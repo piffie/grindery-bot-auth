@@ -41,6 +41,8 @@ router.get("/update-user-information", async (req, res) => {
       }
     );
 
+    const access_token = tokenResponse.data.access_token;
+
     // Get user email using the access token
     const emailResponse = await axios.post(
       "https://orchestrator.grindery.org",
@@ -52,7 +54,7 @@ router.get("/update-user-information", async (req, res) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${tokenResponse.data.access_token}`,
+          Authorization: `Bearer ${access_token}`,
         },
       }
     );
@@ -67,14 +69,16 @@ router.get("/update-user-information", async (req, res) => {
         method: "or_updateUserProps",
         id: "some id",
         params: {
-          email: emailResponse.data.result || null,
-          response_path: decodeState.response_path,
-          phone: decodeState.phone,
+          props: {
+            email: emailResponse.data.result || null,
+            response_path: decodeState.response_path,
+            phone: decodeState.phone,
+          },
         },
       },
       {
         headers: {
-          Authorization: `Bearer ${tokenResponse.data.access_token}`,
+          Authorization: `Bearer ${access_token}`,
         },
       }
     );
