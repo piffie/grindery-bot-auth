@@ -16,7 +16,7 @@ router.get("/auth", async (req, res) => {
     );
     res.redirect(
       `https://orchestrator.grindery.org/oauth/authorize/?redirect_uri=${encodeURIComponent(
-        `https://bot-auth-api.grindery.org/v1/bot-auth/update-user-information?code=&state=${encodedState}`
+        "https://bot-auth-api.grindery.org/v1/bot-auth/update-user-information?code="
       )}&response_type=code&state=${encodedState}`
     );
   } catch (error) {
