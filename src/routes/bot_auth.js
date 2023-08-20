@@ -14,9 +14,10 @@ router.get("/auth", async (req, res) => {
         phone: req.query.phone,
       })
     );
+    const currentDomain = `${req.protocol}://${req.get("host")}`;
     res.redirect(
       `https://orchestrator.grindery.org/oauth/authorize/?redirect_uri=${encodeURIComponent(
-        "https://bot-auth-api.grindery.org/v1/bot-auth/update-user-information?code="
+        `${currentDomain}/v1/bot-auth/update-user-information?code=`
       )}&response_type=code&state=${encodedState}`
     );
   } catch (error) {
