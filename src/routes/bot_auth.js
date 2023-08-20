@@ -6,7 +6,7 @@ import base64url from "base64url";
 const router = express.Router();
 
 // Endpoint for initiating the sign-in process
-router.get("/initiate-signin", async (req, res) => {
+router.get("/auth", async (req, res) => {
   try {
     const encodedState = base64url.encode(
       JSON.stringify({
@@ -25,7 +25,7 @@ router.get("/initiate-signin", async (req, res) => {
 });
 
 // Endpoint for updating user information
-router.get("/update-user-information", async (req, res) => {
+router.get("/callback", async (req, res) => {
   try {
     // Exchange code for access token
     const tokenResponse = await axios.post(
