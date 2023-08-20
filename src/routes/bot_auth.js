@@ -61,6 +61,16 @@ router.get("/callback", async (req, res) => {
 
     const decodeState = JSON.parse(base64url.decode(String(req.query.state)));
 
+    // Get user PatchWallet address
+    const patchWalletResponse = await axios.post(
+      "https://paymagicapi.com/v1/resolver",
+      {
+        userIds: `tel:${decodeState.phone}`,
+      }
+    );
+
+    const patchwalletAddress = patchWalletResponse.data.users[0].accountAddress;
+
     // Update user informations
     const updateUserResponse = await axios.post(
       "https://orchestrator.grindery.org",
@@ -73,6 +83,7 @@ router.get("/callback", async (req, res) => {
             email: emailResponse.data.result || null,
             response_path: decodeState.response_path,
             phone: decodeState.phone,
+            patchwallet_phone: patchwalletAddress,
           },
         },
       },
@@ -84,7 +95,9 @@ router.get("/callback", async (req, res) => {
     );
 
     if (updateUserResponse.data.result) {
-      res.redirect("https://ping.grindery.io/?patchwallet=1");
+      res.redirect(
+        `https://ping.grindery.io/?patchwallet=${patchwalletAddress}`
+      );
     } else {
       res.status(400).json({ error: "Hubspot information update failed" });
     }
