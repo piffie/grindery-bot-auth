@@ -6,7 +6,7 @@ import base64url from "base64url";
 const router = express.Router();
 
 // Endpoint for initiating the sign-in process
-router.get("/auth", async (req, res) => {
+router.get("/init", async (req, res) => {
   try {
     const encodedState = base64url.encode(
       JSON.stringify({
@@ -17,7 +17,7 @@ router.get("/auth", async (req, res) => {
     const currentDomain = `${req.protocol}://${req.get("host")}`;
     res.redirect(
       `https://orchestrator.grindery.org/oauth/authorize/?redirect_uri=${encodeURIComponent(
-        `${currentDomain}/v1/bot-auth/update-user-information?code=`
+        `${currentDomain}/v1/bot-auth/callback`
       )}&response_type=code&state=${encodedState}`
     );
   } catch (error) {
