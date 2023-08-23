@@ -12,15 +12,29 @@ const GRINDERY_ACCOUNT_REFRESH_TOKEN =
     process.env.GRINDERY_ACCOUNT_REFRESH_TOKEN,
   GRINDERY_ACCOUNT_WORKSPACE_KEY = process.env.GRINDERY_ACCOUNT_WORKSPACE_KEY;
 
+/**
+ * POST endpoint to create a wallet notification.
+ *
+ * @route POST /v1/notifications/wallet
+ * @param {object} req - Express request object
+ * @param {object} req.body - Request body object
+ * @param {string} req.body.webhook - Webhook URL for notifications
+ * @param {string} req.body.responsepath - Bot user response path
+ * @param {string} req.body.address - Wallet address (optional if 'phone' is provided)
+ * @param {string} req.body.phone - Phone number for wallet lookup (optional if 'address' is provided)
+ * @param {object} res - Express response object
+ * @returns {object} JSON response indicating success or error
+ * @throws {object} JSON response indicating internal server error
+ */
 router.post("/wallet", async (req, res) => {
-  if (!req.body.address) {
-    return res.status(400).json({ error: "'address' is required" });
-  }
   if (!req.body.webhook) {
     return res.status(400).json({ error: "'webhook' is required" });
   }
   if (!req.body.responsepath) {
     return res.status(400).json({ error: "'responsepath' is required" });
+  }
+  if (!req.body.address && !req.body.phone) {
+    return res.status(400).json({ error: "'address' or 'phone' is required" });
   }
 
   try {
@@ -50,6 +64,17 @@ router.post("/wallet", async (req, res) => {
       type: "evm",
       environment: "production",
     });
+
+    let address = req.body.address;
+    if (!address) {
+      const patchWalletResponse = await axios.post(
+        "https://paymagicapi.com/v1/resolver",
+        {
+          userIds: `tel:${req.body.phone}`,
+        }
+      );
+      address = patchWalletResponse.data.users[0].accountAddress;
+    }
 
     // generate workflows
     const walletWorkflow = generateWorkflow({
