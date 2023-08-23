@@ -16,15 +16,12 @@ const GRINDERY_ACCOUNT_REFRESH_TOKEN =
  * POST endpoint to create a wallet notification.
  *
  * @route POST /v1/notifications/wallet
- * @param {object} req - Express request object
- * @param {object} req.body - Request body object
- * @param {string} req.body.webhook - Webhook URL for notifications
- * @param {string} req.body.responsepath - Bot user response path
- * @param {string} req.body.address - Wallet address (optional if 'phone' is provided)
- * @param {string} req.body.phone - Phone number for wallet lookup (optional if 'address' is provided)
- * @param {object} res - Express response object
- * @returns {object} JSON response indicating success or error
- * @throws {object} JSON response indicating internal server error
+ * @param {object} request.body - Request body object
+ * @param {string} request.body.webhook - Webhook URL for notifications
+ * @param {string} request.body.responsepath - Bot user response path
+ * @param {string} [request.body.address] - Wallet address (optional if 'phone' is provided)
+ * @param {string} [request.body.phone] - Phone number for wallet lookup (optional if 'address' is provided)
+ * @return {object} success or error
  */
 router.post("/wallet", async (req, res) => {
   if (!req.body.webhook) {
