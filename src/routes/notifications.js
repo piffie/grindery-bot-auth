@@ -104,7 +104,10 @@ router.post("/wallet", async (req, res) => {
 
     // check if workflow already exists
     if (Boolean(walletWorkflowExists) || Boolean(erc20WorkflowExists)) {
-      return res.json({ success: false, message: "Notification already exists" });
+      return res.json({
+        success: false,
+        message: "Notification already exists",
+      });
     }
 
     // save workflows

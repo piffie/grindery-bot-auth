@@ -42,10 +42,11 @@ export const generateWorkflow = ({
     state: "on",
     source: "urn:grindery:bot-api",
   };
+
+  workflow.actions[0].input.data.__transactionHash =
+    "{{trigger.__transactionHash}}";
+
   if (trigger === "evmWallet") {
-    workflow.trigger.input._grinderyContractAddress = "0x0";
-    workflow.actions[0].input.data.__transactionHash =
-      "{{trigger.__transactionHash}}";
     workflow.actions[0].input.data.hash = "{{trigger.hash}}";
     workflow.actions[0].input.data.blockHash = "{{trigger.blockHash}}";
     workflow.actions[0].input.data.blockNumber = "{{trigger.blockNumber}}";
@@ -53,7 +54,6 @@ export const generateWorkflow = ({
   }
   if (trigger === "erc20") {
     workflow.trigger.input._grinderyContractAddress = "0x0";
-    workflow.actions[0].input.data.txfees = "{{trigger.__transactionHash}}";
     workflow.actions[0].input.data._grinderyContractAddress =
       "{{trigger._grinderyContractAddress}}";
   }
