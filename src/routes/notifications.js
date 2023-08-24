@@ -75,7 +75,7 @@ router.post("/wallet", async (req, res) => {
 
     // generate workflows
     const walletWorkflow = generateWorkflow({
-      address: req.body.address,
+      address,
       webhook: req.body.webhook,
       responsepath: req.body.responsepath,
       trigger: "evmWallet",
@@ -83,7 +83,7 @@ router.post("/wallet", async (req, res) => {
       creator,
     });
     const erc20Workflow = generateWorkflow({
-      address: req.body.address,
+      address,
       webhook: req.body.webhook,
       responsepath: req.body.responsepath,
       trigger: "erc20",
@@ -104,7 +104,7 @@ router.post("/wallet", async (req, res) => {
 
     // check if workflow already exists
     if (Boolean(walletWorkflowExists) || Boolean(erc20WorkflowExists)) {
-      return res.json({ message: "Notification already exists" });
+      return res.json({ success: false, message: "Notification already exists" });
     }
 
     // save workflows
@@ -117,7 +117,7 @@ router.post("/wallet", async (req, res) => {
       workspaceKey: GRINDERY_ACCOUNT_WORKSPACE_KEY,
     });
 
-    return res.json({ message: "Notification created" });
+    return res.json({ success: true, message: "Notification created" });
   } catch (error) {
     console.error(JSON.stringify(error, null, 2));
     res.status(500).json({ error: "Internal server error" });
