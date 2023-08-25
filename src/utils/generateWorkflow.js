@@ -33,7 +33,7 @@ export const generateWorkflow = ({
             from: "{{trigger.from}}",
             to: "{{trigger.to}}",
             value: "{{trigger.value}}",
-            _grinderyChain: "{{trigger._grinderyChain}}",
+            chain: "{{trigger._grinderyChain}}",
           },
         },
       },
@@ -45,16 +45,14 @@ export const generateWorkflow = ({
 
   if (trigger === "evmWallet") {
     workflow.actions[0].input.data.hash = "{{trigger.hash}}";
-    workflow.actions[0].input.data.__transactionHash = "{{trigger.hash}}";
     workflow.actions[0].input.data.blockHash = "{{trigger.blockHash}}";
     workflow.actions[0].input.data.blockNumber = "{{trigger.blockNumber}}";
     workflow.actions[0].input.data.txfees = "{{trigger.txfees}}";
   }
   if (trigger === "erc20") {
-    workflow.actions[0].input.data.__transactionHash =
-      "{{trigger.__transactionHash}}";
+    workflow.actions[0].input.data.hash = "{{trigger.__transactionHash}}";
     workflow.trigger.input._grinderyContractAddress = "0x0";
-    workflow.actions[0].input.data._grinderyContractAddress =
+    workflow.actions[0].input.data.contract =
       "{{trigger._grinderyContractAddress}}";
   }
 
