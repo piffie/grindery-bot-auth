@@ -5,6 +5,30 @@ import ERC20 from "./abi/ERC20.json" assert { type: "json" };
 
 const router = express.Router();
 
+/**
+ * POST /v1/data/
+ *
+ * @summary Encode Function Call to ERC20 ABI Data
+ * @description Convert a function call and its arguments into an ABI-encoded data for ERC20 smart contracts.
+ * @tags Data
+ * @param {object} request.body - The request body containing necessary information.
+ * @return {object} 200 - Success response
+ * @return {object} 400 - Error response
+ * @example request - 200 - Example request body
+ * {
+ *   "contractAddress": "0xfe4F5145f6e09952a5ba9e956ED0C25e3Fa4c7F1",
+ *   "function": "transfer",
+ *   "inputs": ["0x5c9fAf85F1bCFF9aE11F1f60ADEeBD1f851469a5", "1"]
+ * }
+ * @example response - 200 - Success response example
+ * {
+ *   "encodedData": "0x..."
+ * }
+ * @example response - 400 - Error response example
+ * {
+ *   "error": "Function not found in contract ABI."
+ * }
+ */
 router.post("/", async (req, res) => {
   try {
     const web3 = new Web3();
