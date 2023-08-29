@@ -2,6 +2,7 @@ import Web3 from "web3";
 import express from "express";
 import "dotenv/config";
 import ERC20 from "./abi/ERC20.json" assert { type: "json" };
+import BigNumber from "bignumber.js";
 
 const router = express.Router();
 
@@ -45,6 +46,29 @@ router.post("/", async (req, res) => {
     res
       .status(200)
       .json({ encodedData: targetFunction(...inputArguments).encodeABI() });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "An error occurred." });
+  }
+});
+
+router.get("/balance", async (req, res) => {
+  try {
+    const web3 = new Web3("https://rpc.ankr.com/polygon_mumbai/");
+    const contract = new web3.eth.Contract(ERC20, req.body.contractAddress);
+
+    const balance = await contract.methods
+      .balanceOf(req.body.userAddress)
+      .call();
+
+    res.status(200).json({
+      balanceWei: balance,
+      balanceEther: BigNumber(balance)
+        .div(
+          BigNumber(10).pow(BigNumber(await contract.methods.decimals().call()))
+        )
+        .toString(),
+    });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "An error occurred." });
