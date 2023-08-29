@@ -3,6 +3,7 @@ import express from "express";
 import "dotenv/config";
 import ERC20 from "./abi/ERC20.json" assert { type: "json" };
 import BigNumber from "bignumber.js";
+import { CHAIN_MAPPING } from "../utils/chains.js";
 
 const router = express.Router();
 
@@ -54,7 +55,7 @@ router.post("/", async (req, res) => {
 
 router.post("/balance", async (req, res) => {
   try {
-    const web3 = new Web3("https://rpc.ankr.com/polygon_mumbai/");
+    const web3 = new Web3(CHAIN_MAPPING[req.body.chainId][1]);
     const contract = new web3.eth.Contract(ERC20, req.body.contractAddress);
 
     const balance = await contract.methods
