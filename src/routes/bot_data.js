@@ -52,7 +52,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/balance", async (req, res) => {
+router.post("/balance", async (req, res) => {
   try {
     const web3 = new Web3("https://rpc.ankr.com/polygon_mumbai/");
     const contract = new web3.eth.Contract(ERC20, req.body.contractAddress);
