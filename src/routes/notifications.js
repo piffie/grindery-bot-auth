@@ -10,7 +10,8 @@ const router = express.Router();
 
 const GRINDERY_ACCOUNT_REFRESH_TOKEN =
     process.env.GRINDERY_ACCOUNT_REFRESH_TOKEN,
-  GRINDERY_ACCOUNT_WORKSPACE_KEY = process.env.GRINDERY_ACCOUNT_WORKSPACE_KEY;
+  GRINDERY_ACCOUNT_WORKSPACE_KEY = process.env.GRINDERY_ACCOUNT_WORKSPACE_KEY,
+  WALLET_NOTIFICATION_WEBHOOK_URL = process.env.WALLET_NOTIFICATION_WEBHOOK_URL;
 
 /**
  * POST endpoint to create a wallet notification.
@@ -125,6 +126,10 @@ router.post("/wallet", async (req, res) => {
     console.error(JSON.stringify(error, null, 2));
     res.status(500).json({ error: "Internal server error" });
   }
+});
+
+router.post("/webhook", async (req, res) => {
+  res.redirect(307, WALLET_NOTIFICATION_WEBHOOK_URL);
 });
 
 export default router;
