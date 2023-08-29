@@ -12,9 +12,9 @@ const __dirname = path.dirname(__filename);
 
 const options = {
   info: {
-    version: "1.0.1",
-    title: "Bot Auth API",
-    description: "API for Grindery Bot Auth",
+    version: "1.0.2",
+    title: "Grindery AI API",
+    description: "API for Grindery AI Bot",
     license: {
       name: "MIT",
     },

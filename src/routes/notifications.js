@@ -14,15 +14,35 @@ const GRINDERY_ACCOUNT_REFRESH_TOKEN =
   WALLET_NOTIFICATION_WEBHOOK_URL = process.env.WALLET_NOTIFICATION_WEBHOOK_URL;
 
 /**
- * POST endpoint to create a wallet notification.
+ * POST /v1/notifications/wallet
  *
- * @route POST /v1/notifications/wallet
- * @param {object} request.body - Request body object
- * @param {string} request.body.webhook - Webhook URL for notifications
- * @param {string} request.body.responsepath - Bot user response path
- * @param {string} [request.body.address] - Wallet address (optional if 'phone' is provided)
- * @param {string} [request.body.phone] - Phone number for wallet lookup (optional if 'address' is provided)
- * @return {object} success or error
+ * @summary Create wallet notification
+ * @description Creates a webhook workflows with wallet and erc20 transactions triggers.
+ * @tags Notifications
+ * @param {object} request.body - The request body containing necessary information.
+ * @return {object} 200 - Success response
+ * @return {object} 400 - Error response
+ * @return {object} 500 - Error response
+ * @example request - 200 - Example request body
+ * {
+ *   "webhook": "https://example.com",
+ *   "responsepath": "response_path",
+ *   "address": "0x5c9fAf85F1bCFF9aE11F1f60ADEeBD1f851469a5",
+ *   "phone": "1234567"
+ * }
+ * @example response - 200 - Success response example
+ * {
+ *   "success": true,
+ *   "message": "Notification created"
+ * }
+ * @example response - 400 - Error response example
+ * {
+ *   "error": "webhook is required"
+ * }
+ * @example response - 500 - Error response example
+ * {
+ *   "error": "Server error"
+ * }
  */
 router.post("/wallet", async (req, res) => {
   if (!req.body.webhook) {
@@ -128,6 +148,42 @@ router.post("/wallet", async (req, res) => {
   }
 });
 
+/**
+ * POST /v1/notifications/webhook
+ *
+ * @summary Catch notification webhook
+ * @description Catches notification workflow webhook and redirects it. Redirect URL is set by environment.
+ * @tags Notifications
+ * @param {object} request.body - The request body
+ * @return {object} 200 - Success response
+ * @return {object} 400 - Error response
+ * @return {object} 500 - Error response
+ * @example request - 200 - Example request body
+ * {
+ *   "responsepath": "response_path",
+ *   "from": "0x5c9fAf85F1bCFF9aE11F1f60ADEeBD1f851469a5",
+ *   "to": "0x5c9fAf85F1bCFF9aE11F1f60ADEeBD1f851469a5",
+ *   "value": "1",
+ *   "chain": "eip155:1",
+ *   "hash": "0x5c9fAf85F1bCFF9aE11F1f60ADEeBD1f851469a5",
+ *   "blockHash": "0x5c9fAf85F1bCFF9aE11F1f60ADEeBD1f851469a5",
+ *   "blockNumber": "1",
+ *   "txfees": "1",
+ *   "contract": "0x5c9fAf85F1bCFF9aE11F1f60ADEeBD1f851469a5"
+ * }
+ * @example response - 200 - Success response example
+ * {
+ *   "status": "success"
+ * }
+ * @example response - 400 - Error response example
+ * {
+ *   "error": "Error message"
+ * }
+ * @example response - 500 - Error response example
+ * {
+ *   "error": "Error message"
+ * }
+ */
 router.post("/webhook", async (req, res) => {
   res.redirect(307, WALLET_NOTIFICATION_WEBHOOK_URL);
 });
