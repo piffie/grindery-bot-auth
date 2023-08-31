@@ -2,11 +2,11 @@ import express from "express";
 import pkg from "body-parser";
 import expressJSDocSwagger from "express-jsdoc-swagger";
 import path from "path";
-import { fileURLToPath } from "url";
+import {fileURLToPath} from "url";
 import "./loadEnvironment.js";
 import router from "./router.js";
 
-const { json, urlencoded } = pkg;
+const {json, urlencoded} = pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -80,7 +80,7 @@ app.use(function (req, res, next) {
 
   if (req.method === "OPTIONS") {
     // Return OK response for CORS preflight
-    res.json({ message: "Ok" });
+    res.json({message: "Ok"});
   } else {
     next();
   }
