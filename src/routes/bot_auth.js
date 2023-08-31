@@ -5,13 +5,23 @@ import base64url from "base64url";
 
 const router = express.Router();
 
-// Endpoint for initiating the sign-in process
+/**
+ * GET /v1/bot-auth/init
+ *
+ * @summary Init authentication
+ * @description Inits Grindery authentication for bot user.
+ * @tags Authentication
+ * @param {string} responsepath.query.required - FlowXO chat response path
+ * @param {string} user_id.query.required - Telegram user id
+ * @param {string} redirect_uri.query - Optional success redirect url
+ */
 router.get("/init", async (req, res) => {
   try {
     const encodedState = base64url.encode(
       JSON.stringify({
-        response_path: req.query.responsepath,
-        phone: req.query.phone,
+        response_path: req.query.responsepath || "",
+        user_id: req.query.user_id || "",
+        redirect_uri: req.query.redirect_uri || "",
       })
     );
     const currentDomain = `${req.protocol}://${req.get("host")}`;
@@ -25,7 +35,15 @@ router.get("/init", async (req, res) => {
   }
 });
 
-// Endpoint for updating user information
+/**
+ * GET /v1/bot-auth/callback
+ *
+ * @summary Complete authentication
+ * @description Completes Grindery authentication for Telegram user. Saves response path, user id and patchwallet address if not exists.
+ * @tags Authentication
+ * @param {string} code.query.required - Grindery authentication code.
+ * @param {string} state.query.required - Encoded state. Contains response path, user id and redirect uri.
+ */
 router.get("/callback", async (req, res) => {
   try {
     // Exchange code for access token
@@ -45,13 +63,20 @@ router.get("/callback", async (req, res) => {
     const access_token = tokenResponse.data.access_token;
 
     // Get user email using the access token
-    const emailResponse = await axios.post(
+    const userPropsResponse = await axios.post(
       "https://orchestrator.grindery.org",
       {
         jsonrpc: "2.0",
-        method: "or_getUserEmail",
-        id: "some id",
-        params: {},
+        method: "or_getUserProps",
+        id: new Date(),
+        params: {
+          props: [
+            "email",
+            "telegram_user_id",
+            "patchwallet_telegram",
+            "response_path",
+          ],
+        },
       },
       {
         headers: {
@@ -62,11 +87,28 @@ router.get("/callback", async (req, res) => {
 
     const decodeState = JSON.parse(base64url.decode(String(req.query.state)));
 
+    if (
+      !userPropsResponse.data.result ||
+      !userPropsResponse.data.result.email
+    ) {
+      return res.status(400).json({ error: "Email is missing" });
+    }
+
+    if (
+      userPropsResponse.data.result.patchwallet_telegram &&
+      userPropsResponse.data.result.telegram_user_id &&
+      userPropsResponse.data.result.response_path
+    ) {
+      return res.redirect(
+        decodeState.redirect_uri || `https://app.grindery.io/`
+      );
+    }
+
     // Get user PatchWallet address
     const patchWalletResponse = await axios.post(
       "https://paymagicapi.com/v1/resolver",
       {
-        userIds: `tel:${decodeState.phone}`,
+        userIds: `grindery:${decodeState.user_id}`,
       }
     );
 
@@ -78,13 +120,13 @@ router.get("/callback", async (req, res) => {
       {
         jsonrpc: "2.0",
         method: "or_updateUserProps",
-        id: "some id",
+        id: new Date(),
         params: {
           props: {
-            email: emailResponse.data.result || null,
+            email: userPropsResponse.data.result.email || null,
             response_path: decodeState.response_path,
-            phone: decodeState.phone,
-            patchwallet_phone: patchwalletAddress,
+            telegram_user_id: decodeState.user_id,
+            patchwallet_telegram: patchwalletAddress,
           },
         },
       },
@@ -96,9 +138,7 @@ router.get("/callback", async (req, res) => {
     );
 
     if (updateUserResponse.data.result) {
-      res.redirect(
-        `https://ping.grindery.io/?patchwallet=${patchwalletAddress}`
-      );
+      res.redirect(decodeState.redirect_uri || `https://app.grindery.io/`);
     } else {
       res.status(400).json({ error: "Hubspot information update failed" });
     }
