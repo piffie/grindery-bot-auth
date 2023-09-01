@@ -1,15 +1,15 @@
 import {TelegramClient} from "telegram";
-import {StringSession} from "telegram/sessions/index.js";
+import "dotenv/config";
 
-const telegramClient = () => {
+const TGClient = (session) => {
   return new TelegramClient(
-    new StringSession(""),
-    20757410,
-    "d9818920b6ee370856801a6dfa73c5c8",
+    session,
+    Number(process.env.TELEGRAM_API_ID),
+    process.env.TELEGRAM_API_HASH,
     {
       connectionRetries: 5,
     }
   );
 };
 
-export default telegramClient;
+export default TGClient;
