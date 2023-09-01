@@ -119,7 +119,7 @@ router.post("/callback", async (req, res) => {
  * }
  */
 router.get("/status", async (req, res) => {
-  const client = TGClient(new StringSession(decodeURIComponent(req.query.session)));
+  const client = TGClient(new StringSession(req.query.session));
   await client.connect();
   const status = client.connected;
 
@@ -140,7 +140,7 @@ router.get("/status", async (req, res) => {
  * }
  */
 router.get("/contacts", async (req, res) => {
-  const client = TGClient(new StringSession(decodeURIComponent(req.query.session)));
+  const client = TGClient(new StringSession(req.query.session));
   await client.connect();
 
   if (!client.connected) {
