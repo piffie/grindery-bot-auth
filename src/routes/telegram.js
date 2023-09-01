@@ -1,9 +1,10 @@
 import express from "express";
-import {TelegramClient, Api} from "telegram";
+import {Api} from "telegram";
 import {StringSession} from "telegram/sessions/index.js";
 import createTelegramPromise from "../utils/telegramPromise.js";
 import {uuid} from "uuidv4";
 import TGClient from "../utils/telegramClient.js";
+import {isRequired} from "../utils/auth.js";
 
 const router = express.Router();
 const operations = {};
@@ -27,7 +28,7 @@ const operations = {};
  *   "status": "pending"
  * }
  */
-router.post("/init", async (req, res) => {
+router.post("/init", isRequired, async (req, res) => {
   const operationId = uuid();
 
   const client = TGClient(new StringSession(""));
@@ -92,14 +93,14 @@ router.post("/init", async (req, res) => {
  *   "error": "Operation not found"
  * }
  */
-router.post("/callback", async (req, res) => {
+router.post("/callback", isRequired, async (req, res) => {
   const operationId = req.body.operationId;
   const code = req.body.code;
 
   if (operations[operationId]) {
     operations[operationId].phoneCodePromise.resolve(code);
     const session = operations[operationId].client.session.save();
-    res.json({session: session, status: "code_received"});
+    res.json({session: encodeURIComponent(session), status: "code_received"});
   } else {
     res.status(404).json({error: "Operation not found"});
   }
@@ -118,7 +119,7 @@ router.post("/callback", async (req, res) => {
  *   "status": true // or false
  * }
  */
-router.get("/status", async (req, res) => {
+router.get("/status", isRequired, async (req, res) => {
   const client = TGClient(new StringSession(req.query.session));
   await client.connect();
   const status = client.connected;
@@ -139,7 +140,7 @@ router.get("/status", async (req, res) => {
  *   "contacts": [{...}, {...}] // array of contact objects
  * }
  */
-router.get("/contacts", async (req, res) => {
+router.get("/contacts", isRequired, async (req, res) => {
   const client = TGClient(new StringSession(req.query.session));
   await client.connect();
 
