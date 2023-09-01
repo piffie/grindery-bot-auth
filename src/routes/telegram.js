@@ -154,7 +154,7 @@ router.get("/contacts", isRequired, async (req, res) => {
     })
   );
 
-  res.status(200).json(contacts);
+  res.status(200).json(contacts.users);
 });
 
 export default router;
