@@ -4,8 +4,10 @@ import "dotenv/config";
 import ERC20 from "./abi/ERC20.json" assert { type: "json" };
 import BigNumber from "bignumber.js";
 import { CHAIN_MAPPING } from "../utils/chains.js";
+import axios from "axios";
 
 const router = express.Router();
+const g1PolygonAddress = "0xe36BD65609c08Cd17b53520293523CF4560533d0";
 
 /**
  * POST /v1/data/
@@ -49,7 +51,7 @@ router.post("/", async (req, res) => {
       .json({ encodedData: targetFunction(...inputArguments).encodeABI() });
   } catch (error) {
     console.error("Error:", error);
-    res.status(500).json({ error: "An error occurred." });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -72,7 +74,106 @@ router.post("/balance", async (req, res) => {
     });
   } catch (error) {
     console.error("Error:", error);
-    res.status(500).json({ error: "An error occurred." });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/balance", async (req, res) => {
+  try {
+    const web3 = new Web3(CHAIN_MAPPING[req.body.chainId][1]);
+    const contract = new web3.eth.Contract(ERC20, req.body.contractAddress);
+
+    const balance = await contract.methods
+      .balanceOf(req.body.userAddress)
+      .call();
+
+    res.status(200).json({
+      balanceWei: balance,
+      balanceEther: BigNumber(balance)
+        .div(
+          BigNumber(10).pow(BigNumber(await contract.methods.decimals().call()))
+        )
+        .toString(),
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/patchwallet", async (req, res) => {
+  try {
+    const web3 = new Web3(CHAIN_MAPPING[req.body.chainId][1]);
+    const contract = new web3.eth.Contract(ERC20, req.body.contractAddress);
+
+    const patchWalletAddress = (
+      await axios.post("https://paymagicapi.com/v1/resolver", {
+        userIds: `grindery:${req.body.tgId}`,
+      })
+    ).data.users[0].accountAddress;
+
+    const balance = await contract.methods.balanceOf(patchWalletAddress).call();
+
+    res.status(200).json({
+      balanceWei: balance,
+      balanceEther: BigNumber(balance)
+        .div(
+          BigNumber(10).pow(BigNumber(await contract.methods.decimals().call()))
+        )
+        .toString(),
+      patchWalletAddress,
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/sendTokens", async (req, res) => {
+  try {
+    const accessToken = (
+      await axios.post("https://paymagicapi.com/v1/auth", {
+        client_id: process.env.CLIENT_ID,
+        client_secret: process.env.CLIENT_SECRET,
+      })
+    ).data.access_token;
+
+    const web3 = new Web3();
+    const contract = new web3.eth.Contract(ERC20, g1PolygonAddress);
+
+    const to = (
+      await axios.post("https://paymagicapi.com/v1/resolver", {
+        userIds: `grindery:${req.body.toTgId}`,
+      })
+    ).data.users[0].accountAddress;
+
+    const tokenTransferResponse = await axios.post(
+      "https://paymagicapi.com/v1/kernel/tx",
+      {
+        userId: `grindery:${req.body.tgId}`,
+        chain: "matic",
+        to: [g1PolygonAddress],
+        value: ["0x00"],
+        data: [
+          contract.methods["transfer"](
+            to,
+            Web3.utils.toWei(req.body.amount)
+          ).encodeABI(),
+        ],
+        auth: "",
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    res.status(200).json(tokenTransferResponse.data);
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
