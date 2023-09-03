@@ -10,7 +10,7 @@ export const checkToken = async (token, workspaceKey) => {
         method: "or_listWorkflows",
         id: new Date(),
         params: {
-          ...(typeof workspaceKey !== "undefined" && {workspaceKey}),
+          ...(typeof workspaceKey !== "undefined" && { workspaceKey }),
         },
       },
       {
@@ -31,11 +31,11 @@ export const checkToken = async (token, workspaceKey) => {
 export const isRequired = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
-    return res.status(403).json({message: "No credentials sent"});
+    return res.status(403).json({ message: "No credentials sent" });
   }
 
   if (!authHeader.startsWith("Bearer ")) {
-    return res.status(403).json({message: "Wrong authentication method"});
+    return res.status(403).json({ message: "Wrong authentication method" });
   }
 
   const token = authHeader.substring(7, authHeader.length);
@@ -55,5 +55,35 @@ export const isRequired = async (req, res, next) => {
   res.locals.userId = user.sub;
   res.locals.workspaceId = user.workspace;
 
+  next();
+};
+
+// export const authenticateApiKey = (req, res, next) => {
+//   const apiKey = req.body.apiKey;
+//   if (!apiKey) {
+//     return res.status(401).send({
+//       msg: "Missing API key",
+//     });
+//   }
+//   if (apiKey !== process.env.API_KEY) {
+//     return res.status(401).send({
+//       msg: "Invalid API key",
+//     });
+//   }
+//   next();
+// };
+
+export const authenticateApiKey = (req, res, next) => {
+  const apiKey = req.headers["authorization"];
+  if (!apiKey) {
+    return res.status(401).send({
+      msg: "Missing API key in headers",
+    });
+  }
+  if (apiKey !== `Bearer ${process.env.API_KEY}`) {
+    return res.status(401).send({
+      msg: "Invalid API key",
+    });
+  }
   next();
 };

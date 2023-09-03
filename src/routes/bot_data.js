@@ -5,6 +5,7 @@ import ERC20 from "./abi/ERC20.json" assert { type: "json" };
 import BigNumber from "bignumber.js";
 import { CHAIN_MAPPING } from "../utils/chains.js";
 import axios from "axios";
+import { authenticateApiKey } from "../utils/auth.js";
 
 const router = express.Router();
 const g1PolygonAddress = "0xe36BD65609c08Cd17b53520293523CF4560533d0";
@@ -129,7 +130,7 @@ router.post("/patchwallet", async (req, res) => {
   }
 });
 
-router.post("/sendTokens", async (req, res) => {
+router.post("/sendTokens", authenticateApiKey, async (req, res) => {
   try {
     const accessToken = (
       await axios.post("https://paymagicapi.com/v1/auth", {
