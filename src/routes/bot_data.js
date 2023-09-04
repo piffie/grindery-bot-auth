@@ -133,19 +133,31 @@ router.post("/patchwallet", async (req, res) => {
 router.post("/sendTokens", authenticateApiKey, async (req, res) => {
   try {
     const accessToken = (
-      await axios.post("https://paymagicapi.com/v1/auth", {
-        client_id: process.env.CLIENT_ID,
-        client_secret: process.env.CLIENT_SECRET,
-      })
+      await axios.post(
+        "https://paymagicapi.com/v1/auth",
+        {
+          client_id: process.env.CLIENT_ID,
+          client_secret: process.env.CLIENT_SECRET,
+        },
+        {
+          timeout: 100000,
+        }
+      )
     ).data.access_token;
 
     const web3 = new Web3();
     const contract = new web3.eth.Contract(ERC20, g1PolygonAddress);
 
     const to = (
-      await axios.post("https://paymagicapi.com/v1/resolver", {
-        userIds: `grindery:${req.body.toTgId}`,
-      })
+      await axios.post(
+        "https://paymagicapi.com/v1/resolver",
+        {
+          userIds: `grindery:${req.body.toTgId}`,
+        },
+        {
+          timeout: 100000,
+        }
+      )
     ).data.users[0].accountAddress;
 
     const tokenTransferResponse = await axios.post(
@@ -164,6 +176,7 @@ router.post("/sendTokens", authenticateApiKey, async (req, res) => {
         auth: "",
       },
       {
+        timeout: 100000,
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
