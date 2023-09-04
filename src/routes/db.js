@@ -1,9 +1,10 @@
 import express from "express";
-import {Database} from "../db/conn.js";
+import { Database } from "../db/conn.js";
+import { authenticateApiKey } from "../utils/auth.js";
 
 const router = express.Router();
 
-router.post("/:collectionName", async (req, res) => {
+router.post("/:collectionName", authenticateApiKey, async (req, res) => {
   const collectionName = req.params.collectionName;
   const db = await Database.getInstance(req);
   const collection = db.collection(collectionName);
@@ -16,9 +17,9 @@ router.post("/:collectionName", async (req, res) => {
   );
 });
 
-router.get("/:collectionName", async (req, res) => {
+router.get("/:collectionName", authenticateApiKey, async (req, res) => {
   const collectionName = req.params.collectionName;
-  const query = {...req.query};
+  const query = { ...req.query };
 
   try {
     const db = await Database.getInstance(req);
@@ -27,7 +28,7 @@ router.get("/:collectionName", async (req, res) => {
     const result = await collection.find(query).toArray();
     return res.status(200).send(result);
   } catch (error) {
-    return res.status(500).send({msg: "An error occurred", error});
+    return res.status(500).send({ msg: "An error occurred", error });
   }
 });
 
