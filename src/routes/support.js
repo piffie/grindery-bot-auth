@@ -59,7 +59,25 @@ router.post("/import", authenticateApiKey, async (req, res) => {
     });
   }
 
-  for (const entry of inputData) {
+  // Extract all Telegram IDs from the inputData
+  const inputTelegramIDs = inputData.map((entry) => entry.UserID);
+
+  // Fetch all users from DB that match the input IDs
+  const existingUsers = await collection
+    .find({
+      userTelegramID: {$in: inputTelegramIDs},
+    })
+    .toArray();
+
+  const existingTelegramIDs = existingUsers.map((user) => user.userTelegramID);
+
+  // Filter out the inputData entries that are not in the existing list
+  const nonExistingUsers = inputData.filter(
+    (entry) => !existingTelegramIDs.includes(entry.UserID)
+  );
+
+  // Format the non-existing users for insertion
+  nonExistingUsers.forEach((entry) => {
     const userFormatted = {
       userTelegramID: entry.UserID,
       userName: entry.FirstName,
@@ -68,16 +86,10 @@ router.post("/import", authenticateApiKey, async (req, res) => {
       patchwallet: entry.wallet,
       dateAdded: new Date().toISOString(),
     };
+    toInsert.push(userFormatted);
+  });
 
-    const userExists = await collection.findOne({
-      userTelegramID: userFormatted.userTelegramID,
-    });
-
-    if (!userExists) {
-      toInsert.push(userFormatted);
-    }
-  }
-
+  // Insert the non-existing users to the DB
   if (toInsert.length > 0) {
     const insertedData = await collection.insertMany(toInsert);
     res.status(201).send(insertedData);
