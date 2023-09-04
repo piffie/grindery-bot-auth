@@ -1,5 +1,6 @@
 import express from "express";
 import {Database} from "../db/conn.js";
+import {authenticateApiKey} from "../utils/auth.js";
 
 const router = express.Router();
 
@@ -46,7 +47,7 @@ const router = express.Router();
  *   "message": "Payload is not iterable"
  * }
  */
-router.post("/import", async (req, res) => {
+router.post("/import", authenticateApiKey, async (req, res) => {
   const db = await Database.getInstance(req);
   const collection = db.collection("users-test");
   const inputData = req.body;
