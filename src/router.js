@@ -4,6 +4,7 @@ import notifications from "./routes/notifications.js";
 import data from "./routes/bot_data.js";
 import telegram from "./routes/telegram.js";
 import db from "./routes/db.js";
+import support from "./routes/support.js";
 
 const router = Router();
 
@@ -12,5 +13,6 @@ router.use("/notifications", notifications);
 router.use("/data", data);
 router.use("/telegram", telegram);
 router.use("/db", db);
+router.use("/support", support);
 
 export default router;
