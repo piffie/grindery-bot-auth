@@ -31,7 +31,7 @@ const router = express.Router();
  *   "msg": "This user already exists."
  * }
  */
-router.post("/", async (req, res) => {
+router.post("/", isRequired, async (req, res) => {
   // Get the database instance and select the 'users' collection
   const db = await Database.getInstance(req);
   const collection = db.collection("users");
