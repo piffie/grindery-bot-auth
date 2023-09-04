@@ -75,10 +75,6 @@ router.post("/import", authenticateApiKey, async (req, res) => {
 
     if (!userExists) {
       toInsert.push(userFormatted);
-    } else {
-      return res.status(400).send({
-        message: `User ${userFormatted.userTelegramID} already registed or fields not filled`,
-      });
     }
   }
 
