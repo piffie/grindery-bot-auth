@@ -1,10 +1,9 @@
 import express from "express";
-import {isRequired} from "../utils/auth.js";
 import {Database} from "../db/conn.js";
 
 const router = express.Router();
 
-router.post("/:collectionName", isRequired, async (req, res) => {
+router.post("/:collectionName", async (req, res) => {
   const collectionName = req.params.collectionName;
   const db = await Database.getInstance(req);
   const collection = db.collection(collectionName);
@@ -17,7 +16,7 @@ router.post("/:collectionName", isRequired, async (req, res) => {
   );
 });
 
-router.get("/:collectionName", isRequired, async (req, res) => {
+router.get("/:collectionName", async (req, res) => {
   const collectionName = req.params.collectionName;
   const query = {...req.query};
 
