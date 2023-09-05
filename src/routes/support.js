@@ -49,7 +49,7 @@ const router = express.Router();
  */
 router.post("/import", authenticateApiKey, async (req, res) => {
   const db = await Database.getInstance(req);
-  const collection = db.collection("users-test");
+  const collection = db.collection("users");
   const inputData = req.body;
   const toInsert = [];
 
