@@ -1,4 +1,4 @@
-import {MongoClient} from "mongodb";
+import { MongoClient } from "mongodb";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -9,7 +9,7 @@ const client = new MongoClient(connectionString);
 export class Database {
   static instance;
 
-  static async getInstance(req) {
+  static async getInstance() {
     if (!Database.instance) {
       let conn;
       try {

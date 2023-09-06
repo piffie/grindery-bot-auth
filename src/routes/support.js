@@ -1,6 +1,6 @@
 import express from "express";
-import {Database} from "../db/conn.js";
-import {authenticateApiKey} from "../utils/auth.js";
+import { Database } from "../db/conn.js";
+import { authenticateApiKey } from "../utils/auth.js";
 
 const router = express.Router();
 
@@ -48,7 +48,7 @@ const router = express.Router();
  * }
  */
 router.post("/import", authenticateApiKey, async (req, res) => {
-  const db = await Database.getInstance(req);
+  const db = await Database.getInstance();
   const collection = db.collection("users");
   const inputData = req.body;
   const toInsert = [];
@@ -65,7 +65,7 @@ router.post("/import", authenticateApiKey, async (req, res) => {
   // Fetch all users from DB that match the input IDs
   const existingUsers = await collection
     .find({
-      userTelegramID: {$in: inputTelegramIDs},
+      userTelegramID: { $in: inputTelegramIDs },
     })
     .toArray();
 
@@ -94,7 +94,7 @@ router.post("/import", authenticateApiKey, async (req, res) => {
     const insertedData = await collection.insertMany(toInsert);
     res.status(201).send(insertedData);
   } else {
-    res.status(400).send({message: "No valid data to insert"});
+    res.status(400).send({ message: "No valid data to insert" });
   }
 });
 
