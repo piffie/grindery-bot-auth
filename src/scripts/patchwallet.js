@@ -1,6 +1,10 @@
 import { Database } from "../db/conn.js";
 import { getPatchWalletAddressFromTgId } from "../utils/patchwallet.js";
 
+// Usage: updatePatchWalletAddresses()
+// Description: This function updates the PatchWallet addresses for users in the database.
+// It fetches users with an empty patchwallet field and updates it using data from getPatchWalletAddressFromTgId.
+// Example: updatePatchWalletAddresses();
 async function updatePatchWalletAddresses() {
   let db;
   try {
