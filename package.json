@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google-cloud/pubsub": "^4.0.5",
     "axios": "^1.4.0",
     "base64url": "^3.0.1",
     "bignumber.js": "^9.1.1",
