@@ -2,13 +2,20 @@ import express from "express";
 import { PubSub } from "@google-cloud/pubsub";
 import { authenticateApiKey } from "../utils/auth.js";
 
-const pubSubClient = new PubSub({
-  projectId: "your-project-id",
-  keyFilename: "/path/to/keyfile.json",
-});
+/**
+ * This is a generic and extendable implementation of a webhook endpoint and pub/sub messages queue.
+ * It can be used to catch any webhook event and push it to the queue for processing.
+ *
+ * Add new events to the switch statement in the messageHandler function.
+ * Events that are not defined in switch statement will be acknowledged and removed from the queue by default.
+ */
 
-const topicName = "grindery-bot-webhook";
-const subscriptionName = "grindery-bot-webhook-sub";
+// Init pub/sub client
+const pubSubClient = new PubSub();
+
+// Get topic and subscription names from env
+const topicName = process.env.PUBSUB_TOPIC_NAME;
+const subscriptionName = process.env.PUBSUB_SUBSCRIPTION_NAME;
 
 const router = express.Router();
 
@@ -16,7 +23,7 @@ const router = express.Router();
  * POST /v1/webhook
  *
  * @summary Catch a webhook
- * @description Catch a webhook event and push it to the queue.
+ * @description Catches a webhook event and pushes it to the queue for processing.
  * @tags Webhook
  * @param {object} request.body - The request body containing the event name and params
  * @return {object} 200 - Success response with message ID
@@ -56,31 +63,48 @@ router.post("/", authenticateApiKey, async (req, res) => {
   }
 });
 
+// Subscribe to messages from Pub/Sub
 const listenForMessages = () => {
   const subscription = pubSubClient.subscription(subscriptionName);
 
+  // Process and acknowledge pub/sub message
   const messageHandler = async (message) => {
+    const messageDataString = message.data.toString();
+    const messageData = JSON.parse(messageDataString);
+    console.log("Received message:", JSON.stringify(messageData, null, 2));
+
     try {
-      let result = {};
+      let processed = false; // Has event been processed. If not, message will be requeued.
 
-      // handle event here:
+      // Handle Events Here:
 
-      // send transaction, save to db, send to segment, set result
-      // if (message.data.event === "new_transaction" && event.params) ...
+      switch (messageData.event) {
+        // User initiated new transaction
+        case "new_transaction":
+          //processed = await handleNewTransaction(messageData.params);
+          break;
+        // New user started the bot
+        case "new_user":
+          //processed = await handleNewUser(messageData.params);
+          break;
+        // New reward has been issued to user
+        case "new_reward":
+          //processed = await handleNewReward(messageData.params);
+          break;
+        default:
+          processed = true;
+          break;
+      }
 
-      // save user to db, send to segment, set result
-      // if (message.data.event === "new_user"  && event.params) ...
+      if (!processed) {
+        throw new Error("Error processing event");
+      }
 
-      // save reward to db, set result
-      // if (message.data.event === "new_reward"  && event.params) ...
-
-      // ... rest of events
-
-      // send result to a webhook (flowxo) here
-
-      // "Ack" (acknowledge receipt of) the message
-      console.log("Received message:", JSON.stringify(message.data, null, 2));
-      message.ack();
+      console.log(
+        "Acknowledged message:",
+        JSON.stringify(messageData, null, 2)
+      );
+      message.ack(); // // "Ack" (acknowledge receipt of) the message
     } catch (error) {
       console.error("messageHandler error:", error);
     }
@@ -89,6 +113,7 @@ const listenForMessages = () => {
   subscription.on("message", messageHandler);
 };
 
+// Start listening for pub/sub messages
 listenForMessages();
 
 export default router;
