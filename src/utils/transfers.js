@@ -63,23 +63,9 @@ export async function getRewardTxsUser(db, userId, start, limit) {
   }));
 }
 
-// function formatDate(date) {
-//   return new Date(date).toLocaleString("en-US", {
-//     year: "numeric",
-//     month: "2-digit",
-//     day: "2-digit",
-//     hour: "2-digit",
-//     minute: "2-digit",
-//     second: "2-digit",
-//     hour12: true,
-//     timeZoneName: "short",
-//   });
-// }
-
 function formatDate(date) {
-  const options = {
+  return new Date(date).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "short",
-  };
-  return new Date(date).toLocaleDateString("en-US", options);
+  });
 }

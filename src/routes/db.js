@@ -84,8 +84,10 @@ async function myFunction(userTgId) {
           ? `<b>Outgoing transfers:</b>\n${outgoingTxs
               .map(
                 (transfer) =>
-                  `${transfer.tokenAmount} g1 to @${
+                  `${transfer.tokenAmount} g1 to ${
                     transfer.recipientUserHandle
+                      ? `@${transfer.recipientUserHandle}`
+                      : `a new user (Telegram ID: ${transfer.recipientTgId})`
                   } on ${transfer.dateAdded} ${
                     transfer.message
                       ? `[text details: ${transfer.message}]`
@@ -122,7 +124,5 @@ async function myFunction(userTgId) {
     process.exit(0);
   }
 }
-
-myFunction("5695885361");
 
 export default router;
