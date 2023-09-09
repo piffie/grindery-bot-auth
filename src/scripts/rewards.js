@@ -84,5 +84,3 @@ async function saveRewards(rewards) {
     console.log("Batch: ", i);
   }
 }
-
-startImport("dune.csv");
