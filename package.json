@@ -26,7 +26,7 @@
     "mongodb": "^5.7.0",
     "telegram": "^2.18.26",
     "uuidv4": "^6.2.13",
-    "web3": "^4.1.1"
+    "web3": "^1.7.4"
   },
   "devDependencies": {
     "nodemon": "^2.0.21"
