@@ -86,5 +86,5 @@ async function distributeSignupRewards() {
   }
 }
 
-// Execute the function to distribute sign-up rewards to eligible users
-distributeSignupRewards();
+// // Execute the function to distribute sign-up rewards to eligible users
+// distributeSignupRewards();
