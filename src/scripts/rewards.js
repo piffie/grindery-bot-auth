@@ -1,6 +1,7 @@
 import {Database} from "../db/conn.js";
 import fs from "fs";
 import csv from "csv-parser";
+import web3 from "web3";
 
 // Usage: startImport(filePath)
 // Description: This function imports rewards data from a CSV file into the database.
@@ -26,52 +27,61 @@ const startImport = (fileName) => {
 
 async function saveRewards(rewards) {
   const db = await Database.getInstance();
-  const collection = db.collection("rewards");
+  const collection = db.collection("rewards-test");
 
   // Step 1: Create a set of existing rewards hashes
   const existingHashes = await collection.distinct("transactionHash");
 
-  // Step 2: Filter the rewards to find the missing ones
-  const missingRewards = rewards.filter(
-    (reward) => !existingHashes.includes(reward.evt_tx_hash)
+  // Step 2: Filter the rewards to find the missing ones and format them
+  const formattedMissingRewards = rewards
+    .filter((reward) => !existingHashes.includes(reward.evt_tx_hash))
+    .map((rewards) => {
+      const amount = String(Number(rewards.value) / 1e18);
+      return {
+        userTelegramID: "",
+        responsePath: "",
+        walletAddress: web3.utils.toChecksumAddress(rewards.to),
+        reason: "hunt",
+        userHandle: "",
+        userName: "",
+        amount: amount,
+        message: `Here are your ${amount} Grindery One Token for supporting us on Product Hunt!`,
+        transactionHash: rewards.evt_tx_hash,
+        dateAdded: new Date(rewards.evt_block_time),
+      };
+    });
+
+  // Step 3: Extract all walletAddress values from formattedMissingRewards
+  const walletAddresses = formattedMissingRewards.map(
+    (reward) => reward.walletAddress
   );
 
-  console.log("Number of rewards in csv file: ", rewards.length);
-  console.log(
-    "Number of rewards in `rewards` collection: ",
-    existingHashes.length
-  );
-  console.log(
-    "Number of missing rewards in `rewards` collection: ",
-    missingRewards.length
-  );
+  // Step 4: Filter the users collection to match walletAddress values
+  const userData = await db
+    .collection("users")
+    .find({patchwallet: {$in: walletAddresses}})
+    .toArray();
 
-  // Step 3: Format missing rewards
-  const formattedMissingRewards = missingRewards.map((rewards) => {
-    const amount = String(Number(rewards.value) / 1e18);
-    return {
-      userTelegramID: "",
-      responsePath: "",
-      walletAddress: rewards.to,
-      reason: "hunt",
-      userHandle: "",
-      userName: "",
-      amount: amount,
-      message: `Here are your ${amount} Grindery One Token for supporting us on Product Hunt!`,
-      transactionHash: rewards.evt_tx_hash,
-      dateAdded: new Date(rewards.evt_block_time),
-    };
+  // Step 5: Loop through each formatted missing reward and fill user data
+  formattedMissingRewards.forEach((reward) => {
+    const matchingUser = userData.find(
+      (user) => user.patchwallet === reward.walletAddress
+    );
+
+    if (matchingUser) {
+      reward.userTelegramID = matchingUser.userTelegramID;
+      reward.responsePath = matchingUser.responsePath;
+      reward.userHandle = matchingUser.userHandle;
+      reward.userName = matchingUser.userName;
+    }
   });
 
-  // Step 4: Batch insert the missing rewards into the collection
-  if (formattedMissingRewards.length > 0) {
-    const collectionTest = db.collection("rewards-test");
-    const batchSize = 10000;
-    for (let i = 0; i < formattedMissingRewards.length; i += batchSize) {
-      console.log("loop number: ", i);
-      const batch = formattedMissingRewards.slice(i, i + batchSize);
-      await collectionTest.insertMany(batch);
-    }
+  // Step 6: Batch insert the missing rewards into the collection if needed
+  const batchSize = 10000;
+  for (let i = 0; i < formattedMissingRewards.length; i += batchSize) {
+    const batch = formattedMissingRewards.slice(i, i + batchSize);
+    await collection.insertMany(batch);
+    console.log("Batch: ", i);
   }
 }
 
