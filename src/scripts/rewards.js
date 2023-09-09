@@ -34,7 +34,14 @@ async function saveRewards(rewards) {
 
   // Step 2: Filter the rewards to find the missing ones and format them
   const formattedMissingRewards = rewards
-    .filter((reward) => !existingHashes.includes(reward.evt_tx_hash))
+    .filter((reward) => {
+      // Exclude rewards with amounts other than 100 or 50
+      const amount = Number(reward.value) / 1e18;
+      return (
+        (amount === 100 || amount === 50) &&
+        !existingHashes.includes(reward.evt_tx_hash)
+      );
+    })
     .map((rewards) => {
       const amount = String(Number(rewards.value) / 1e18);
       const message = generateRewardMessage(amount, rewards.evt_block_time);
