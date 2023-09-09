@@ -87,10 +87,9 @@ async function saveRewards(rewards) {
 }
 
 const generateRewardMessage = (amount, blockTime) => {
-  const dayOfWeek = new Date(blockTime).getUTCDay();
-  const isBeforeTuesdayNoon =
-    dayOfWeek === 1 ||
-    (dayOfWeek === 2 && new Date(blockTime).getUTCHours() < 12);
+  const transitionDate = new Date("2023-09-05T12:00:00Z");
+  const dateObj = new Date(blockTime);
+  const isBeforeTuesdayNoon = dateObj < transitionDate;
 
   if (amount === "100") {
     return {
