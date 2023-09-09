@@ -37,15 +37,16 @@ async function saveRewards(rewards) {
     .filter((reward) => !existingHashes.includes(reward.evt_tx_hash))
     .map((rewards) => {
       const amount = String(Number(rewards.value) / 1e18);
+      const message = generateRewardMessage(amount, rewards.evt_block_time);
       return {
         userTelegramID: "",
         responsePath: "",
         walletAddress: web3.utils.toChecksumAddress(rewards.to),
-        reason: "hunt",
+        reason: message.reason,
         userHandle: "",
         userName: "",
         amount: amount,
-        message: `Here are your ${amount} Grindery One Token for supporting us on Product Hunt!`,
+        message: message.description,
         transactionHash: rewards.evt_tx_hash,
         dateAdded: new Date(rewards.evt_block_time),
       };
@@ -84,3 +85,35 @@ async function saveRewards(rewards) {
     console.log("Batch: ", i);
   }
 }
+
+const generateRewardMessage = (amount, blockTime) => {
+  const dayOfWeek = new Date(blockTime).getUTCDay();
+  const isBeforeTuesdayNoon =
+    dayOfWeek === 1 ||
+    (dayOfWeek === 2 && new Date(blockTime).getUTCHours() < 12);
+
+  if (amount === "100") {
+    return {
+      reason: "user_sign_up",
+      description:
+        "Thank you for signing up. Here are your first 100 Grindery One Tokens.",
+    };
+  } else if (amount === "50" && isBeforeTuesdayNoon) {
+    return {
+      reason: "hunt",
+      description:
+        "Here are your 50 Grindery One Token reward, thanks for supporting us on Product Hunt.",
+    };
+  } else if (amount === "50" && !isBeforeTuesdayNoon) {
+    return {
+      reason: "2x_reward",
+      description:
+        "Thank you for sending tokens. Here is your 50 token reward in Grindery One Tokens.",
+    };
+  } else {
+    return {
+      reason: undefined,
+      description: undefined,
+    };
+  }
+};
