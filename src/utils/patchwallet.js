@@ -42,7 +42,7 @@ export async function sendTokens(
     ERC20,
     process.env.G1_POLYGON_ADDRESS
   );
-  await axios.post(
+  return await axios.post(
     "https://paymagicapi.com/v1/kernel/tx",
     {
       userId: `grindery:${senderTgId}`,
