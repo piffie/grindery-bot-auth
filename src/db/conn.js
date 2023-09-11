@@ -9,7 +9,7 @@ const client = new MongoClient(connectionString);
 export class Database {
   static instance;
 
-  static async getInstance() {
+  static async getInstance(req) {
     if (!Database.instance) {
       let conn;
       try {

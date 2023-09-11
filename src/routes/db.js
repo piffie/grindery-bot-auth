@@ -11,7 +11,7 @@ const router = express.Router();
 
 router.post("/:collectionName", authenticateApiKey, async (req, res) => {
   const collectionName = req.params.collectionName;
-  const db = await Database.getInstance();
+  const db = await Database.getInstance(req);
   const collection = db.collection(collectionName);
 
   res.status(201).send(
@@ -24,7 +24,7 @@ router.post("/:collectionName", authenticateApiKey, async (req, res) => {
 
 router.get("/format-transfers-user", authenticateApiKey, async (req, res) => {
   try {
-    const db = await Database.getInstance();
+    const db = await Database.getInstance(req);
     const start =
       parseInt(req.query.start) >= 0 ? parseInt(req.query.start) : 0;
     const limit =
@@ -105,7 +105,7 @@ router.get("/:collectionName", authenticateApiKey, async (req, res) => {
   const query = { ...req.query };
 
   try {
-    const db = await Database.getInstance();
+    const db = await Database.getInstance(req);
     const collection = db.collection(collectionName);
 
     const result = await collection.find(query).toArray();
