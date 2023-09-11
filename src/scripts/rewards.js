@@ -1,7 +1,8 @@
-import {Database} from "../db/conn.js";
+import { Database } from "../db/conn.js";
 import fs from "fs";
 import csv from "csv-parser";
 import web3 from "web3";
+import { REWARDS_COLLECTION, USERS_COLLECTION } from "../utils/constants.js";
 
 // Usage: startImport(filePath)
 // Description: This function imports rewards data from a CSV file into the database.
@@ -66,8 +67,8 @@ async function saveRewards(rewards) {
 
   // Step 4: Filter the users collection to match walletAddress values
   const userData = await db
-    .collection("users")
-    .find({patchwallet: {$in: walletAddresses}})
+    .collection(USERS_COLLECTION)
+    .find({ patchwallet: { $in: walletAddresses } })
     .toArray();
 
   // Step 5: Loop through each formatted missing reward and fill user data
@@ -101,20 +102,17 @@ const generateRewardMessage = (amount, blockTime) => {
   if (amount === "100") {
     return {
       reason: "user_sign_up",
-      description:
-        "Thank you for signing up. Here are your first 100 Grindery One Tokens.",
+      description: "Sign up reward",
     };
   } else if (amount === "50" && isBeforeTuesdayNoon) {
     return {
       reason: "hunt",
-      description:
-        "Here are your 50 Grindery One Token reward, thanks for supporting us on Product Hunt.",
+      description: "Product Hunt reward",
     };
   } else if (amount === "50" && !isBeforeTuesdayNoon) {
     return {
       reason: "2x_reward",
-      description:
-        "Thank you for sending tokens. Here is your 50 token reward in Grindery One Tokens.",
+      description: "2x Referral reward",
     };
   } else {
     return {
@@ -123,3 +121,56 @@ const generateRewardMessage = (amount, blockTime) => {
     };
   }
 };
+
+async function updateRewardMessages() {
+  const db = await Database.getInstance();
+  const collection = db.collection(REWARDS_COLLECTION);
+
+  const rewards = await collection.find({}).toArray();
+  const totalRewards = rewards.length;
+
+  const bulkUpdateOperations = [];
+
+  let processedCount = 0;
+
+  for (const reward of rewards) {
+    let updatedMessage = "";
+
+    if (reward.amount === "100") {
+      updatedMessage = "Sign up reward";
+    } else if (
+      reward.amount === "50" &&
+      reward.message.includes("Product Hunt")
+    ) {
+      updatedMessage = "Product Hunt reward";
+    } else if (
+      reward.amount === "50" &&
+      !reward.message.includes("Product Hunt")
+    ) {
+      updatedMessage = "Referral reward";
+    } else {
+      updatedMessage = "2x Referral reward";
+    }
+
+    if (updatedMessage) {
+      bulkUpdateOperations.push({
+        updateOne: {
+          filter: { _id: reward._id },
+          update: { $set: { message: updatedMessage } },
+        },
+      });
+
+      processedCount++;
+      console.log(
+        `[${processedCount}/${totalRewards}]: Message updated for ${reward.userTelegramID}`
+      );
+    }
+  }
+
+  if (bulkUpdateOperations.length > 0) {
+    await collection.bulkWrite(bulkUpdateOperations);
+  }
+
+  console.log("\n All rewards have been updated \n");
+  process.exit(0);
+}
