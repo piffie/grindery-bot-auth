@@ -260,6 +260,7 @@ export async function distributeReferralRewards() {
     // Exit the script
     process.exit(0);
   }
+}
 
 // Usage: startImport(filePath)
 // Description: This function imports rewards data from a CSV file into the database.
