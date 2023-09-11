@@ -104,12 +104,6 @@ router.get("/:collectionName", authenticateApiKey, async (req, res) => {
   const { limit, start, ...query } = req.query;
   try {
     const db = await Database.getInstance(req);
-<<<<<<< HEAD
-    const collection = db.collection(collectionName);
-
-    const result = await collection.find(query).toArray();
-    return res.status(200).send(result);
-=======
     return res.status(200).send(
       await db
         .collection(req.params.collectionName)
@@ -118,7 +112,6 @@ router.get("/:collectionName", authenticateApiKey, async (req, res) => {
         .limit(limit !== undefined && parseInt(limit) > 0 ? parseInt(limit) : 0)
         .toArray()
     );
->>>>>>> f223786e77e8510b65537f3d625ad8cc213abe80
   } catch (error) {
     return res.status(500).send({ msg: "An error occurred", error });
   }
