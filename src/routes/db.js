@@ -101,15 +101,17 @@ router.get("/format-transfers-user", authenticateApiKey, async (req, res) => {
 });
 
 router.get("/:collectionName", authenticateApiKey, async (req, res) => {
-  const collectionName = req.params.collectionName;
-  const query = { ...req.query };
-
+  const { limit, start, ...query } = req.query;
   try {
-    const db = await Database.getInstance();
-    const collection = db.collection(collectionName);
-
-    const result = await collection.find(query).toArray();
-    return res.status(200).send(result);
+    const db = await Database.getInstance(req);
+    return res.status(200).send(
+      await db
+        .collection(req.params.collectionName)
+        .find(query)
+        .skip(parseInt(start) >= 0 ? parseInt(start) : 0)
+        .limit(limit !== undefined && parseInt(limit) > 0 ? parseInt(limit) : 0)
+        .toArray()
+    );
   } catch (error) {
     return res.status(500).send({ msg: "An error occurred", error });
   }
