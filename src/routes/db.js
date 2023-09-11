@@ -47,7 +47,7 @@ router.get("/format-transfers-user", authenticateApiKey, async (req, res) => {
                 `- ${transfer.tokenAmount} g1 from @${
                   transfer.senderUserHandle
                 } on ${transfer.dateAdded} ${
-                  transfer.message ? `[text details: ${transfer.message}]` : ""
+                  transfer.message ? `[${transfer.message}]` : ""
                 }`
             )
             .join("\n")}\n\n`
@@ -69,7 +69,7 @@ router.get("/format-transfers-user", authenticateApiKey, async (req, res) => {
                     ? `@${transfer.recipientUserHandle}`
                     : `a new user (Telegram ID: ${transfer.recipientTgId})`
                 } on ${transfer.dateAdded} ${
-                  transfer.message ? `[text details: ${transfer.message}]` : ""
+                  transfer.message ? `[${transfer.message}]` : ""
                 }`
             )
             .join("\n")}\n\n`
@@ -87,7 +87,7 @@ router.get("/format-transfers-user", authenticateApiKey, async (req, res) => {
             .map(
               (transfer) =>
                 `- ${transfer.amount} g1 on ${transfer.dateAdded} ${
-                  transfer.message ? `[text details: ${transfer.message}]` : ""
+                  transfer.message ? `[${transfer.message}]` : ""
                 }`
             )
             .join("\n")}\n\n`

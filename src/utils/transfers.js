@@ -11,6 +11,7 @@ export async function getIncomingTxsUser(db, userId, start, limit) {
       await db
         .collection(TRANSFERS_COLLECTION)
         .find({ recipientTgId: userId })
+        .sort({ dateAdded: -1 })
         .skip(start)
         .limit(limit)
         .toArray()
@@ -33,6 +34,7 @@ export async function getOutgoingTxsUser(db, userId, start, limit) {
       await db
         .collection(TRANSFERS_COLLECTION)
         .find({ senderTgId: userId })
+        .sort({ dateAdded: -1 })
         .skip(start)
         .limit(limit)
         .toArray()
@@ -54,6 +56,7 @@ export async function getRewardTxsUser(db, userId, start, limit) {
     await db
       .collection(REWARDS_COLLECTION)
       .find({ userTelegramID: userId })
+      .sort({ dateAdded: -1 })
       .skip(start)
       .limit(limit)
       .toArray()
