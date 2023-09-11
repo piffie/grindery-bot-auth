@@ -94,7 +94,7 @@ async function distributeSignupRewards() {
   }
 }
 
-async function distributeReferralRewards() {
+export async function distributeReferralRewards() {
   try {
     // Connect to the database
     const db = await Database.getInstance();
@@ -111,8 +111,8 @@ async function distributeReferralRewards() {
 
     // Export the users and rewards collections as arrays
     const allUsers = await db.collection("users").find({}).toArray();
-    const allRewards50 = await rewardsCollection
-      .find({ amount: "50", reason: "2x_reward" })
+    const allRewardsReferral = await rewardsCollection
+      .find({ reason: "2x_reward" })
       .toArray();
     const allTransfers = await db.collection("transfers").find({}).toArray();
 
@@ -120,8 +120,6 @@ async function distributeReferralRewards() {
 
     for (const transfer of allTransfers) {
       transferCount++;
-
-      //   console
 
       // Find the recipient user based on their Telegram ID
       const recipientUser = allUsers.find(
@@ -140,7 +138,7 @@ async function distributeReferralRewards() {
 
       // Check if a reward for this transfer has already been issued
       if (
-        allRewards50.some(
+        allRewardsReferral.some(
           (reward) => reward.parentTransactionHash === transfer.TxId
         )
       ) {
@@ -177,29 +175,34 @@ async function distributeReferralRewards() {
               ? (Number(transfer.tokenAmount) * 2).toString()
               : "50";
 
-          //   // Send a reward of 50 tokens using the Patch Wallet API
-          //   const txReward = await sendTokens(
-          //     process.env.SOURCE_TG_ID,
-          //     rewardWallet,
-          //     rewardAmount,
-          //     patchWalletAccessToken
-          //   );
+          let rewardMessage =
+            new Date(transfer.dateAdded) < new Date("2023-09-07T12:00:00Z") &&
+            Number(transfer.tokenAmount) < 1000
+              ? "2x Referral reward"
+              : "Referral reward";
 
-          //   // Log the issuance of the reward and insert the record into the rewards collection
-          //   await rewardsCollection.insertOne({
-          //     userTelegramID: senderUser.userTelegramID,
-          //     responsePath: senderUser.responsePath,
-          //     walletAddress: rewardWallet,
-          //     reason: "2x_reward",
-          //     userHandle: senderUser.userHandle,
-          //     userName: senderUser.userName,
-          //     amount: rewardAmount,
-          //     message:
-          //       "Thank you for sending tokens. Here is your 50 token reward in Grindery One Tokens.",
-          //     transactionHash: txReward.data.txHash,
-          //     parentTransactionHash: transfer.transactionHash.substring(1, 8),
-          //     dateAdded: new Date(Date.now()),
-          //   });
+          // Send a reward of 50 tokens using the Patch Wallet API
+          const txReward = await sendTokens(
+            process.env.SOURCE_TG_ID,
+            rewardWallet,
+            rewardAmount,
+            patchWalletAccessToken
+          );
+
+          // Log the issuance of the reward and insert the record into the rewards collection
+          await rewardsCollection.insertOne({
+            userTelegramID: senderUser.userTelegramID,
+            responsePath: senderUser.responsePath,
+            walletAddress: rewardWallet,
+            reason: "2x_reward",
+            userHandle: senderUser.userHandle,
+            userName: senderUser.userName,
+            amount: rewardAmount,
+            message: rewardMessage,
+            transactionHash: txReward.data.txHash,
+            parentTransactionHash: transfer.transactionHash.substring(1, 8),
+            dateAdded: new Date(Date.now()),
+          });
 
           // Add the rewarded user to the array with reward amount
           rewardedUsers.push({
@@ -222,7 +225,6 @@ async function distributeReferralRewards() {
           console.log(
             `[${transferCount}/${allTransfers.length}] User ${senderUser.userTelegramID} has been rewarded for sending tokens.`
           );
-          //   break;
         } catch (error) {
           // Handle errors and log them
           console.error("An error occurred during reward distribution:", error);
@@ -230,44 +232,23 @@ async function distributeReferralRewards() {
       }
     }
 
-    // Log completion message and separate rewarded users based on reward amount
-    const rewardedAt50 = rewardedUsers.filter(
-      (user) => user.rewardAmount === "50"
-    );
-    const rewardedAtDouble = rewardedUsers.filter(
-      (user) => Number(user.rewardAmount) !== 50
-    );
+    // // Log completion message and separate rewarded users based on reward amount
+    // const rewardedAt50 = rewardedUsers.filter(
+    //   (user) => user.rewardAmount === "50"
+    // );
+    // const rewardedAtDouble = rewardedUsers.filter(
+    //   (user) => Number(user.rewardAmount) !== 50
+    // );
 
-    console.log(
-      "All transfer rewards have been issued.",
-      "Rewarded at 50 tokens:",
-      rewardedAt50,
-      "Rewarded at double tokens:",
-      rewardedAtDouble.length
-    );
+    // console.log(
+    //   "All transfer rewards have been issued.",
+    //   "Rewarded at 50 tokens:",
+    //   rewardedAt50,
+    //   "Rewarded at double tokens:",
+    //   rewardedAtDouble.length
+    // );
 
-    // Export to CSV
-    const csvWriter = createCsvWriter({
-      path: "rewardedUsers.csv",
-      header: [
-        { id: "userTelegramIDToReward", title: "User ID to Reward" },
-        { id: "TxId", title: "Transaction ID" },
-        { id: "chainId", title: "Chain ID" },
-        { id: "tokenSymbol", title: "Token Symbol" },
-        { id: "tokenAddress", title: "Token Address" },
-        { id: "senderTgId", title: "Sender's Telegram ID" },
-        { id: "senderWallet", title: "Sender's Wallet Address" },
-        { id: "senderName", title: "Sender's Name" },
-        { id: "recipientTgId", title: "Recipient's Telegram ID" },
-        { id: "recipientWallet", title: "Recipient's Wallet Address" },
-        { id: "tokenAmount", title: "Token Amount" },
-        { id: "transactionHash", title: "Transaction Hash" },
-        { id: "dateAdded", title: "Date Added" },
-        { id: "rewardAmount", title: "Reward Amount" },
-      ],
-    });
-
-    await csvWriter.writeRecords(rewardedUsers);
+    console.log(`${rewardedUsers.length} users have been rewarded.`);
   } catch (error) {
     // Handle errors and log them
     console.error("An error occurred:", error);
@@ -276,5 +257,3 @@ async function distributeReferralRewards() {
     process.exit(0);
   }
 }
-
-// distributeReferralRewards();
