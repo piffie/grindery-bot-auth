@@ -1,6 +1,7 @@
 import express from "express";
 import { Database } from "../db/conn.js";
 import { authenticateApiKey } from "../utils/auth.js";
+import { distributeReferralRewards } from "../scripts/rewards.js";
 import {
   getIncomingTxsUser,
   getOutgoingTxsUser,
@@ -8,6 +9,22 @@ import {
 } from "../utils/transfers.js";
 
 const router = express.Router();
+
+router.post(
+  "/distributeReferralRewards",
+  authenticateApiKey,
+  async (req, res) => {
+    try {
+      await distributeReferralRewards();
+
+      res
+        .status(200)
+        .send({ message: "Referral rewards distributed successfully." });
+    } catch (error) {
+      res.status(500).send({ message: "An error occurred", error });
+    }
+  }
+);
 
 router.post("/:collectionName", authenticateApiKey, async (req, res) => {
   const collectionName = req.params.collectionName;
