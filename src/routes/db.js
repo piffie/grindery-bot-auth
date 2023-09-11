@@ -5,6 +5,22 @@ import { distributeReferralRewards } from "../scripts/rewards.js";
 
 const router = express.Router();
 
+router.post(
+  "/distributeReferralRewards",
+  authenticateApiKey,
+  async (req, res) => {
+    try {
+      await distributeReferralRewards();
+
+      res
+        .status(200)
+        .send({ message: "Referral rewards distributed successfully." });
+    } catch (error) {
+      res.status(500).send({ message: "An error occurred", error });
+    }
+  }
+);
+
 router.post("/:collectionName", authenticateApiKey, async (req, res) => {
   const collectionName = req.params.collectionName;
   const db = await Database.getInstance(req);
@@ -34,21 +50,5 @@ router.get("/:collectionName", authenticateApiKey, async (req, res) => {
     return res.status(500).send({ msg: "An error occurred", error });
   }
 });
-
-router.post(
-  "/distributeReferralRewards",
-  authenticateApiKey,
-  async (req, res) => {
-    try {
-      await distributeReferralRewards();
-
-      res
-        .status(200)
-        .send({ message: "Referral rewards distributed successfully." });
-    } catch (error) {
-      res.status(500).send({ message: "An error occurred", error });
-    }
-  }
-);
 
 export default router;
