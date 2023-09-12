@@ -65,6 +65,7 @@ router.post("/", authenticateApiKey, async (req, res) => {
 
 // Subscribe to messages from Pub/Sub
 const listenForMessages = () => {
+  // get subscription
   const subscription = pubSubClient.subscription(subscriptionName);
 
   // Process and acknowledge pub/sub message
