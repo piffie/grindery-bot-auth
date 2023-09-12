@@ -415,6 +415,10 @@ async function updateRewardMessages() {
   process.exit(0);
 }
 
+// Usage: rewardsCleanup(filePath)
+// Description: This function processes rewards data from a CSV file and deletes incomplete rewards from the database.
+// - filePath: The path to the CSV file containing rewards data.
+// Example: rewardsCleanup("dune.csv");
 async function rewardsCleanup(fileName) {
   const db = await Database.getInstance();
   const collection = db.collection("rewards-test");
