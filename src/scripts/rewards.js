@@ -70,8 +70,7 @@ async function distributeSignupRewards() {
               userHandle: user.userHandle,
               userName: user.userName,
               amount: "100",
-              message:
-                "Thank you for signing up. Here are your first 100 Grindery One Tokens.",
+              message: "Sign up reward",
               transactionHash: txReward.data.txHash,
               dateAdded: new Date(Date.now()),
             });
