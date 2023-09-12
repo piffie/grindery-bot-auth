@@ -236,22 +236,6 @@ export async function distributeReferralRewards() {
       }
     }
 
-    // // Log completion message and separate rewarded users based on reward amount
-    // const rewardedAt50 = rewardedUsers.filter(
-    //   (user) => user.rewardAmount === "50"
-    // );
-    // const rewardedAtDouble = rewardedUsers.filter(
-    //   (user) => Number(user.rewardAmount) !== 50
-    // );
-
-    // console.log(
-    //   "All transfer rewards have been issued.",
-    //   "Rewarded at 50 tokens:",
-    //   rewardedAt50,
-    //   "Rewarded at double tokens:",
-    //   rewardedAtDouble.length
-    // );
-
     console.log(`${rewardedUsers.length} users have been rewarded.`);
   } catch (error) {
     // Handle errors and log them
