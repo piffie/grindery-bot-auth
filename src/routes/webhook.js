@@ -77,8 +77,9 @@ const listenForMessages = () => {
     try {
       let processed = false; // Has event been processed. If not, message will be requeued.
 
-      // Handle Events Here:
+      // Handle events below. If event is not specified, message will be acknowledged and removed from the queue.
 
+      // Example events:
       switch (messageData.event) {
         // User initiated new transaction
         case "new_transaction":
