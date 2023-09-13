@@ -15,6 +15,7 @@ const operations = {};
  * @summary Initialize a Telegram Session
  * @description Start a session with Telegram using phone number and password, awaiting a phone code for full authentication.
  * @tags Telegram
+ * @security BearerAuth
  * @param {object} request.body - The request body containing the phone and password.
  * @return {object} 200 - Success response with operation ID and status
  * @example request - 200 - Example request body
@@ -75,6 +76,7 @@ router.post("/init", isRequired, async (req, res) => {
  * @summary Set Phone Code for Authentication
  * @description Provide the phone code received on the user's device to authenticate the session with Telegram.
  * @tags Telegram
+ * @security BearerAuth
  * @param {object} request.body - The request body containing the operation ID and phone code.
  * @return {object} 200 - Success response with session and status
  * @return {object} 404 - Error response if operation not found
@@ -112,6 +114,7 @@ router.post("/callback", isRequired, async (req, res) => {
  * @summary Check Telegram Connection Status
  * @description Check if the Telegram client is currently connected.
  * @tags Telegram
+ * @security BearerAuth
  * @param {string} request.query.session - The session string to identify the client.
  * @return {object} 200 - Success response with connection status
  * @example response - 200 - Success response example
@@ -133,6 +136,7 @@ router.get("/status", isRequired, async (req, res) => {
  * @summary Fetch Telegram Contacts
  * @description Retrieve the contact list associated with the given session.
  * @tags Telegram
+ * @security BearerAuth
  * @param {string} request.query.session - The session string to identify the client.
  * @return {object} 200 - Success response with the list of contacts
  * @example response - 200 - Success response example (simplified for brevity)
