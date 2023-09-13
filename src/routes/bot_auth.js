@@ -3,13 +3,6 @@ import "dotenv/config";
 import axios from "axios";
 import base64url from "base64url";
 
-// QUICK TEST, DELETE IT LATER
-axios
-  .get("http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/email", {
-    headers: { "Metadata-Flavor": "Google" },
-  })
-  .then((r) => console.log(r.data));
-
 const router = express.Router();
 
 /**
