@@ -1,10 +1,10 @@
-import { Database } from "../db/conn.js";
-import { getPatchWalletAccessToken, sendTokens } from "../utils/patchwallet.js";
-import { createObjectCsvWriter as createCsvWriter } from "csv-writer";
+import {Database} from "../db/conn.js";
+import {getPatchWalletAccessToken, sendTokens} from "../utils/patchwallet.js";
+import {createObjectCsvWriter as createCsvWriter} from "csv-writer";
 import fs from "fs";
 import csv from "csv-parser";
 import web3 from "web3";
-import { REWARDS_COLLECTION, USERS_COLLECTION } from "../utils/constants.js";
+import {REWARDS_COLLECTION, USERS_COLLECTION} from "../utils/constants.js";
 
 /**
  * Distributes a sign-up reward of 100 Grindery One Tokens to users without previous rewards.
@@ -26,9 +26,7 @@ async function distributeSignupRewards() {
     let userCount = 0;
 
     // Load all rewards into memory for filtering
-    const allRewards = await rewardsCollection
-      .find({ amount: "100" })
-      .toArray();
+    const allRewards = await rewardsCollection.find({amount: "100"}).toArray();
 
     for (const user of allUsers) {
       userCount++;
@@ -115,7 +113,7 @@ export async function distributeReferralRewards() {
     // Export the users and rewards collections as arrays
     const allUsers = await db.collection("users").find({}).toArray();
     const allRewardsReferral = await rewardsCollection
-      .find({ reason: "2x_reward" })
+      .find({reason: "2x_reward"})
       .toArray();
     const allTransfers = await db.collection("transfers").find({}).toArray();
 
@@ -309,7 +307,7 @@ async function saveRewards(rewards) {
   // Step 4: Filter the users collection to match walletAddress values
   const userData = await db
     .collection(USERS_COLLECTION)
-    .find({ patchwallet: { $in: walletAddresses } })
+    .find({patchwallet: {$in: walletAddresses}})
     .toArray();
 
   // Step 5: Loop through each formatted missing reward and fill user data
@@ -396,8 +394,8 @@ async function updateRewardMessages() {
     if (updatedMessage) {
       bulkUpdateOperations.push({
         updateOne: {
-          filter: { _id: reward._id },
-          update: { $set: { message: updatedMessage } },
+          filter: {_id: reward._id},
+          update: {$set: {message: updatedMessage}},
         },
       });
 
@@ -414,4 +412,57 @@ async function updateRewardMessages() {
 
   console.log("\n All rewards have been updated \n");
   process.exit(0);
+}
+
+// Usage: rewardsCleanup(filePath)
+// Description: This function processes rewards data from a CSV file and deletes incomplete rewards from the database.
+// - filePath: The path to the CSV file containing rewards data.
+// Example: rewardsCleanup("dune.csv");
+async function rewardsCleanup(fileName) {
+  const db = await Database.getInstance();
+  const collection = db.collection("rewards-test");
+  const hashesInCsv = [];
+  let latestTimestamp = null;
+
+  fs.createReadStream(fileName)
+    .pipe(csv())
+    .on("data", (row) => {
+      hashesInCsv.push(row.evt_tx_hash);
+      const rowTimestamp = new Date(row.evt_block_time);
+      if (latestTimestamp === null || rowTimestamp > latestTimestamp) {
+        latestTimestamp = rowTimestamp;
+      }
+    })
+    .on("end", async () => {
+      if (latestTimestamp === null) {
+        console.log("No timestamp found in CSV.");
+        process.exit(1);
+      }
+
+      const rewardsInDb = await collection
+        .find({
+          dateAdded: {$lte: latestTimestamp},
+        })
+        .toArray();
+
+      const hashesToDelete = rewardsInDb
+        .filter((reward) => !hashesInCsv.includes(reward.transactionHash))
+        .map((reward) => reward.transactionHash);
+
+      if (hashesToDelete.length === 0) {
+        console.log("All rewards in database match the rewards in CSV.");
+      } else {
+        const deleteResult = await collection.deleteMany({
+          transactionHash: {$in: hashesToDelete},
+        });
+        console.log(`${deleteResult.deletedCount} incomplete rewards deleted.`);
+      }
+
+      console.log("\n All tasks completed \n");
+      process.exit(0);
+    })
+    .on("error", (error) => {
+      console.log("\n Errors during CSV parsing \n");
+      process.exit(1);
+    });
 }
