@@ -25,6 +25,7 @@ const router = express.Router();
  * @summary Catch a webhook
  * @description Catches a webhook event and pushes it to the queue for processing.
  * @tags Webhook
+ * @security BearerAuth
  * @param {object} request.body - The request body containing the event name and params
  * @return {object} 200 - Success response with message ID
  * @example request - 200 - Example request body
