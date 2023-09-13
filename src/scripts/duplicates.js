@@ -37,5 +37,3 @@ async function removeDuplicateUsers(targetCollection, refId) {
     process.exit(0);
   }
 }
-
-removeDuplicateUsers("transfers", "transactionHash");
