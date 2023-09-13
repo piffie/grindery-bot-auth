@@ -1,4 +1,7 @@
 import { Database } from "../db/conn.js";
+import fs from "fs";
+import csv from "csv-parser";
+import web3 from "web3";
 
 // Example usage of the functions:
 // removeDuplicateTransfers();
@@ -33,6 +36,141 @@ async function removeDuplicateTransfers() {
     console.log(`Deleted ${deleteResult.deletedCount} duplicate transfers.`);
   } catch (error) {
     console.error(`An error occurred: ${error.message}`);
+  } finally {
+    process.exit(0);
+  }
+}
+
+// Usage: transfersCleanup(filePath)
+// Description: This function processes transfers data from a CSV file and deletes incomplete transfers from the database.
+// - filePath: The path to the CSV file containing transfers data.
+// Example: transfersCleanup("dune.csv");
+async function transfersCleanup(fileName) {
+  const db = await Database.getInstance();
+  const collection = db.collection("transfers");
+  const hashesInCsv = [];
+  let latestTimestamp = null;
+
+  fs.createReadStream(fileName)
+    .pipe(csv())
+    .on("data", (row) => {
+      hashesInCsv.push(row.hash);
+      const rowTimestamp = new Date(row.block_time);
+      if (latestTimestamp === null || rowTimestamp > latestTimestamp) {
+        latestTimestamp = rowTimestamp;
+      }
+    })
+    .on("end", async () => {
+      if (latestTimestamp === null) {
+        console.log("No timestamp found in CSV.");
+        process.exit(1);
+      }
+
+      const transfersInDb = await collection
+        .find({
+          dateAdded: { $lte: latestTimestamp },
+        })
+        .toArray();
+
+      const hashesToDelete = transfersInDb
+        .filter((transfer) => !hashesInCsv.includes(transfer.transactionHash))
+        .map((transfer) => transfer.transactionHash);
+
+      if (hashesToDelete.length === 0) {
+        console.log("All transfers in database match the transfers in CSV.");
+      } else {
+        const deleteResult = await collection.deleteMany({
+          transactionHash: { $in: hashesToDelete },
+        });
+        console.log(
+          `${deleteResult.deletedCount} incomplete transfers deleted.`
+        );
+      }
+
+      console.log("\n All tasks completed \n");
+      process.exit(0);
+    })
+    .on("error", (error) => {
+      console.log("\n Errors during CSV parsing \n");
+      process.exit(1);
+    });
+}
+
+async function updateTransfersInformations() {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+
+    // Get the transfers collection
+    const transfersCollection = db.collection("transfers");
+
+    // Get the users collection
+    const usersCollection = db.collection("users");
+
+    // Find all transfers in the collection
+    const allTransfers = await transfersCollection.find({}).toArray();
+    const totalTransfers = allTransfers.length;
+
+    const allUsers = await usersCollection.find({}).toArray();
+
+    // Create an array to store bulk write operations
+    const bulkWriteOperations = [];
+
+    let index = 0;
+
+    for (const transfer of allTransfers) {
+      index++;
+
+      // Update senderWallet and recipientWallet to checksum addresses
+      transfer.senderWallet = web3.utils.toChecksumAddress(
+        transfer.senderWallet
+      );
+      transfer.recipientWallet = web3.utils.toChecksumAddress(
+        transfer.recipientWallet
+      );
+
+      // Find sender user based on senderWallet
+      const senderUser = allUsers.find(
+        (user) => user.patchwallet === transfer.senderWallet
+      );
+
+      // Find recipient user based on recipientWallet
+      const recipientUser = allUsers.find(
+        (user) => user.patchwallet === transfer.recipientWallet
+      );
+
+      if (senderUser) {
+        // Fill senderTgId and senderName
+        transfer.senderTgId = senderUser.userTelegramID;
+        transfer.senderName = senderUser.userName;
+      }
+
+      if (recipientUser) {
+        // Fill recipientTgId
+        transfer.recipientTgId = recipientUser.userTelegramID;
+      }
+
+      // Create an update operation and add it to the bulk write array
+      const updateOperation = {
+        updateOne: {
+          filter: { _id: transfer._id },
+          update: { $set: transfer },
+        },
+      };
+
+      bulkWriteOperations.push(updateOperation);
+
+      console.log(
+        `Updated transfer ${index}/${totalTransfers}: ${transfer._id}`
+      );
+    }
+
+    // Perform bulk write operations
+    await transfersCollection.bulkWrite(bulkWriteOperations);
+
+    console.log("All transfers have been updated.");
+  } catch (error) {
+    console.error("An error occurred:", error);
   } finally {
     process.exit(0);
   }
