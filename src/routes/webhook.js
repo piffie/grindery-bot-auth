@@ -109,6 +109,7 @@ const listenForMessages = () => {
       message.ack(); // // "Ack" (acknowledge receipt of) the message
     } catch (error) {
       console.error("messageHandler error:", error);
+      message.nack(); // "Nack" (don't acknowledge receipt of) the message
     }
   };
 
