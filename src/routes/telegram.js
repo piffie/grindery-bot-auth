@@ -167,6 +167,7 @@ router.get("/me", telegramHashIsValid, async (req, res) => {
     const authorization = req.headers["authorization"]
     const token = authorization.split(" ")[1];
     const data = Object.fromEntries(new URLSearchParams(token));
+    console.log('telegram user data', JSON.stringify(data, null, 2));
     if(!data?.user?.id){
       return res.status(401).send({ msg: "Invalid user" });
     }
