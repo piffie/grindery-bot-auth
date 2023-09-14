@@ -164,12 +164,11 @@ router.get("/contacts", isRequired, async (req, res) => {
 
 router.get("/me", telegramHashIsValid, async (req, res) => {
   try {
-    console.log('Telegram hash is valid', req.query.id);
     const db = await Database.getInstance(req);
     return res.status(200).send(
       await db
         .collection('users')
-        .findOne({ userTelegramID: res.query.id })
+        .findOne({ userTelegramID: req.query.id })
     );
   } catch (error) {
     console.error('Error getting user', error);
