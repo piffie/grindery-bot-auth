@@ -158,7 +158,9 @@ export async function distributeReferralRewards() {
 
       // Find information about the sender of the transaction
       const senderUser = allUsers.find(
-        (user) => user.userTelegramID === transfer.senderTgId
+        (user) =>
+          user.userTelegramID === transfer.senderTgId &&
+          transfer.senderTgId !== process.env.SOURCE_TG_ID
       );
 
       if (senderUser) {
@@ -244,6 +246,8 @@ export async function distributeReferralRewards() {
     process.exit(0);
   }
 }
+
+distributeReferralRewards();
 
 // Usage: startImport(filePath)
 // Description: This function imports rewards data from a CSV file into the database.
