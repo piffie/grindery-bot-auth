@@ -78,7 +78,9 @@ export const telegramHashIsValid = async (req, res, next) => {
   if (!process.env.BOT_TOKEN) {
     return res.status(500).json({ error: 'Internal server error' });
   }
-  const data = Object.fromEntries(new URLSearchParams(req.body.hash));
+  const authorization = req.headers["authorization"]
+  const hash = authorization.split(" ")[1];
+  const data = Object.fromEntries(new URLSearchParams(hash));
   const encoder = new TextEncoder();
   const checkString = Object.keys(data)
     .filter((key) => key !== 'hash')
