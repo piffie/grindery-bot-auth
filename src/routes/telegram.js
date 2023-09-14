@@ -1,10 +1,10 @@
 import express from "express";
-import {Api} from "telegram";
-import {StringSession} from "telegram/sessions/index.js";
+import { Api } from "telegram";
+import { StringSession } from "telegram/sessions/index.js";
 import createTelegramPromise from "../utils/telegramPromise.js";
-import {uuid} from "uuidv4";
+import { uuid } from "uuidv4";
 import TGClient from "../utils/telegramClient.js";
-import {isRequired, telegramHashIsValid} from "../utils/auth.js";
+import { isRequired, telegramHashIsValid } from "../utils/auth.js";
 import { Database } from "../db/conn.js";
 
 const router = express.Router();
@@ -103,9 +103,9 @@ router.post("/callback", isRequired, async (req, res) => {
   if (operations[operationId]) {
     operations[operationId].phoneCodePromise.resolve(code);
     const session = operations[operationId].client.session.save();
-    res.json({session: encodeURIComponent(session), status: "code_received"});
+    res.json({ session: encodeURIComponent(session), status: "code_received" });
   } else {
-    res.status(404).json({error: "Operation not found"});
+    res.status(404).json({ error: "Operation not found" });
   }
 });
 
@@ -128,7 +128,7 @@ router.get("/status", isRequired, async (req, res) => {
   await client.connect();
   const status = client.connected;
 
-  res.status(200).json({status: status});
+  res.status(200).json({ status: status });
 });
 
 /**
@@ -162,23 +162,44 @@ router.get("/contacts", isRequired, async (req, res) => {
   res.status(200).json(contacts.users);
 });
 
+/**
+ * GET /v1/telegram/me
+ *
+ * @summary Get telegram webapp user
+ * @description Gets telegram webapp user record from DB collection.
+ * @tags Telegram
+ * @security BearerAuth
+ * @return {object} 200 - Success response with connection status
+ * @example response - 200 - Success response example
+ * {
+ *   "_id": "123",
+ *   "userTelegramID": "456",
+ *   "userName": "User Name",
+ *   "userHandle": "username",
+ *   "responsePath": "123/456",
+ *   "patchwallet": "0x123",
+ *   "dateAdded": "2021-01-01T00:00:00.000Z"
+ * }
+ */
 router.get("/me", telegramHashIsValid, async (req, res) => {
   try {
-    const authorization = req.headers["authorization"]
+    const authorization = req.headers["authorization"];
     const token = authorization.split(" ")[1];
     const data = Object.fromEntries(new URLSearchParams(token));
     const user = JSON.parse(data?.user);
-    if(!user?.id){
+    if (!user?.id) {
       return res.status(401).send({ msg: "Invalid user" });
     }
     const db = await Database.getInstance(req);
-    return res.status(200).send(
-      await db
-        .collection('users')
-        .findOne({ userTelegramID: user?.id })
-    );
+    return res
+      .status(200)
+      .send(
+        await db
+          .collection("users")
+          .findOne({ userTelegramID: user.id.toString() })
+      );
   } catch (error) {
-    console.error('Error getting user', error);
+    console.error("Error getting user", error);
     return res.status(500).send({ msg: "An error occurred", error });
   }
 });
