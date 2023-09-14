@@ -164,11 +164,17 @@ router.get("/contacts", isRequired, async (req, res) => {
 
 router.get("/me", telegramHashIsValid, async (req, res) => {
   try {
+    const authorization = req.headers["authorization"]
+    const token = authorization.split(" ")[1];
+    const data = Object.fromEntries(new URLSearchParams(token));
+    if(!data?.user?.id){
+      return res.status(401).send({ msg: "Invalid user" });
+    }
     const db = await Database.getInstance(req);
     return res.status(200).send(
       await db
         .collection('users')
-        .findOne({ userTelegramID: req.query.id })
+        .findOne({ userTelegramID: data?.user?.id })
     );
   } catch (error) {
     console.error('Error getting user', error);
