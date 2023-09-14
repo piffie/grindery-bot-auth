@@ -4,7 +4,8 @@ import {StringSession} from "telegram/sessions/index.js";
 import createTelegramPromise from "../utils/telegramPromise.js";
 import {uuid} from "uuidv4";
 import TGClient from "../utils/telegramClient.js";
-import {isRequired} from "../utils/auth.js";
+import {isRequired, telegramHashIsValid} from "../utils/auth.js";
+import { Database } from "../db/conn.js";
 
 const router = express.Router();
 const operations = {};
@@ -159,6 +160,19 @@ router.get("/contacts", isRequired, async (req, res) => {
   );
 
   res.status(200).json(contacts.users);
+});
+
+router.get("/me", telegramHashIsValid, async (req, res) => {
+  try {
+    const db = await Database.getInstance(req);
+    return res.status(200).send(
+      await db
+        .collection('users')
+        .findOne({ "userTelegramID": res.query.id })
+    );
+  } catch (error) {
+    return res.status(500).send({ msg: "An error occurred", error });
+  }
 });
 
 export default router;
