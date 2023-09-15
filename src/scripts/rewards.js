@@ -247,8 +247,6 @@ export async function distributeReferralRewards() {
   }
 }
 
-distributeReferralRewards();
-
 // Usage: startImport(filePath)
 // Description: This function imports rewards data from a CSV file into the database.
 // - filePath: The path to the CSV file containing rewards data.
