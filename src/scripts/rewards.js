@@ -190,7 +190,7 @@ export async function distributeReferralRewards() {
           const txReward = await sendTokens(
             process.env.SOURCE_TG_ID,
             rewardWallet,
-            rewardAmount,
+            Number(rewardAmount).toFixed(18),
             patchWalletAccessToken
           );
 

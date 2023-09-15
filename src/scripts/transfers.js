@@ -2,6 +2,10 @@ import { Database } from "../db/conn.js";
 import fs from "fs";
 import csv from "csv-parser";
 import web3 from "web3";
+import {
+  REWARDS_COLLECTION,
+  TRANSFERS_COLLECTION,
+} from "../utils/constants.js";
 
 // Example usage of the functions:
 // removeDuplicateTransfers();
@@ -171,6 +175,50 @@ async function updateTransfersInformations() {
     console.log("All transfers have been updated.");
   } catch (error) {
     console.error("An error occurred:", error);
+  } finally {
+    process.exit(0);
+  }
+}
+
+async function removeRewardFromTransfers() {
+  try {
+    const db = await Database.getInstance();
+    const collectionTransfers = db.collection(TRANSFERS_COLLECTION);
+    const collectionRewards = db.collection(REWARDS_COLLECTION);
+
+    // Get all transaction hashes from the rewards collection
+    const rewardHashes = await collectionRewards.distinct("transactionHash");
+
+    const allTransfers = await collectionTransfers.find({}).toArray();
+    const totalTransfers = allTransfers.length;
+    let deletedTransfers = [];
+
+    let index = 0;
+
+    for (const transfer of allTransfers) {
+      index++;
+
+      // Check if the transactionHash exists in the rewardHashes array
+      // and sender is SOURCE_TG_ID
+      if (
+        rewardHashes.includes(transfer.transactionHash) &&
+        transfer.senderTgId == process.env.SOURCE_TG_ID
+      ) {
+        // Delete the transfer
+        await collectionTransfers.deleteOne({
+          _id: transfer._id,
+        });
+        deletedTransfers.push(transfer);
+
+        console.log(
+          `Deleted transfer ${index}/${totalTransfers}: ${transfer._id}`
+        );
+      }
+    }
+
+    console.log(`Total deleted transfers: ${deletedTransfers.length}`);
+  } catch (error) {
+    console.error(`An error occurred: ${error.message}`);
   } finally {
     process.exit(0);
   }
