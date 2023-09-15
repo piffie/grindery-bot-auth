@@ -9,7 +9,7 @@ import {
   getPatchWalletAddressFromTgId,
   sendTokens,
 } from "./patchwallet";
-import { addIdentitySegment } from "./segment";
+import { addIdentitySegment, addTrackSegment } from "./segment";
 
 export const handleNewUser = async (params) => {
   try {
@@ -139,56 +139,6 @@ export const handleNewSignUpReward = async (params) => {
   return false;
 };
 
-export const handleNewTransaction = async (params) => {
-  try {
-    const db = await Database.getInstance();
-
-    // Retrieve sender information from the "users" collection
-    const senderInformation = await db
-      .collection(USERS_TEST_COLLECTION)
-      .findOne({ userTelegramID: params.senderTgId });
-
-    const recipientWallet = await getPatchWalletAddressFromTgId(
-      params.recipientTgId
-    );
-
-    const tx = await sendTokens(
-      params.senderTgId,
-      recipientWallet,
-      params.amount.toString(),
-      await getPatchWalletAccessToken()
-    );
-
-    if (tx.data.txHash) {
-      // Add the reward to the "rewards" collection
-      await db.collection(TRANSFERS_TEST_COLLECTION).insertOne({
-        TxId: tx.data.txHash.substring(1, 8),
-        chainId: "eip155:137",
-        tokenSymbol: "g1",
-        tokenAddress: process.env.G1_POLYGON_ADDRESS,
-        senderTgId: params.senderTgId,
-        senderWallet: senderInformation.patchwallet,
-        senderName: senderInformation.userName,
-        recipientTgId: params.recipientTgId,
-        recipientWallet: recipientWallet,
-        tokenAmount: params.amount.toString(),
-        transactionHash: tx.data.txHash,
-        dateAdded: new Date(),
-      });
-
-      console.log(
-        `[${tx.data.txHash}] transaction from ${params.senderTgId} to ${
-          params.recipientTgId
-        } for ${params.amount.toString()} added.`
-      );
-      return true;
-    }
-  } catch (error) {
-    console.error("Error processing transaction event:", error);
-  }
-  return false;
-};
-
 export const handleNewReferralReward = async (params) => {
   try {
     const db = await Database.getInstance();
@@ -289,6 +239,71 @@ export const handleNewReferralReward = async (params) => {
     return processed;
   } catch (error) {
     console.error("Error processing referral reward event:", error);
+  }
+  return false;
+};
+
+export const handleNewTransaction = async (params) => {
+  try {
+    const db = await Database.getInstance();
+
+    // Retrieve sender information from the "users" collection
+    const senderInformation = await db
+      .collection(USERS_TEST_COLLECTION)
+      .findOne({ userTelegramID: params.senderTgId });
+
+    const recipientWallet = await getPatchWalletAddressFromTgId(
+      params.recipientTgId
+    );
+
+    const tx = await sendTokens(
+      params.senderTgId,
+      recipientWallet,
+      params.amount.toString(),
+      await getPatchWalletAccessToken()
+    );
+
+    if (tx.data.txHash) {
+      const dateAdded = new Date();
+
+      // Add the reward to the "rewards" collection
+      await db.collection(TRANSFERS_TEST_COLLECTION).insertOne({
+        TxId: tx.data.txHash.substring(1, 8),
+        chainId: "eip155:137",
+        tokenSymbol: "g1",
+        tokenAddress: process.env.G1_POLYGON_ADDRESS,
+        senderTgId: params.senderTgId,
+        senderWallet: senderInformation.patchwallet,
+        senderName: senderInformation.userName,
+        recipientTgId: params.recipientTgId,
+        recipientWallet: recipientWallet,
+        tokenAmount: params.amount.toString(),
+        transactionHash: tx.data.txHash,
+        dateAdded: dateAdded,
+      });
+
+      await addTrackSegment({
+        userTelegramID: params.senderTgId,
+        TxId: tx.data.txHash.substring(1, 8),
+        senderTgId: params.senderTgId,
+        senderWallet: senderInformation.patchwallet,
+        senderName: senderInformation.userName,
+        recipientTgId: params.recipientTgId,
+        recipientWallet: recipientWallet,
+        tokenAmount: params.amount.toString(),
+        transactionHash: tx.data.txHash,
+        dateAdded: dateAdded,
+      });
+
+      console.log(
+        `[${tx.data.txHash}] transaction from ${params.senderTgId} to ${
+          params.recipientTgId
+        } for ${params.amount.toString()} added.`
+      );
+      return true;
+    }
+  } catch (error) {
+    console.error("Error processing transaction event:", error);
   }
   return false;
 };
