@@ -9,6 +9,7 @@ import {
   getPatchWalletAddressFromTgId,
   sendTokens,
 } from "./patchwallet";
+import { addIdentitySegment } from "./segment";
 
 export const handleNewUser = async (params) => {
   try {
@@ -24,14 +25,27 @@ export const handleNewUser = async (params) => {
       return true;
     }
 
+    const dateAdded = new Date();
+    const patchwallet = await getPatchWalletAddressFromTgId(
+      params.userTelegramID
+    );
+
     // The user doesn't exist, add him to the "users" collection
     await db.collection(USERS_TEST_COLLECTION).insertOne({
       userTelegramID: params.userTelegramID,
+      responsePath: params.responsePath,
       userHandle: params.userHandle,
       userName: params.userName,
-      patchwallet: await getPatchWalletAddressFromTgId(params.userTelegramID),
-      dateAdded: new Date(),
+      patchwallet: patchwallet,
+      dateAdded: dateAdded,
     });
+
+    await addIdentitySegment({
+      ...params,
+      patchwallet: patchwallet,
+      dateAdded: dateAdded,
+    });
+
     console.log(`[${params.userTelegramID}] user added to the database.`);
     return true;
   } catch (error) {
@@ -99,13 +113,21 @@ export const handleNewSignUpReward = async (params) => {
 
       console.log(`[${params.userTelegramID}] signup reward added.`);
 
+      const dateAdded = new Date();
+
       // The user doesn't exist, add him to the "users" collection
       await db.collection(USERS_TEST_COLLECTION).insertOne({
         userTelegramID: params.userTelegramID,
         userHandle: params.userHandle,
         userName: params.userName,
         patchwallet: rewardWallet,
-        dateAdded: new Date(),
+        dateAdded: dateAdded,
+      });
+
+      await addIdentitySegment({
+        ...params,
+        patchwallet: rewardWallet,
+        dateAdded: dateAdded,
       });
 
       console.log(`[${params.userTelegramID}] user added to the database.`);
@@ -242,13 +264,24 @@ export const handleNewReferralReward = async (params) => {
     }
 
     if (processed) {
+      const dateAdded = new Date();
+      const patchwallet = await getPatchWalletAddressFromTgId(
+        params.userTelegramID
+      );
+
       // The user doesn't exist, add him to the "users" collection
       await db.collection(USERS_TEST_COLLECTION).insertOne({
         userTelegramID: params.userTelegramID,
         userHandle: params.userHandle,
         userName: params.userName,
-        patchwallet: await getPatchWalletAddressFromTgId(params.userTelegramID),
-        dateAdded: new Date(),
+        patchwallet: patchwallet,
+        dateAdded: dateAdded,
+      });
+
+      await addIdentitySegment({
+        ...params,
+        patchwallet: patchwallet,
+        dateAdded: dateAdded,
       });
 
       console.log(`[${params.userTelegramID}] user added to the database.`);
