@@ -11,6 +11,11 @@ import {
 } from "./patchwallet";
 import { addIdentitySegment, addTrackSegment } from "./segment";
 
+/**
+ * Handles a new user registration event.
+ * @param {object} params - User registration parameters.
+ * @returns {Promise<boolean>} Returns a Promise that resolves to true if the user is successfully registered, false otherwise.
+ */
 export const handleNewUser = async (params) => {
   try {
     const db = await Database.getInstance();
@@ -54,6 +59,11 @@ export const handleNewUser = async (params) => {
   return false;
 };
 
+/**
+ * Handles a new sign-up reward event.
+ * @param {object} params - Sign-up reward parameters.
+ * @returns {Promise<boolean>} Returns a Promise that resolves to true if the reward is successfully processed, false otherwise.
+ */
 export const handleNewSignUpReward = async (params) => {
   try {
     const db = await Database.getInstance();
@@ -139,6 +149,11 @@ export const handleNewSignUpReward = async (params) => {
   return false;
 };
 
+/**
+ * Handles a new referral reward event.
+ * @param {object} params - Referral reward parameters.
+ * @returns {Promise<boolean>} Returns a Promise that resolves to true if the reward is successfully processed, false otherwise.
+ */
 export const handleNewReferralReward = async (params) => {
   try {
     const db = await Database.getInstance();
@@ -243,6 +258,11 @@ export const handleNewReferralReward = async (params) => {
   return false;
 };
 
+/**
+ * Handles a new transaction event.
+ * @param {object} params - Transaction parameters.
+ * @returns {Promise<boolean>} Returns a Promise that resolves to true if the transaction is successfully processed, false otherwise.
+ */
 export const handleNewTransaction = async (params) => {
   try {
     const db = await Database.getInstance();
