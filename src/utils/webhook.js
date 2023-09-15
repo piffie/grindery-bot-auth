@@ -30,7 +30,7 @@ export const handleNewUser = async (params) => {
       userHandle: params.userHandle,
       userName: params.userName,
       patchwallet: await getPatchWalletAddressFromTgId(params.userTelegramID),
-      dateAdded: new Date(Date.now()),
+      dateAdded: new Date(),
     });
     console.log(`[${params.userTelegramID}] user added to the database.`);
     return true;
@@ -51,7 +51,7 @@ export const handleNewSignUpReward = async (params) => {
 
     if (user) {
       // The user already exists, stop processing
-      console.log(`[${userExists.userTelegramID}] user already exist.`);
+      console.log(`[${user.userTelegramID}] user already exist.`);
       return true;
     }
 
@@ -94,7 +94,7 @@ export const handleNewSignUpReward = async (params) => {
         amount: "100",
         message: "Sign up reward",
         transactionHash: txReward.data.txHash,
-        dateAdded: new Date(Date.now()),
+        dateAdded: new Date(),
       });
 
       console.log(`[${params.userTelegramID}] signup reward added.`);
@@ -105,7 +105,7 @@ export const handleNewSignUpReward = async (params) => {
         userHandle: params.userHandle,
         userName: params.userName,
         patchwallet: rewardWallet,
-        dateAdded: new Date(Date.now()),
+        dateAdded: new Date(),
       });
 
       console.log(`[${params.userTelegramID}] user added to the database.`);
@@ -151,7 +151,7 @@ export const handleNewTransaction = async (params) => {
         recipientWallet: recipientWallet,
         tokenAmount: params.amount.toString(),
         transactionHash: tx.data.txHash,
-        dateAdded: new Date(Date.now()),
+        dateAdded: new Date(),
       });
 
       console.log(
@@ -174,7 +174,7 @@ export const handleNewReferralReward = async (params) => {
     // Check if the user already exists in the "users" collection
     const user = await db
       .collection(USERS_TEST_COLLECTION)
-      .findOne({ userTelegramID: messageData.params.userTelegramID });
+      .findOne({ userTelegramID: params.userTelegramID });
 
     if (user) {
       // The user already exists, stop processing
@@ -185,11 +185,11 @@ export const handleNewReferralReward = async (params) => {
     // Retrieve all transfers where this user is the recipient
     const referralTransfers = await db
       .collection(TRANSFERS_TEST_COLLECTION)
-      .find({ recipientTgId: messageData.params.userTelegramID })
+      .find({ recipientTgId: params.userTelegramID })
       .toArray();
 
     // Initialize a flag to track the success of all transactions
-    const processed = true;
+    let processed = true;
 
     // For each transfer, award a reward to the sender
     for (const transfer of referralTransfers) {
@@ -224,7 +224,7 @@ export const handleNewReferralReward = async (params) => {
             amount: "50",
             message: "Referral reward",
             transactionHash: txReward.data.txHash,
-            dateAdded: new Date(Date.now()),
+            dateAdded: new Date(),
           });
 
           console.log(
@@ -244,18 +244,14 @@ export const handleNewReferralReward = async (params) => {
     if (processed) {
       // The user doesn't exist, add him to the "users" collection
       await db.collection(USERS_TEST_COLLECTION).insertOne({
-        userTelegramID: messageData.params.userTelegramID,
-        userHandle: messageData.params.userHandle,
-        userName: messageData.params.userName,
-        patchwallet: await getPatchWalletAddressFromTgId(
-          messageData.params.userTelegramID
-        ),
-        dateAdded: new Date(Date.now()),
+        userTelegramID: params.userTelegramID,
+        userHandle: params.userHandle,
+        userName: params.userName,
+        patchwallet: await getPatchWalletAddressFromTgId(params.userTelegramID),
+        dateAdded: new Date(),
       });
 
-      console.log(
-        `[${messageData.params.userTelegramID}] user added to the database.`
-      );
+      console.log(`[${params.userTelegramID}] user added to the database.`);
     }
     return processed;
   } catch (error) {
