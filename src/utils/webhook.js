@@ -1,15 +1,15 @@
-import { Database } from "../db/conn";
+import { Database } from "../db/conn.js";
 import {
   REWARDS_TEST_COLLECTION,
   TRANSFERS_TEST_COLLECTION,
   USERS_TEST_COLLECTION,
-} from "./constants";
+} from "./constants.js";
 import {
   getPatchWalletAccessToken,
   getPatchWalletAddressFromTgId,
   sendTokens,
-} from "./patchwallet";
-import { addIdentitySegment, addTrackSegment } from "./segment";
+} from "./patchwallet.js";
+import { addIdentitySegment, addTrackSegment } from "./segment.js";
 
 /**
  * Handles a new user registration event.
@@ -172,7 +172,10 @@ export const handleNewReferralReward = async (params) => {
     // Retrieve all transfers where this user is the recipient
     const referralTransfers = await db
       .collection(TRANSFERS_TEST_COLLECTION)
-      .find({ recipientTgId: params.userTelegramID })
+      .find({
+        senderTgId: { $ne: params.userTelegramID },
+        recipientTgId: params.userTelegramID,
+      })
       .toArray();
 
     // Initialize a flag to track the success of all transactions

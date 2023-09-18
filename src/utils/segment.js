@@ -37,7 +37,7 @@ export async function addTrackSegment(params) {
   return await axios.post(
     "https://api.segment.io/v1/track",
     {
-      userId: user.userTelegramID,
+      userId: params.userTelegramID,
       event: "Transfer",
       properties: {
         TxId: params.TxId,
@@ -52,7 +52,7 @@ export async function addTrackSegment(params) {
         tokenAmount: params.tokenAmount,
         transactionHash: params.transactionHash,
       },
-      timestamp: user.dateAdded,
+      timestamp: params.dateAdded,
     },
     {
       timeout: 100000,
