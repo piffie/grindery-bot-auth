@@ -78,44 +78,6 @@ async function removeUsersScientificNotationInTelegramID() {
 }
 
 // Example usage of the functions:
-// removeDuplicateUsers();
-async function removeDuplicateUsers() {
-  try {
-    const db = await Database.getInstance();
-    const collectionUsers = db.collection("users");
-
-    // Aggregation pipeline to identify duplicates and keep the first instance
-    const aggregationPipeline = [
-      {
-        $group: {
-          _id: "$userTelegramID",
-          firstInstance: { $first: "$_id" },
-        },
-      },
-    ];
-
-    // Find the first instance of each duplicate userTelegramID
-    const firstInstances = await collectionUsers
-      .aggregate(aggregationPipeline)
-      .toArray();
-
-    // Create an array of _id values to keep (first instances)
-    const idsToKeep = firstInstances.map((instance) => instance.firstInstance);
-
-    // Delete all documents that are not in the idsToKeep array
-    const deleteResult = await collectionUsers.deleteMany({
-      _id: { $nin: idsToKeep },
-    });
-
-    console.log(`Deleted ${deleteResult.deletedCount} duplicate users.`);
-  } catch (error) {
-    console.error(`An error occurred: ${error.message}`);
-  } finally {
-    process.exit(0);
-  }
-}
-
-// Example usage of the functions:
 // const users = [
 //   { userTelegramID: "12345" },
 //   { userTelegramID: "67890" },

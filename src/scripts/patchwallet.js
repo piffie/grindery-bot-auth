@@ -12,7 +12,9 @@ async function updatePatchWalletAddresses() {
     const collectionUsers = db.collection("users");
 
     for (const user of await collectionUsers
-      .find({ patchwallet: "" })
+      .find({
+        $or: [{ patchwallet: "" }, { patchwallet: { $not: /^0x/ } }],
+      })
       .toArray()) {
       try {
         await collectionUsers.updateOne(
@@ -43,3 +45,5 @@ async function updatePatchWalletAddresses() {
     process.exit(0);
   }
 }
+
+updatePatchWalletAddresses();
