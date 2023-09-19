@@ -70,7 +70,12 @@ router.get("/callback", async (req, res) => {
         method: "or_getUserProps",
         id: new Date(),
         params: {
-          props: ["email", "telegram_user_id", "patchwallet_telegram", "response_path"],
+          props: [
+            "email",
+            "telegram_user_id",
+            "patchwallet_telegram",
+            "response_path",
+          ],
         },
       },
       {
@@ -82,7 +87,10 @@ router.get("/callback", async (req, res) => {
 
     const decodeState = JSON.parse(base64url.decode(String(req.query.state)));
 
-    if (!userPropsResponse.data.result || !userPropsResponse.data.result.email) {
+    if (
+      !userPropsResponse.data.result ||
+      !userPropsResponse.data.result.email
+    ) {
       return res.status(400).json({ error: "Email is missing" });
     }
 
@@ -91,13 +99,18 @@ router.get("/callback", async (req, res) => {
       userPropsResponse.data.result.telegram_user_id &&
       userPropsResponse.data.result.response_path
     ) {
-      return res.redirect(decodeState.redirect_uri || `https://app.grindery.io/`);
+      return res.redirect(
+        decodeState.redirect_uri || `https://app.grindery.io/`
+      );
     }
 
     // Get user PatchWallet address
-    const patchWalletResponse = await axios.post("https://paymagicapi.com/v1/resolver", {
-      userIds: `grindery:${decodeState.user_id}`,
-    });
+    const patchWalletResponse = await axios.post(
+      "https://paymagicapi.com/v1/resolver",
+      {
+        userIds: `grindery:${decodeState.user_id}`,
+      }
+    );
 
     const patchwalletAddress = patchWalletResponse.data.users[0].accountAddress;
 

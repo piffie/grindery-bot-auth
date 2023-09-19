@@ -9,22 +9,6 @@ import {
 
 const router = express.Router();
 
-/**
- * POST /v1/db/:collectionName
- *
- * @summary Add record to DB
- * @description Adds record to DB collection.
- * @tags Database
- * @security BearerAuth
- * @param {string} collectionName.path.required - Collection name
- * @param {object} request.body - The request body containing the record object.
- * @return {object} 200 - Success response
- * @example request - 200 - Example request body
- * {
- *   "param1": "value1",
- *   "param2": "value2"
- * }
- */
 router.post("/:collectionName", authenticateApiKey, async (req, res) => {
   const collectionName = req.params.collectionName;
   const db = await Database.getInstance(req);
@@ -137,18 +121,6 @@ router.get("/format-transfers-user", authenticateApiKey, async (req, res) => {
   }
 });
 
-/**
- * GET /v1/db/:collectionName
- *
- * @summary Get records from DB
- * @description Gets records from DB collection. Accepts filtering through query params.
- * @tags Database
- * @security BearerAuth
- * @param {string} collectionName.path.required - Collection name
- * @param {string} [limit.query] - Optional limit for pagination
- * @param {string} [start.query] - Optional offset for pagination
- * @return {object} 200 - Success response
- */
 router.get("/:collectionName", authenticateApiKey, async (req, res) => {
   const { limit, start, ...query } = req.query;
   try {
