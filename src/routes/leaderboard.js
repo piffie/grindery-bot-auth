@@ -4,6 +4,32 @@ import {authenticateApiKey} from "../utils/auth.js";
 
 const router = express.Router();
 
+/**
+ * GET /v1/txSent
+ *
+ * @summary Get leaderboard for transactions sent
+ * @description Retrieves a leaderboard showing users who have sent the most transactions.
+ * @tags Leaderboard
+ * @param {string} [request.query.days] - The number of past days to filter results by.
+ * @param {string} [request.query.topX] - Limit results to the top X users.
+ * @param {string} [request.query.limit=10] - Number of results per page.
+ * @param {string} [request.query.skip=0] - Number of results to skip for pagination.
+ * @return {object} 200 - Array of users and their transaction counts.
+ * @return {object} 500 - Error response.
+ * @example response - 200 - Success response example
+ * [
+ *   {
+ *     "_id": "1899307514",
+ *     "count": 15
+ *   },
+ *   ...
+ * ]
+ * @example response - 500 - Error response example
+ * {
+ *   "msg": "An error occurred",
+ *   "error": "Server error description"
+ * }
+ */
 router.get("/txSent", authenticateApiKey, async (req, res) => {
   const {days, topX, limit = 10, skip = 0} = req.query;
 
@@ -43,6 +69,34 @@ router.get("/txSent", authenticateApiKey, async (req, res) => {
   }
 });
 
+/**
+ * GET /v1/txSent
+ *
+ * @summary Get leaderboard for transactions sent
+ * @description Retrieves a leaderboard showing users who have sent the most transactions.
+ * @tags Leaderboard
+ * @param {string} [request.query.days] - The number of past days to filter results by.
+ * @param {string} [request.query.topX] - Limit results to the top X users.
+ * @param {string} [request.query.limit=10] - Number of results per page.
+ * @param {string} [request.query.skip=0] - Number of results to skip for pagination.
+ * @return {object} 200 - Array of users and their transaction counts.
+ * @return {object} 500 - Error response.
+ * @example response - 200 - Success response example
+ * [
+ *   {
+ *     "_id": "1899307514",
+ *       "totalTokens": {
+ *       "$numberDecimal": "83580"
+ *     }
+ *   },
+ *   ...
+ * ]
+ * @example response - 500 - Error response example
+ * {
+ *   "msg": "An error occurred",
+ *   "error": "Server error description"
+ * }
+ */
 router.get("/tokensSent", authenticateApiKey, async (req, res) => {
   const {days, limit = 10, skip = 0, topX} = req.query;
 
@@ -84,6 +138,34 @@ router.get("/tokensSent", authenticateApiKey, async (req, res) => {
   }
 });
 
+/**
+ * GET /v1/rewards
+ *
+ * @summary Get leaderboard for rewards accumulated
+ * @description Retrieves a leaderboard showing users with the most accumulated rewards.
+ * @tags Leaderboard
+ * @param {string} [request.query.days] - The number of past days to filter results by.
+ * @param {string} [request.query.topX] - Limit results to the top X users.
+ * @param {string} [request.query.limit=10] - Number of results per page.
+ * @param {string} [request.query.skip=0] - Number of results to skip for pagination.
+ * @return {object} 200 - Array of users and their total rewards accumulated.
+ * @return {object} 500 - Error response.
+ * @example response - 200 - Success response example
+ * [
+ *   {
+ *     "_id": "66670057",
+ *       "totalRewards": {
+ *       "$numberDecimal": "2800"
+ *     }
+ *   },
+ *   ...
+ * ]
+ * @example response - 500 - Error response example
+ * {
+ *   "msg": "An error occurred",
+ *   "error": "Server error description"
+ * }
+ */
 router.get("/rewards", authenticateApiKey, async (req, res) => {
   const {days, skip = 0, limit = 10, topX} = req.query;
 
