@@ -1,6 +1,18 @@
 import express from "express";
 import { PubSub } from "@google-cloud/pubsub";
 import { authenticateApiKey } from "../utils/auth.js";
+import { Database } from "../db/conn.js";
+import {
+  getPatchWalletAccessToken,
+  getPatchWalletAddressFromTgId,
+  sendTokens,
+} from "../utils/patchwallet.js";
+import {
+  handleNewReferralReward,
+  handleNewSignUpReward,
+  handleNewTransaction,
+  handleNewUser,
+} from "../utils/webhook.js";
 
 /**
  * This is a generic and extendable implementation of a webhook endpoint and pub/sub messages queue.
@@ -84,15 +96,19 @@ const listenForMessages = () => {
       switch (messageData.event) {
         // User initiated new transaction
         case "new_transaction":
-          //processed = await handleNewTransaction(messageData.params);
+          processed = await handleNewTransaction(messageData.params);
           break;
         // New user started the bot
         case "new_user":
-          //processed = await handleNewUser(messageData.params);
+          processed = await handleNewUser(messageData.params);
           break;
         // New reward has been issued to user
-        case "new_reward":
-          //processed = await handleNewReward(messageData.params);
+        case "new_signup_reward":
+          processed = await handleNewSignUpReward(messageData.params);
+          break;
+        // New referral rewards for previous senders
+        case "new_referral_reward":
+          processed = await handleNewReferralReward(messageData.params);
           break;
         default:
           processed = true;
@@ -107,7 +123,7 @@ const listenForMessages = () => {
         "Acknowledged message:",
         JSON.stringify(messageData, null, 2)
       );
-      message.ack(); // // "Ack" (acknowledge receipt of) the message
+      message.ack(); // "Ack" (acknowledge receipt of) the message
     } catch (error) {
       console.error("messageHandler error:", error);
       message.nack(); // "Nack" (don't acknowledge receipt of) the message
