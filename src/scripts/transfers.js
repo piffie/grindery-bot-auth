@@ -230,7 +230,7 @@ async function removeRewardFromTransfers() {
 async function checkMissingTransfers(fileName) {
   const db = await Database.getInstance();
   const collection = db.collection("transfers");
-  const hashesInCsv = new Set(); // Use a Set for faster lookups
+  const hashesInCsv = new Set();
   const excludeAddress = "0x6ef802abD3108411AFe86656c9A369946aff590D"; // Tim wallet address
 
   fs.createReadStream(fileName)
@@ -242,27 +242,23 @@ async function checkMissingTransfers(fileName) {
       }
     })
     .on("end", async () => {
-      // Fetch all transfer transactionHashes from MongoDB
       const transfersHashesInDb = await collection.distinct("transactionHash");
 
-      // Filter out the transactionHashes that are not in the CSV
-      const hashesNotInCsv = transfersHashesInDb.filter(
-        (hash) => !hashesInCsv.has(hash)
+      const hashesNotInDb = [...hashesInCsv].filter(
+        (hash) => !transfersHashesInDb.includes(hash)
       );
 
-      if (hashesNotInCsv.length === 0) {
+      if (hashesNotInDb.length === 0) {
         console.log(
           "All transfers in CSV are present in the MongoDB collection."
         );
       } else {
         console.log(
-          "The following transaction hashes in MongoDB aren't present in the CSV:"
+          "The following transaction hashes from the CSV aren't present in MongoDB transfers collection:"
         );
-        console.log(hashesNotInCsv.join("\n"));
-        console.log(`Total Missing: ${hashesNotInCsv.length}`);
+        console.log(hashesNotInDb.join("\n"));
+        console.log(`Total Missing: ${hashesNotInDb.length}`);
       }
-
-      console.log("\n Task completed \n");
       process.exit(0);
     })
     .on("error", (error) => {

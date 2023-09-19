@@ -478,7 +478,7 @@ async function rewardsCleanup(fileName) {
 async function checkMissingRewards(fileName) {
   const db = await Database.getInstance();
   const collection = db.collection("rewards");
-  const hashesInCsv = new Set(); // Use a Set for faster lookups
+  const hashesInCsv = new Set();
 
   fs.createReadStream(fileName)
     .pipe(csv())
@@ -486,27 +486,23 @@ async function checkMissingRewards(fileName) {
       hashesInCsv.add(row.evt_tx_hash);
     })
     .on("end", async () => {
-      // Fetch all rewards transactionHashes from MongoDB
       const rewardsHashesInDb = await collection.distinct("transactionHash");
 
-      // Filter out the transactionHashes that are not in the CSV
-      const hashesNotInCsv = rewardsHashesInDb.filter(
-        (hash) => !hashesInCsv.has(hash)
+      const hashesNotInDb = [...hashesInCsv].filter(
+        (hash) => !rewardsHashesInDb.includes(hash)
       );
 
-      if (hashesNotInCsv.length === 0) {
+      if (hashesNotInDb.length === 0) {
         console.log(
           "All rewards in CSV are present in the MongoDB collection."
         );
       } else {
         console.log(
-          "The following transaction hashes for rewards in MongoDB aren't present in the CSV:"
+          "The following transaction hashes from the CSV aren't present in MongoDB rewards collection:"
         );
-        console.log(hashesNotInCsv.join("\n"));
-        console.log(`Total Missing: ${hashesNotInCsv.length}`);
+        console.log(hashesNotInDb.join("\n"));
+        console.log(`Total Missing: ${hashesNotInDb.length}`);
       }
-
-      console.log("\n Task completed \n");
       process.exit(0);
     })
     .on("error", (error) => {
