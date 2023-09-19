@@ -5,7 +5,7 @@ import {authenticateApiKey} from "../utils/auth.js";
 const router = express.Router();
 
 /**
- * GET /v1/txSent
+ * GET /v1/tx-sent
  *
  * @summary Get leaderboard for transactions sent
  * @description Retrieves a leaderboard showing users who have sent the most transactions.
@@ -30,13 +30,17 @@ const router = express.Router();
  *   "error": "Server error description"
  * }
  */
-router.get("/txSent", authenticateApiKey, async (req, res) => {
+router.get("/tx-sent", async (req, res) => {
   const {days, topX, limit = 10, skip = 0} = req.query;
 
   try {
     const db = await Database.getInstance(req);
 
     let dateFilter = {};
+
+    if (topX && isNaN(parseInt(topX))) {
+      return res.status(400).send({msg: "Invalid value for topX."});
+    }
 
     if (days && !isNaN(days)) {
       dateFilter = {
@@ -51,7 +55,7 @@ router.get("/txSent", authenticateApiKey, async (req, res) => {
       {$group: {_id: "$senderTgId", count: {$sum: 1}}},
       {$sort: {count: -1}},
       {$skip: parseInt(skip)},
-      {$limit: parseInt(limit)},
+      {$limit: topX ? parseInt(topX) : parseInt(limit)},
     ];
 
     if (topX && !isNaN(topX)) {
@@ -70,24 +74,22 @@ router.get("/txSent", authenticateApiKey, async (req, res) => {
 });
 
 /**
- * GET /v1/txSent
+ * GET /v1/tokens-sent
  *
- * @summary Get leaderboard for transactions sent
- * @description Retrieves a leaderboard showing users who have sent the most transactions.
+ * @summary Get leaderboard for tokens sent
+ * @description Retrieves a leaderboard showing users who have sent the most tokens in a given period.
  * @tags Leaderboard
  * @param {string} [request.query.days] - The number of past days to filter results by.
  * @param {string} [request.query.topX] - Limit results to the top X users.
  * @param {string} [request.query.limit=10] - Number of results per page.
  * @param {string} [request.query.skip=0] - Number of results to skip for pagination.
- * @return {object} 200 - Array of users and their transaction counts.
+ * @return {object} 200 - Array of users and their total tokens sent.
  * @return {object} 500 - Error response.
  * @example response - 200 - Success response example
  * [
  *   {
  *     "_id": "1899307514",
- *       "totalTokens": {
- *       "$numberDecimal": "83580"
- *     }
+ *     "totalTokens": "100"
  *   },
  *   ...
  * ]
@@ -97,13 +99,17 @@ router.get("/txSent", authenticateApiKey, async (req, res) => {
  *   "error": "Server error description"
  * }
  */
-router.get("/tokensSent", authenticateApiKey, async (req, res) => {
+router.get("/tokensent", authenticateApiKey, async (req, res) => {
   const {days, limit = 10, skip = 0, topX} = req.query;
 
   try {
     const db = await Database.getInstance(req);
 
     let dateFilter = {};
+
+    if (topX && isNaN(parseInt(topX))) {
+      return res.status(400).send({msg: "Invalid value for topX."});
+    }
 
     if (days && !isNaN(days)) {
       dateFilter = {
@@ -170,6 +176,10 @@ router.get("/rewards", authenticateApiKey, async (req, res) => {
   const {days, skip = 0, limit = 10, topX} = req.query;
 
   let dateFilter = {};
+
+  if (topX && isNaN(parseInt(topX))) {
+    return res.status(400).send({msg: "Invalid value for topX."});
+  }
 
   if (days && !isNaN(days)) {
     dateFilter = {
