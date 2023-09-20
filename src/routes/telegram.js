@@ -154,11 +154,10 @@ router.get("/status", telegramHashIsValid, async (req, res) => {
 /**
  * GET /v1/telegram/contacts
  *
- * @summary Fetch Telegram Contacts
- * @description Retrieve the contact list associated with the given session.
+ * @summary Get Telegram Contacts
+ * @description Retrieve telegram user's contact list.
  * @tags Telegram
  * @security BearerAuth
- * @param {string} request.query.session - The session string to identify the client.
  * @return {object} 200 - Success response with the list of contacts
  * @example response - 200 - Success response example (simplified for brevity)
  * {
@@ -166,20 +165,36 @@ router.get("/status", telegramHashIsValid, async (req, res) => {
  * }
  */
 router.get("/contacts", telegramHashIsValid, async (req, res) => {
-  const client = TGClient(new StringSession(req.query.session));
-  await client.connect();
+  try {
+    const user = getUser(req);
+    if (!user?.id) {
+      return res.status(401).send({ msg: "Invalid user" });
+    }
+    const db = await Database.getInstance(req);
+    const userDoc = await db
+      .collection("users")
+      .findOne({ userTelegramID: user.id.toString() });
+    const session = userDoc.telegramSession;
+    if (!session) {
+      return res.status(200).json([]);
+    }
+    const client = TGClient(new StringSession(session));
+    await client.connect();
 
-  if (!client.connected) {
-    return res.status(200).json([]);
+    if (!client.connected) {
+      return res.status(200).json([]);
+    }
+    const contacts = await client.invoke(
+      new Api.contacts.GetContacts({
+        hash: BigInt("-4156887774564"),
+      })
+    );
+
+    res.status(200).json(contacts.users);
+  } catch (error) {
+    console.error("Error getting user", error);
+    return res.status(500).send({ msg: "An error occurred", error });
   }
-
-  const contacts = await client.invoke(
-    new Api.contacts.GetContacts({
-      hash: BigInt("-4156887774564"),
-    })
-  );
-
-  res.status(200).json(contacts.users);
 });
 
 /**
@@ -232,9 +247,7 @@ router.get("/me", telegramHashIsValid, async (req, res) => {
  * @example response - 200 - Success response example
  * [
  *  {
- *    "_id": {
- *        "$oid": "6asdfghjff2936fefd07cf93"
- *      },
+ *    "_id": "6asdfghjff2936fefd07cf93",
  *     "TxId": "xdc3ooo",
  *     "chainId": "eip155:137",
  *     "tokenSymbol": "g1",
