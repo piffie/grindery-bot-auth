@@ -11,6 +11,7 @@ import {
 } from "./patchwallet.js";
 import { addIdentitySegment, addTrackSegment } from "./segment.js";
 import axios from "axios";
+import "dotenv/config";
 
 /**
  * Handles a new user registration event.
@@ -52,7 +53,7 @@ export const handleNewUser = async (params) => {
       dateAdded: dateAdded,
     });
 
-    await axios.post("https://flowxo.com/hooks/a/w4vb3jq7", {
+    await axios.post(process.env.FLOWXO_NEW_USER_WEBHOOK, {
       userTelegramID: params.userTelegramID,
       responsePath: params.responsePath,
       userHandle: params.userHandle,
@@ -150,7 +151,7 @@ export const handleNewSignUpReward = async (params) => {
         dateAdded: dateAdded,
       });
 
-      await axios.post("https://flowxo.com/hooks/a/ejer26bp", {
+      await axios.post(process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK, {
         userTelegramID: params.userTelegramID,
         responsePath: params.responsePath,
         walletAddress: rewardWallet,
@@ -242,7 +243,7 @@ export const handleNewReferralReward = async (params) => {
             dateAdded: dateAdded,
           });
 
-          await axios.post("https://flowxo.com/hooks/a/vxejbke3", {
+          await axios.post(process.env.FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK, {
             newUserTgId: user.userTelegramID,
             newUserResponsePath: user.responsePath,
             newUserUserHandle: user.userHandle,
@@ -338,7 +339,7 @@ export const handleNewTransaction = async (params) => {
         dateAdded: dateAdded,
       });
 
-      await axios.post("https://flowxo.com/hooks/a/25xxwk5v", {
+      await axios.post(process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK, {
         senderResponsePath: senderInformation.responsePath,
         TxId: tx.data.txHash.substring(1, 8),
         chainId: "eip155:137",
