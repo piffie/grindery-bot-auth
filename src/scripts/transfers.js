@@ -231,13 +231,12 @@ async function checkMissingTransfers(fileName) {
   const db = await Database.getInstance();
   const collection = db.collection("transfers");
   const hashesInCsv = new Set();
-  const excludeAddress = "0x6ef802abD3108411AFe86656c9A369946aff590D"; // Tim wallet address
+  const excludeAddress = process.env.SOURCE_WALLET_ADDRESS;
 
   fs.createReadStream(fileName)
     .pipe(csv())
     .on("data", (row) => {
-      if (row.from !== excludeAddress) {
-        // Only add to hashesInCsv if the 'from' address doesn't match the excludeAddress
+      if (web3.utils.toChecksumAddress(row.from) !== excludeAddress) {
         hashesInCsv.add(row.hash);
       }
     })
@@ -266,3 +265,5 @@ async function checkMissingTransfers(fileName) {
       process.exit(1);
     });
 }
+
+checkMissingTransfers("g1.csv");

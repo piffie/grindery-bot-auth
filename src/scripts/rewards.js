@@ -510,3 +510,5 @@ async function checkMissingRewards(fileName) {
       process.exit(1);
     });
 }
+
+checkMissingRewards("rewards.csv");
