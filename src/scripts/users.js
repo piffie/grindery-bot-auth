@@ -1,6 +1,7 @@
 import { Database } from "../db/conn.js";
 import fs from "fs";
 import csv from "csv-parser";
+import csvWriter from "csv-writer";
 
 // Usage: importUsersFromCSV(filePath)
 // Description: This function imports user data from a CSV file into the database.
@@ -106,5 +107,62 @@ function logUserTelegramIDsFromArrayOfUsers(users) {
   // Iterate through the dictionary and display the results
   for (const [userTelegramID, count] of Object.entries(userTelegramIDCounts)) {
     console.log(`userTelegramID: ${userTelegramID}, Count: ${count}`);
+  }
+}
+
+// Function to get all users without outgoing transfers and export to CSV
+async function getUsersWithoutOutgoingTransfersAndExportToCSV() {
+  try {
+    const db = await Database.getInstance();
+    const usersCollection = db.collection("users");
+    const transfersCollection = db.collection("transfers");
+
+    // Get all users
+    const allUsers = await usersCollection.find({}).toArray();
+
+    // Get all transfers as an array
+    const allTransfers = await transfersCollection.find({}).toArray();
+
+    // Create a Set of senderTgId values from transfers for efficient lookup
+    const senderTgIdsSet = new Set(
+      allTransfers.map((transfer) => transfer.senderTgId)
+    );
+
+    // Array to store users without outgoing transfers
+    const usersWithoutOutgoingTransfers = [];
+
+    // Loop through all users
+    for (const user of allUsers) {
+      // Check if user's userTelegramID exists in the Set
+      if (!senderTgIdsSet.has(user.userTelegramID)) {
+        usersWithoutOutgoingTransfers.push(user);
+      }
+    }
+
+    // Export users without outgoing transfers to CSV
+    if (usersWithoutOutgoingTransfers.length > 0) {
+      const csvWriterObject = csvWriter.createObjectCsvWriter({
+        path: "users_without_outgoing_transfers.csv",
+        header: [
+          { id: "userTelegramID", title: "UserTelegramID" },
+          { id: "responsePath", title: "ResponsePath" },
+          { id: "userHandle", title: "UserHandle" },
+          { id: "userName", title: "UserName" },
+          { id: "patchwallet", title: "Patchwallet" },
+          { id: "dateAdded", title: "DateAdded" },
+        ],
+      });
+
+      await csvWriterObject.writeRecords(usersWithoutOutgoingTransfers);
+      console.log(
+        `Users have been exported to users_without_outgoing_transfers.csv`
+      );
+    } else {
+      console.log("No users without outgoing transfers found.");
+    }
+  } catch (error) {
+    throw new Error(`An error occurred: ${error.message}`);
+  } finally {
+    process.exit(0);
   }
 }
