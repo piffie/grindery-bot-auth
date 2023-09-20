@@ -4,8 +4,9 @@ import { StringSession } from "telegram/sessions/index.js";
 import createTelegramPromise from "../utils/telegramPromise.js";
 import { uuid } from "uuidv4";
 import TGClient from "../utils/telegramClient.js";
-import { isRequired, telegramHashIsValid } from "../utils/auth.js";
+import { telegramHashIsValid } from "../utils/auth.js";
 import { Database } from "../db/conn.js";
+import { getUser } from "../utils/telegram.js";
 
 const router = express.Router();
 const operations = {};
@@ -104,10 +105,7 @@ router.post("/callback", telegramHashIsValid, async (req, res) => {
     operations[operationId].phoneCodePromise.resolve(code);
     const session = operations[operationId].client.session.save();
     try {
-      const authorization = req.headers["authorization"];
-      const token = authorization.split(" ")[1];
-      const data = Object.fromEntries(new URLSearchParams(token));
-      const user = JSON.parse(data?.user);
+      const user = getUser(req);
       if (!user?.id) {
         return res.status(401).send({ msg: "Invalid user" });
       }
@@ -205,10 +203,7 @@ router.get("/contacts", telegramHashIsValid, async (req, res) => {
  */
 router.get("/me", telegramHashIsValid, async (req, res) => {
   try {
-    const authorization = req.headers["authorization"];
-    const token = authorization.split(" ")[1];
-    const data = Object.fromEntries(new URLSearchParams(token));
-    const user = JSON.parse(data?.user);
+    const user = getUser(req);
     if (!user?.id) {
       return res.status(401).send({ msg: "Invalid user" });
     }
@@ -222,6 +217,63 @@ router.get("/me", telegramHashIsValid, async (req, res) => {
       );
   } catch (error) {
     console.error("Error getting user", error);
+    return res.status(500).send({ msg: "An error occurred", error });
+  }
+});
+
+/**
+ * GET /v1/telegram/activity
+ *
+ * @summary Get telegram user activity
+ * @description Gets telegram user activity (transactions) from DB collection.
+ * @tags Telegram
+ * @security BearerAuth
+ * @return {object} 200 - Success response with connection status
+ * @example response - 200 - Success response example
+ * [
+ *  {
+ *    "_id": {
+ *        "$oid": "6asdfghjff2936fefd07cf93"
+ *      },
+ *     "TxId": "xdc3ooo",
+ *     "chainId": "eip155:137",
+ *     "tokenSymbol": "g1",
+ *     "tokenAddress": "0xe36BD65609c08Cgavehr3520293523CF4560533d0",
+ *     "senderTgId": "1899300004",
+ *     "senderWallet": "0x1234556751f3D2e4dE9D8B860311936090bcaC95",
+ *     "senderName": "undefined",
+ *     "recipientTgId": "5900000139",
+ *     "recipientWallet": "0x43371FD1Df1a3ee6550ca42f61956feasdfghj33",
+ *     "tokenAmount": "10",
+ *     "transactionHash": "0xdtgbrfve594b7950ef2e5fe6efa89eb4daf6e1424b641eee0dd4db2f8e5fdf8f",
+ *     "dateAdded": {
+ *       "$date": {
+ *         "$numberLong": "1693857254073"
+ *       }
+ *     }
+ *   }
+ * ]
+ */
+router.get("/activity", telegramHashIsValid, async (req, res) => {
+  try {
+    const user = getUser(req);
+    if (!user?.id) {
+      return res.status(401).send({ msg: "Invalid user" });
+    }
+    const db = await Database.getInstance(req);
+    return res.status(200).send(
+      await db
+        .collection("transfers")
+        .find({
+          $or: [
+            { senderTgId: user.id.toString() },
+            { recipientTgId: user.id.toString() },
+          ],
+        })
+        .toArray()
+    );
+  } catch (error) {
+    console.error("Error getting activity", error);
     return res.status(500).send({ msg: "An error occurred", error });
   }
 });
