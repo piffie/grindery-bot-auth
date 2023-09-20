@@ -259,11 +259,7 @@ router.get("/me", telegramHashIsValid, async (req, res) => {
  *     "recipientWallet": "0x43371FD1Df1a3ee6550ca42f61956feasdfghj33",
  *     "tokenAmount": "10",
  *     "transactionHash": "0xdtgbrfve594b7950ef2e5fe6efa89eb4daf6e1424b641eee0dd4db2f8e5fdf8f",
- *     "dateAdded": {
- *       "$date": {
- *         "$numberLong": "1693857254073"
- *       }
- *     }
+ *     "dateAdded": "2021-01-01T00:00:00.000Z"
  *   }
  * ]
  */
@@ -326,6 +322,52 @@ router.get("/user", telegramHashIsValid, async (req, res) => {
       );
   } catch (error) {
     console.error("Error getting user", error);
+    return res.status(500).send({ msg: "An error occurred", error });
+  }
+});
+
+/**
+ * GET /v1/telegram/rewards
+ *
+ * @summary Get telegram user rewards
+ * @description Gets telegram user rewards (transactions) from DB collection.
+ * @tags Telegram
+ * @security BearerAuth
+ * @return {object} 200 - Success response with connection status
+ * @example response - 200 - Success response example
+ * [
+ *  {
+ *    "_id": "64f623c2ff2936zxcv07cbab",
+ *    "userTelegramID": "1652aaa020",
+ *    "responsePath": "64d170d6dggaaa00578ad6f6/c/1652061020",
+ *    "walletAddress": "0x151bF7ccvvb2e6E32acC4362A8A5Bb26c5EAc38E",
+ *    "reason": "user_sign_up",
+ *    "userHandle": "username",
+ *    "userName": "Firstname Lastname",
+ *    "amount":"100",
+ *    "message":"Sign up reward",
+ *    "transactionHash": "0x2d9c28626cc15b8aaassacd1c16a66886769a381b53be247f0518a55c0d5a334",
+ *    "dateAdded": "2021-01-01T00:00:00.000Z"
+ *  }
+ * ]
+ */
+router.get("/rewards", telegramHashIsValid, async (req, res) => {
+  try {
+    const user = getUser(req);
+    if (!user?.id) {
+      return res.status(401).send({ msg: "Invalid user" });
+    }
+    const db = await Database.getInstance(req);
+    return res.status(200).send(
+      await db
+        .collection("rewards")
+        .find({
+          userTelegramID: user.id.toString(),
+        })
+        .toArray()
+    );
+  } catch (error) {
+    console.error("Error getting rewards", error);
     return res.status(500).send({ msg: "An error occurred", error });
   }
 });
