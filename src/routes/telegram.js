@@ -291,4 +291,43 @@ router.get("/activity", telegramHashIsValid, async (req, res) => {
   }
 });
 
+/**
+ * GET /v1/telegram/user
+ *
+ * @summary Get telegram user public profile
+ * @description Gets telegram user public profile from DB collection.
+ * @tags Telegram
+ * @security BearerAuth
+ * @param {string} request.query.id - The telegram id of the user.
+ * @return {object} 200 - Success response with connection status
+ * @example response - 200 - Success response example
+ * {
+ *   "_id": "123",
+ *   "userTelegramID": "456",
+ *   "userName": "User Name",
+ *   "userHandle": "username",
+ *   "patchwallet": "0x123"
+ * }
+ */
+router.get("/user", telegramHashIsValid, async (req, res) => {
+  try {
+    const user = getUser(req);
+    if (!user?.id) {
+      return res.status(401).send({ msg: "Invalid user" });
+    }
+    if (!req.query.id) {
+      return res.status(400).send({ msg: "Invalid user ID" });
+    }
+    const db = await Database.getInstance(req);
+    return res
+      .status(200)
+      .send(
+        await db.collection("users").findOne({ userTelegramID: req.query.id })
+      );
+  } catch (error) {
+    console.error("Error getting user", error);
+    return res.status(500).send({ msg: "An error occurred", error });
+  }
+});
+
 export default router;
