@@ -71,7 +71,6 @@ async function sendTransfersBatchRequest() {
       userId: transfer.senderTgId,
       event: "Transfer",
       properties: {
-        Amount: transfer.tokenAmount,
         TxId: transfer.TxId,
         chainId: transfer.chainId,
         recipientTgId: transfer.recipientTgId,
