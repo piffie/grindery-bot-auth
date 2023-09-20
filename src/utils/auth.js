@@ -1,5 +1,6 @@
 import axios from "axios";
 import jwt_decode from "jwt-decode";
+import { webcrypto } from 'crypto';
 
 export const checkToken = async (token, workspaceKey) => {
   try {
