@@ -433,10 +433,10 @@ router.get("/user/photo", telegramHashIsValid, async (req, res) => {
 
     const photo = await client.downloadProfilePhoto(username);
 
+    const base64Photo = btoa(String.fromCharCode(...new Uint8Array(photo)));
+
     return res.status(200).json({
-      photo: `data:image/png;base64,${btoa(
-        String.fromCharCode(...new Uint8Array(photo))
-      )}`,
+      photo: base64Photo ? `data:image/png;base64,${base64Photo}` : "",
     });
   } catch (error) {
     console.error("Error getting user photo", error);
