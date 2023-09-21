@@ -190,7 +190,25 @@ router.get("/contacts", telegramHashIsValid, async (req, res) => {
       })
     );
 
-    res.status(200).json(contacts.users);
+    const usersArray = await db
+      .collection("users")
+      .find({
+        $or: contacts.users.map((user) => ({
+          userTelegramID: user.id.toString(),
+        })),
+      })
+      .toArray();
+
+    res.status(200).json(
+      contacts.users.map((user) => ({
+        ...user,
+        isGrinderyUser: usersArray.find(
+          (u) => u.userTelegramID === user.id.toString()
+        )
+          ? true
+          : false,
+      }))
+    );
   } catch (error) {
     console.error("Error getting user", error);
     return res.status(500).send({ msg: "An error occurred", error });
@@ -343,7 +361,7 @@ router.get("/user", telegramHashIsValid, async (req, res) => {
  *    "walletAddress": "0x151bF7ccvvb2e6E32acC4362A8A5Bb26c5EAc38E",
  *    "reason": "user_sign_up",
  *    "userHandle": "username",
- *    "userName": "Firstname Lastname",
+ *    "userName": "Firstname L`astname",
  *    "amount":"100",
  *    "message":"Sign up reward",
  *    "transactionHash": "0x2d9c28626cc15b8aaassacd1c16a66886769a381b53be247f0518a55c0d5a334",
