@@ -390,4 +390,58 @@ router.get("/rewards", telegramHashIsValid, async (req, res) => {
   }
 });
 
+/**
+ * GET /v1/telegram/user/photo
+ *
+ * @summary Get telegram user public profile photo
+ * @description Gets telegram user public profile photo from Telegram API
+ * @tags Telegram
+ * @security BearerAuth
+ * @param {object} request.query.username - Contact username
+ * @return {object} 200 - Success response with photo as base64 url string
+ * @return {object} 404 - Error response if operation not found
+ * @example response - 200 - Success response example
+ * {
+ *   "photo": "data:image/png;base64,asdfghjklqwertyuiopzxcvbnm"
+ * }
+ */
+router.get("/user/photo", telegramHashIsValid, async (req, res) => {
+  try {
+    const username = req.query.username;
+
+    if (!username) {
+      return res.status(401).send({ msg: "Username is required" });
+    }
+    const user = getUser(req);
+    if (!user?.id) {
+      return res.status(401).send({ msg: "Invalid user" });
+    }
+    const db = await Database.getInstance(req);
+    const userDoc = await db
+      .collection("users")
+      .findOne({ userTelegramID: user.id.toString() });
+    const session = userDoc.telegramSession;
+    if (!session) {
+      return res.status(200).json([]);
+    }
+    const client = TGClient(new StringSession(session));
+    await client.connect();
+
+    if (!client.connected) {
+      return res.status(200).json({ photo: "" });
+    }
+
+    const photo = await client.downloadProfilePhoto(username);
+
+    return res.status(200).json({
+      photo: `data:image/png;base64,${btoa(
+        String.fromCharCode(...new Uint8Array(photo))
+      )}`,
+    });
+  } catch (error) {
+    console.error("Error getting user photo", error);
+    return res.status(500).send({ msg: "An error occurred", error });
+  }
+});
+
 export default router;
