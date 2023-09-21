@@ -1,11 +1,8 @@
-import { Database } from "../db/conn.js";
+import {Database} from "../db/conn.js";
 import fs from "fs";
 import csv from "csv-parser";
 import web3 from "web3";
-import {
-  REWARDS_COLLECTION,
-  TRANSFERS_COLLECTION,
-} from "../utils/constants.js";
+import {REWARDS_COLLECTION, TRANSFERS_COLLECTION} from "../utils/constants.js";
 
 // Example usage of the functions:
 // removeDuplicateTransfers();
@@ -19,7 +16,7 @@ async function removeDuplicateTransfers() {
       {
         $group: {
           _id: "$transactionHash",
-          firstInstance: { $first: "$_id" },
+          firstInstance: {$first: "$_id"},
         },
       },
     ];
@@ -34,7 +31,7 @@ async function removeDuplicateTransfers() {
 
     // Delete all documents that are not in the idsToKeep array
     const deleteResult = await collectionTransfers.deleteMany({
-      _id: { $nin: idsToKeep },
+      _id: {$nin: idsToKeep},
     });
 
     console.log(`Deleted ${deleteResult.deletedCount} duplicate transfers.`);
@@ -72,7 +69,7 @@ async function transfersCleanup(fileName) {
 
       const transfersInDb = await collection
         .find({
-          dateAdded: { $lte: latestTimestamp },
+          dateAdded: {$lte: latestTimestamp},
         })
         .toArray();
 
@@ -84,7 +81,7 @@ async function transfersCleanup(fileName) {
         console.log("All transfers in database match the transfers in CSV.");
       } else {
         const deleteResult = await collection.deleteMany({
-          transactionHash: { $in: hashesToDelete },
+          transactionHash: {$in: hashesToDelete},
         });
         console.log(
           `${deleteResult.deletedCount} incomplete transfers deleted.`
@@ -157,8 +154,8 @@ async function updateTransfersInformations() {
       // Create an update operation and add it to the bulk write array
       const updateOperation = {
         updateOne: {
-          filter: { _id: transfer._id },
-          update: { $set: transfer },
+          filter: {_id: transfer._id},
+          update: {$set: transfer},
         },
       };
 
@@ -223,3 +220,50 @@ async function removeRewardFromTransfers() {
     process.exit(0);
   }
 }
+
+/**
+ * Usage: checkMissingTransfers(filePath)
+ * Description: This function processes transfer data from a CSV file and identifies the transfers in the database that aren't present in the CSV, excluding a specified address.
+ * - filePath: The path to the CSV file containing transfer data.
+ * Example: checkMissingTransfers("transfersData.csv");
+ */
+async function checkMissingTransfers(fileName) {
+  const db = await Database.getInstance();
+  const collection = db.collection("transfers");
+  const hashesInCsv = new Set();
+  const excludeAddress = process.env.SOURCE_WALLET_ADDRESS;
+
+  fs.createReadStream(fileName)
+    .pipe(csv())
+    .on("data", (row) => {
+      if (web3.utils.toChecksumAddress(row.from) !== excludeAddress) {
+        hashesInCsv.add(row.hash);
+      }
+    })
+    .on("end", async () => {
+      const transfersHashesInDb = await collection.distinct("transactionHash");
+
+      const hashesNotInDb = [...hashesInCsv].filter(
+        (hash) => !transfersHashesInDb.includes(hash)
+      );
+
+      if (hashesNotInDb.length === 0) {
+        console.log(
+          "All transfers in CSV are present in the MongoDB collection."
+        );
+      } else {
+        console.log(
+          "The following transaction hashes from the CSV aren't present in MongoDB transfers collection:"
+        );
+        console.log(hashesNotInDb.join("\n"));
+        console.log(`Total Missing: ${hashesNotInDb.length}`);
+      }
+      process.exit(0);
+    })
+    .on("error", (error) => {
+      console.error("Error during CSV parsing:", error);
+      process.exit(1);
+    });
+}
+
+checkMissingTransfers("g1.csv");
