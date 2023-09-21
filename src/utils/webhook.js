@@ -10,6 +10,8 @@ import {
   sendTokens,
 } from "./patchwallet.js";
 import { addIdentitySegment, addTrackSegment } from "./segment.js";
+import axios from "axios";
+import "dotenv/config";
 
 /**
  * Handles a new user registration event.
@@ -47,6 +49,15 @@ export const handleNewUser = async (params) => {
 
     await addIdentitySegment({
       ...params,
+      patchwallet: patchwallet,
+      dateAdded: dateAdded,
+    });
+
+    await axios.post(process.env.FLOWXO_NEW_USER_WEBHOOK, {
+      userTelegramID: params.userTelegramID,
+      responsePath: params.responsePath,
+      userHandle: params.userHandle,
+      userName: params.userName,
       patchwallet: patchwallet,
       dateAdded: dateAdded,
     });
@@ -107,6 +118,8 @@ export const handleNewSignUpReward = async (params) => {
     );
 
     if (txReward.data.txHash) {
+      const dateAdded = new Date();
+
       // Add the reward to the "rewards" collection
       await db.collection(REWARDS_TEST_COLLECTION).insertOne({
         userTelegramID: params.userTelegramID,
@@ -118,12 +131,10 @@ export const handleNewSignUpReward = async (params) => {
         amount: "100",
         message: "Sign up reward",
         transactionHash: txReward.data.txHash,
-        dateAdded: new Date(),
+        dateAdded: dateAdded,
       });
 
       console.log(`[${params.userTelegramID}] signup reward added.`);
-
-      const dateAdded = new Date();
 
       // The user doesn't exist, add him to the "users" collection
       await db.collection(USERS_TEST_COLLECTION).insertOne({
@@ -137,6 +148,19 @@ export const handleNewSignUpReward = async (params) => {
       await addIdentitySegment({
         ...params,
         patchwallet: rewardWallet,
+        dateAdded: dateAdded,
+      });
+
+      await axios.post(process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK, {
+        userTelegramID: params.userTelegramID,
+        responsePath: params.responsePath,
+        walletAddress: rewardWallet,
+        reason: "user_sign_up",
+        userHandle: params.userHandle,
+        userName: params.userName,
+        amount: "100",
+        message: "Sign up reward",
+        transactionHash: txReward.data.txHash,
         dateAdded: dateAdded,
       });
 
@@ -203,6 +227,8 @@ export const handleNewReferralReward = async (params) => {
         );
 
         if (txReward.data.txHash) {
+          const dateAdded = new Date();
+
           // Add the reward to the "rewards" collection
           await db.collection(REWARDS_TEST_COLLECTION).insertOne({
             userTelegramID: senderInformation.userTelegramID,
@@ -214,7 +240,25 @@ export const handleNewReferralReward = async (params) => {
             amount: "50",
             message: "Referral reward",
             transactionHash: txReward.data.txHash,
-            dateAdded: new Date(),
+            dateAdded: dateAdded,
+          });
+
+          await axios.post(process.env.FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK, {
+            newUserTgId: user.userTelegramID,
+            newUserResponsePath: user.responsePath,
+            newUserUserHandle: user.userHandle,
+            newUserUserName: user.userName,
+            newUserPatchwallet: user.patchwallet,
+            userTelegramID: senderInformation.userTelegramID,
+            responsePath: senderInformation.responsePath,
+            walletAddress: senderWallet,
+            reason: "2x_reward",
+            userHandle: senderInformation.userHandle,
+            userName: senderInformation.userName,
+            amount: "50",
+            message: "Referral reward",
+            transactionHash: txReward.data.txHash,
+            dateAdded: dateAdded,
           });
 
           console.log(
@@ -231,29 +275,6 @@ export const handleNewReferralReward = async (params) => {
       }
     }
 
-    if (processed) {
-      const dateAdded = new Date();
-      const patchwallet = await getPatchWalletAddressFromTgId(
-        params.userTelegramID
-      );
-
-      // The user doesn't exist, add him to the "users" collection
-      await db.collection(USERS_TEST_COLLECTION).insertOne({
-        userTelegramID: params.userTelegramID,
-        userHandle: params.userHandle,
-        userName: params.userName,
-        patchwallet: patchwallet,
-        dateAdded: dateAdded,
-      });
-
-      await addIdentitySegment({
-        ...params,
-        patchwallet: patchwallet,
-        dateAdded: dateAdded,
-      });
-
-      console.log(`[${params.userTelegramID}] user added to the database.`);
-    }
     return processed;
   } catch (error) {
     console.error("Error processing referral reward event:", error);
@@ -308,6 +329,22 @@ export const handleNewTransaction = async (params) => {
       await addTrackSegment({
         userTelegramID: params.senderTgId,
         TxId: tx.data.txHash.substring(1, 8),
+        senderTgId: params.senderTgId,
+        senderWallet: senderInformation.patchwallet,
+        senderName: senderInformation.userName,
+        recipientTgId: params.recipientTgId,
+        recipientWallet: recipientWallet,
+        tokenAmount: params.amount.toString(),
+        transactionHash: tx.data.txHash,
+        dateAdded: dateAdded,
+      });
+
+      await axios.post(process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK, {
+        senderResponsePath: senderInformation.responsePath,
+        TxId: tx.data.txHash.substring(1, 8),
+        chainId: "eip155:137",
+        tokenSymbol: "g1",
+        tokenAddress: process.env.G1_POLYGON_ADDRESS,
         senderTgId: params.senderTgId,
         senderWallet: senderInformation.patchwallet,
         senderName: senderInformation.userName,
