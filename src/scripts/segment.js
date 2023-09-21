@@ -1,8 +1,6 @@
 import {Database} from "../db/conn.js";
 import axios from "axios";
-
-const SEGMENT_API_ENDPOINT = "https://api.segment.io/v1/batch";
-const SEGMENT_WRITE_KEY = process.env.SEGMENT_WRITE_KEY;
+import {SEGMENT_API_ENDPOINT, SEGMENT_WRITE_KEY} from "../utils/constants.js";
 
 // Usage: sendUsersBatchRequest()
 // Description: Sends a batch request to the Segment API with user details.
