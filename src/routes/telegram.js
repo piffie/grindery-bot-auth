@@ -190,23 +190,23 @@ router.get("/contacts", telegramHashIsValid, async (req, res) => {
       })
     );
 
-    /*const usersArray = await db
+    const usersArray = await db
       .collection("users")
       .find({
         $or: contacts.users.map((user) => ({
           userTelegramID: user.id.toString(),
         })),
       })
-      .toArray();*/
+      .toArray();
 
     res.status(200).json(
       contacts.users.map((user) => ({
         ...user,
-        /*isGrinderyUser: usersArray.find(
+        isGrinderyUser: usersArray.find(
           (u) => u.userTelegramID === user.id.toString()
         )
           ? true
-          : false,*/
+          : false,
       }))
     );
   } catch (error) {
@@ -422,7 +422,7 @@ router.get("/user/photo", telegramHashIsValid, async (req, res) => {
       .findOne({ userTelegramID: user.id.toString() });
     const session = userDoc.telegramSession;
     if (!session) {
-      return res.status(200).json([]);
+      return res.status(200).json({ photo: "" });
     }
     const client = TGClient(new StringSession(session));
     await client.connect();
