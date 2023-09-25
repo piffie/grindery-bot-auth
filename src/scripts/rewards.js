@@ -1,10 +1,11 @@
-import {Database} from "../db/conn.js";
-import {getPatchWalletAccessToken, sendTokens} from "../utils/patchwallet.js";
-import {createObjectCsvWriter as createCsvWriter} from "csv-writer";
+import { Database } from "../db/conn.js";
+import { getPatchWalletAccessToken, sendTokens } from "../utils/patchwallet.js";
+import { createObjectCsvWriter as createCsvWriter } from "csv-writer";
 import fs from "fs";
 import csv from "csv-parser";
 import web3 from "web3";
-import {REWARDS_COLLECTION, USERS_COLLECTION} from "../utils/constants.js";
+import { REWARDS_COLLECTION, USERS_COLLECTION } from "../utils/constants.js";
+import { ObjectId } from "mongodb";
 
 /**
  * Distributes a sign-up reward of 100 Grindery One Tokens to users without previous rewards.
@@ -26,7 +27,9 @@ async function distributeSignupRewards() {
     let userCount = 0;
 
     // Load all rewards into memory for filtering
-    const allRewards = await rewardsCollection.find({amount: "100"}).toArray();
+    const allRewards = await rewardsCollection
+      .find({ amount: "100" })
+      .toArray();
 
     for (const user of allUsers) {
       userCount++;
@@ -113,7 +116,7 @@ export async function distributeReferralRewards() {
     // Export the users and rewards collections as arrays
     const allUsers = await db.collection("users").find({}).toArray();
     const allRewardsReferral = await rewardsCollection
-      .find({reason: "2x_reward"})
+      .find({ reason: "2x_reward" })
       .toArray();
     const allTransfers = await db.collection("transfers").find({}).toArray();
 
@@ -309,7 +312,7 @@ async function saveRewards(rewards) {
   // Step 4: Filter the users collection to match walletAddress values
   const userData = await db
     .collection(USERS_COLLECTION)
-    .find({patchwallet: {$in: walletAddresses}})
+    .find({ patchwallet: { $in: walletAddresses } })
     .toArray();
 
   // Step 5: Loop through each formatted missing reward and fill user data
@@ -396,8 +399,8 @@ async function updateRewardMessages() {
     if (updatedMessage) {
       bulkUpdateOperations.push({
         updateOne: {
-          filter: {_id: reward._id},
-          update: {$set: {message: updatedMessage}},
+          filter: { _id: reward._id },
+          update: { $set: { message: updatedMessage } },
         },
       });
 
@@ -443,7 +446,7 @@ async function rewardsCleanup(fileName) {
 
       const rewardsInDb = await collection
         .find({
-          dateAdded: {$lte: latestTimestamp},
+          dateAdded: { $lte: latestTimestamp },
         })
         .toArray();
 
@@ -455,7 +458,7 @@ async function rewardsCleanup(fileName) {
         console.log("All rewards in database match the rewards in CSV.");
       } else {
         const deleteResult = await collection.deleteMany({
-          transactionHash: {$in: hashesToDelete},
+          transactionHash: { $in: hashesToDelete },
         });
         console.log(`${deleteResult.deletedCount} incomplete rewards deleted.`);
       }
@@ -511,4 +514,42 @@ async function checkMissingRewards(fileName) {
     });
 }
 
-checkMissingRewards("rewards.csv");
+async function filterAndRemoveInvalidRewards() {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+    const rewardsCollection = db.collection("rewards");
+
+    // Find rewards documents where transactionHash doesn't start with "0x"
+    const invalidRewards = await rewardsCollection
+      .find({
+        transactionHash: { $not: /^0x/ },
+      })
+      .toArray();
+
+    if (invalidRewards.length > 0) {
+      console.log(`${invalidRewards.length} invalid rewards found.`);
+
+      // Collect the IDs of invalid rewards to delete in a batch
+      const invalidRewardIds = invalidRewards.map((reward) => reward._id);
+
+      // Use bulkWrite to delete invalid rewards in a batch
+      const deleteOperations = invalidRewardIds.map((id) => ({
+        deleteOne: {
+          filter: { _id: new ObjectId(id) },
+        },
+      }));
+
+      const result = await rewardsCollection.bulkWrite(deleteOperations);
+
+      console.log(`${result.deletedCount} invalid rewards have been removed.`);
+    } else {
+      console.log("No invalid rewards found.");
+    }
+  } catch (error) {
+    console.error("An error occurred:", error);
+  } finally {
+    // Exit the script
+    process.exit(0);
+  }
+}
