@@ -199,11 +199,21 @@ router.get("/contacts", telegramHashIsValid, async (req, res) => {
       })
       .toArray();
 
+    const transfers = await db
+      .collection("transfers")
+      .find({ senderTgId: user.id.toString() })
+      .toArray();
+
     res.status(200).json(
       contacts.users.map((user) => ({
         ...user,
         isGrinderyUser: usersArray.find(
           (u) => u.userTelegramID === user.id.toString()
+        )
+          ? true
+          : false,
+        isInvited: transfers.find(
+          (transfer) => transfer.recipientTgId === user.id.toString()
         )
           ? true
           : false,
