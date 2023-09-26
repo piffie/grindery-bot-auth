@@ -2,6 +2,7 @@ import { Database } from "../db/conn.js";
 import {
   REWARDS_TEST_COLLECTION,
   TRANSFERS_TEST_COLLECTION,
+  USERS_COLLECTION,
   USERS_TEST_COLLECTION,
 } from "./constants.js";
 import {
@@ -116,15 +117,6 @@ export const handleSignUpReward = async (
       });
 
       console.log(`[${userTelegramID}] signup reward added.`);
-
-      await addIdentitySegment({
-        responsePath: responsePath,
-        userTelegramID: userTelegramID,
-        userHandle: userHandle,
-        userName: userName,
-        patchwallet: rewardWallet,
-        dateAdded: dateAdded,
-      });
 
       await axios.post(process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK, {
         userTelegramID: userTelegramID,
@@ -269,6 +261,23 @@ export const handleLinkReward = async (
       return true;
     }
 
+    if (
+      (await db.collection(USERS_TEST_COLLECTION).findOne({
+        userTelegramID: userTelegramID,
+      })) ||
+      (await db.collection(REWARDS_TEST_COLLECTION).findOne({
+        sponsoredUserTelegramID: userTelegramID,
+        reason: "referral_link",
+      }))
+    ) {
+      // The user has already received a referral link reward, stop processing
+      console.log(
+        `[${userTelegramID}] user already received referral link reward.`
+      );
+
+      return true;
+    }
+
     const rewardWallet =
       referent.patchwallet ??
       (await getPatchWalletAddressFromTgId(referentUserTelegramID));
@@ -295,22 +304,23 @@ export const handleLinkReward = async (
         message: "Referral link",
         transactionHash: txReward.data.txHash,
         dateAdded: dateAdded,
+        sponsoredUserTelegramID: userTelegramID,
       });
 
       console.log(`[${referentUserTelegramID}] referral link reward added.`);
 
       await axios.post(process.env.FLOWXO_NEW_LINK_REWARD_WEBHOOK, {
-        userTelegramID: userTelegramID,
-        referentUserTelegramID: referentUserTelegramID,
-        referentResponsePath: referent.responsePath,
-        referentWalletAddress: rewardWallet,
+        userTelegramID: referentUserTelegramID,
+        responsePath: referent.responsePath,
+        walletAddress: rewardWallet,
         reason: "referral_link",
-        referentUserHandle: referent.userHandle,
-        referentUserName: referent.userName,
+        userHandle: referent.userHandle,
+        userName: referent.userName,
         amount: "10",
         message: "Referral link",
         transactionHash: txReward.data.txHash,
         dateAdded: dateAdded,
+        sponsoredUserTelegramID: userTelegramID,
       });
 
       return true;

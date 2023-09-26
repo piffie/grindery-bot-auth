@@ -46,12 +46,6 @@ describe("handleSignUpReward function", async function () {
           });
         }
 
-        if (url == "https://api.segment.io/v1/identify") {
-          return Promise.resolve({
-            result: "success",
-          });
-        }
-
         if (url == process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK) {
           return Promise.resolve({
             result: "success",
@@ -80,6 +74,28 @@ describe("handleSignUpReward function", async function () {
         mockWallet
       )
     ).to.be.true;
+  });
+
+  it("Should not send tokens if user already exists in the database", async function () {
+    await collectionRewardsMock.insertOne({
+      userTelegramID: mockUserTelegramID,
+      reason: "user_sign_up",
+    });
+
+    await handleSignUpReward(
+      dbMock,
+      mockUserTelegramID,
+      mockResponsePath,
+      mockUserHandle,
+      mockUserName,
+      mockWallet
+    );
+
+    chai.expect(
+      axiosStub
+        .getCalls()
+        .find((e) => e.firstArg === "https://paymagicapi.com/v1/kernel/tx")
+    ).to.be.undefined;
   });
 
   it("Should not add new reward to the database if user already exists in the database", async function () {
@@ -143,7 +159,7 @@ describe("handleSignUpReward function", async function () {
 
     chai.expect(rewards.length).to.equal(1);
     chai.expect(rewards[0]).excluding(["_id", "dateAdded"]).to.deep.equal({
-      userTelegramID: "2114356934",
+      userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       walletAddress: mockWallet,
       reason: "user_sign_up",
@@ -155,41 +171,8 @@ describe("handleSignUpReward function", async function () {
     });
     chai
       .expect(rewards[0].dateAdded)
-      .to.be.greaterThan(new Date(Date.now() - 20000)); // 20 seconds
-    chai.expect(rewards[0].dateAdded).to.be.lessThan(new Date());
-  });
-
-  it("Should add user to Segment properly if the user is new", async function () {
-    await handleSignUpReward(
-      dbMock,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
-
-    const segmentCallArgs = axiosStub
-      .getCalls()
-      .find((e) => e.firstArg === "https://api.segment.io/v1/identify").args[1];
-
-    chai
-      .expect(segmentCallArgs)
-      .excluding(["timestamp"])
-      .to.deep.equal({
-        userId: mockUserTelegramID,
-        traits: {
-          responsePath: mockResponsePath,
-          userHandle: mockUserHandle,
-          userName: mockUserName,
-          patchwallet: mockWallet,
-        },
-      });
-
-    chai
-      .expect(segmentCallArgs.timestamp)
-      .to.be.greaterThan(new Date(Date.now() - 20000)); // 20 seconds
-    chai.expect(segmentCallArgs.timestamp).to.be.lessThan(new Date());
+      .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
+    chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
   });
 
   it("Should call FlowXO webhook properly if the user is new", async function () {
@@ -221,8 +204,8 @@ describe("handleSignUpReward function", async function () {
 
     chai
       .expect(FlowXOCallArgs.dateAdded)
-      .to.be.greaterThan(new Date(Date.now() - 20000)); // 20 seconds
-    chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThan(new Date());
+      .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
+    chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
   });
 
   it("Should return true if the user is new", async function () {
@@ -283,28 +266,6 @@ describe("handleSignUpReward function", async function () {
       mockWallet
     );
     chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
-  });
-
-  it("Should not call Segment if there is an error in the transaction", async function () {
-    axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
-      data: {
-        error: "service non available",
-      },
-    });
-    await handleSignUpReward(
-      dbMock,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
-
-    chai.expect(
-      axiosStub
-        .getCalls()
-        .find((e) => e.firstArg === "https://api.segment.io/v1/identify")
-    ).to.be.undefined;
   });
 
   it("Should not call FlowXO if there is an error in the transaction", async function () {

@@ -13,6 +13,7 @@ export const collectionTransfersMock = dbMock.collection(
 );
 
 export const mockUserTelegramID = "2114356934";
+export const mockUserTelegramID1 = "2114356931";
 export const mockResponsePath = "64d170d6dc5a2a45328ad6f6/c/43320456";
 export const mockUserHandle = "myUserHandle";
 export const mockUserName = "myUserName";
