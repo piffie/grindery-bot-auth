@@ -397,6 +397,7 @@ export const handleNewReward = async (params) => {
       userTelegramID: params.userTelegramID,
       userHandle: params.userHandle,
       userName: params.userName,
+      responsePath: params.responsePath,
       patchwallet: patchwallet,
       dateAdded: dateAdded,
     });
@@ -406,6 +407,8 @@ export const handleNewReward = async (params) => {
       patchwallet: patchwallet,
       dateAdded: dateAdded,
     });
+
+    return true;
   } catch (error) {
     console.error("Error processing reward event:", error);
   }

@@ -1,5 +1,4 @@
 import chai from "chai";
-import chaiHttp from "chai-http";
 import {
   collectionRewardsMock,
   dbMock,
@@ -18,7 +17,6 @@ import axios from "axios";
 import "dotenv/config";
 import chaiExclude from "chai-exclude";
 
-chai.use(chaiHttp);
 chai.use(chaiExclude);
 
 describe("handleSignUpReward function", async function () {

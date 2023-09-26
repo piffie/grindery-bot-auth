@@ -1,5 +1,4 @@
 import chai from "chai";
-import chaiHttp from "chai-http";
 import {
   collectionRewardsMock,
   dbMock,
@@ -15,17 +14,12 @@ import {
   collectionTransfersMock,
   mockTransactionHash1,
 } from "./utils.js";
-import {
-  handleLinkReward,
-  handleReferralReward,
-  handleSignUpReward,
-} from "../utils/webhook.js";
+import { handleReferralReward } from "../utils/webhook.js";
 import Sinon from "sinon";
 import axios from "axios";
 import "dotenv/config";
 import chaiExclude from "chai-exclude";
 
-chai.use(chaiHttp);
 chai.use(chaiExclude);
 
 describe("handleReferralReward function", function () {
