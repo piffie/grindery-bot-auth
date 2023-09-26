@@ -363,21 +363,24 @@ router.get("/user", telegramHashIsValid, async (req, res) => {
  * @security BearerAuth
  * @return {object} 200 - Success response with connection status
  * @example response - 200 - Success response example
- * [
- *  {
- *    "_id": "64f623c2ff2936zxcv07cbab",
- *    "userTelegramID": "1652aaa020",
- *    "responsePath": "64d170d6dggaaa00578ad6f6/c/1652061020",
- *    "walletAddress": "0x151bF7ccvvb2e6E32acC4362A8A5Bb26c5EAc38E",
- *    "reason": "user_sign_up",
- *    "userHandle": "username",
- *    "userName": "Firstname L`astname",
- *    "amount":"100",
- *    "message":"Sign up reward",
- *    "transactionHash": "0x2d9c28626cc15b8aaassacd1c16a66886769a381b53be247f0518a55c0d5a334",
- *    "dateAdded": "2021-01-01T00:00:00.000Z"
- *  }
- * ]
+ * {
+ *  "pending": [
+ *    {
+ *      "_id": "64f623c2ff2936zxcv07cbab",
+ *      "userTelegramID": "1652aaa020",
+ *      "responsePath": "64d170d6dggaaa00578ad6f6/c/1652061020",
+ *      "walletAddress": "0x151bF7ccvvb2e6E32acC4362A8A5Bb26c5EAc38E",
+ *      "reason": "user_sign_up",
+ *      "userHandle": "username",
+ *      "userName": "Firstname L`astname",
+ *      "amount":"100",
+ *      "message":"Sign up reward",
+ *      "transactionHash": "0x2d9c28626cc15b8aaassacd1c16a66886769a381b53be247f0518a55c0d5a334",
+ *      "dateAdded": "2021-01-01T00:00:00.000Z"
+ *    }
+ *  ],
+ *  "received": []
+ * }
  */
 router.get("/rewards", telegramHashIsValid, async (req, res) => {
   try {
@@ -386,14 +389,45 @@ router.get("/rewards", telegramHashIsValid, async (req, res) => {
       return res.status(401).send({ msg: "Invalid user" });
     }
     const db = await Database.getInstance(req);
-    return res.status(200).send(
-      await db
-        .collection("rewards")
-        .find({
-          userTelegramID: user.id.toString(),
-        })
-        .toArray()
-    );
+    const sent = await db
+      .collection("transfers")
+      .find({ senderTgId: user.id.toString() })
+      .toArray();
+    const users = await db
+      .collection("users")
+      .find({
+        $or: sent.map((col) => ({
+          userTelegramID: col.recipientTgId,
+        })),
+      })
+      .toArray();
+
+    const key = "recipientTgId";
+    const pending = [
+      ...new Map(
+        sent
+          .filter(
+            (col) =>
+              !users
+                .map((user) => user.userTelegramID)
+                .includes(col.recipientTgId)
+          )
+          .map((col) => ({ ...col, tokenAmount: "50" }))
+          .map((item) => [item[key], item])
+      ).values(),
+    ];
+
+    const received = await db
+      .collection("rewards")
+      .find({
+        userTelegramID: user.id.toString(),
+      })
+      .toArray();
+
+    return res.status(200).send({
+      pending,
+      received,
+    });
   } catch (error) {
     console.error("Error getting rewards", error);
     return res.status(500).send({ msg: "An error occurred", error });
