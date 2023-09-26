@@ -7,6 +7,7 @@ import TGClient from "../utils/telegramClient.js";
 import { telegramHashIsValid } from "../utils/auth.js";
 import { Database } from "../db/conn.js";
 import { getUser } from "../utils/telegram.js";
+import axios from "axios";
 
 const router = express.Router();
 const operations = {};
