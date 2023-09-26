@@ -8,6 +8,7 @@ import {
   sendTokens,
 } from "../utils/patchwallet.js";
 import {
+  handleNewLinkReward,
   handleNewReferralReward,
   handleNewSignUpReward,
   handleNewTransaction,
@@ -109,6 +110,10 @@ const listenForMessages = () => {
         // New referral rewards for previous senders
         case "new_referral_reward":
           processed = await handleNewReferralReward(messageData.params);
+          break;
+        // New link reward
+        case "new_link_reward":
+          processed = await handleNewLinkReward(messageData.params);
           break;
         default:
           processed = true;

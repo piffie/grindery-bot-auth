@@ -70,192 +70,12 @@ export const handleNewUser = async (params) => {
   return false;
 };
 
-const handleSignUpReward = async (
-  userTelegramID,
-  responsePath,
-  userHandle,
-  userName,
-  rewardWallet
-) => {
-  try {
-    // Check if the user has already received a signup reward
-    if (
-      await db.collection(REWARDS_TEST_COLLECTION).findOne({
-        userTelegramID: userTelegramID,
-        reason: "user_sign_up",
-      })
-    ) {
-      // The user has already received a signup reward, stop processing
-      console.log(`[${userTelegramID}] user already received signup reward.`);
-      return true;
-    }
-
-    const txReward = await sendTokens(
-      process.env.SOURCE_TG_ID,
-      rewardWallet,
-      "100",
-      await getPatchWalletAccessToken()
-    );
-
-    if (txReward.data.txHash) {
-      const dateAdded = new Date();
-
-      // Add the reward to the "rewards" collection
-      await db.collection(REWARDS_TEST_COLLECTION).insertOne({
-        userTelegramID: userTelegramID,
-        responsePath: responsePath,
-        walletAddress: rewardWallet,
-        reason: "user_sign_up",
-        userHandle: userHandle,
-        userName: userName,
-        amount: "100",
-        message: "Sign up reward",
-        transactionHash: txReward.data.txHash,
-        dateAdded: dateAdded,
-      });
-
-      console.log(`[${userTelegramID}] signup reward added.`);
-
-      await addIdentitySegment({
-        userTelegramID: userTelegramID,
-        userHandle: userHandle,
-        userName: userName,
-        patchwallet: rewardWallet,
-        dateAdded: dateAdded,
-      });
-
-      await axios.post(process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK, {
-        userTelegramID: userTelegramID,
-        responsePath: responsePath,
-        walletAddress: rewardWallet,
-        reason: "user_sign_up",
-        userHandle: userHandle,
-        userName: userName,
-        amount: "100",
-        message: "Sign up reward",
-        transactionHash: txReward.data.txHash,
-        dateAdded: dateAdded,
-      });
-
-      console.log(`[${userTelegramID}] user added to the database.`);
-      return true;
-    }
-  } catch (error) {
-    console.error("Error processing signup reward event:", error);
-  }
-  return false;
-};
-
-const handleReferralReward = async (
-  userTelegramID,
-  responsePath,
-  userHandle,
-  userName,
-  patchwallet
-) => {
-  try {
-    // Initialize a flag to track the success of all transactions
-    let processed = true;
-
-    // Retrieve all transfers where this user is the recipient
-    // For each transfer, award a reward to the sender
-    for (const transfer of await db
-      .collection(TRANSFERS_TEST_COLLECTION)
-      .find({
-        senderTgId: { $ne: userTelegramID },
-        recipientTgId: userTelegramID,
-      })
-      .toArray()) {
-      try {
-        if (
-          await db.collection(REWARDS_TEST_COLLECTION).findOne({
-            reason: "2x_reward",
-            parentTransactionHash: transfer.transactionHash,
-          })
-        ) {
-          continue;
-        }
-
-        // Retrieve sender information from the "users" collection
-        const senderInformation = await db
-          .collection(USERS_TEST_COLLECTION)
-          .findOne({ userTelegramID: transfer.senderTgId });
-
-        const senderWallet =
-          senderInformation.patchwallet ??
-          (await getPatchWalletAddressFromTgId(
-            senderInformation.userTelegramID
-          ));
-
-        const txReward = await sendTokens(
-          process.env.SOURCE_TG_ID,
-          senderWallet,
-          "50",
-          await getPatchWalletAccessToken()
-        );
-
-        if (txReward.data.txHash) {
-          const dateAdded = new Date();
-
-          // Add the reward to the "rewards" collection
-          await db.collection(REWARDS_TEST_COLLECTION).insertOne({
-            userTelegramID: senderInformation.userTelegramID,
-            responsePath: senderInformation.responsePath,
-            walletAddress: senderWallet,
-            reason: "2x_reward",
-            userHandle: senderInformation.userHandle,
-            userName: senderInformation.userName,
-            amount: "50",
-            message: "Referral reward",
-            transactionHash: txReward.data.txHash,
-            dateAdded: dateAdded,
-            parentTransactionHash: transfer.transactionHash,
-          });
-
-          await axios.post(process.env.FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK, {
-            newUserTgId: userTelegramID,
-            newUserResponsePath: responsePath,
-            newUserUserHandle: userHandle,
-            newUserUserName: userName,
-            newUserPatchwallet: patchwallet,
-            userTelegramID: senderInformation.userTelegramID,
-            responsePath: senderInformation.responsePath,
-            walletAddress: senderWallet,
-            reason: "2x_reward",
-            userHandle: senderInformation.userHandle,
-            userName: senderInformation.userName,
-            amount: "50",
-            message: "Referral reward",
-            transactionHash: txReward.data.txHash,
-            dateAdded: dateAdded,
-          });
-
-          console.log(
-            `[${senderInformation.userTelegramID}] referral reward added.`
-          );
-        } else {
-          // If a transaction fails, set the flag to false
-          processed = false;
-        }
-      } catch (error) {
-        console.error("Error during referral reward transaction:", error);
-        // If a transaction fails, set the flag to false
-        processed = false;
-      }
-    }
-    return processed;
-  } catch (error) {
-    console.error("Error processing referral reward event:", error);
-  }
-  return false;
-};
-
 /**
  * Handles a new sign-up reward event.
  * @param {object} params - Sign-up reward parameters.
  * @returns {Promise<boolean>} Returns a Promise that resolves to true if the reward is successfully processed, false otherwise.
  */
-export const handleNewReward = async (params) => {
+export const handleNewSignUpReward = async (params) => {
   try {
     const db = await Database.getInstance();
 
@@ -270,35 +90,85 @@ export const handleNewReward = async (params) => {
       return true;
     }
 
-    const patchwallet = await getPatchWalletAddressFromTgId(
+    // Check if the user has already received a signup reward
+    const userSignupReward = await db
+      .collection(REWARDS_TEST_COLLECTION)
+      .findOne({
+        userTelegramID: params.userTelegramID,
+        reason: "user_sign_up",
+      });
+
+    if (userSignupReward) {
+      // The user has already received a signup reward, stop processing
+      console.log(
+        `[${userSignupReward.userTelegramID}] user already received signup reward.`
+      );
+      return true;
+    }
+
+    const rewardWallet = await getPatchWalletAddressFromTgId(
       params.userTelegramID
     );
 
-    const signupReward = await handleSignUpReward(
-      params.userTelegramID,
-      params.responsePath,
-      params.userHandle,
-      params.userName,
-      patchwallet
+    const txReward = await sendTokens(
+      process.env.SOURCE_TG_ID,
+      rewardWallet,
+      "100",
+      await getPatchWalletAccessToken()
     );
 
-    if (!signupReward) {
-      return false;
-    }
+    if (txReward.data.txHash) {
+      const dateAdded = new Date();
 
-    const referralReward = await handleReferralReward(
-      params.userTelegramID,
-      params.responsePath,
-      params.userHandle,
-      params.userName,
-      patchwallet
-    );
+      // Add the reward to the "rewards" collection
+      await db.collection(REWARDS_TEST_COLLECTION).insertOne({
+        userTelegramID: params.userTelegramID,
+        responsePath: params.responsePath,
+        walletAddress: rewardWallet,
+        reason: "user_sign_up",
+        userHandle: params.userHandle,
+        userName: params.userName,
+        amount: "100",
+        message: "Sign up reward",
+        transactionHash: txReward.data.txHash,
+        dateAdded: dateAdded,
+      });
 
-    if (!referralReward) {
-      return false;
+      console.log(`[${params.userTelegramID}] signup reward added.`);
+
+      // The user doesn't exist, add him to the "users" collection
+      await db.collection(USERS_TEST_COLLECTION).insertOne({
+        userTelegramID: params.userTelegramID,
+        userHandle: params.userHandle,
+        userName: params.userName,
+        patchwallet: rewardWallet,
+        dateAdded: dateAdded,
+      });
+
+      await addIdentitySegment({
+        ...params,
+        patchwallet: rewardWallet,
+        dateAdded: dateAdded,
+      });
+
+      await axios.post(process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK, {
+        userTelegramID: params.userTelegramID,
+        responsePath: params.responsePath,
+        walletAddress: rewardWallet,
+        reason: "user_sign_up",
+        userHandle: params.userHandle,
+        userName: params.userName,
+        amount: "100",
+        message: "Sign up reward",
+        transactionHash: txReward.data.txHash,
+        dateAdded: dateAdded,
+      });
+
+      console.log(`[${params.userTelegramID}] user added to the database.`);
+      return true;
     }
   } catch (error) {
-    console.error("Error processing reward event:", error);
+    console.error("Error processing signup reward event:", error);
   }
   return false;
 };
