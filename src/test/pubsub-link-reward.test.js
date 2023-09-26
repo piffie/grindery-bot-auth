@@ -55,12 +55,6 @@ describe("handleLinkReward function", async function () {
           });
         }
 
-        if (url == "https://api.segment.io/v1/identify") {
-          return Promise.resolve({
-            result: "success",
-          });
-        }
-
         if (url == process.env.FLOWXO_NEW_LINK_REWARD_WEBHOOK) {
           return Promise.resolve({
             result: "success",
@@ -80,40 +74,6 @@ describe("handleLinkReward function", async function () {
   });
 
   it("Should not send tokens if referent is not a user", async function () {
-    await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
-
-    chai.expect(
-      axiosStub
-        .getCalls()
-        .find((e) => e.firstArg === "https://paymagicapi.com/v1/kernel/tx")
-    ).to.be.undefined;
-  });
-
-  it("Should return true if user is already a user", async function () {
-    await collectionUsersMock.insertMany([
-      {
-        userTelegramID: mockUserTelegramID,
-      },
-      {
-        userTelegramID: mockUserTelegramID1,
-      },
-    ]);
-
-    chai.expect(
-      await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1)
-    ).to.be.true;
-  });
-
-  it("Should not send tokens if user is already a user", async function () {
-    await collectionUsersMock.insertMany([
-      {
-        userTelegramID: mockUserTelegramID,
-      },
-      {
-        userTelegramID: mockUserTelegramID1,
-      },
-    ]);
-
     await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
 
     chai.expect(

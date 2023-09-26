@@ -223,6 +223,7 @@ export const handleReferralReward = async (
             message: "Referral reward",
             transactionHash: txReward.data.txHash,
             dateAdded: dateAdded,
+            parentTransactionHash: transfer.transactionHash,
           });
 
           console.log(
@@ -262,17 +263,14 @@ export const handleLinkReward = async (
     }
 
     if (
-      (await db.collection(USERS_TEST_COLLECTION).findOne({
-        userTelegramID: userTelegramID,
-      })) ||
-      (await db.collection(REWARDS_TEST_COLLECTION).findOne({
+      await db.collection(REWARDS_TEST_COLLECTION).findOne({
         sponsoredUserTelegramID: userTelegramID,
         reason: "referral_link",
-      }))
+      })
     ) {
       // The user has already received a referral link reward, stop processing
       console.log(
-        `[${userTelegramID}] user already received referral link reward.`
+        `[${userTelegramID}] already sponsored another user for a referral link reward.`
       );
 
       return true;

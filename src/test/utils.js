@@ -22,3 +22,5 @@ export const mockAccessToken =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 export const mockTransactionHash =
   "0xd7ca91c2ed1c33fc97366861487e731f0eacbec2bdb76cd09b34679e6cade9b3";
+export const mockTransactionHash1 =
+  "0x93c0ca80f2171b05b68531d176183efcbad940265be5e21b1c12d6f321bd44b9";
