@@ -506,12 +506,14 @@ router.get("/user/photo", telegramHashIsValid, async (req, res) => {
  * }
  * @example response - 200 - Success response example
  * {
- *   "session": "session-string",
- *   "status": "code_received"
+ *   "success": true,
+ *   "messageId": "some-uuid"
  * }
- * @example response - 404 - Error response example
+ *
+ * @example response - 500 - Error response example
  * {
- *   "error": "Operation not found"
+ *   "success": false,
+ *   "error": "error message"
  * }
  */
 router.post("/send", telegramHashIsValid, async (req, res) => {
@@ -549,7 +551,7 @@ router.post("/send", telegramHashIsValid, async (req, res) => {
     return res.status(200).json({ success: res.data?.success || false });
   } catch (error) {
     console.error("Error sending transaction", error);
-    return res.status(500).send({ msg: "An error occurred", error });
+    return res.status(500).send({ success: false, error: "An error occurred" });
   }
 });
 
