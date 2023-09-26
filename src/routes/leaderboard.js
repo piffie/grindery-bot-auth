@@ -1,6 +1,6 @@
-import express from "express";
-import {Database} from "../db/conn.js";
-import {authenticateApiKey} from "../utils/auth.js";
+import express from 'express';
+import { Database } from '../db/conn.js';
+import { authenticateApiKey } from '../utils/auth.js';
 
 const router = express.Router();
 
@@ -30,8 +30,8 @@ const router = express.Router();
  *   "error": "Server error description"
  * }
  */
-router.get("/tx-sent", async (req, res) => {
-  const {days, topX, limit = 10, skip = 0} = req.query;
+router.get('/tx-sent', async (req, res) => {
+  const { days, topX, limit = 10, skip = 0 } = req.query;
 
   try {
     const db = await Database.getInstance(req);
@@ -39,7 +39,7 @@ router.get("/tx-sent", async (req, res) => {
     let dateFilter = {};
 
     if (topX && isNaN(parseInt(topX))) {
-      return res.status(400).send({msg: "Invalid value for topX."});
+      return res.status(400).send({ msg: 'Invalid value for topX.' });
     }
 
     if (days && !isNaN(days)) {
@@ -51,25 +51,25 @@ router.get("/tx-sent", async (req, res) => {
     }
 
     const pipeline = [
-      {$match: dateFilter},
-      {$group: {_id: "$senderTgId", count: {$sum: 1}}},
-      {$sort: {count: -1}},
-      {$skip: parseInt(skip)},
-      {$limit: topX ? parseInt(topX) : parseInt(limit)},
+      { $match: dateFilter },
+      { $group: { _id: '$senderTgId', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $skip: parseInt(skip) },
+      { $limit: topX ? parseInt(topX) : parseInt(limit) },
     ];
 
     if (topX && !isNaN(topX)) {
-      pipeline.push({$limit: parseInt(topX)});
+      pipeline.push({ $limit: parseInt(topX) });
     }
 
     const results = await db
-      .collection("transfers")
+      .collection('transfers')
       .aggregate(pipeline)
       .toArray();
 
     return res.status(200).send(results);
   } catch (error) {
-    return res.status(500).send({msg: "An error occurred", error});
+    return res.status(500).send({ msg: 'An error occurred', error });
   }
 });
 
@@ -99,8 +99,8 @@ router.get("/tx-sent", async (req, res) => {
  *   "error": "Server error description"
  * }
  */
-router.get("/tokensent", authenticateApiKey, async (req, res) => {
-  const {days, limit = 10, skip = 0, topX} = req.query;
+router.get('/tokensent', authenticateApiKey, async (req, res) => {
+  const { days, limit = 10, skip = 0, topX } = req.query;
 
   try {
     const db = await Database.getInstance(req);
@@ -108,7 +108,7 @@ router.get("/tokensent", authenticateApiKey, async (req, res) => {
     let dateFilter = {};
 
     if (topX && isNaN(parseInt(topX))) {
-      return res.status(400).send({msg: "Invalid value for topX."});
+      return res.status(400).send({ msg: 'Invalid value for topX.' });
     }
 
     if (days && !isNaN(days)) {
@@ -120,27 +120,27 @@ router.get("/tokensent", authenticateApiKey, async (req, res) => {
     }
 
     const pipeline = [
-      {$match: dateFilter},
+      { $match: dateFilter },
       {
         $group: {
-          _id: "$senderTgId",
-          totalTokens: {$sum: {$toDecimal: "$tokenAmount"}},
+          _id: '$senderTgId',
+          totalTokens: { $sum: { $toDecimal: '$tokenAmount' } },
         },
       },
-      {$sort: {totalTokens: -1}},
-      {$skip: parseInt(skip)},
-      {$limit: topX ? parseInt(topX) : parseInt(limit)},
+      { $sort: { totalTokens: -1 } },
+      { $skip: parseInt(skip) },
+      { $limit: topX ? parseInt(topX) : parseInt(limit) },
     ];
 
     const results = await db
-      .collection("transfers")
+      .collection('transfers')
       .aggregate(pipeline)
       .toArray();
 
     return res.status(200).send(results);
   } catch (error) {
     console.log(error);
-    return res.status(500).send({msg: "An error occurred", error});
+    return res.status(500).send({ msg: 'An error occurred', error });
   }
 });
 
@@ -172,13 +172,13 @@ router.get("/tokensent", authenticateApiKey, async (req, res) => {
  *   "error": "Server error description"
  * }
  */
-router.get("/rewards", authenticateApiKey, async (req, res) => {
-  const {days, skip = 0, limit = 10, topX} = req.query;
+router.get('/rewards', authenticateApiKey, async (req, res) => {
+  const { days, skip = 0, limit = 10, topX } = req.query;
 
   let dateFilter = {};
 
   if (topX && isNaN(parseInt(topX))) {
-    return res.status(400).send({msg: "Invalid value for topX."});
+    return res.status(400).send({ msg: 'Invalid value for topX.' });
   }
 
   if (days && !isNaN(days)) {
@@ -192,25 +192,25 @@ router.get("/rewards", authenticateApiKey, async (req, res) => {
   try {
     const db = await Database.getInstance(req);
     const pipeline = [
-      {$match: dateFilter},
+      { $match: dateFilter },
       {
         $group: {
-          _id: "$userTelegramID",
-          totalRewards: {$sum: {$toDecimal: "$amount"}},
+          _id: '$userTelegramID',
+          totalRewards: { $sum: { $toDecimal: '$amount' } },
         },
       },
-      {$sort: {totalRewards: -1}},
-      {$skip: parseInt(skip)},
-      {$limit: topX ? parseInt(topX) : parseInt(limit)},
+      { $sort: { totalRewards: -1 } },
+      { $skip: parseInt(skip) },
+      { $limit: topX ? parseInt(topX) : parseInt(limit) },
     ];
 
     const leaderboard = await db
-      .collection("rewards")
+      .collection('rewards')
       .aggregate(pipeline)
       .toArray();
     return res.status(200).send(leaderboard);
   } catch (error) {
-    return res.status(500).send({msg: "An error occurred", error});
+    return res.status(500).send({ msg: 'An error occurred', error });
   }
 });
 

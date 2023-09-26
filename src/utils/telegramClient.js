@@ -1,5 +1,5 @@
-import {TelegramClient} from "telegram";
-import "dotenv/config";
+import { TelegramClient } from 'telegram';
+import 'dotenv/config';
 
 const TGClient = (session) => {
   return new TelegramClient(

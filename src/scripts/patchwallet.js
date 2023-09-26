@@ -1,5 +1,5 @@
-import { Database } from "../db/conn.js";
-import { getPatchWalletAddressFromTgId } from "../utils/patchwallet.js";
+import { Database } from '../db/conn.js';
+import { getPatchWalletAddressFromTgId } from '../utils/patchwallet.js';
 
 // Usage: updatePatchWalletAddresses()
 // Description: This function updates the PatchWallet addresses for users in the database.
@@ -9,11 +9,11 @@ async function updatePatchWalletAddresses() {
   let db;
   try {
     db = await Database.getInstance();
-    const collectionUsers = db.collection("users");
+    const collectionUsers = db.collection('users');
 
     for (const user of await collectionUsers
       .find({
-        $or: [{ patchwallet: "" }, { patchwallet: { $not: /^0x/ } }],
+        $or: [{ patchwallet: '' }, { patchwallet: { $not: /^0x/ } }],
       })
       .toArray()) {
       try {
@@ -38,7 +38,7 @@ async function updatePatchWalletAddresses() {
       }
     }
 
-    console.log("Update completed.");
+    console.log('Update completed.');
   } catch (error) {
     console.error(`An error occurred: ${error.message}`);
   } finally {

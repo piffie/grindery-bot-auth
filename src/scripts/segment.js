@@ -1,6 +1,6 @@
-import {Database} from "../db/conn.js";
-import axios from "axios";
-import {SEGMENT_API_ENDPOINT, SEGMENT_WRITE_KEY} from "../utils/constants.js";
+import { Database } from '../db/conn.js';
+import axios from 'axios';
+import { SEGMENT_API_ENDPOINT, SEGMENT_WRITE_KEY } from '../utils/constants.js';
 
 // Usage: sendUsersBatchRequest()
 // Description: Sends a batch request to the Segment API with user details.
@@ -10,13 +10,13 @@ import {SEGMENT_API_ENDPOINT, SEGMENT_WRITE_KEY} from "../utils/constants.js";
 // Example: sendUsersBatchRequest();
 async function sendUsersBatchRequest() {
   const db = await Database.getInstance();
-  const usersCollection = db.collection("users");
+  const usersCollection = db.collection('users');
 
   try {
     const users = await usersCollection.find().toArray();
 
     const batch = users.map((user) => ({
-      type: "identify",
+      type: 'identify',
       userId: user.userTelegramID,
       traits: {
         userName: user.userName,
@@ -34,16 +34,16 @@ async function sendUsersBatchRequest() {
     const config = {
       headers: {
         Authorization: `Bearer ${SEGMENT_WRITE_KEY}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     };
 
     const response = await axios.post(SEGMENT_API_ENDPOINT, payload, config);
-    console.log("Data sent successfully:", response.data);
+    console.log('Data sent successfully:', response.data);
   } catch (error) {
     console.log(error);
     console.error(
-      "Error sending batch request:",
+      'Error sending batch request:',
       error.response ? error.response.data : error.message
     );
   } finally {
@@ -59,15 +59,15 @@ async function sendUsersBatchRequest() {
 // Example: sendTransfersBatchRequest();
 async function sendTransfersBatchRequest() {
   const db = await Database.getInstance();
-  const transfersCollection = db.collection("transfers");
+  const transfersCollection = db.collection('transfers');
 
   try {
     const transfers = await transfersCollection.find().toArray();
 
     const batch = transfers.map((transfer) => ({
-      type: "track",
+      type: 'track',
       userId: transfer.senderTgId,
-      event: "Transfer",
+      event: 'Transfer',
       properties: {
         TxId: transfer.TxId,
         chainId: transfer.chainId,
@@ -91,15 +91,15 @@ async function sendTransfersBatchRequest() {
     const config = {
       headers: {
         Authorization: `Bearer ${SEGMENT_WRITE_KEY}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     };
 
     const response = await axios.post(SEGMENT_API_ENDPOINT, payload, config);
-    console.log("Data sent successfully:", response.data);
+    console.log('Data sent successfully:', response.data);
   } catch (error) {
     console.error(
-      "Error sending batch request:",
+      'Error sending batch request:',
       error.response ? error.response.data : error.message
     );
   } finally {

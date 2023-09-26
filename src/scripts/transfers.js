@@ -1,22 +1,25 @@
-import {Database} from "../db/conn.js";
-import fs from "fs";
-import csv from "csv-parser";
-import web3 from "web3";
-import {REWARDS_COLLECTION, TRANSFERS_COLLECTION} from "../utils/constants.js";
+import { Database } from '../db/conn.js';
+import fs from 'fs';
+import csv from 'csv-parser';
+import web3 from 'web3';
+import {
+  REWARDS_COLLECTION,
+  TRANSFERS_COLLECTION,
+} from '../utils/constants.js';
 
 // Example usage of the functions:
 // removeDuplicateTransfers();
 async function removeDuplicateTransfers() {
   try {
     const db = await Database.getInstance();
-    const collectionTransfers = db.collection("transfers");
+    const collectionTransfers = db.collection('transfers');
 
     // Aggregation pipeline to identify duplicates and keep the first instance
     const aggregationPipeline = [
       {
         $group: {
-          _id: "$transactionHash",
-          firstInstance: {$first: "$_id"},
+          _id: '$transactionHash',
+          firstInstance: { $first: '$_id' },
         },
       },
     ];
@@ -31,7 +34,7 @@ async function removeDuplicateTransfers() {
 
     // Delete all documents that are not in the idsToKeep array
     const deleteResult = await collectionTransfers.deleteMany({
-      _id: {$nin: idsToKeep},
+      _id: { $nin: idsToKeep },
     });
 
     console.log(`Deleted ${deleteResult.deletedCount} duplicate transfers.`);
@@ -48,28 +51,28 @@ async function removeDuplicateTransfers() {
 // Example: transfersCleanup("dune.csv");
 async function transfersCleanup(fileName) {
   const db = await Database.getInstance();
-  const collection = db.collection("transfers");
+  const collection = db.collection('transfers');
   const hashesInCsv = [];
   let latestTimestamp = null;
 
   fs.createReadStream(fileName)
     .pipe(csv())
-    .on("data", (row) => {
+    .on('data', (row) => {
       hashesInCsv.push(row.hash);
       const rowTimestamp = new Date(row.block_time);
       if (latestTimestamp === null || rowTimestamp > latestTimestamp) {
         latestTimestamp = rowTimestamp;
       }
     })
-    .on("end", async () => {
+    .on('end', async () => {
       if (latestTimestamp === null) {
-        console.log("No timestamp found in CSV.");
+        console.log('No timestamp found in CSV.');
         process.exit(1);
       }
 
       const transfersInDb = await collection
         .find({
-          dateAdded: {$lte: latestTimestamp},
+          dateAdded: { $lte: latestTimestamp },
         })
         .toArray();
 
@@ -78,21 +81,21 @@ async function transfersCleanup(fileName) {
         .map((transfer) => transfer.transactionHash);
 
       if (hashesToDelete.length === 0) {
-        console.log("All transfers in database match the transfers in CSV.");
+        console.log('All transfers in database match the transfers in CSV.');
       } else {
         const deleteResult = await collection.deleteMany({
-          transactionHash: {$in: hashesToDelete},
+          transactionHash: { $in: hashesToDelete },
         });
         console.log(
           `${deleteResult.deletedCount} incomplete transfers deleted.`
         );
       }
 
-      console.log("\n All tasks completed \n");
+      console.log('\n All tasks completed \n');
       process.exit(0);
     })
-    .on("error", (error) => {
-      console.log("\n Errors during CSV parsing \n");
+    .on('error', (error) => {
+      console.log('\n Errors during CSV parsing \n');
       process.exit(1);
     });
 }
@@ -103,10 +106,10 @@ async function updateTransfersInformations() {
     const db = await Database.getInstance();
 
     // Get the transfers collection
-    const transfersCollection = db.collection("transfers");
+    const transfersCollection = db.collection('transfers');
 
     // Get the users collection
-    const usersCollection = db.collection("users");
+    const usersCollection = db.collection('users');
 
     // Find all transfers in the collection
     const allTransfers = await transfersCollection.find({}).toArray();
@@ -154,8 +157,8 @@ async function updateTransfersInformations() {
       // Create an update operation and add it to the bulk write array
       const updateOperation = {
         updateOne: {
-          filter: {_id: transfer._id},
-          update: {$set: transfer},
+          filter: { _id: transfer._id },
+          update: { $set: transfer },
         },
       };
 
@@ -169,9 +172,9 @@ async function updateTransfersInformations() {
     // Perform bulk write operations
     await transfersCollection.bulkWrite(bulkWriteOperations);
 
-    console.log("All transfers have been updated.");
+    console.log('All transfers have been updated.');
   } catch (error) {
-    console.error("An error occurred:", error);
+    console.error('An error occurred:', error);
   } finally {
     process.exit(0);
   }
@@ -184,7 +187,7 @@ async function removeRewardFromTransfers() {
     const collectionRewards = db.collection(REWARDS_COLLECTION);
 
     // Get all transaction hashes from the rewards collection
-    const rewardHashes = await collectionRewards.distinct("transactionHash");
+    const rewardHashes = await collectionRewards.distinct('transactionHash');
 
     const allTransfers = await collectionTransfers.find({}).toArray();
     const totalTransfers = allTransfers.length;
@@ -229,19 +232,19 @@ async function removeRewardFromTransfers() {
  */
 async function checkMissingTransfers(fileName) {
   const db = await Database.getInstance();
-  const collection = db.collection("transfers");
+  const collection = db.collection('transfers');
   const hashesInCsv = new Set();
   const excludeAddress = process.env.SOURCE_WALLET_ADDRESS;
 
   fs.createReadStream(fileName)
     .pipe(csv())
-    .on("data", (row) => {
+    .on('data', (row) => {
       if (web3.utils.toChecksumAddress(row.from) !== excludeAddress) {
         hashesInCsv.add(row.hash);
       }
     })
-    .on("end", async () => {
-      const transfersHashesInDb = await collection.distinct("transactionHash");
+    .on('end', async () => {
+      const transfersHashesInDb = await collection.distinct('transactionHash');
 
       const hashesNotInDb = [...hashesInCsv].filter(
         (hash) => !transfersHashesInDb.includes(hash)
@@ -249,21 +252,21 @@ async function checkMissingTransfers(fileName) {
 
       if (hashesNotInDb.length === 0) {
         console.log(
-          "All transfers in CSV are present in the MongoDB collection."
+          'All transfers in CSV are present in the MongoDB collection.'
         );
       } else {
         console.log(
           "The following transaction hashes from the CSV aren't present in MongoDB transfers collection:"
         );
-        console.log(hashesNotInDb.join("\n"));
+        console.log(hashesNotInDb.join('\n'));
         console.log(`Total Missing: ${hashesNotInDb.length}`);
       }
       process.exit(0);
     })
-    .on("error", (error) => {
-      console.error("Error during CSV parsing:", error);
+    .on('error', (error) => {
+      console.error('Error during CSV parsing:', error);
       process.exit(1);
     });
 }
 
-checkMissingTransfers("g1.csv");
+checkMissingTransfers('g1.csv');

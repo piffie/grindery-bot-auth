@@ -1,4 +1,4 @@
-import { Database } from "../db/conn.js";
+import { Database } from '../db/conn.js';
 
 // Example usage of the functions:
 // removeDuplicateUsers();
@@ -12,7 +12,7 @@ async function removeDuplicateUsers(targetCollection, refId) {
       {
         $group: {
           _id: `$${refId}`,
-          firstInstance: { $first: "$_id" },
+          firstInstance: { $first: '$_id' },
         },
       },
     ];

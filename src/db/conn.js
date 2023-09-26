@@ -1,9 +1,9 @@
-import { MongoClient } from "mongodb";
-import * as dotenv from "dotenv";
+import { MongoClient } from 'mongodb';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-const connectionString = process.env.ATLAS_URI || "";
+const connectionString = process.env.ATLAS_URI || '';
 const client = new MongoClient(connectionString);
 
 export class Database {
@@ -18,7 +18,7 @@ export class Database {
         console.error(e);
       }
 
-      Database.instance = conn.db("grindery-bot");
+      Database.instance = conn.db('grindery-bot');
     }
     return Database.instance;
   }

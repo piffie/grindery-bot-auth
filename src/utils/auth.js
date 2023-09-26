@@ -1,16 +1,16 @@
-import axios from "axios";
-import jwt_decode from "jwt-decode";
+import axios from 'axios';
+import jwt_decode from 'jwt-decode';
 
 export const checkToken = async (token, workspaceKey) => {
   try {
     await axios.post(
-      "https://orchestrator.grindery.org",
+      'https://orchestrator.grindery.org',
       {
-        jsonrpc: "2.0",
-        method: "or_listWorkflows",
+        jsonrpc: '2.0',
+        method: 'or_listWorkflows',
         id: new Date(),
         params: {
-          ...(typeof workspaceKey !== "undefined" && { workspaceKey }),
+          ...(typeof workspaceKey !== 'undefined' && { workspaceKey }),
         },
       },
       {
@@ -23,7 +23,7 @@ export const checkToken = async (token, workspaceKey) => {
     throw new Error(
       (err && err.response && err.response.data && err.response.data.message) ||
         err.message ||
-        "Invalid token"
+        'Invalid token'
     );
   }
 };
@@ -31,11 +31,11 @@ export const checkToken = async (token, workspaceKey) => {
 export const isRequired = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
-    return res.status(403).json({ message: "No credentials sent" });
+    return res.status(403).json({ message: 'No credentials sent' });
   }
 
-  if (!authHeader.startsWith("Bearer ")) {
-    return res.status(403).json({ message: "Wrong authentication method" });
+  if (!authHeader.startsWith('Bearer ')) {
+    return res.status(403).json({ message: 'Wrong authentication method' });
   }
 
   const token = authHeader.substring(7, authHeader.length);
@@ -59,15 +59,15 @@ export const isRequired = async (req, res, next) => {
 };
 
 export const authenticateApiKey = (req, res, next) => {
-  const apiKey = req.headers["authorization"];
+  const apiKey = req.headers['authorization'];
   if (!apiKey) {
     return res.status(401).send({
-      msg: "Missing API key in headers",
+      msg: 'Missing API key in headers',
     });
   }
   if (apiKey !== `Bearer ${process.env.API_KEY}`) {
     return res.status(401).send({
-      msg: "Invalid API key",
+      msg: 'Invalid API key',
     });
   }
   next();

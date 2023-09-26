@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prettier:check": "prettier --check \"**/*.{js,json,md,ts,yml}\"",
+    "prettier:write": "prettier --write \"**/*.{js,json,md,ts,yml}\""
   },
   "author": "",
   "license": "ISC",
@@ -30,7 +32,8 @@
     "web3": "^1.7.4"
   },
   "devDependencies": {
-    "nodemon": "^2.0.21"
+    "nodemon": "^2.0.21",
+    "prettier": "2.8.4"
   },
   "engines": {
     "node": ">=16"

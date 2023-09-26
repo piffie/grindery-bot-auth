@@ -4,7 +4,7 @@ const createTelegramPromise = () => {
     resolve = _resolve;
     reject = _reject;
   });
-  return {resolve, reject, promise};
+  return { resolve, reject, promise };
 };
 
 export default createTelegramPromise;
