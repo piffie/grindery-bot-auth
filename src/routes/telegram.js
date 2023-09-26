@@ -488,4 +488,68 @@ router.get("/user/photo", telegramHashIsValid, async (req, res) => {
   }
 });
 
+/**
+ * POST /v1/telegram/send
+ *
+ * @summary Send transaction
+ * @description Send transaction to a contact from telegram webapp
+ * @tags Telegram
+ * @security BearerAuth
+ * @param {object} request.body - The request body containing the transaction details
+ * @return {object} 200 - Success response with session and status
+ * @return {object} 404 - Error response if operation not found
+ * @example request - Example request body
+ * {
+ *   "operationId": "some-uuid",
+ *   "code": "12345"
+ * }
+ * @example response - 200 - Success response example
+ * {
+ *   "session": "session-string",
+ *   "status": "code_received"
+ * }
+ * @example response - 404 - Error response example
+ * {
+ *   "error": "Operation not found"
+ * }
+ */
+router.post("/send", telegramHashIsValid, async (req, res) => {
+  const user = getUser(req);
+  if (!user?.id) {
+    return res.status(401).send({ msg: "Invalid user" });
+  }
+  if (!req.body.recipientTgId) {
+    return res.status(400).json({ error: "Recipient is required" });
+  }
+  if (!req.body.amount) {
+    return res.status(400).json({ error: "Amount is required" });
+  }
+  try {
+    const params = {
+      recipientTgId: req.body.recipientTgId,
+      amount: req.body.amount,
+      senderTgId: user.id.toString(),
+    };
+
+    const event = {
+      event: "new_transaction",
+      params,
+    };
+    const res = await axios.post(
+      `https://bot-auth-api-staging.grindery.org/v1/webhook`,
+      event,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return res.status(200).json({ success: res.data?.success || false });
+  } catch (error) {
+    console.error("Error sending transaction", error);
+    return res.status(500).send({ msg: "An error occurred", error });
+  }
+});
+
 export default router;
