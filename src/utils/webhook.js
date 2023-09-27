@@ -290,12 +290,19 @@ export const handleLinkReward = async (
       referent.patchwallet ??
       (await getPatchWalletAddressFromTgId(referentUserTelegramID));
 
-    const txReward = await sendTokens(
-      process.env.SOURCE_TG_ID,
-      rewardWallet,
-      "10",
-      await getPatchWalletAccessToken()
-    );
+    let txReward = undefined;
+
+    try {
+      txReward = await sendTokens(
+        process.env.SOURCE_TG_ID,
+        rewardWallet,
+        "10",
+        await getPatchWalletAccessToken()
+      );
+    } catch (error) {
+      console.error("Error processing PatchWallet token sending:", error);
+      return false;
+    }
 
     if (txReward.data.txHash) {
       const dateAdded = new Date();
@@ -333,10 +340,12 @@ export const handleLinkReward = async (
 
       return true;
     }
+
+    return false;
   } catch (error) {
     console.error("Error processing referral link reward event:", error);
   }
-  return false;
+  return true;
 };
 
 /**
