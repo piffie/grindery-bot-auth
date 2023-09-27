@@ -1,15 +1,8 @@
 import express from "express";
 import { PubSub } from "@google-cloud/pubsub";
 import { authenticateApiKey } from "../utils/auth.js";
-import { Database } from "../db/conn.js";
 import {
-  getPatchWalletAccessToken,
-  getPatchWalletAddressFromTgId,
-  sendTokens,
-} from "../utils/patchwallet.js";
-import {
-  handleNewReferralReward,
-  handleNewSignUpReward,
+  handleNewReward,
   handleNewTransaction,
   handleNewUser,
 } from "../utils/webhook.js";
@@ -103,12 +96,8 @@ const listenForMessages = () => {
           processed = await handleNewUser(messageData.params);
           break;
         // New reward has been issued to user
-        case "new_signup_reward":
-          processed = await handleNewSignUpReward(messageData.params);
-          break;
-        // New referral rewards for previous senders
-        case "new_referral_reward":
-          processed = await handleNewReferralReward(messageData.params);
+        case "new_reward":
+          processed = await handleNewReward(messageData.params);
           break;
         default:
           processed = true;
