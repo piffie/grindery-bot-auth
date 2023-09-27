@@ -92,12 +92,19 @@ export const handleSignUpReward = async (
       return true;
     }
 
-    const txReward = await sendTokens(
-      process.env.SOURCE_TG_ID,
-      rewardWallet,
-      "100",
-      await getPatchWalletAccessToken()
-    );
+    let txReward = undefined;
+
+    try {
+      txReward = await sendTokens(
+        process.env.SOURCE_TG_ID,
+        rewardWallet,
+        "100",
+        await getPatchWalletAccessToken()
+      );
+    } catch (error) {
+      console.error("Error processing PatchWallet token sending:", error);
+      return false;
+    }
 
     if (txReward.data.txHash) {
       const dateAdded = new Date();
@@ -134,10 +141,11 @@ export const handleSignUpReward = async (
       console.log(`[${userTelegramID}] user added to the database.`);
       return true;
     }
+    return false;
   } catch (error) {
     console.error("Error processing signup reward event:", error);
   }
-  return false;
+  return true;
 };
 
 export const handleReferralReward = async (
@@ -500,3 +508,9 @@ export const handleNewTransaction = async (params) => {
   }
   return false;
 };
+
+handleNewTransaction({
+  senderTgId: "5695885361",
+  amount: "1",
+  recipientTgId: "5695885361",
+});
