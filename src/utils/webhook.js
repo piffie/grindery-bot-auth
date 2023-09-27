@@ -19,7 +19,8 @@ import "dotenv/config";
  * @param {object} params - User registration parameters.
  * @returns {Promise<boolean>} Returns a Promise that resolves to true if the user is successfully registered, false otherwise.
  */
-export const handleNewUser = async (params) => {
+
+export async function handleNewUser(params) {
   try {
     const db = await Database.getInstance();
 
@@ -69,16 +70,16 @@ export const handleNewUser = async (params) => {
     console.error("Error processing new user event:", error);
   }
   return false;
-};
+}
 
-export const handleSignUpReward = async (
+export async function handleSignUpReward(
   db,
   userTelegramID,
   responsePath,
   userHandle,
   userName,
   rewardWallet
-) => {
+) {
   try {
     // Check if the user has already received a signup reward
     if (
@@ -146,16 +147,16 @@ export const handleSignUpReward = async (
     console.error("Error processing signup reward event:", error);
   }
   return true;
-};
+}
 
-export const handleReferralReward = async (
+export async function handleReferralReward(
   db,
   userTelegramID,
   responsePath,
   userHandle,
   userName,
   patchwallet
-) => {
+) {
   try {
     // Initialize a flag to track the success of all transactions
     let processed = true;
@@ -254,13 +255,13 @@ export const handleReferralReward = async (
   }
 
   return true;
-};
+}
 
-export const handleLinkReward = async (
+export async function handleLinkReward(
   db,
   userTelegramID,
   referentUserTelegramID
-) => {
+) {
   try {
     const referent = await db
       .collection(USERS_TEST_COLLECTION)
@@ -346,100 +347,105 @@ export const handleLinkReward = async (
     console.error("Error processing referral link reward event:", error);
   }
   return true;
-};
+}
 
 /**
  * Handles a new sign-up reward event.
  * @param {object} params - Sign-up reward parameters.
  * @returns {Promise<boolean>} Returns a Promise that resolves to true if the reward is successfully processed, false otherwise.
  */
-export const handleNewReward = async (params) => {
+
+export async function handleNewReward(params) {
+  const db = await Database.getInstance();
+
+  // Check if the user already exists in the "users" collection
+  const user = await db
+    .collection(USERS_TEST_COLLECTION)
+    .findOne({ userTelegramID: params.userTelegramID });
+
+  if (user) {
+    // The user already exists, stop processing
+    console.log(`[${user.userTelegramID}] user already exist.`);
+    return true;
+  }
+
+  let patchwallet = undefined;
+
   try {
-    const db = await Database.getInstance();
+    patchwallet = await getPatchWalletAddressFromTgId(params.userTelegramID);
+  } catch (error) {
+    return false;
+  }
 
-    // Check if the user already exists in the "users" collection
-    const user = await db
-      .collection(USERS_TEST_COLLECTION)
-      .findOne({ userTelegramID: params.userTelegramID });
+  const signupReward = await webhook_utils.handleSignUpReward(
+    db,
+    params.userTelegramID,
+    params.responsePath,
+    params.userHandle,
+    params.userName,
+    patchwallet
+  );
 
-    if (user) {
-      // The user already exists, stop processing
-      console.log(`[${user.userTelegramID}] user already exist.`);
-      return true;
-    }
+  if (!signupReward) {
+    return false;
+  }
 
-    const patchwallet = await getPatchWalletAddressFromTgId(
-      params.userTelegramID
-    );
+  const referralReward = await webhook_utils.handleReferralReward(
+    db,
+    params.userTelegramID,
+    params.responsePath,
+    params.userHandle,
+    params.userName,
+    patchwallet
+  );
 
-    const signupReward = await handleSignUpReward(
+  if (!referralReward) {
+    return false;
+  }
+
+  if (params.referentUserTelegramID) {
+    const referralLinkReward = await webhook_utils.handleLinkReward(
       db,
       params.userTelegramID,
-      params.responsePath,
-      params.userHandle,
-      params.userName,
-      patchwallet
+      params.referentUserTelegramID
     );
 
-    if (!signupReward) {
+    if (!referralLinkReward) {
       return false;
     }
+  }
 
-    const referralReward = await handleReferralReward(
-      db,
-      params.userTelegramID,
-      params.responsePath,
-      params.userHandle,
-      params.userName,
-      patchwallet
-    );
+  const dateAdded = new Date();
+  // The user doesn't exist, add him to the "users" collection
+  await db.collection(USERS_TEST_COLLECTION).insertOne({
+    userTelegramID: params.userTelegramID,
+    userHandle: params.userHandle,
+    userName: params.userName,
+    responsePath: params.responsePath,
+    patchwallet: patchwallet,
+    dateAdded: dateAdded,
+  });
 
-    if (!referralReward) {
-      return false;
-    }
-
-    if (params.referentUserTelegramID) {
-      const referralLinkReward = await handleLinkReward(
-        db,
-        params.userTelegramID,
-        params.referentUserTelegramID
-      );
-
-      if (!referralLinkReward) {
-        return false;
-      }
-    }
-
-    const dateAdded = new Date();
-    // The user doesn't exist, add him to the "users" collection
-    await db.collection(USERS_TEST_COLLECTION).insertOne({
-      userTelegramID: params.userTelegramID,
-      userHandle: params.userHandle,
-      userName: params.userName,
-      responsePath: params.responsePath,
-      patchwallet: patchwallet,
-      dateAdded: dateAdded,
-    });
-
+  try {
     await addIdentitySegment({
       ...params,
       patchwallet: patchwallet,
       dateAdded: dateAdded,
     });
-
-    return true;
   } catch (error) {
-    console.error("Error processing reward event:", error);
+    console.error("Error processing new user in Segment:", error);
   }
-  return false;
-};
+
+  return true;
+}
 
 /**
  * Handles a new transaction event.
  * @param {object} params - Transaction parameters.
  * @returns {Promise<boolean>} Returns a Promise that resolves to true if the transaction is successfully processed, false otherwise.
  */
-export const handleNewTransaction = async (params) => {
+
+export async function handleNewTransaction(params) {
   try {
     const db = await Database.getInstance();
 
@@ -518,4 +524,10 @@ export const handleNewTransaction = async (params) => {
     console.error("Error processing transaction event:", error);
   }
   return false;
+}
+
+export const webhook_utils = {
+  handleSignUpReward,
+  handleLinkReward,
+  handleReferralReward,
 };
