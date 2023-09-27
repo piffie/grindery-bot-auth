@@ -446,44 +446,60 @@ export async function handleNewReward(params) {
  */
 
 export async function handleNewTransaction(params) {
+  const db = await Database.getInstance();
+
+  // Retrieve sender information from the "users" collection
+  const senderInformation = await db
+    .collection(USERS_TEST_COLLECTION)
+    .findOne({ userTelegramID: params.senderTgId });
+
+  if (!senderInformation) {
+    console.error("Sender is not a user");
+    return true;
+  }
+
+  let recipientWallet = undefined;
+
   try {
-    const db = await Database.getInstance();
+    recipientWallet = await getPatchWalletAddressFromTgId(params.recipientTgId);
+  } catch (error) {
+    return false;
+  }
 
-    // Retrieve sender information from the "users" collection
-    const senderInformation = await db
-      .collection(USERS_TEST_COLLECTION)
-      .findOne({ userTelegramID: params.senderTgId });
+  let tx = undefined;
 
-    const recipientWallet = await getPatchWalletAddressFromTgId(
-      params.recipientTgId
-    );
-
-    const tx = await sendTokens(
+  try {
+    tx = await sendTokens(
       params.senderTgId,
       recipientWallet,
       params.amount.toString(),
       await getPatchWalletAccessToken()
     );
+  } catch (error) {
+    console.error("Error processing PatchWallet token sending:", error);
+    return false;
+  }
 
-    if (tx.data.txHash) {
-      const dateAdded = new Date();
+  if (tx.data.txHash) {
+    const dateAdded = new Date();
 
-      // Add the reward to the "rewards" collection
-      await db.collection(TRANSFERS_TEST_COLLECTION).insertOne({
-        TxId: tx.data.txHash.substring(1, 8),
-        chainId: "eip155:137",
-        tokenSymbol: "g1",
-        tokenAddress: process.env.G1_POLYGON_ADDRESS,
-        senderTgId: params.senderTgId,
-        senderWallet: senderInformation.patchwallet,
-        senderName: senderInformation.userName,
-        recipientTgId: params.recipientTgId,
-        recipientWallet: recipientWallet,
-        tokenAmount: params.amount.toString(),
-        transactionHash: tx.data.txHash,
-        dateAdded: dateAdded,
-      });
+    // Add the reward to the "rewards" collection
+    await db.collection(TRANSFERS_TEST_COLLECTION).insertOne({
+      TxId: tx.data.txHash.substring(1, 8),
+      chainId: "eip155:137",
+      tokenSymbol: "g1",
+      tokenAddress: process.env.G1_POLYGON_ADDRESS,
+      senderTgId: params.senderTgId,
+      senderWallet: senderInformation.patchwallet,
+      senderName: senderInformation.userName,
+      recipientTgId: params.recipientTgId,
+      recipientWallet: recipientWallet,
+      tokenAmount: params.amount.toString(),
+      transactionHash: tx.data.txHash,
+      dateAdded: dateAdded,
+    });
 
+    try {
       await addTrackSegment({
         userTelegramID: params.senderTgId,
         TxId: tx.data.txHash.substring(1, 8),
@@ -512,17 +528,18 @@ export async function handleNewTransaction(params) {
         transactionHash: tx.data.txHash,
         dateAdded: dateAdded,
       });
-
-      console.log(
-        `[${tx.data.txHash}] transaction from ${params.senderTgId} to ${
-          params.recipientTgId
-        } for ${params.amount.toString()} added.`
-      );
-      return true;
+    } catch (error) {
+      console.error("Error processing Segment or FlowXO webhook:", error);
     }
-  } catch (error) {
-    console.error("Error processing transaction event:", error);
+
+    console.log(
+      `[${tx.data.txHash}] transaction from ${params.senderTgId} to ${
+        params.recipientTgId
+      } for ${params.amount.toString()} added.`
+    );
+    return true;
   }
+
   return false;
 }
 

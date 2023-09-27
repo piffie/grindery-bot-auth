@@ -32,6 +32,7 @@ export const mockTransactionHash1 =
   "0x93c0ca80f2171b05b68531d176183efcbad940265be5e21b1c12d6f321bd44b9";
 
 export const segmentIdentifyUrl = "https://api.segment.io/v1/identify";
+export const segmentTrackUrl = "https://api.segment.io/v1/track";
 export const patchwalletResolverUrl = "https://paymagicapi.com/v1/resolver";
 export const patchwalletAuthUrl = "https://paymagicapi.com/v1/auth";
 export const patchwalletTxUrl = "https://paymagicapi.com/v1/kernel/tx";

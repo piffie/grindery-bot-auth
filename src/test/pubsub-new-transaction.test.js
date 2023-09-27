@@ -12,6 +12,8 @@ import {
   patchwalletResolverUrl,
   patchwalletTxUrl,
   patchwalletAuthUrl,
+  segmentIdentifyUrl,
+  segmentTrackUrl,
 } from "./utils.js";
 import { handleNewTransaction } from "../utils/webhook.js";
 import Sinon from "sinon";
@@ -55,6 +57,12 @@ describe("handleNewTransaction function", async function () {
         }
 
         if (url == process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK) {
+          return Promise.resolve({
+            result: "success",
+          });
+        }
+
+        if (url == segmentTrackUrl) {
           return Promise.resolve({
             result: "success",
           });
@@ -276,5 +284,160 @@ describe("handleNewTransaction function", async function () {
         .getCalls()
         .find((e) => e.firstArg === process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK)
     ).to.be.undefined;
+  });
+
+  // #######################################
+  // #######################################
+  // #######################################
+
+  it("Should return true and no new transaction in database if sender is not a user", async function () {
+    const result = await handleNewTransaction({
+      senderTgId: mockUserTelegramID,
+      amount: "100",
+      recipientTgId: mockUserTelegramID1,
+    });
+
+    chai.expect(result).to.be.true;
+    chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
+  });
+
+  it("Should return false and no new transaction in database if error in PatchWallet get address", async function () {
+    axiosStub
+      .withArgs(patchwalletResolverUrl)
+      .rejects(new Error("Service not available"));
+
+    await collectionUsersMock.insertOne({
+      userTelegramID: mockUserTelegramID,
+      userName: mockUserName,
+      patchwallet: mockWallet,
+      responsePath: mockResponsePath,
+    });
+
+    const result = await handleNewTransaction({
+      senderTgId: mockUserTelegramID,
+      amount: "100",
+      recipientTgId: mockUserTelegramID1,
+    });
+
+    chai.expect(result).to.be.false;
+    chai
+      .expect(await collectionUsersMock.find({}).toArray())
+      .excluding(["_id"])
+      .to.deep.equal([
+        {
+          userTelegramID: mockUserTelegramID,
+          userName: mockUserName,
+          patchwallet: mockWallet,
+          responsePath: mockResponsePath,
+        },
+      ]);
+  });
+
+  it("Should return true if error in Segment Webhook", async function () {
+    axiosStub
+      .withArgs(segmentTrackUrl)
+      .rejects(new Error("Service not available"));
+
+    await collectionUsersMock.insertOne({
+      userTelegramID: mockUserTelegramID,
+      userName: mockUserName,
+      patchwallet: mockWallet,
+      responsePath: mockResponsePath,
+    });
+
+    const result = await handleNewTransaction({
+      senderTgId: mockUserTelegramID,
+      amount: "100",
+      recipientTgId: mockUserTelegramID1,
+    });
+
+    chai.expect(result).to.be.true;
+  });
+
+  it("Should return true if error in FlowXO Webhook", async function () {
+    axiosStub
+      .withArgs(process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK)
+      .rejects(new Error("Service not available"));
+
+    await collectionUsersMock.insertOne({
+      userTelegramID: mockUserTelegramID,
+      userName: mockUserName,
+      patchwallet: mockWallet,
+      responsePath: mockResponsePath,
+    });
+
+    const result = await handleNewTransaction({
+      senderTgId: mockUserTelegramID,
+      amount: "100",
+      recipientTgId: mockUserTelegramID1,
+    });
+
+    chai.expect(result).to.be.true;
+  });
+
+  it("Should return false and no new transaction in database if error in PatchWallet transaction", async function () {
+    axiosStub
+      .withArgs(patchwalletTxUrl)
+      .rejects(new Error("Service not available"));
+
+    await collectionUsersMock.insertOne({
+      userTelegramID: mockUserTelegramID,
+      userName: mockUserName,
+      patchwallet: mockWallet,
+      responsePath: mockResponsePath,
+    });
+
+    const result = await handleNewTransaction({
+      senderTgId: mockUserTelegramID,
+      amount: "100",
+      recipientTgId: mockUserTelegramID1,
+    });
+
+    chai.expect(result).to.be.false;
+    chai
+      .expect(await collectionUsersMock.find({}).toArray())
+      .excluding(["_id"])
+      .to.deep.equal([
+        {
+          userTelegramID: mockUserTelegramID,
+          userName: mockUserName,
+          patchwallet: mockWallet,
+          responsePath: mockResponsePath,
+        },
+      ]);
+  });
+
+  it("Should return false and no new transaction in database if no hash in PatchWallet transaction", async function () {
+    axiosStub.withArgs(patchwalletTxUrl).resolves({
+      data: {
+        error: "service non available",
+      },
+    });
+
+    await collectionUsersMock.insertOne({
+      userTelegramID: mockUserTelegramID,
+      userName: mockUserName,
+      patchwallet: mockWallet,
+      responsePath: mockResponsePath,
+    });
+
+    const result = await handleNewTransaction({
+      senderTgId: mockUserTelegramID,
+      amount: "100",
+      recipientTgId: mockUserTelegramID1,
+    });
+
+    chai.expect(result).to.be.false;
+    chai
+      .expect(await collectionUsersMock.find({}).toArray())
+      .excluding(["_id"])
+      .to.deep.equal([
+        {
+          userTelegramID: mockUserTelegramID,
+          userName: mockUserName,
+          patchwallet: mockWallet,
+          responsePath: mockResponsePath,
+        },
+      ]);
   });
 });
