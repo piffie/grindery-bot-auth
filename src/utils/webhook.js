@@ -519,9 +519,3 @@ export const handleNewTransaction = async (params) => {
   }
   return false;
 };
-
-handleNewTransaction({
-  senderTgId: "5695885361",
-  amount: "1",
-  recipientTgId: "5695885361",
-});
