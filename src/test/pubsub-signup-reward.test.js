@@ -231,81 +231,6 @@ describe("handleSignUpReward function", async function () {
     chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
   });
 
-  it("Should return false if there is an error in the transaction", async function () {
-    axiosStub
-      .withArgs("https://paymagicapi.com/v1/kernel/tx")
-      .rejects(new Error("Service not available"));
-    chai.expect(
-      await handleSignUpReward(
-        dbMock,
-        mockUserTelegramID,
-        mockResponsePath,
-        mockUserHandle,
-        mockUserName,
-        mockWallet
-      )
-    ).to.be.false;
-  });
-
-  it("Should not add reward in the database if there is an error in the transaction", async function () {
-    axiosStub
-      .withArgs("https://paymagicapi.com/v1/kernel/tx")
-      .rejects(new Error("Service not available"));
-
-    await handleSignUpReward(
-      dbMock,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
-    chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
-  });
-
-  it("Should not add reward in the database and return false if there is no hash in PatchWallet answer", async function () {
-    axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
-      data: {
-        error: "service non available",
-      },
-    });
-
-    const result = await handleSignUpReward(
-      dbMock,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
-
-    chai.expect(result).to.be.false;
-    chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
-  });
-
-  it("Should not call FlowXO if there is an error in the transaction", async function () {
-    axiosStub
-      .withArgs("https://paymagicapi.com/v1/kernel/tx")
-      .rejects(new Error("Service not available"));
-
-    await handleSignUpReward(
-      dbMock,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
-
-    chai.expect(
-      axiosStub
-        .getCalls()
-        .find(
-          (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
-        )
-    ).to.be.undefined;
-  });
-
   it("Should return true if there is an error in FlowXO", async function () {
     axiosStub
       .withArgs(process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK)
@@ -321,5 +246,126 @@ describe("handleSignUpReward function", async function () {
         mockWallet
       )
     ).to.be.true;
+  });
+
+  describe("PatchWallet transaction error", function () {
+    it("Should return false if there is an error in the transaction", async function () {
+      axiosStub
+        .withArgs("https://paymagicapi.com/v1/kernel/tx")
+        .rejects(new Error("Service not available"));
+
+      chai.expect(
+        await handleSignUpReward(
+          dbMock,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        )
+      ).to.be.false;
+    });
+
+    it("Should not add reward in the database if there is an error in the transaction", async function () {
+      axiosStub
+        .withArgs("https://paymagicapi.com/v1/kernel/tx")
+        .rejects(new Error("Service not available"));
+
+      await handleSignUpReward(
+        dbMock,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+    });
+
+    it("Should not call FlowXO if there is an error in the transaction", async function () {
+      axiosStub
+        .withArgs("https://paymagicapi.com/v1/kernel/tx")
+        .rejects(new Error("Service not available"));
+
+      await handleSignUpReward(
+        dbMock,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
+  });
+
+  describe("PatchWallet transaction without hash", function () {
+    it("Should return false if there is no hash in PatchWallet response", async function () {
+      axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
+        data: {
+          error: "service non available",
+        },
+      });
+      chai.expect(
+        await handleSignUpReward(
+          dbMock,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        )
+      ).to.be.false;
+    });
+
+    it("Should not add reward in the database if there is no hash in PatchWallet response", async function () {
+      axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
+        data: {
+          error: "service non available",
+        },
+      });
+
+      await handleSignUpReward(
+        dbMock,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+    });
+
+    it("Should not call FlowXO if there is no hash in PatchWallet response", async function () {
+      axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
+        data: {
+          error: "service non available",
+        },
+      });
+
+      await handleSignUpReward(
+        dbMock,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
   });
 });

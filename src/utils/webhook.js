@@ -169,89 +169,91 @@ export const handleReferralReward = async (
         recipientTgId: userTelegramID,
       })
       .toArray()) {
+      if (
+        await db.collection(REWARDS_TEST_COLLECTION).findOne({
+          reason: "2x_reward",
+          parentTransactionHash: transfer.transactionHash,
+        })
+      ) {
+        continue;
+      }
+
+      // Retrieve sender information from the "users" collection
+      const senderInformation = await db
+        .collection(USERS_TEST_COLLECTION)
+        .findOne({ userTelegramID: transfer.senderTgId });
+
+      const senderWallet =
+        senderInformation.patchwallet ??
+        (await getPatchWalletAddressFromTgId(senderInformation.userTelegramID));
+
+      let txReward = undefined;
+
       try {
-        if (
-          await db.collection(REWARDS_TEST_COLLECTION).findOne({
-            reason: "2x_reward",
-            parentTransactionHash: transfer.transactionHash,
-          })
-        ) {
-          continue;
-        }
-
-        // Retrieve sender information from the "users" collection
-        const senderInformation = await db
-          .collection(USERS_TEST_COLLECTION)
-          .findOne({ userTelegramID: transfer.senderTgId });
-
-        const senderWallet =
-          senderInformation.patchwallet ??
-          (await getPatchWalletAddressFromTgId(
-            senderInformation.userTelegramID
-          ));
-
-        const txReward = await sendTokens(
+        txReward = await sendTokens(
           process.env.SOURCE_TG_ID,
           senderWallet,
           "50",
           await getPatchWalletAccessToken()
         );
-
-        if (txReward.data.txHash) {
-          const dateAdded = new Date();
-
-          // Add the reward to the "rewards" collection
-          await db.collection(REWARDS_TEST_COLLECTION).insertOne({
-            userTelegramID: senderInformation.userTelegramID,
-            responsePath: senderInformation.responsePath,
-            walletAddress: senderWallet,
-            reason: "2x_reward",
-            userHandle: senderInformation.userHandle,
-            userName: senderInformation.userName,
-            amount: "50",
-            message: "Referral reward",
-            transactionHash: txReward.data.txHash,
-            dateAdded: dateAdded,
-            parentTransactionHash: transfer.transactionHash,
-          });
-
-          await axios.post(process.env.FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK, {
-            newUserTgId: userTelegramID,
-            newUserResponsePath: responsePath,
-            newUserUserHandle: userHandle,
-            newUserUserName: userName,
-            newUserPatchwallet: patchwallet,
-            userTelegramID: senderInformation.userTelegramID,
-            responsePath: senderInformation.responsePath,
-            walletAddress: senderWallet,
-            reason: "2x_reward",
-            userHandle: senderInformation.userHandle,
-            userName: senderInformation.userName,
-            amount: "50",
-            message: "Referral reward",
-            transactionHash: txReward.data.txHash,
-            dateAdded: dateAdded,
-            parentTransactionHash: transfer.transactionHash,
-          });
-
-          console.log(
-            `[${senderInformation.userTelegramID}] referral reward added.`
-          );
-        } else {
-          // If a transaction fails, set the flag to false
-          processed = false;
-        }
       } catch (error) {
-        console.error("Error during referral reward transaction:", error);
+        console.error("Error processing PatchWallet token sending:", error);
+        processed = false;
+        continue;
+      }
+
+      if (txReward.data.txHash) {
+        const dateAdded = new Date();
+
+        // Add the reward to the "rewards" collection
+        await db.collection(REWARDS_TEST_COLLECTION).insertOne({
+          userTelegramID: senderInformation.userTelegramID,
+          responsePath: senderInformation.responsePath,
+          walletAddress: senderWallet,
+          reason: "2x_reward",
+          userHandle: senderInformation.userHandle,
+          userName: senderInformation.userName,
+          amount: "50",
+          message: "Referral reward",
+          transactionHash: txReward.data.txHash,
+          dateAdded: dateAdded,
+          parentTransactionHash: transfer.transactionHash,
+        });
+
+        await axios.post(process.env.FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK, {
+          newUserTgId: userTelegramID,
+          newUserResponsePath: responsePath,
+          newUserUserHandle: userHandle,
+          newUserUserName: userName,
+          newUserPatchwallet: patchwallet,
+          userTelegramID: senderInformation.userTelegramID,
+          responsePath: senderInformation.responsePath,
+          walletAddress: senderWallet,
+          reason: "2x_reward",
+          userHandle: senderInformation.userHandle,
+          userName: senderInformation.userName,
+          amount: "50",
+          message: "Referral reward",
+          transactionHash: txReward.data.txHash,
+          dateAdded: dateAdded,
+          parentTransactionHash: transfer.transactionHash,
+        });
+
+        console.log(
+          `[${senderInformation.userTelegramID}] referral reward added.`
+        );
+      } else {
         // If a transaction fails, set the flag to false
         processed = false;
       }
     }
+
     return processed;
   } catch (error) {
     console.error("Error processing referral reward event:", error);
   }
-  return false;
+
+  return true;
 };
 
 export const handleLinkReward = async (
