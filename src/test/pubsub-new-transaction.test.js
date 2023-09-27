@@ -9,8 +9,11 @@ import {
   mockTransactionHash,
   collectionUsersMock,
   collectionTransfersMock,
+  patchwalletResolverUrl,
+  patchwalletTxUrl,
+  patchwalletAuthUrl,
 } from "./utils.js";
-import {handleNewTransaction} from "../utils/webhook.js";
+import { handleNewTransaction } from "../utils/webhook.js";
 import Sinon from "sinon";
 import axios from "axios";
 import "dotenv/config";
@@ -27,15 +30,15 @@ describe("handleNewTransaction function", async function () {
     axiosStub = sandbox
       .stub(axios, "post")
       .callsFake(async (url, data, options) => {
-        if (url === "https://paymagicapi.com/v1/resolver") {
+        if (url === patchwalletResolverUrl) {
           return Promise.resolve({
             data: {
-              users: [{accountAddress: mockWallet}],
+              users: [{ accountAddress: mockWallet }],
             },
           });
         }
 
-        if (url === "https://paymagicapi.com/v1/kernel/tx") {
+        if (url === patchwalletTxUrl) {
           return Promise.resolve({
             data: {
               txHash: mockTransactionHash,
@@ -43,7 +46,7 @@ describe("handleNewTransaction function", async function () {
           });
         }
 
-        if (url === "https://paymagicapi.com/v1/auth") {
+        if (url === patchwalletAuthUrl) {
           return Promise.resolve({
             data: {
               access_token: mockAccessToken,
@@ -107,7 +110,7 @@ describe("handleNewTransaction function", async function () {
       patchwallet: mockWallet,
     });
 
-    axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
+    axiosStub.withArgs(patchwalletTxUrl).resolves({
       data: {
         error: "service non available",
       },
@@ -129,7 +132,7 @@ describe("handleNewTransaction function", async function () {
       patchwallet: mockWallet,
     });
 
-    axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
+    axiosStub.withArgs(patchwalletTxUrl).resolves({
       data: {
         error: "service non available",
       },
@@ -191,7 +194,7 @@ describe("handleNewTransaction function", async function () {
       responsePath: mockResponsePath,
     });
 
-    axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
+    axiosStub.withArgs(patchwalletTxUrl).resolves({
       data: {
         error: "service non available",
       },
@@ -256,7 +259,7 @@ describe("handleNewTransaction function", async function () {
       responsePath: mockResponsePath,
     });
 
-    axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
+    axiosStub.withArgs(patchwalletTxUrl).resolves({
       data: {
         error: "service non available",
       },

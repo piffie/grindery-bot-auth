@@ -10,6 +10,8 @@ import {
   mockAccessToken,
   mockTransactionHash,
   collectionUsersMock,
+  patchwalletAuthUrl,
+  patchwalletTxUrl,
 } from "./utils.js";
 import { handleSignUpReward } from "../utils/webhook.js";
 import Sinon from "sinon";
@@ -28,7 +30,7 @@ describe("handleSignUpReward function", async function () {
     axiosStub = sandbox
       .stub(axios, "post")
       .callsFake(async (url, data, options) => {
-        if (url === "https://paymagicapi.com/v1/auth") {
+        if (url === patchwalletAuthUrl) {
           return Promise.resolve({
             data: {
               access_token: mockAccessToken,
@@ -36,7 +38,7 @@ describe("handleSignUpReward function", async function () {
           });
         }
 
-        if (url === "https://paymagicapi.com/v1/kernel/tx") {
+        if (url === patchwalletTxUrl) {
           return Promise.resolve({
             data: {
               txHash: mockTransactionHash,
@@ -90,9 +92,7 @@ describe("handleSignUpReward function", async function () {
     );
 
     chai.expect(
-      axiosStub
-        .getCalls()
-        .find((e) => e.firstArg === "https://paymagicapi.com/v1/kernel/tx")
+      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
     ).to.be.undefined;
   });
 
@@ -126,9 +126,7 @@ describe("handleSignUpReward function", async function () {
 
     chai
       .expect(
-        axiosStub
-          .getCalls()
-          .find((e) => e.firstArg === "https://paymagicapi.com/v1/kernel/tx")
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
           .args[1]
       )
       .to.deep.equal({
@@ -251,7 +249,7 @@ describe("handleSignUpReward function", async function () {
   describe("PatchWallet transaction error", function () {
     it("Should return false if there is an error in the transaction", async function () {
       axiosStub
-        .withArgs("https://paymagicapi.com/v1/kernel/tx")
+        .withArgs(patchwalletTxUrl)
         .rejects(new Error("Service not available"));
 
       chai.expect(
@@ -268,7 +266,7 @@ describe("handleSignUpReward function", async function () {
 
     it("Should not add reward in the database if there is an error in the transaction", async function () {
       axiosStub
-        .withArgs("https://paymagicapi.com/v1/kernel/tx")
+        .withArgs(patchwalletTxUrl)
         .rejects(new Error("Service not available"));
 
       await handleSignUpReward(
@@ -284,7 +282,7 @@ describe("handleSignUpReward function", async function () {
 
     it("Should not call FlowXO if there is an error in the transaction", async function () {
       axiosStub
-        .withArgs("https://paymagicapi.com/v1/kernel/tx")
+        .withArgs(patchwalletTxUrl)
         .rejects(new Error("Service not available"));
 
       await handleSignUpReward(
@@ -308,7 +306,7 @@ describe("handleSignUpReward function", async function () {
 
   describe("PatchWallet transaction without hash", function () {
     it("Should return false if there is no hash in PatchWallet response", async function () {
-      axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
+      axiosStub.withArgs(patchwalletTxUrl).resolves({
         data: {
           error: "service non available",
         },
@@ -326,7 +324,7 @@ describe("handleSignUpReward function", async function () {
     });
 
     it("Should not add reward in the database if there is no hash in PatchWallet response", async function () {
-      axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
+      axiosStub.withArgs(patchwalletTxUrl).resolves({
         data: {
           error: "service non available",
         },
@@ -344,7 +342,7 @@ describe("handleSignUpReward function", async function () {
     });
 
     it("Should not call FlowXO if there is no hash in PatchWallet response", async function () {
-      axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
+      axiosStub.withArgs(patchwalletTxUrl).resolves({
         data: {
           error: "service non available",
         },

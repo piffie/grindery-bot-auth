@@ -16,6 +16,8 @@ import {
   mockUserHandle1,
   mockUserName1,
   mockWallet1,
+  patchwalletResolverUrl,
+  segmentIdentifyUrl,
 } from "./utils.js";
 import { handleNewReward, webhook_utils } from "../utils/webhook.js";
 import Sinon from "sinon";
@@ -35,7 +37,7 @@ describe("handleReferralReward function", function () {
     axiosStub = sandbox
       .stub(axios, "post")
       .callsFake(async (url, data, options) => {
-        if (url === "https://paymagicapi.com/v1/resolver") {
+        if (url === patchwalletResolverUrl) {
           return Promise.resolve({
             data: {
               users: [{ accountAddress: mockWallet }],
@@ -43,7 +45,7 @@ describe("handleReferralReward function", function () {
           });
         }
 
-        if (url === "https://api.segment.io/v1/identify") {
+        if (url === segmentIdentifyUrl) {
           return Promise.resolve({
             result: "success",
           });
@@ -297,7 +299,7 @@ describe("handleReferralReward function", function () {
 
     const segmentIdentityCall = axiosStub
       .getCalls()
-      .filter((e) => e.firstArg === "https://api.segment.io/v1/identify");
+      .filter((e) => e.firstArg === segmentIdentifyUrl);
 
     chai
       .expect(segmentIdentityCall[0].args[1])
@@ -321,7 +323,7 @@ describe("handleReferralReward function", function () {
 
   it("Should return false with nothing in the database if PatchWallet address error", async function () {
     axiosStub
-      .withArgs("https://paymagicapi.com/v1/resolver")
+      .withArgs(patchwalletResolverUrl)
       .rejects(new Error("Service not available"));
 
     const result = await handleNewReward({
@@ -338,7 +340,7 @@ describe("handleReferralReward function", function () {
 
   it("Should return true if error in Segment", async function () {
     axiosStub
-      .withArgs("https://api.segment.io/v1/identify")
+      .withArgs(segmentIdentifyUrl)
       .rejects(new Error("Service not available"));
 
     const result = await handleNewReward({

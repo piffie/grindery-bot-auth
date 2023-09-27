@@ -11,6 +11,9 @@ import {
   mockTransactionHash,
   collectionUsersMock,
   mockUserTelegramID1,
+  patchwalletTxUrl,
+  patchwalletResolverUrl,
+  patchwalletAuthUrl,
 } from "./utils.js";
 import { handleLinkReward } from "../utils/webhook.js";
 import Sinon from "sinon";
@@ -29,7 +32,7 @@ describe("handleLinkReward function", async function () {
     axiosStub = sandbox
       .stub(axios, "post")
       .callsFake(async (url, data, options) => {
-        if (url === "https://paymagicapi.com/v1/auth") {
+        if (url === patchwalletAuthUrl) {
           return Promise.resolve({
             data: {
               access_token: mockAccessToken,
@@ -37,7 +40,7 @@ describe("handleLinkReward function", async function () {
           });
         }
 
-        if (url === "https://paymagicapi.com/v1/kernel/tx") {
+        if (url === patchwalletTxUrl) {
           return Promise.resolve({
             data: {
               txHash: mockTransactionHash,
@@ -45,7 +48,7 @@ describe("handleLinkReward function", async function () {
           });
         }
 
-        if (url === "https://paymagicapi.com/v1/resolver") {
+        if (url === patchwalletResolverUrl) {
           return Promise.resolve({
             data: {
               users: [{ accountAddress: mockWallet }],
@@ -75,9 +78,7 @@ describe("handleLinkReward function", async function () {
     await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
 
     chai.expect(
-      axiosStub
-        .getCalls()
-        .find((e) => e.firstArg === "https://paymagicapi.com/v1/kernel/tx")
+      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
     ).to.be.undefined;
   });
 
@@ -123,9 +124,7 @@ describe("handleLinkReward function", async function () {
     await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
 
     chai.expect(
-      axiosStub
-        .getCalls()
-        .find((e) => e.firstArg === "https://paymagicapi.com/v1/kernel/tx")
+      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
     ).to.be.undefined;
   });
 
@@ -138,9 +137,7 @@ describe("handleLinkReward function", async function () {
 
     chai
       .expect(
-        axiosStub
-          .getCalls()
-          .find((e) => e.firstArg === "https://paymagicapi.com/v1/kernel/tx")
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
           .args[1]
       )
       .to.deep.equal({
@@ -247,7 +244,7 @@ describe("handleLinkReward function", async function () {
   describe("PatchWallet transaction error", function () {
     it("Should return false if there is an error in the transaction", async function () {
       axiosStub
-        .withArgs("https://paymagicapi.com/v1/kernel/tx")
+        .withArgs(patchwalletTxUrl)
         .rejects(new Error("Service not available"));
 
       await collectionUsersMock.insertOne({
@@ -261,7 +258,7 @@ describe("handleLinkReward function", async function () {
 
     it("Should not add reward in the database if there is an error in the transaction", async function () {
       axiosStub
-        .withArgs("https://paymagicapi.com/v1/kernel/tx")
+        .withArgs(patchwalletTxUrl)
         .rejects(new Error("Service not available"));
 
       await collectionUsersMock.insertOne({
@@ -274,7 +271,7 @@ describe("handleLinkReward function", async function () {
 
     it("Should not call FlowXO if there is an error in the transaction", async function () {
       axiosStub
-        .withArgs("https://paymagicapi.com/v1/kernel/tx")
+        .withArgs(patchwalletTxUrl)
         .rejects(new Error("Service not available"));
 
       await collectionUsersMock.insertOne({
@@ -295,7 +292,7 @@ describe("handleLinkReward function", async function () {
 
   describe("PatchWallet transaction without hash", function () {
     it("Should return false if there is no hash in PatchWallet response", async function () {
-      axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
+      axiosStub.withArgs(patchwalletTxUrl).resolves({
         data: {
           error: "service non available",
         },
@@ -311,7 +308,7 @@ describe("handleLinkReward function", async function () {
     });
 
     it("Should not add reward in the database if there is no hash in PatchWallet response", async function () {
-      axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
+      axiosStub.withArgs(patchwalletTxUrl).resolves({
         data: {
           error: "service non available",
         },
@@ -326,7 +323,7 @@ describe("handleLinkReward function", async function () {
     });
 
     it("Should not call FlowXO if there is no hash in PatchWallet response", async function () {
-      axiosStub.withArgs("https://paymagicapi.com/v1/kernel/tx").resolves({
+      axiosStub.withArgs(patchwalletTxUrl).resolves({
         data: {
           error: "service non available",
         },
