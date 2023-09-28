@@ -46,6 +46,7 @@ export async function addTrackSegment(params) {
         tokenAddress: process.env.G1_POLYGON_ADDRESS,
         senderTgId: params.senderTgId,
         senderWallet: params.senderWallet,
+        senderHandle: params.senderHandle,
         senderName: params.senderName,
         recipientTgId: params.recipientTgId,
         recipientWallet: params.recipientWallet,

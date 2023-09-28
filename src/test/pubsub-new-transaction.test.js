@@ -14,6 +14,7 @@ import {
   patchwalletAuthUrl,
   segmentIdentifyUrl,
   segmentTrackUrl,
+  mockUserHandle,
 } from "./utils.js";
 import { handleNewTransaction } from "../utils/webhook.js";
 import Sinon from "sinon";
@@ -78,6 +79,7 @@ describe("handleNewTransaction function", async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
+      userHandle: mockUserHandle,
       patchwallet: mockWallet,
     });
 
@@ -103,6 +105,7 @@ describe("handleNewTransaction function", async function () {
         senderTgId: mockUserTelegramID,
         senderWallet: mockWallet,
         senderName: mockUserName,
+        senderHandle: mockUserHandle,
         recipientTgId: mockUserTelegramID1,
         recipientWallet: mockWallet,
         tokenAmount: "100",
@@ -115,6 +118,7 @@ describe("handleNewTransaction function", async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
+      userHandle: mockUserHandle,
       patchwallet: mockWallet,
     });
 
@@ -137,6 +141,7 @@ describe("handleNewTransaction function", async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
+      userHandle: mockUserHandle,
       patchwallet: mockWallet,
     });
 
@@ -159,6 +164,7 @@ describe("handleNewTransaction function", async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
+      userHandle: mockUserHandle,
       patchwallet: mockWallet,
     });
 
@@ -186,6 +192,7 @@ describe("handleNewTransaction function", async function () {
           senderTgId: mockUserTelegramID,
           senderWallet: mockWallet,
           senderName: mockUserName,
+          senderHandle: mockUserHandle,
           recipientTgId: mockUserTelegramID1,
           recipientWallet: mockWallet,
           tokenAmount: "100",
@@ -198,6 +205,7 @@ describe("handleNewTransaction function", async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
+      userHandle: mockUserHandle,
       patchwallet: mockWallet,
       responsePath: mockResponsePath,
     });
@@ -225,6 +233,7 @@ describe("handleNewTransaction function", async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
+      userHandle: mockUserHandle,
       patchwallet: mockWallet,
       responsePath: mockResponsePath,
     });
@@ -252,6 +261,7 @@ describe("handleNewTransaction function", async function () {
         senderTgId: mockUserTelegramID,
         senderWallet: mockWallet,
         senderName: mockUserName,
+        senderHandle: mockUserHandle,
         recipientTgId: mockUserTelegramID1,
         recipientWallet: mockWallet,
         tokenAmount: "100",
@@ -263,6 +273,7 @@ describe("handleNewTransaction function", async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
+      userHandle: mockUserHandle,
       patchwallet: mockWallet,
       responsePath: mockResponsePath,
     });
@@ -309,6 +320,7 @@ describe("handleNewTransaction function", async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
+      userHandle: mockUserHandle,
       patchwallet: mockWallet,
       responsePath: mockResponsePath,
     });
@@ -327,6 +339,7 @@ describe("handleNewTransaction function", async function () {
         {
           userTelegramID: mockUserTelegramID,
           userName: mockUserName,
+          userHandle: mockUserHandle,
           patchwallet: mockWallet,
           responsePath: mockResponsePath,
         },
@@ -341,6 +354,7 @@ describe("handleNewTransaction function", async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
+      userHandle: mockUserHandle,
       patchwallet: mockWallet,
       responsePath: mockResponsePath,
     });
@@ -362,6 +376,7 @@ describe("handleNewTransaction function", async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
+      userHandle: mockUserHandle,
       patchwallet: mockWallet,
       responsePath: mockResponsePath,
     });
@@ -383,6 +398,7 @@ describe("handleNewTransaction function", async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
+      userHandle: mockUserHandle,
       patchwallet: mockWallet,
       responsePath: mockResponsePath,
     });
@@ -401,6 +417,7 @@ describe("handleNewTransaction function", async function () {
         {
           userTelegramID: mockUserTelegramID,
           userName: mockUserName,
+          userHandle: mockUserHandle,
           patchwallet: mockWallet,
           responsePath: mockResponsePath,
         },
@@ -417,6 +434,7 @@ describe("handleNewTransaction function", async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
+      userHandle: mockUserHandle,
       patchwallet: mockWallet,
       responsePath: mockResponsePath,
     });
@@ -435,6 +453,7 @@ describe("handleNewTransaction function", async function () {
         {
           userTelegramID: mockUserTelegramID,
           userName: mockUserName,
+          userHandle: mockUserHandle,
           patchwallet: mockWallet,
           responsePath: mockResponsePath,
         },
