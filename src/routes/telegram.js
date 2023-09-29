@@ -8,6 +8,7 @@ import { telegramHashIsValid } from "../utils/auth.js";
 import { Database } from "../db/conn.js";
 import { getUser } from "../utils/telegram.js";
 import axios from "axios";
+import { decrypt, encrypt } from "../utils/crypt.js";
 
 const router = express.Router();
 const operations = {};
@@ -116,12 +117,12 @@ router.post("/callback", telegramHashIsValid, async (req, res) => {
         { userTelegramID: user.id.toString() },
         {
           $set: {
-            telegramSession: session,
+            telegramSession: encrypt(session),
           },
         }
       );
       res.json({
-        session: encodeURIComponent(session),
+        session: encodeURIComponent(encrypt(session)),
         status: "code_received",
       });
     } catch (error) {}
@@ -145,7 +146,7 @@ router.post("/callback", telegramHashIsValid, async (req, res) => {
  * }
  */
 router.get("/status", telegramHashIsValid, async (req, res) => {
-  const client = TGClient(new StringSession(req.query.session));
+  const client = TGClient(new StringSession(decrypt(req.query.session)));
   await client.connect();
   const status = client.connected;
 
@@ -179,7 +180,7 @@ router.get("/contacts", telegramHashIsValid, async (req, res) => {
     if (!session) {
       return res.status(200).json([]);
     }
-    const client = TGClient(new StringSession(session));
+    const client = TGClient(new StringSession(decrypt(session)));
     await client.connect();
 
     if (!client.connected) {
@@ -469,7 +470,7 @@ router.get("/user/photo", telegramHashIsValid, async (req, res) => {
     if (!session) {
       return res.status(200).json({ photo: "" });
     }
-    const client = TGClient(new StringSession(session));
+    const client = TGClient(new StringSession(decrypt(session)));
     await client.connect();
 
     if (!client.connected) {
