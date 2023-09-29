@@ -538,7 +538,7 @@ router.post("/send", telegramHashIsValid, async (req, res) => {
       event: "new_transaction",
       params,
     };
-    const res = await axios.post(
+    const eventRes = await axios.post(
       `https://bot-auth-api-staging.grindery.org/v1/webhook`,
       event,
       {
@@ -548,7 +548,7 @@ router.post("/send", telegramHashIsValid, async (req, res) => {
         },
       }
     );
-    return res.status(200).json({ success: res.data?.success || false });
+    return res.status(200).json({ success: eventRes.data?.success || false });
   } catch (error) {
     console.error("Error sending transaction", error);
     return res.status(500).send({ success: false, error: "An error occurred" });
