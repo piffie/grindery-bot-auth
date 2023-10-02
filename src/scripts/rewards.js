@@ -574,7 +574,7 @@ async function updateParentTransactionHash() {
     for (const reward of allRewards) {
       // Find the corresponding transfer
       const correspondingTransfer = await transfersCollection.findOne({
-        transactionHash: reward.transactionHash
+        transactionHash: reward.parentTransactionHash
       });
 
       // If a corresponding transfer is found
