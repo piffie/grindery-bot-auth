@@ -553,3 +553,45 @@ async function filterAndRemoveInvalidRewards() {
     process.exit(0);
   }
 }
+
+/**
+ * Usage: updateParentTransactionHash()
+ * Description: This function retrieves all rewards from the 'rewards' collection and updates
+ * the 'parentTransactionHash' field of each reward based on the 'transactionHash' from the 'transfers' collection.
+ * Example: Simply call the function without arguments: updateParentTransactionHash();
+ */
+async function updateParentTransactionHash() {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+
+    const transfersCollection = db.collection('transfers');
+    const rewardsCollection = db.collection('rewards');
+
+    // Fetch all rewards
+    const allRewards = await rewardsCollection.find({}).toArray();
+
+    for (const reward of allRewards) {
+      // Find the corresponding transfer
+      const correspondingTransfer = await transfersCollection.findOne({
+        transactionHash: reward.transactionHash
+      });
+
+      // If a corresponding transfer is found
+      if (correspondingTransfer) {
+        // Update the parentTransactionHash in the rewards collection
+        await rewardsCollection.updateOne(
+          { _id: reward._id },
+          { $set: { parentTransactionHash: correspondingTransfer.transactionHash } }
+        );
+
+        console.log(`Updated reward: ${reward._id}`);
+      }
+    }
+
+  } catch (error) {
+    console.error(`An error occurred: ${error.message}`);
+  } finally {
+    await client.close();
+  }
+}
