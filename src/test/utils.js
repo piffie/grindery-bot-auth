@@ -1,16 +1,14 @@
 import { Database } from "../db/conn.js";
 import {
-  REWARDS_TEST_COLLECTION,
-  TRANSFERS_TEST_COLLECTION,
-  USERS_TEST_COLLECTION,
+  REWARDS_COLLECTION,
+  TRANSFERS_COLLECTION,
+  USERS_COLLECTION,
 } from "../utils/constants.js";
 
 export const dbMock = await Database.getInstance("unit-test");
-export const collectionUsersMock = dbMock.collection(USERS_TEST_COLLECTION);
-export const collectionRewardsMock = dbMock.collection(REWARDS_TEST_COLLECTION);
-export const collectionTransfersMock = dbMock.collection(
-  TRANSFERS_TEST_COLLECTION
-);
+export const collectionUsersMock = dbMock.collection(USERS_COLLECTION);
+export const collectionRewardsMock = dbMock.collection(REWARDS_COLLECTION);
+export const collectionTransfersMock = dbMock.collection(TRANSFERS_COLLECTION);
 
 export const mockUserTelegramID = "2114356934";
 export const mockResponsePath = "64d170d6dc5a2a45328ad6f6/c/43320456";
