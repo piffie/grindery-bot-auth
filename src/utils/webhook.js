@@ -1,9 +1,8 @@
 import { Database } from "../db/conn.js";
 import {
-  REWARDS_TEST_COLLECTION,
-  TRANSFERS_TEST_COLLECTION,
+  REWARDS_COLLECTION,
+  TRANSFERS_COLLECTION,
   USERS_COLLECTION,
-  USERS_TEST_COLLECTION,
 } from "./constants.js";
 import {
   getPatchWalletAccessToken,
@@ -26,7 +25,7 @@ export async function handleNewUser(params) {
 
     // Check if the user already exists in the "users" collection
     const user = await db
-      .collection(USERS_TEST_COLLECTION)
+      .collection(USERS_COLLECTION)
       .findOne({ userTelegramID: params.userTelegramID });
     if (user) {
       // The user already exists, stop processing
@@ -40,7 +39,7 @@ export async function handleNewUser(params) {
     );
 
     // The user doesn't exist, add him to the "users" collection
-    await db.collection(USERS_TEST_COLLECTION).insertOne({
+    await db.collection(USERS_COLLECTION).insertOne({
       userTelegramID: params.userTelegramID,
       responsePath: params.responsePath,
       userHandle: params.userHandle,
@@ -83,7 +82,7 @@ export async function handleSignUpReward(
   try {
     // Check if the user has already received a signup reward
     if (
-      await db.collection(REWARDS_TEST_COLLECTION).findOne({
+      await db.collection(REWARDS_COLLECTION).findOne({
         userTelegramID: userTelegramID,
         reason: "user_sign_up",
       })
@@ -111,7 +110,7 @@ export async function handleSignUpReward(
       const dateAdded = new Date();
 
       // Add the reward to the "rewards" collection
-      await db.collection(REWARDS_TEST_COLLECTION).insertOne({
+      await db.collection(REWARDS_COLLECTION).insertOne({
         userTelegramID: userTelegramID,
         responsePath: responsePath,
         walletAddress: rewardWallet,
@@ -164,14 +163,14 @@ export async function handleReferralReward(
     // Retrieve all transfers where this user is the recipient
     // For each transfer, award a reward to the sender
     for (const transfer of await db
-      .collection(TRANSFERS_TEST_COLLECTION)
+      .collection(TRANSFERS_COLLECTION)
       .find({
         senderTgId: { $ne: userTelegramID },
         recipientTgId: userTelegramID,
       })
       .toArray()) {
       if (
-        await db.collection(REWARDS_TEST_COLLECTION).findOne({
+        await db.collection(REWARDS_COLLECTION).findOne({
           reason: "2x_reward",
           parentTransactionHash: transfer.transactionHash,
         })
@@ -181,7 +180,7 @@ export async function handleReferralReward(
 
       // Retrieve sender information from the "users" collection
       const senderInformation = await db
-        .collection(USERS_TEST_COLLECTION)
+        .collection(USERS_COLLECTION)
         .findOne({ userTelegramID: transfer.senderTgId });
 
       const senderWallet =
@@ -207,7 +206,7 @@ export async function handleReferralReward(
         const dateAdded = new Date();
 
         // Add the reward to the "rewards" collection
-        await db.collection(REWARDS_TEST_COLLECTION).insertOne({
+        await db.collection(REWARDS_COLLECTION).insertOne({
           userTelegramID: senderInformation.userTelegramID,
           responsePath: senderInformation.responsePath,
           walletAddress: senderWallet,
@@ -264,7 +263,7 @@ export async function handleLinkReward(
 ) {
   try {
     const referent = await db
-      .collection(USERS_TEST_COLLECTION)
+      .collection(USERS_COLLECTION)
       .findOne({ userTelegramID: referentUserTelegramID });
 
     if (!referent) {
@@ -274,7 +273,7 @@ export async function handleLinkReward(
     }
 
     if (
-      await db.collection(REWARDS_TEST_COLLECTION).findOne({
+      await db.collection(REWARDS_COLLECTION).findOne({
         sponsoredUserTelegramID: userTelegramID,
         reason: "referral_link",
       })
@@ -309,7 +308,7 @@ export async function handleLinkReward(
       const dateAdded = new Date();
 
       // Add the reward to the "rewards" collection
-      await db.collection(REWARDS_TEST_COLLECTION).insertOne({
+      await db.collection(REWARDS_COLLECTION).insertOne({
         userTelegramID: referentUserTelegramID,
         responsePath: referent.responsePath,
         walletAddress: rewardWallet,
@@ -360,7 +359,7 @@ export async function handleNewReward(params) {
 
   // Check if the user already exists in the "users" collection
   const user = await db
-    .collection(USERS_TEST_COLLECTION)
+    .collection(USERS_COLLECTION)
     .findOne({ userTelegramID: params.userTelegramID });
 
   if (user) {
@@ -417,7 +416,7 @@ export async function handleNewReward(params) {
 
   const dateAdded = new Date();
   // The user doesn't exist, add him to the "users" collection
-  await db.collection(USERS_TEST_COLLECTION).insertOne({
+  await db.collection(USERS_COLLECTION).insertOne({
     userTelegramID: params.userTelegramID,
     userHandle: params.userHandle,
     userName: params.userName,
@@ -450,7 +449,7 @@ export async function handleNewTransaction(params) {
 
   // Retrieve sender information from the "users" collection
   const senderInformation = await db
-    .collection(USERS_TEST_COLLECTION)
+    .collection(USERS_COLLECTION)
     .findOne({ userTelegramID: params.senderTgId });
 
   if (!senderInformation) {
@@ -484,7 +483,7 @@ export async function handleNewTransaction(params) {
     const dateAdded = new Date();
 
     // Add the reward to the "rewards" collection
-    await db.collection(TRANSFERS_TEST_COLLECTION).insertOne({
+    await db.collection(TRANSFERS_COLLECTION).insertOne({
       TxId: tx.data.txHash.substring(1, 8),
       chainId: "eip155:137",
       tokenSymbol: "g1",
