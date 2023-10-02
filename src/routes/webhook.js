@@ -1,6 +1,6 @@
 import express from "express";
-import { PubSub } from "@google-cloud/pubsub";
-import { authenticateApiKey } from "../utils/auth.js";
+import {PubSub} from "@google-cloud/pubsub";
+import {authenticateApiKey} from "../utils/auth.js";
 import {
   handleNewReward,
   handleNewTransaction,
@@ -57,15 +57,15 @@ router.post("/", authenticateApiKey, async (req, res) => {
     const dataBuffer = Buffer.from(data);
     const messageId = await pubSubClient
       .topic(topicName)
-      .publishMessage({ data: dataBuffer });
+      .publishMessage({data: dataBuffer});
     if (messageId) {
-      res.json({ success: true, messageId });
+      res.json({success: true, messageId});
     } else {
-      res.status(500).json({ success: false, error: "Event wasn't saved" });
+      res.status(500).json({success: false, error: "Event wasn't saved"});
     }
   } catch (error) {
     console.error(`Received error while publishing: ${error.message}`);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({success: false, error: error.message});
   }
 });
 
@@ -90,6 +90,10 @@ const listenForMessages = () => {
         // User initiated new transaction
         case "new_transaction":
           processed = await handleNewTransaction(messageData.params);
+          break;
+        case "new_transaction_batch":
+          for (let params of messageData.params)
+            await handleNewTransaction(params);
           break;
         // New user started the bot
         case "new_user":
