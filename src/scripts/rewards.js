@@ -571,27 +571,44 @@ async function updateParentTransactionHash() {
     // Fetch all rewards
     const allRewards = await rewardsCollection.find({}).toArray();
 
+    // Fetch all transfers and store them in an array
+    const allTransfers = await transfersCollection.find({}).toArray();
+
+    // Create an array to store update operations
+    const updateOperations = [];
+
     for (const reward of allRewards) {
       // Find the corresponding transfer
-      const correspondingTransfer = await transfersCollection.findOne({
-        transactionHash: reward.parentTransactionHash
-      });
+      const correspondingTransfer = allTransfers.find(
+        (e) => e.TxId === reward.parentTransactionHash
+      );
 
       // If a corresponding transfer is found
       if (correspondingTransfer) {
-        // Update the parentTransactionHash in the rewards collection
-        await rewardsCollection.updateOne(
-          { _id: reward._id },
-          { $set: { parentTransactionHash: correspondingTransfer.transactionHash } }
-        );
-
-        console.log(`Updated reward: ${reward._id}`);
+        // Create an update operation and add it to the array
+        const updateOperation = {
+          updateOne: {
+            filter: { _id: reward._id },
+            update: {
+              $set: {
+                parentTransactionHash: correspondingTransfer.transactionHash,
+              },
+            },
+          },
+        };
+        updateOperations.push(updateOperation);
+        console.log(`Reward to update: ${reward._id}`);
       }
     }
 
+    // Bulk update all the rewards with the update operations
+    if (updateOperations.length > 0) {
+      await rewardsCollection.bulkWrite(updateOperations);
+    }
   } catch (error) {
     console.error(`An error occurred: ${error.message}`);
   } finally {
-    await client.close();
+    // Exit the script
+    process.exit(0);
   }
 }
