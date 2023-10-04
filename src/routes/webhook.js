@@ -50,7 +50,31 @@ const router = express.Router();
  *   "error": "error message"
  * }
  */
-router.post("/", authenticateApiKey, async (req, res) => {
+router.post("/", async (req, res) => {
+  if (Array.isArray(req.body)) {
+    let isEventProcessed = [];
+
+    for (let body of req.body) {
+      try {
+        const data = JSON.stringify(body);
+        const dataBuffer = Buffer.from(data);
+        const messageId = await pubSubClient
+          .topic(topicName)
+          .publishMessage({data: dataBuffer});
+        isEventProcessed.push({success: true, messageId});
+      } catch (error) {
+        console.error(
+          `Error processing body: ${JSON.stringify(body)}. Error: ${
+            error.message
+          }`
+        );
+        isEventProcessed.push({success: false, error: error.message});
+      }
+    }
+
+    return res.json(isEventProcessed);
+  }
+
   try {
     const data = JSON.stringify(req.body);
     console.log(`Publishing message: ${data}`);
@@ -90,10 +114,6 @@ const listenForMessages = () => {
         // User initiated new transaction
         case "new_transaction":
           processed = await handleNewTransaction(messageData.params);
-          break;
-        case "new_transaction_batch":
-          for (let params of messageData.params)
-            await handleNewTransaction(params);
           break;
         // New user started the bot
         case "new_user":
