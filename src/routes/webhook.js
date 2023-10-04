@@ -50,7 +50,7 @@ const router = express.Router();
  *   "error": "error message"
  * }
  */
-router.post("/", async (req, res) => {
+router.post("/", authenticateApiKey, async (req, res) => {
   if (Array.isArray(req.body)) {
     let isEventProcessed = [];
 
