@@ -410,18 +410,32 @@ describe("handleNewTransaction function", async function () {
     });
 
     chai.expect(result).to.be.false;
-    chai
-      .expect(await collectionUsersMock.find({}).toArray())
-      .excluding(["_id"])
-      .to.deep.equal([
-        {
-          userTelegramID: mockUserTelegramID,
-          userName: mockUserName,
-          userHandle: mockUserHandle,
-          patchwallet: mockWallet,
-          responsePath: mockResponsePath,
-        },
-      ]);
+    chai.expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
+  });
+
+  it("Should return true and no new transaction in database if error 470 in PatchWallet transaction", async function () {
+    axiosStub.withArgs(patchwalletTxUrl).rejects({
+      response: {
+        status: 470,
+      },
+    });
+
+    await collectionUsersMock.insertOne({
+      userTelegramID: mockUserTelegramID,
+      userName: mockUserName,
+      userHandle: mockUserHandle,
+      patchwallet: mockWallet,
+      responsePath: mockResponsePath,
+    });
+
+    const result = await handleNewTransaction({
+      senderTgId: mockUserTelegramID,
+      amount: "100",
+      recipientTgId: mockUserTelegramID1,
+    });
+
+    chai.expect(result).to.be.true;
+    chai.expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
   });
 
   it("Should return false and no new transaction in database if no hash in PatchWallet transaction", async function () {
