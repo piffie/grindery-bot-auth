@@ -476,6 +476,9 @@ export async function handleNewTransaction(params) {
     );
   } catch (error) {
     console.error("Error processing PatchWallet token sending:", error);
+    if (error?.response?.status === 470) {
+      return true;
+    }
     return false;
   }
 
