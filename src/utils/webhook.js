@@ -449,15 +449,19 @@ export async function handleNewReward(params) {
 export async function handleNewTransaction(params) {
   const db = await Database.getInstance();
 
-  const txInformation = await db.collection(TRANSFERS_COLLECTION).findOne({
-    _id: new ObjectId(params._id),
-    status: TRANSACTION_STATUS.PENDING,
-  });
-
-  if (!txInformation) {
-    console.error('Transaction is not found');
-    return true;
-  }
+  await db.collection(TRANSFERS_COLLECTION).updateOne(
+    { eventId: params.eventId },
+    {
+      $setOnInsert: {
+        eventId: params.eventId,
+        senderTgId: params.senderTgId,
+        recipientTgId: params.recipientTgId,
+        tokenAmount: params.amount.toString(),
+        status: TRANSACTION_STATUS.PENDING,
+      },
+    },
+    { upsert: true }
+  );
 
   // Retrieve sender information from the "users" collection
   const senderInformation = await db
@@ -490,7 +494,7 @@ export async function handleNewTransaction(params) {
     console.error('Error processing PatchWallet token sending:', error);
     if (error?.response?.status === 470) {
       await db.collection(TRANSFERS_COLLECTION).updateOne(
-        { _id: new ObjectId(params._id) },
+        { eventId: params.eventId },
         {
           $set: {
             chainId: 'eip155:137',
@@ -518,7 +522,7 @@ export async function handleNewTransaction(params) {
 
     // Add the transfer to the "transfers" collection
     await db.collection(TRANSFERS_COLLECTION).updateOne(
-      { _id: new ObjectId(params._id) },
+      { eventId: params.eventId },
       {
         $set: {
           TxId: tx.data.txHash.substring(1, 8),
@@ -552,6 +556,7 @@ export async function handleNewTransaction(params) {
         tokenAmount: params.amount.toString(),
         transactionHash: tx.data.txHash,
         dateAdded: dateAdded,
+        eventId: params.eventId,
       });
 
       await axios.post(process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK, {

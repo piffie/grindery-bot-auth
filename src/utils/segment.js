@@ -52,6 +52,7 @@ export async function addTrackSegment(params) {
         recipientWallet: params.recipientWallet,
         tokenAmount: params.tokenAmount,
         transactionHash: params.transactionHash,
+        eventId: params.eventId,
       },
       timestamp: params.dateAdded,
     },
