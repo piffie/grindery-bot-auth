@@ -608,7 +608,7 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
  *   "error": "error details"
  * }
  */
-router.get('/leaderboard', async (req, res) => {
+router.get('/leaderboard', telegramHashIsValid, async (req, res) => {
   try {
     const chainId = req.query.chainId || "eip155:137";
 
