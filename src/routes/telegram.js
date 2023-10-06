@@ -529,19 +529,31 @@ router.post("/send", telegramHashIsValid, async (req, res) => {
     return res.status(400).json({ error: "Amount is required" });
   }
   try {
-    const params = {
-      recipientTgId: req.body.recipientTgId,
-      amount: req.body.amount,
-      senderTgId: user.id.toString(),
-    };
+    const isSingle = !Array.isArray(req.body.recipientTgId);
+    let data = {};
+    if (isSingle) {
+      data = {
+        event: "new_transaction",
+        params: {
+          recipientTgId: req.body.recipientTgId,
+          amount: req.body.amount,
+          senderTgId: user.id.toString(),
+        },
+      };
+    } else {
+      data = {
+        event: "new_transaction_batch",
+        params: req.body.recipientTgId.map((id) => ({
+          recipientTgId: id,
+          amount: req.body.amount,
+          senderTgId: user.id.toString(),
+        })),
+      };
+    }
 
-    const event = {
-      event: "new_transaction",
-      params,
-    };
     const eventRes = await axios.post(
       `https://bot-auth-api-staging.grindery.org/v1/webhook`,
-      event,
+      data,
       {
         headers: {
           Authorization: `Bearer ${process.env.API_KEY}`,
