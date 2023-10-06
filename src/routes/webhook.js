@@ -6,6 +6,10 @@ import {
   handleNewTransaction,
   handleNewUser,
 } from '../utils/webhook.js';
+import {
+  TRANSACTION_STATUS,
+  TRANSFERS_COLLECTION,
+} from '../utils/constants.js';
 
 /**
  * This is a generic and extendable implementation of a webhook endpoint and pub/sub messages queue.
@@ -52,6 +56,32 @@ const router = express.Router();
  */
 router.post('/', authenticateApiKey, async (req, res) => {
   try {
+    if (req.body.event === 'new_transaction') {
+      const db = await Database.getInstance();
+      const result = await db.collection(TRANSFERS_COLLECTION).insertOne({
+        senderTgId: req.body.params.senderTgId,
+        recipientTgId: req.body.params.recipientTgId,
+        tokenAmount: req.body.params.amount,
+        status: TRANSACTION_STATUS.PENDING,
+      });
+
+      req.body.params._id = result.insertedId.toString();
+    }
+
+    if (req.body.event === 'new_transaction_batch') {
+      const db = await Database.getInstance();
+      for (let singleTransaction of req.body.params) {
+        const result = await db.collection(TRANSFERS_COLLECTION).insertOne({
+          senderTgId: singleTransaction.senderTgId,
+          recipientTgId: singleTransaction.recipientTgId,
+          tokenAmount: singleTransaction.amount,
+          status: TRANSACTION_STATUS.PENDING,
+        });
+
+        singleTransaction._id = result.insertedId.toString();
+      }
+    }
+
     const data = JSON.stringify(req.body);
     console.log(`Publishing message: ${data}`);
     const dataBuffer = Buffer.from(data);

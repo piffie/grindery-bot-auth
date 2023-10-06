@@ -1,6 +1,8 @@
+import { ObjectId } from 'mongodb';
 import { Database } from '../db/conn.js';
 import {
   REWARDS_COLLECTION,
+  TRANSACTION_STATUS,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
 } from './constants.js';
@@ -447,6 +449,16 @@ export async function handleNewReward(params) {
 export async function handleNewTransaction(params) {
   const db = await Database.getInstance();
 
+  const txInformation = await db.collection(TRANSFERS_COLLECTION).findOne({
+    _id: new ObjectId(params._id),
+    status: TRANSACTION_STATUS.PENDING,
+  });
+
+  if (!txInformation) {
+    console.error('Transaction is not found');
+    return true;
+  }
+
   // Retrieve sender information from the "users" collection
   const senderInformation = await db
     .collection(USERS_COLLECTION)
@@ -477,6 +489,25 @@ export async function handleNewTransaction(params) {
   } catch (error) {
     console.error('Error processing PatchWallet token sending:', error);
     if (error?.response?.status === 470) {
+      await db.collection(TRANSFERS_COLLECTION).updateOne(
+        { _id: new ObjectId(params._id) },
+        {
+          $set: {
+            chainId: 'eip155:137',
+            tokenSymbol: 'g1',
+            tokenAddress: process.env.G1_POLYGON_ADDRESS,
+            senderTgId: params.senderTgId,
+            senderWallet: senderInformation.patchwallet,
+            senderName: senderInformation.userName,
+            senderHandle: senderInformation.userHandle,
+            recipientTgId: params.recipientTgId,
+            recipientWallet: recipientWallet,
+            tokenAmount: params.amount.toString(),
+            dateAdded: new Date(),
+            status: TRANSACTION_STATUS.FAILURE,
+          },
+        }
+      );
       return true;
     }
     return false;
@@ -485,22 +516,28 @@ export async function handleNewTransaction(params) {
   if (tx.data.txHash) {
     const dateAdded = new Date();
 
-    // Add the reward to the "rewards" collection
-    await db.collection(TRANSFERS_COLLECTION).insertOne({
-      TxId: tx.data.txHash.substring(1, 8),
-      chainId: 'eip155:137',
-      tokenSymbol: 'g1',
-      tokenAddress: process.env.G1_POLYGON_ADDRESS,
-      senderTgId: params.senderTgId,
-      senderWallet: senderInformation.patchwallet,
-      senderName: senderInformation.userName,
-      senderHandle: senderInformation.userHandle,
-      recipientTgId: params.recipientTgId,
-      recipientWallet: recipientWallet,
-      tokenAmount: params.amount.toString(),
-      transactionHash: tx.data.txHash,
-      dateAdded: dateAdded,
-    });
+    // Add the transfer to the "transfers" collection
+    await db.collection(TRANSFERS_COLLECTION).updateOne(
+      { _id: new ObjectId(params._id) },
+      {
+        $set: {
+          TxId: tx.data.txHash.substring(1, 8),
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: process.env.G1_POLYGON_ADDRESS,
+          senderTgId: params.senderTgId,
+          senderWallet: senderInformation.patchwallet,
+          senderName: senderInformation.userName,
+          senderHandle: senderInformation.userHandle,
+          recipientTgId: params.recipientTgId,
+          recipientWallet: recipientWallet,
+          tokenAmount: params.amount.toString(),
+          transactionHash: tx.data.txHash,
+          dateAdded: dateAdded,
+          status: TRANSACTION_STATUS.SUCCESS,
+        },
+      }
+    );
 
     try {
       await addTrackSegment({
