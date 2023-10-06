@@ -9,6 +9,9 @@ import { Database } from '../db/conn.js';
 import { getUser } from '../utils/telegram.js';
 import axios from 'axios';
 import { decrypt, encrypt } from '../utils/crypt.js';
+import Web3 from 'web3';
+import { CHAIN_MAPPING } from '../utils/chains.js';
+import ERC20 from './abi/ERC20.json' assert { type: 'json' };
 
 const router = express.Router();
 const operations = {};
@@ -565,6 +568,124 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
   } catch (error) {
     console.error('Error sending transaction', error);
     return res.status(500).send({ success: false, error: 'An error occurred' });
+  }
+});
+
+/**
+ * GET /leaderboard
+ *
+ * @summary Retrieve leaderboard data
+ * @description Fetches leaderboard data based on transaction and reward statistics for users. It provides sorting, pagination, and filter features. Additionally, it integrates with Web3 to retrieve balances for users.
+ * @tags Leaderboard
+ * @param {string} request.query.chainId - The chain ID for Web3 operations (default "eip155:137").
+ * @param {number} request.query.page - The page number for pagination (default 1).
+ * @param {number} request.query.limit - The number of results per page (default 10).
+ * @param {string} request.query.sortBy - The field to sort results by (default "txCount").
+ * @param {string} request.query.order - Sorting order (default "desc", can also be "asc").
+ * @return {object[]} 200 - Array of user statistics for the leaderboard.
+ * @return {object} 500 - Error response with message and error details.
+ * @example request - Example request
+ * GET /leaderboard?page=1&limit=10&sortBy=txCount&order=desc
+ * @example response - 200 - Success response example
+ * [
+ *   {
+ *     "userName": "John Doe",
+ *     "userHandle": "johndoe",
+ *     "wallet": "0x3EcD632C733feBfEcc8c199fB69149e1696Bb9a2",
+ *     "firstTxDate": "2023-09-04T19:37:34.241Z",
+ *     "lastTxDate": "2023-09-05T19:37:34.241Z",
+ *     "txCount": 5,
+ *     "rewardsCount": 3,
+ *     "referralsCount": 2,
+ *     "balance": 0.5
+ *   },
+ *   ...
+ * ]
+ *
+ * @example response - 500 - Error response example
+ * {
+ *   "msg": "An error occurred",
+ *   "error": "error details"
+ * }
+ */
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const chainId = req.query.chainId || "eip155:137";
+
+    // pagination params
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    // sort params
+    const sortBy = req.query.sortBy || "txCount";
+    let order = req.query.order === 'asc' ? 1 : -1;
+
+    const db = await Database.getInstance(req);
+
+    const leaderboardData = await db.collection('users').aggregate([
+      {
+        $lookup: {
+          from: "transfers",
+          localField: "userTelegramID",
+          foreignField: "senderTgId",
+          as: "transactions"
+        }
+      },
+      {
+        $lookup: {
+          from: "rewards",
+          localField: "userTelegramID",
+          foreignField: "userTelegramID",
+          as: "rewards"
+        }
+      },
+      {
+        $project: {
+          userName: 1,
+          userHandle: 1,
+          wallet: "$patchwallet",
+          firstTxDate: { $min: "$transactions.dateAdded" },
+          lastTxDate: { $max: "$transactions.dateAdded" },
+          txCount: { $size: "$transactions" },
+          rewardsCount: { $size: "$rewards" },
+          referralsCount: {
+            $size: {
+              $filter: {
+                input: "$rewards",
+                as: "reward",
+                cond: { $eq: ["$$reward.message", "Referral reward"] }
+              }
+            }
+          }
+        }
+      },
+      {
+        $sort: { [sortBy]: order }
+      },
+      {
+        $skip: skip
+      },
+      {
+        $limit: limit
+      }
+    ]).toArray();
+
+    const web3 = new Web3(CHAIN_MAPPING[chainId][1]);
+    const contract = new web3.eth.Contract(ERC20, process.env.G1_POLYGON_ADDRESS);
+
+    for (let user of leaderboardData) {
+      const balance = await contract.methods
+        .balanceOf(user.wallet)
+        .call();
+
+      user.balance = balance / 1e18;
+    }
+
+    return res.status(200).send(leaderboardData);
+  } catch (error) {
+    console.error('Error getting leaderboard data', error);
+    return res.status(500).send({ msg: 'An error occurred', error });
   }
 });
 
