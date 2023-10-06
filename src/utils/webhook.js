@@ -12,6 +12,7 @@ import {
 import { addIdentitySegment, addTrackSegment } from "./segment.js";
 import axios from "axios";
 import "dotenv/config";
+import { sendTelegramMessage } from "./telegram.js";
 
 /**
  * Handles a new user registration event.
@@ -533,6 +534,20 @@ export async function handleNewTransaction(params) {
         transactionHash: tx.data.txHash,
         dateAdded: dateAdded,
       });
+
+      // send telegram message if params.message exists
+      if (params.message) {
+        const senderUser = await db
+          .collection(USERS_COLLECTION)
+          .findOne({ userTelegramID: params.senderTgId });
+        if (senderUser) {
+          await sendTelegramMessage(
+            params.message,
+            params.recipientTgId,
+            senderUser
+          );
+        }
+      }
     } catch (error) {
       console.error("Error processing Segment or FlowXO webhook:", error);
     }

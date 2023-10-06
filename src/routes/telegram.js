@@ -6,9 +6,10 @@ import { uuid } from "uuidv4";
 import TGClient from "../utils/telegramClient.js";
 import { telegramHashIsValid } from "../utils/auth.js";
 import { Database } from "../db/conn.js";
-import { getUser } from "../utils/telegram.js";
+import { getUser, sendTelegramMessage } from "../utils/telegram.js";
 import axios from "axios";
 import { decrypt, encrypt } from "../utils/crypt.js";
+import { USERS_COLLECTION } from "../utils/constants.js";
 
 const router = express.Router();
 const operations = {};
@@ -538,6 +539,7 @@ router.post("/send", telegramHashIsValid, async (req, res) => {
           recipientTgId: req.body.recipientTgId,
           amount: req.body.amount,
           senderTgId: user.id.toString(),
+          message: req.body.message,
         },
       };
     } else {
@@ -547,6 +549,7 @@ router.post("/send", telegramHashIsValid, async (req, res) => {
           recipientTgId: id,
           amount: req.body.amount,
           senderTgId: user.id.toString(),
+          message: req.body.message,
         })),
       };
     }
@@ -561,6 +564,20 @@ router.post("/send", telegramHashIsValid, async (req, res) => {
         },
       }
     );
+    // send telegram message if params.message exists
+    if (isSingle && req.body.message) {
+      const db = await Database.getInstance(req);
+      const senderUser = await db
+        .collection(USERS_COLLECTION)
+        .findOne({ userTelegramID: user.id.toString() });
+      if (senderUser) {
+        await sendTelegramMessage(
+          req.body.message,
+          req.body.recipientTgId,
+          senderUser
+        );
+      }
+    }
     return res.status(200).json({ success: eventRes.data?.success || false });
   } catch (error) {
     console.error("Error sending transaction", error);
