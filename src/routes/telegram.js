@@ -654,7 +654,7 @@ router.get('/leaderboard', async (req, res) => {
               $filter: {
                 input: "$rewards",
                 as: "reward",
-                cond: { $eq: ["$$reward.message", "Referral reward"] }
+                cond: { $eq: ["$$reward.reason", "2x_reward"] }
               }
             }
           }
