@@ -540,16 +540,28 @@ export async function handleNewTransaction(params) {
         const senderUser = await db
           .collection(USERS_COLLECTION)
           .findOne({ userTelegramID: params.senderTgId });
-        if (senderUser) {
-          await sendTelegramMessage(
+
+        // only try to send if the sender has a telegram session
+        if (senderUser && senderUser.telegramSession) {
+          const messageSendingResult = await sendTelegramMessage(
             params.message,
             params.recipientTgId,
             senderUser
           );
+          // log error if message sending failed
+          if (!messageSendingResult.success) {
+            console.error(
+              "Error sending telegram message:",
+              messageSendingResult.message
+            );
+          }
         }
       }
     } catch (error) {
-      console.error("Error processing Segment or FlowXO webhook:", error);
+      console.error(
+        "Error processing Segment or FlowXO webhook, or sending telegram message:",
+        error
+      );
     }
 
     console.log(

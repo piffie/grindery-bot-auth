@@ -31,12 +31,6 @@ export const sendTelegramMessage = async (message, recepientId, senderUser) => {
     if (!senderUser.telegramSession)
       throw new Error("Telegram session not found");
 
-    const data = {
-      peer: recepientId,
-      message: message,
-      sendAs: senderUser.userTelegramID,
-    };
-
     const client = TGClient(
       new StringSession(decrypt(senderUser.telegramSession))
     );
@@ -47,10 +41,26 @@ export const sendTelegramMessage = async (message, recepientId, senderUser) => {
       throw new Error("Telegram client not connected");
     }
 
-    const result = await client.invoke(new Api.messages.SendMessage(data));
+    // get recepient handle
+    const recepient = await client.invoke(
+      new Api.users.GetFullUser({
+        id: recepientId,
+      })
+    );
 
-    // DEBUG, TODO: remove log
-    console.log("sendTelegramMessage result", result);
+    const recepientHandle =
+      (recepient &&
+        recepient.users &&
+        recepient.users[0] &&
+        recepient.users[0].username) ||
+      "";
+
+    const data = {
+      peer: recepientHandle,
+      message: message,
+    };
+
+    const result = await client.invoke(new Api.messages.SendMessage(data));
 
     if (result) {
       return { success: true, message: "Message sent successfully" };

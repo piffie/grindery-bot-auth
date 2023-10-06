@@ -564,20 +564,7 @@ router.post("/send", telegramHashIsValid, async (req, res) => {
         },
       }
     );
-    // send telegram message if params.message exists
-    if (isSingle && req.body.message) {
-      const db = await Database.getInstance(req);
-      const senderUser = await db
-        .collection(USERS_COLLECTION)
-        .findOne({ userTelegramID: user.id.toString() });
-      if (senderUser) {
-        await sendTelegramMessage(
-          req.body.message,
-          req.body.recipientTgId,
-          senderUser
-        );
-      }
-    }
+
     return res.status(200).json({ success: eventRes.data?.success || false });
   } catch (error) {
     console.error("Error sending transaction", error);
