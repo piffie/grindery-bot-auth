@@ -1,4 +1,4 @@
-import chai from "chai";
+import chai from 'chai';
 import {
   collectionRewardsMock,
   dbMock,
@@ -12,23 +12,23 @@ import {
   collectionUsersMock,
   patchwalletAuthUrl,
   patchwalletTxUrl,
-} from "./utils.js";
-import { handleSignUpReward } from "../utils/webhook.js";
-import Sinon from "sinon";
-import axios from "axios";
-import "dotenv/config";
-import chaiExclude from "chai-exclude";
+} from './utils.js';
+import { handleSignUpReward } from '../utils/webhook.js';
+import Sinon from 'sinon';
+import axios from 'axios';
+import 'dotenv/config';
+import chaiExclude from 'chai-exclude';
 
 chai.use(chaiExclude);
 
-describe("handleSignUpReward function", async function () {
+describe('handleSignUpReward function', async function () {
   let sandbox;
   let axiosStub;
 
   beforeEach(function () {
     sandbox = Sinon.createSandbox();
     axiosStub = sandbox
-      .stub(axios, "post")
+      .stub(axios, 'post')
       .callsFake(async (url, data, options) => {
         if (url === patchwalletAuthUrl) {
           return Promise.resolve({
@@ -48,7 +48,7 @@ describe("handleSignUpReward function", async function () {
 
         if (url == process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK) {
           return Promise.resolve({
-            result: "success",
+            result: 'success',
           });
         }
       });
@@ -58,10 +58,10 @@ describe("handleSignUpReward function", async function () {
     sandbox.restore();
   });
 
-  it("Should return true if user already exists in the database", async function () {
+  it('Should return true if user already exists in the database', async function () {
     await collectionRewardsMock.insertOne({
       userTelegramID: mockUserTelegramID,
-      reason: "user_sign_up",
+      reason: 'user_sign_up',
     });
 
     chai.expect(
@@ -76,10 +76,10 @@ describe("handleSignUpReward function", async function () {
     ).to.be.true;
   });
 
-  it("Should not send tokens if user already exists in the database", async function () {
+  it('Should not send tokens if user already exists in the database', async function () {
     await collectionRewardsMock.insertOne({
       userTelegramID: mockUserTelegramID,
-      reason: "user_sign_up",
+      reason: 'user_sign_up',
     });
 
     await handleSignUpReward(
@@ -96,10 +96,10 @@ describe("handleSignUpReward function", async function () {
     ).to.be.undefined;
   });
 
-  it("Should not add new reward to the database if user already exists in the database", async function () {
+  it('Should not add new reward to the database if user already exists in the database', async function () {
     await collectionRewardsMock.insertOne({
       userTelegramID: mockUserTelegramID,
-      reason: "user_sign_up",
+      reason: 'user_sign_up',
     });
     await handleSignUpReward(
       dbMock,
@@ -114,7 +114,7 @@ describe("handleSignUpReward function", async function () {
       .to.equal(1);
   });
 
-  it("Should call the sendTokens function properly if the user is new", async function () {
+  it('Should call the sendTokens function properly if the user is new', async function () {
     await handleSignUpReward(
       dbMock,
       mockUserTelegramID,
@@ -131,17 +131,17 @@ describe("handleSignUpReward function", async function () {
       )
       .to.deep.equal({
         userId: `grindery:${process.env.SOURCE_TG_ID}`,
-        chain: "matic",
+        chain: 'matic',
         to: [process.env.G1_POLYGON_ADDRESS],
-        value: ["0x00"],
+        value: ['0x00'],
         data: [
-          "0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000",
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
         ],
-        auth: "",
+        auth: '',
       });
   });
 
-  it("Should insert a new element in the reward collection of the database if the user is new", async function () {
+  it('Should insert a new element in the reward collection of the database if the user is new', async function () {
     await handleSignUpReward(
       dbMock,
       mockUserTelegramID,
@@ -154,15 +154,15 @@ describe("handleSignUpReward function", async function () {
     const rewards = await collectionRewardsMock.find({}).toArray();
 
     chai.expect(rewards.length).to.equal(1);
-    chai.expect(rewards[0]).excluding(["_id", "dateAdded"]).to.deep.equal({
+    chai.expect(rewards[0]).excluding(['_id', 'dateAdded']).to.deep.equal({
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       walletAddress: mockWallet,
-      reason: "user_sign_up",
+      reason: 'user_sign_up',
       userHandle: mockUserHandle,
       userName: mockUserName,
-      amount: "100",
-      message: "Sign up reward",
+      amount: '100',
+      message: 'Sign up reward',
       transactionHash: mockTransactionHash,
     });
     chai
@@ -171,7 +171,7 @@ describe("handleSignUpReward function", async function () {
     chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
   });
 
-  it("Should call FlowXO webhook properly if the user is new", async function () {
+  it('Should call FlowXO webhook properly if the user is new', async function () {
     await handleSignUpReward(
       dbMock,
       mockUserTelegramID,
@@ -186,15 +186,15 @@ describe("handleSignUpReward function", async function () {
       .find((e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK)
       .args[1];
 
-    chai.expect(FlowXOCallArgs).excluding(["dateAdded"]).to.deep.equal({
+    chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       walletAddress: mockWallet,
-      reason: "user_sign_up",
+      reason: 'user_sign_up',
       userHandle: mockUserHandle,
       userName: mockUserName,
-      amount: "100",
-      message: "Sign up reward",
+      amount: '100',
+      message: 'Sign up reward',
       transactionHash: mockTransactionHash,
     });
 
@@ -204,7 +204,7 @@ describe("handleSignUpReward function", async function () {
     chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
   });
 
-  it("Should return true if the user is new", async function () {
+  it('Should return true if the user is new', async function () {
     chai.expect(
       await handleSignUpReward(
         dbMock,
@@ -217,7 +217,7 @@ describe("handleSignUpReward function", async function () {
     ).to.be.true;
   });
 
-  it("Should not add the user in the database (in handleSignUpReward) if the user is new", async function () {
+  it('Should not add the user in the database (in handleSignUpReward) if the user is new', async function () {
     await handleSignUpReward(
       dbMock,
       mockUserTelegramID,
@@ -229,10 +229,10 @@ describe("handleSignUpReward function", async function () {
     chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
   });
 
-  it("Should return true if there is an error in FlowXO", async function () {
+  it('Should return true if there is an error in FlowXO', async function () {
     axiosStub
       .withArgs(process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK)
-      .rejects(new Error("Service not available"));
+      .rejects(new Error('Service not available'));
 
     chai.expect(
       await handleSignUpReward(
@@ -246,11 +246,11 @@ describe("handleSignUpReward function", async function () {
     ).to.be.true;
   });
 
-  describe("PatchWallet transaction error", function () {
-    it("Should return false if there is an error in the transaction", async function () {
+  describe('PatchWallet transaction error', function () {
+    it('Should return false if there is an error in the transaction', async function () {
       axiosStub
         .withArgs(patchwalletTxUrl)
-        .rejects(new Error("Service not available"));
+        .rejects(new Error('Service not available'));
 
       chai.expect(
         await handleSignUpReward(
@@ -264,10 +264,10 @@ describe("handleSignUpReward function", async function () {
       ).to.be.false;
     });
 
-    it("Should not add reward in the database if there is an error in the transaction", async function () {
+    it('Should not add reward in the database if there is an error in the transaction', async function () {
       axiosStub
         .withArgs(patchwalletTxUrl)
-        .rejects(new Error("Service not available"));
+        .rejects(new Error('Service not available'));
 
       await handleSignUpReward(
         dbMock,
@@ -280,10 +280,10 @@ describe("handleSignUpReward function", async function () {
       chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
     });
 
-    it("Should not call FlowXO if there is an error in the transaction", async function () {
+    it('Should not call FlowXO if there is an error in the transaction', async function () {
       axiosStub
         .withArgs(patchwalletTxUrl)
-        .rejects(new Error("Service not available"));
+        .rejects(new Error('Service not available'));
 
       await handleSignUpReward(
         dbMock,
@@ -304,11 +304,11 @@ describe("handleSignUpReward function", async function () {
     });
   });
 
-  describe("PatchWallet transaction without hash", function () {
-    it("Should return false if there is no hash in PatchWallet response", async function () {
+  describe('PatchWallet transaction without hash', function () {
+    it('Should return false if there is no hash in PatchWallet response', async function () {
       axiosStub.withArgs(patchwalletTxUrl).resolves({
         data: {
-          error: "service non available",
+          error: 'service non available',
         },
       });
       chai.expect(
@@ -323,10 +323,10 @@ describe("handleSignUpReward function", async function () {
       ).to.be.false;
     });
 
-    it("Should not add reward in the database if there is no hash in PatchWallet response", async function () {
+    it('Should not add reward in the database if there is no hash in PatchWallet response', async function () {
       axiosStub.withArgs(patchwalletTxUrl).resolves({
         data: {
-          error: "service non available",
+          error: 'service non available',
         },
       });
 
@@ -341,10 +341,10 @@ describe("handleSignUpReward function", async function () {
       chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
     });
 
-    it("Should not call FlowXO if there is no hash in PatchWallet response", async function () {
+    it('Should not call FlowXO if there is no hash in PatchWallet response', async function () {
       axiosStub.withArgs(patchwalletTxUrl).resolves({
         data: {
-          error: "service non available",
+          error: 'service non available',
         },
       });
 

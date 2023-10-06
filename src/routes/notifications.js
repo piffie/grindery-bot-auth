@@ -1,8 +1,8 @@
-import "dotenv/config";
-import express from "express";
-import axios from "axios";
-import grinderyClient from "grindery-nexus-client";
-import { generateWorkflow } from "../utils/generateWorkflow.js";
+import 'dotenv/config';
+import express from 'express';
+import axios from 'axios';
+import grinderyClient from 'grindery-nexus-client';
+import { generateWorkflow } from '../utils/generateWorkflow.js';
 
 const NexusClient = grinderyClient.default;
 
@@ -44,7 +44,7 @@ const GRINDERY_ACCOUNT_REFRESH_TOKEN =
  *   "error": "Server error"
  * }
  */
-router.post("/wallet", async (req, res) => {
+router.post('/wallet', async (req, res) => {
   if (!req.body.webhook) {
     return res.status(400).json({ error: "'webhook' is required" });
   }
@@ -58,14 +58,14 @@ router.post("/wallet", async (req, res) => {
   try {
     // get access token for grindery account
     const getAccessToken = await axios.post(
-      "https://orchestrator.grindery.org/oauth/token",
+      'https://orchestrator.grindery.org/oauth/token',
       {
         refresh_token: GRINDERY_ACCOUNT_REFRESH_TOKEN,
-        grant_type: "refresh_token",
+        grant_type: 'refresh_token',
       },
       {
         headers: {
-          "content-type": "application/x-www-form-urlencoded",
+          'content-type': 'application/x-www-form-urlencoded',
         },
       }
     );
@@ -79,14 +79,14 @@ router.post("/wallet", async (req, res) => {
 
     // get list of evm chains
     const chains = await client.chain.list({
-      type: "evm",
-      environment: "production",
+      type: 'evm',
+      environment: 'production',
     });
 
     let address = req.body.address;
     if (!address) {
       const patchWalletResponse = await axios.post(
-        "https://paymagicapi.com/v1/resolver",
+        'https://paymagicapi.com/v1/resolver',
         {
           userIds: `tel:${req.body.phone}`,
         }
@@ -99,7 +99,7 @@ router.post("/wallet", async (req, res) => {
       address,
       webhook: req.body.webhook,
       responsepath: req.body.responsepath,
-      trigger: "evmWallet",
+      trigger: 'evmWallet',
       chains: chains.map((chain) => chain.value),
       creator,
     });
@@ -107,7 +107,7 @@ router.post("/wallet", async (req, res) => {
       address,
       webhook: req.body.webhook,
       responsepath: req.body.responsepath,
-      trigger: "erc20",
+      trigger: 'erc20',
       chains: chains.map((chain) => chain.value),
       creator,
     });
@@ -127,7 +127,7 @@ router.post("/wallet", async (req, res) => {
     if (Boolean(walletWorkflowExists) || Boolean(erc20WorkflowExists)) {
       return res.json({
         success: true,
-        message: "Notification already enabled",
+        message: 'Notification already enabled',
       });
     }
 
@@ -141,10 +141,10 @@ router.post("/wallet", async (req, res) => {
       workspaceKey: GRINDERY_ACCOUNT_WORKSPACE_KEY,
     });
 
-    return res.json({ success: true, message: "Notification created" });
+    return res.json({ success: true, message: 'Notification created' });
   } catch (error) {
     console.error(JSON.stringify(error, null, 2));
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -184,7 +184,7 @@ router.post("/wallet", async (req, res) => {
  *   "error": "Error message"
  * }
  */
-router.post("/webhook", async (req, res) => {
+router.post('/webhook', async (req, res) => {
   res.redirect(307, WALLET_NOTIFICATION_WEBHOOK_URL);
 });
 

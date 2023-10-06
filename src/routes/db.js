@@ -1,15 +1,15 @@
-import express from "express";
-import { Database } from "../db/conn.js";
-import { authenticateApiKey } from "../utils/auth.js";
+import express from 'express';
+import { Database } from '../db/conn.js';
+import { authenticateApiKey } from '../utils/auth.js';
 import {
   getIncomingTxsUser,
   getOutgoingTxsUser,
   getRewardTxsUser,
-} from "../utils/transfers.js";
+} from '../utils/transfers.js';
 
 const router = express.Router();
 
-router.post("/:collectionName", authenticateApiKey, async (req, res) => {
+router.post('/:collectionName', authenticateApiKey, async (req, res) => {
   const collectionName = req.params.collectionName;
   const db = await Database.getInstance(req);
   const collection = db.collection(collectionName);
@@ -22,28 +22,28 @@ router.post("/:collectionName", authenticateApiKey, async (req, res) => {
   );
 });
 
-router.get("/backlog-signup-rewards", authenticateApiKey, async (req, res) => {
+router.get('/backlog-signup-rewards', authenticateApiKey, async (req, res) => {
   try {
     const db = await Database.getInstance();
 
     return res.status(200).send(
       await db
-        .collection("users")
+        .collection('users')
         .find({
           userTelegramID: {
-            $nin: await db.collection("rewards").distinct("userTelegramID", {
-              amount: "100",
+            $nin: await db.collection('rewards').distinct('userTelegramID', {
+              amount: '100',
             }),
           },
         })
         .toArray()
     );
   } catch (error) {
-    return res.status(500).send({ msg: "An error occurred", error });
+    return res.status(500).send({ msg: 'An error occurred', error });
   }
 });
 
-router.get("/format-transfers-user", authenticateApiKey, async (req, res) => {
+router.get('/format-transfers-user', authenticateApiKey, async (req, res) => {
   try {
     const db = await Database.getInstance(req);
     const start =
@@ -53,7 +53,7 @@ router.get("/format-transfers-user", authenticateApiKey, async (req, res) => {
         ? parseInt(req.query.limit)
         : 0;
 
-    let formattedTxs = "";
+    let formattedTxs = '';
 
     formattedTxs += await getIncomingTxsUser(
       db,
@@ -68,11 +68,11 @@ router.get("/format-transfers-user", authenticateApiKey, async (req, res) => {
                 `- ${transfer.tokenAmount} g1 from @${
                   transfer.senderUserHandle
                 } on ${transfer.dateAdded} ${
-                  transfer.message ? `[${transfer.message}]` : ""
+                  transfer.message ? `[${transfer.message}]` : ''
                 }`
             )
-            .join("\n")}\n\n`
-        : "";
+            .join('\n')}\n\n`
+        : '';
     });
 
     formattedTxs += await getOutgoingTxsUser(
@@ -90,11 +90,11 @@ router.get("/format-transfers-user", authenticateApiKey, async (req, res) => {
                     ? `@${transfer.recipientUserHandle}`
                     : `a new user (Telegram ID: ${transfer.recipientTgId})`
                 } on ${transfer.dateAdded} ${
-                  transfer.message ? `[${transfer.message}]` : ""
+                  transfer.message ? `[${transfer.message}]` : ''
                 }`
             )
-            .join("\n")}\n\n`
-        : "";
+            .join('\n')}\n\n`
+        : '';
     });
 
     formattedTxs += await getRewardTxsUser(
@@ -108,20 +108,20 @@ router.get("/format-transfers-user", authenticateApiKey, async (req, res) => {
             .map(
               (transfer) =>
                 `- ${transfer.amount} g1 on ${transfer.dateAdded} ${
-                  transfer.message ? `[${transfer.message}]` : ""
+                  transfer.message ? `[${transfer.message}]` : ''
                 }`
             )
-            .join("\n")}\n\n`
-        : "";
+            .join('\n')}\n\n`
+        : '';
     });
 
     res.status(200).send({ formattedTxs: formattedTxs.trimEnd() });
   } catch (error) {
-    return res.status(500).send({ msg: "An error occurred", error });
+    return res.status(500).send({ msg: 'An error occurred', error });
   }
 });
 
-router.get("/:collectionName", authenticateApiKey, async (req, res) => {
+router.get('/:collectionName', authenticateApiKey, async (req, res) => {
   const { limit, start, ...query } = req.query;
   try {
     const db = await Database.getInstance(req);
@@ -134,7 +134,7 @@ router.get("/:collectionName", authenticateApiKey, async (req, res) => {
         .toArray()
     );
   } catch (error) {
-    return res.status(500).send({ msg: "An error occurred", error });
+    return res.status(500).send({ msg: 'An error occurred', error });
   }
 });
 

@@ -1,6 +1,6 @@
-import { Database } from "../db/conn.js";
-import fs from "fs";
-import csv from "csv-parser";
+import { Database } from '../db/conn.js';
+import fs from 'fs';
+import csv from 'csv-parser';
 
 // Usage: importUsersFromCSV(filePath)
 // Description: This function imports user data from a CSV file into the database.
@@ -8,28 +8,28 @@ import csv from "csv-parser";
 // Example: importUsersFromCSV("/path/to/your/file.csv");
 async function importUsersFromCSV(filePath) {
   const db = await Database.getInstance();
-  const collection = db.collection("users");
+  const collection = db.collection('users');
   const toInsert = [];
 
   try {
     // Read the CSV file and parse its contents
     fs.createReadStream(filePath)
       .pipe(csv())
-      .on("data", (data) => {
+      .on('data', (data) => {
         // Extract data from CSV row and format it
         toInsert.push({
           userTelegramID: data.UserID,
           responsePath: data.ResponsePath,
           userHandle: data.UserHandle,
-          userName: data.FirstName + " " + data.LastName,
+          userName: data.FirstName + ' ' + data.LastName,
           patchwallet: data.wallet,
           dateAdded: new Date(data.FirstActive).toISOString(),
         });
       })
-      .on("end", async () => {
+      .on('end', async () => {
         // Retrieve existing userTelegramIDs from the database
         const existingTelegramIDs = (
-          await collection.distinct("userTelegramID")
+          await collection.distinct('userTelegramID')
         ).map(String);
 
         // Filter out new users not present in the database
@@ -40,15 +40,15 @@ async function importUsersFromCSV(filePath) {
         if (newUsers.length > 0) {
           // Insert new users into the database
           await collection.insertMany(newUsers);
-          console.log("Missing users inserted");
+          console.log('Missing users inserted');
         } else {
-          console.log("No new users to insert.");
+          console.log('No new users to insert.');
         }
 
         process.exit(0);
       });
   } catch (error) {
-    console.error("Error reading CSV file:", error);
+    console.error('Error reading CSV file:', error);
     process.exit(1);
   }
 }
@@ -59,7 +59,7 @@ async function importUsersFromCSV(filePath) {
 async function removeUsersScientificNotationInTelegramID() {
   try {
     const db = await Database.getInstance();
-    const collectionUsers = db.collection("users");
+    const collectionUsers = db.collection('users');
 
     // Define a filter to find users with "+" in userTelegramID
     const filter = { userTelegramID: { $regex: /\+/ } };

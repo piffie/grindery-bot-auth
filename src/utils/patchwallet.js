@@ -1,12 +1,12 @@
-import "dotenv/config";
-import axios from "axios";
-import Web3 from "web3";
-import ERC20 from "../routes/abi/ERC20.json" assert { type: "json" };
+import 'dotenv/config';
+import axios from 'axios';
+import Web3 from 'web3';
+import ERC20 from '../routes/abi/ERC20.json' assert { type: 'json' };
 
 export async function getPatchWalletAccessToken() {
   return (
     await axios.post(
-      "https://paymagicapi.com/v1/auth",
+      'https://paymagicapi.com/v1/auth',
       {
         client_id: process.env.CLIENT_ID,
         client_secret: process.env.CLIENT_SECRET,
@@ -21,7 +21,7 @@ export async function getPatchWalletAccessToken() {
 export async function getPatchWalletAddressFromTgId(tgId) {
   return (
     await axios.post(
-      "https://paymagicapi.com/v1/resolver",
+      'https://paymagicapi.com/v1/resolver',
       {
         userIds: `grindery:${tgId}`,
       },
@@ -43,25 +43,25 @@ export async function sendTokens(
     process.env.G1_POLYGON_ADDRESS
   );
   return await axios.post(
-    "https://paymagicapi.com/v1/kernel/tx",
+    'https://paymagicapi.com/v1/kernel/tx',
     {
       userId: `grindery:${senderTgId}`,
-      chain: "matic",
+      chain: 'matic',
       to: [process.env.G1_POLYGON_ADDRESS],
-      value: ["0x00"],
+      value: ['0x00'],
       data: [
-        g1Contract.methods["transfer"](
+        g1Contract.methods['transfer'](
           recipientwallet,
           Web3.utils.toWei(amountEther)
         ).encodeABI(),
       ],
-      auth: "",
+      auth: '',
     },
     {
       timeout: 100000,
       headers: {
         Authorization: `Bearer ${patchWalletAccessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     }
   );

@@ -6,10 +6,9 @@ import { uuid } from "uuidv4";
 import TGClient from "../utils/telegramClient.js";
 import { telegramHashIsValid } from "../utils/auth.js";
 import { Database } from "../db/conn.js";
-import { getUser, sendTelegramMessage } from "../utils/telegram.js";
+import { getUser } from "../utils/telegram.js";
 import axios from "axios";
 import { decrypt, encrypt } from "../utils/crypt.js";
-import { USERS_COLLECTION } from "../utils/constants.js";
 
 const router = express.Router();
 const operations = {};
@@ -34,12 +33,12 @@ const operations = {};
  *   "status": "pending"
  * }
  */
-router.post("/init", telegramHashIsValid, async (req, res) => {
+router.post('/init', telegramHashIsValid, async (req, res) => {
   const operationId = uuid();
 
-  const client = TGClient(new StringSession(""));
+  const client = TGClient(new StringSession(''));
   operations[operationId] = {
-    status: "pending",
+    status: 'pending',
     client: client,
     phoneCodePromise: null,
   };
@@ -58,20 +57,20 @@ router.post("/init", telegramHashIsValid, async (req, res) => {
           operations[operationId].phoneCodePromise = createTelegramPromise();
           return code;
         }
-        throw new Error("Phone code promise not found.");
+        throw new Error('Phone code promise not found.');
       },
       onError: (err) => {
-        operations[operationId].status = "error";
+        operations[operationId].status = 'error';
         operations[operationId].error = err;
       },
     })
     .then(() => {
-      operations[operationId].status = "completed";
+      operations[operationId].status = 'completed';
     });
 
   res.json({
     operationId: operationId,
-    status: "pending",
+    status: 'pending',
   });
 });
 
@@ -100,7 +99,7 @@ router.post("/init", telegramHashIsValid, async (req, res) => {
  *   "error": "Operation not found"
  * }
  */
-router.post("/callback", telegramHashIsValid, async (req, res) => {
+router.post('/callback', telegramHashIsValid, async (req, res) => {
   const operationId = req.body.operationId;
   const code = req.body.code;
 
@@ -110,11 +109,11 @@ router.post("/callback", telegramHashIsValid, async (req, res) => {
     try {
       const user = getUser(req);
       if (!user?.id) {
-        return res.status(401).send({ msg: "Invalid user" });
+        return res.status(401).send({ msg: 'Invalid user' });
       }
 
       const db = await Database.getInstance(req);
-      await db.collection("users").updateOne(
+      await db.collection('users').updateOne(
         { userTelegramID: user.id.toString() },
         {
           $set: {
@@ -124,11 +123,11 @@ router.post("/callback", telegramHashIsValid, async (req, res) => {
       );
       res.json({
         session: encodeURIComponent(encrypt(session)),
-        status: "code_received",
+        status: 'code_received',
       });
     } catch (error) {}
   } else {
-    res.status(404).json({ error: "Operation not found" });
+    res.status(404).json({ error: 'Operation not found' });
   }
 });
 
@@ -146,7 +145,7 @@ router.post("/callback", telegramHashIsValid, async (req, res) => {
  *   "status": true // or false
  * }
  */
-router.get("/status", telegramHashIsValid, async (req, res) => {
+router.get('/status', telegramHashIsValid, async (req, res) => {
   const client = TGClient(new StringSession(decrypt(req.query.session)));
   await client.connect();
   const status = client.connected;
@@ -167,15 +166,15 @@ router.get("/status", telegramHashIsValid, async (req, res) => {
  *   "contacts": [{...}, {...}] // array of contact objects
  * }
  */
-router.get("/contacts", telegramHashIsValid, async (req, res) => {
+router.get('/contacts', telegramHashIsValid, async (req, res) => {
   try {
     const user = getUser(req);
     if (!user?.id) {
-      return res.status(401).send({ msg: "Invalid user" });
+      return res.status(401).send({ msg: 'Invalid user' });
     }
     const db = await Database.getInstance(req);
     const userDoc = await db
-      .collection("users")
+      .collection('users')
       .findOne({ userTelegramID: user.id.toString() });
     const session = userDoc.telegramSession;
     if (!session) {
@@ -189,12 +188,12 @@ router.get("/contacts", telegramHashIsValid, async (req, res) => {
     }
     const contacts = await client.invoke(
       new Api.contacts.GetContacts({
-        hash: BigInt("-4156887774564"),
+        hash: BigInt('-4156887774564'),
       })
     );
 
     const usersArray = await db
-      .collection("users")
+      .collection('users')
       .find({
         $or: contacts.users.map((user) => ({
           userTelegramID: user.id.toString(),
@@ -203,7 +202,7 @@ router.get("/contacts", telegramHashIsValid, async (req, res) => {
       .toArray();
 
     const transfers = await db
-      .collection("transfers")
+      .collection('transfers')
       .find({ senderTgId: user.id.toString() })
       .toArray();
 
@@ -223,8 +222,8 @@ router.get("/contacts", telegramHashIsValid, async (req, res) => {
       }))
     );
   } catch (error) {
-    console.error("Error getting user", error);
-    return res.status(500).send({ msg: "An error occurred", error });
+    console.error('Error getting user', error);
+    return res.status(500).send({ msg: 'An error occurred', error });
   }
 });
 
@@ -247,23 +246,23 @@ router.get("/contacts", telegramHashIsValid, async (req, res) => {
  *   "dateAdded": "2021-01-01T00:00:00.000Z"
  * }
  */
-router.get("/me", telegramHashIsValid, async (req, res) => {
+router.get('/me', telegramHashIsValid, async (req, res) => {
   try {
     const user = getUser(req);
     if (!user?.id) {
-      return res.status(401).send({ msg: "Invalid user" });
+      return res.status(401).send({ msg: 'Invalid user' });
     }
     const db = await Database.getInstance(req);
     return res
       .status(200)
       .send(
         await db
-          .collection("users")
+          .collection('users')
           .findOne({ userTelegramID: user.id.toString() })
       );
   } catch (error) {
-    console.error("Error getting user", error);
-    return res.status(500).send({ msg: "An error occurred", error });
+    console.error('Error getting user', error);
+    return res.status(500).send({ msg: 'An error occurred', error });
   }
 });
 
@@ -294,16 +293,16 @@ router.get("/me", telegramHashIsValid, async (req, res) => {
  *   }
  * ]
  */
-router.get("/activity", telegramHashIsValid, async (req, res) => {
+router.get('/activity', telegramHashIsValid, async (req, res) => {
   try {
     const user = getUser(req);
     if (!user?.id) {
-      return res.status(401).send({ msg: "Invalid user" });
+      return res.status(401).send({ msg: 'Invalid user' });
     }
     const db = await Database.getInstance(req);
     return res.status(200).send(
       await db
-        .collection("transfers")
+        .collection('transfers')
         .find({
           $or: [
             { senderTgId: user.id.toString() },
@@ -313,8 +312,8 @@ router.get("/activity", telegramHashIsValid, async (req, res) => {
         .toArray()
     );
   } catch (error) {
-    console.error("Error getting activity", error);
-    return res.status(500).send({ msg: "An error occurred", error });
+    console.error('Error getting activity', error);
+    return res.status(500).send({ msg: 'An error occurred', error });
   }
 });
 
@@ -336,24 +335,24 @@ router.get("/activity", telegramHashIsValid, async (req, res) => {
  *   "patchwallet": "0x123"
  * }
  */
-router.get("/user", telegramHashIsValid, async (req, res) => {
+router.get('/user', telegramHashIsValid, async (req, res) => {
   try {
     const user = getUser(req);
     if (!user?.id) {
-      return res.status(401).send({ msg: "Invalid user" });
+      return res.status(401).send({ msg: 'Invalid user' });
     }
     if (!req.query.id) {
-      return res.status(400).send({ msg: "Invalid user ID" });
+      return res.status(400).send({ msg: 'Invalid user ID' });
     }
     const db = await Database.getInstance(req);
     return res
       .status(200)
       .send(
-        await db.collection("users").findOne({ userTelegramID: req.query.id })
+        await db.collection('users').findOne({ userTelegramID: req.query.id })
       );
   } catch (error) {
-    console.error("Error getting user", error);
-    return res.status(500).send({ msg: "An error occurred", error });
+    console.error('Error getting user', error);
+    return res.status(500).send({ msg: 'An error occurred', error });
   }
 });
 
@@ -385,19 +384,19 @@ router.get("/user", telegramHashIsValid, async (req, res) => {
  *  "received": []
  * }
  */
-router.get("/rewards", telegramHashIsValid, async (req, res) => {
+router.get('/rewards', telegramHashIsValid, async (req, res) => {
   try {
     const user = getUser(req);
     if (!user?.id) {
-      return res.status(401).send({ msg: "Invalid user" });
+      return res.status(401).send({ msg: 'Invalid user' });
     }
     const db = await Database.getInstance(req);
     const sent = await db
-      .collection("transfers")
+      .collection('transfers')
       .find({ senderTgId: user.id.toString() })
       .toArray();
     const users = await db
-      .collection("users")
+      .collection('users')
       .find({
         $or: sent.map((col) => ({
           userTelegramID: col.recipientTgId,
@@ -405,7 +404,7 @@ router.get("/rewards", telegramHashIsValid, async (req, res) => {
       })
       .toArray();
 
-    const key = "recipientTgId";
+    const key = 'recipientTgId';
     const pending = [
       ...new Map(
         sent
@@ -415,13 +414,13 @@ router.get("/rewards", telegramHashIsValid, async (req, res) => {
                 .map((user) => user.userTelegramID)
                 .includes(col.recipientTgId)
           )
-          .map((col) => ({ ...col, tokenAmount: "50" }))
+          .map((col) => ({ ...col, tokenAmount: '50' }))
           .map((item) => [item[key], item])
       ).values(),
     ];
 
     const received = await db
-      .collection("rewards")
+      .collection('rewards')
       .find({
         userTelegramID: user.id.toString(),
       })
@@ -432,8 +431,8 @@ router.get("/rewards", telegramHashIsValid, async (req, res) => {
       received,
     });
   } catch (error) {
-    console.error("Error getting rewards", error);
-    return res.status(500).send({ msg: "An error occurred", error });
+    console.error('Error getting rewards', error);
+    return res.status(500).send({ msg: 'An error occurred', error });
   }
 });
 
@@ -452,30 +451,30 @@ router.get("/rewards", telegramHashIsValid, async (req, res) => {
  *   "photo": "data:image/png;base64,asdfghjklqwertyuiopzxcvbnm"
  * }
  */
-router.get("/user/photo", telegramHashIsValid, async (req, res) => {
+router.get('/user/photo', telegramHashIsValid, async (req, res) => {
   try {
     const username = req.query.username;
 
     if (!username) {
-      return res.status(401).send({ msg: "Username is required" });
+      return res.status(401).send({ msg: 'Username is required' });
     }
     const user = getUser(req);
     if (!user?.id) {
-      return res.status(401).send({ msg: "Invalid user" });
+      return res.status(401).send({ msg: 'Invalid user' });
     }
     const db = await Database.getInstance(req);
     const userDoc = await db
-      .collection("users")
+      .collection('users')
       .findOne({ userTelegramID: user.id.toString() });
     const session = userDoc.telegramSession;
     if (!session) {
-      return res.status(200).json({ photo: "" });
+      return res.status(200).json({ photo: '' });
     }
     const client = TGClient(new StringSession(decrypt(session)));
     await client.connect();
 
     if (!client.connected) {
-      return res.status(200).json({ photo: "" });
+      return res.status(200).json({ photo: '' });
     }
 
     const photo = await client.downloadProfilePhoto(username);
@@ -483,11 +482,11 @@ router.get("/user/photo", telegramHashIsValid, async (req, res) => {
     const base64Photo = btoa(String.fromCharCode(...new Uint8Array(photo)));
 
     return res.status(200).json({
-      photo: base64Photo ? `data:image/png;base64,${base64Photo}` : "",
+      photo: base64Photo ? `data:image/png;base64,${base64Photo}` : '',
     });
   } catch (error) {
-    console.error("Error getting user photo", error);
-    return res.status(500).send({ msg: "An error occurred", error });
+    console.error('Error getting user photo', error);
+    return res.status(500).send({ msg: 'An error occurred', error });
   }
 });
 
@@ -518,23 +517,23 @@ router.get("/user/photo", telegramHashIsValid, async (req, res) => {
  *   "error": "error message"
  * }
  */
-router.post("/send", telegramHashIsValid, async (req, res) => {
+router.post('/send', telegramHashIsValid, async (req, res) => {
   const user = getUser(req);
   if (!user?.id) {
-    return res.status(401).send({ msg: "Invalid user" });
+    return res.status(401).send({ msg: 'Invalid user' });
   }
   if (!req.body.recipientTgId) {
-    return res.status(400).json({ error: "Recipient is required" });
+    return res.status(400).json({ error: 'Recipient is required' });
   }
   if (!req.body.amount) {
-    return res.status(400).json({ error: "Amount is required" });
+    return res.status(400).json({ error: 'Amount is required' });
   }
   try {
     const isSingle = !Array.isArray(req.body.recipientTgId);
     let data = {};
     if (isSingle) {
       data = {
-        event: "new_transaction",
+        event: 'new_transaction',
         params: {
           recipientTgId: req.body.recipientTgId,
           amount: req.body.amount,
@@ -544,7 +543,7 @@ router.post("/send", telegramHashIsValid, async (req, res) => {
       };
     } else {
       data = {
-        event: "new_transaction_batch",
+        event: 'new_transaction_batch',
         params: req.body.recipientTgId.map((id) => ({
           recipientTgId: id,
           amount: req.body.amount,
@@ -560,15 +559,15 @@ router.post("/send", telegramHashIsValid, async (req, res) => {
       {
         headers: {
           Authorization: `Bearer ${process.env.API_KEY}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       }
     );
 
     return res.status(200).json({ success: eventRes.data?.success || false });
   } catch (error) {
-    console.error("Error sending transaction", error);
-    return res.status(500).send({ success: false, error: "An error occurred" });
+    console.error('Error sending transaction', error);
+    return res.status(500).send({ success: false, error: 'An error occurred' });
   }
 });
 

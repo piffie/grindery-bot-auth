@@ -1,4 +1,4 @@
-import chai from "chai";
+import chai from 'chai';
 import {
   collectionRewardsMock,
   mockResponsePath,
@@ -18,24 +18,24 @@ import {
   mockWallet1,
   patchwalletResolverUrl,
   segmentIdentifyUrl,
-} from "./utils.js";
-import { handleNewReward, webhook_utils } from "../utils/webhook.js";
-import Sinon from "sinon";
-import axios from "axios";
-import "dotenv/config";
-import chaiExclude from "chai-exclude";
-import * as webhookModule from "../utils/webhook.js";
+} from './utils.js';
+import { handleNewReward, webhook_utils } from '../utils/webhook.js';
+import Sinon from 'sinon';
+import axios from 'axios';
+import 'dotenv/config';
+import chaiExclude from 'chai-exclude';
+import * as webhookModule from '../utils/webhook.js';
 
 chai.use(chaiExclude);
 
-describe("handleReferralReward function", function () {
+describe('handleReferralReward function', function () {
   let sandbox;
   let axiosStub;
 
   beforeEach(function () {
     sandbox = Sinon.createSandbox();
     axiosStub = sandbox
-      .stub(axios, "post")
+      .stub(axios, 'post')
       .callsFake(async (url, data, options) => {
         if (url === patchwalletResolverUrl) {
           return Promise.resolve({
@@ -47,22 +47,22 @@ describe("handleReferralReward function", function () {
 
         if (url === segmentIdentifyUrl) {
           return Promise.resolve({
-            result: "success",
+            result: 'success',
           });
         }
       });
     sandbox
-      .stub(webhook_utils, "handleSignUpReward")
+      .stub(webhook_utils, 'handleSignUpReward')
       .callsFake(async function () {
         return true;
       });
     sandbox
-      .stub(webhook_utils, "handleLinkReward")
+      .stub(webhook_utils, 'handleLinkReward')
       .callsFake(async function () {
         return true;
       });
     sandbox
-      .stub(webhook_utils, "handleReferralReward")
+      .stub(webhook_utils, 'handleReferralReward')
       .callsFake(async function () {
         return true;
       });
@@ -72,7 +72,7 @@ describe("handleReferralReward function", function () {
     sandbox.restore();
   });
 
-  it("Should return true with no new user if user is not new", async function () {
+  it('Should return true with no new user if user is not new', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
     });
@@ -87,7 +87,7 @@ describe("handleReferralReward function", function () {
     chai.expect(result).to.be.true;
     chai
       .expect(await collectionUsersMock.find({}).toArray())
-      .excluding(["_id"])
+      .excluding(['_id'])
       .to.deep.equal([
         {
           userTelegramID: mockUserTelegramID,
@@ -95,7 +95,7 @@ describe("handleReferralReward function", function () {
       ]);
   });
 
-  it("Should return true if user is new", async function () {
+  it('Should return true if user is new', async function () {
     const result = await handleNewReward({
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
@@ -106,7 +106,7 @@ describe("handleReferralReward function", function () {
     chai.expect(result).to.be.true;
   });
 
-  it("Should return false with no new user if signup reward is false", async function () {
+  it('Should return false with no new user if signup reward is false', async function () {
     webhook_utils.handleSignUpReward.callsFake(async function () {
       return false;
     });
@@ -122,7 +122,7 @@ describe("handleReferralReward function", function () {
     chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
   });
 
-  it("Should return true and populate database properly after restart", async function () {
+  it('Should return true and populate database properly after restart', async function () {
     webhook_utils.handleSignUpReward.callsFake(async function () {
       return false;
     });
@@ -153,7 +153,7 @@ describe("handleReferralReward function", function () {
     chai.expect(result).to.be.true;
     chai
       .expect(users)
-      .excluding(["_id", "dateAdded"])
+      .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
           userTelegramID: mockUserTelegramID,
@@ -165,7 +165,7 @@ describe("handleReferralReward function", function () {
       ]);
   });
 
-  it("Should return false and no new user if referral reward is false", async function () {
+  it('Should return false and no new user if referral reward is false', async function () {
     webhook_utils.handleReferralReward.callsFake(async function () {
       return false;
     });
@@ -181,7 +181,7 @@ describe("handleReferralReward function", function () {
     chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
   });
 
-  it("Should be able to restart, return true and populate the database properly after restart", async function () {
+  it('Should be able to restart, return true and populate the database properly after restart', async function () {
     webhook_utils.handleReferralReward.callsFake(async function () {
       return false;
     });
@@ -210,7 +210,7 @@ describe("handleReferralReward function", function () {
     chai.expect(result).to.be.true;
     chai
       .expect(await collectionUsersMock.find({}).toArray())
-      .excluding(["_id", "dateAdded"])
+      .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
           userTelegramID: mockUserTelegramID,
@@ -222,7 +222,7 @@ describe("handleReferralReward function", function () {
       ]);
   });
 
-  it("Should return true and populate database correctly with referral link", async function () {
+  it('Should return true and populate database correctly with referral link', async function () {
     const result = await handleNewReward({
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
@@ -234,7 +234,7 @@ describe("handleReferralReward function", function () {
     chai.expect(result).to.be.true;
     chai
       .expect(await collectionUsersMock.find({}).toArray())
-      .excluding(["_id", "dateAdded"])
+      .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
           userTelegramID: mockUserTelegramID,
@@ -246,7 +246,7 @@ describe("handleReferralReward function", function () {
       ]);
   });
 
-  it("Should be able to restart and return true + populate the database properly", async function () {
+  it('Should be able to restart and return true + populate the database properly', async function () {
     webhook_utils.handleLinkReward.callsFake(async function () {
       return false;
     });
@@ -277,7 +277,7 @@ describe("handleReferralReward function", function () {
     chai.expect(result).to.be.true;
     chai
       .expect(await collectionUsersMock.find({}).toArray())
-      .excluding(["_id", "dateAdded"])
+      .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
           userTelegramID: mockUserTelegramID,
@@ -289,9 +289,9 @@ describe("handleReferralReward function", function () {
       ]);
   });
 
-  it("Should populate the segment user properly", async function () {
+  it('Should populate the segment user properly', async function () {
     const result = await handleNewReward({
-      userTelegramID: "newUserTgId",
+      userTelegramID: 'newUserTgId',
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
       userName: mockUserName,
@@ -303,9 +303,9 @@ describe("handleReferralReward function", function () {
 
     chai
       .expect(segmentIdentityCall[0].args[1])
-      .excluding(["timestamp"])
+      .excluding(['timestamp'])
       .to.deep.equal({
-        userId: "newUserTgId",
+        userId: 'newUserTgId',
         traits: {
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -321,10 +321,10 @@ describe("handleReferralReward function", function () {
       .to.be.lessThanOrEqual(new Date());
   });
 
-  it("Should return false with nothing in the database if PatchWallet address error", async function () {
+  it('Should return false with nothing in the database if PatchWallet address error', async function () {
     axiosStub
       .withArgs(patchwalletResolverUrl)
-      .rejects(new Error("Service not available"));
+      .rejects(new Error('Service not available'));
 
     const result = await handleNewReward({
       userTelegramID: mockUserTelegramID,
@@ -338,10 +338,10 @@ describe("handleReferralReward function", function () {
     chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
   });
 
-  it("Should return true if error in Segment", async function () {
+  it('Should return true if error in Segment', async function () {
     axiosStub
       .withArgs(segmentIdentifyUrl)
-      .rejects(new Error("Service not available"));
+      .rejects(new Error('Service not available'));
 
     const result = await handleNewReward({
       userTelegramID: mockUserTelegramID,

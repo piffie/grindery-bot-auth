@@ -1,9 +1,9 @@
-import { Database } from "../db/conn.js";
+import { Database } from '../db/conn.js';
 import {
   REWARDS_COLLECTION,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
-} from "./constants.js";
+} from './constants.js';
 
 export async function getIncomingTxsUser(db, userId, start, limit) {
   return await Promise.all(
@@ -67,8 +67,8 @@ export async function getRewardTxsUser(db, userId, start, limit) {
 }
 
 function formatDate(date) {
-  return new Date(date).toLocaleDateString("en-US", {
-    day: "2-digit",
-    month: "short",
+  return new Date(date).toLocaleDateString('en-US', {
+    day: '2-digit',
+    month: 'short',
   });
 }

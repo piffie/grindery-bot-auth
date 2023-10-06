@@ -1,10 +1,10 @@
-import { Database } from "../db/conn.js";
-import { getPatchWalletAccessToken, sendTokens } from "../utils/patchwallet.js";
-import { createObjectCsvWriter as createCsvWriter } from "csv-writer";
-import fs from "fs";
-import csv from "csv-parser";
-import web3 from "web3";
-import { REWARDS_COLLECTION, USERS_COLLECTION } from "../utils/constants.js";
+import { Database } from '../db/conn.js';
+import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet.js';
+import { createObjectCsvWriter as createCsvWriter } from 'csv-writer';
+import fs from 'fs';
+import csv from 'csv-parser';
+import web3 from 'web3';
+import { REWARDS_COLLECTION, USERS_COLLECTION } from '../utils/constants.js';
 
 /**
  * Distributes a sign-up reward of 100 Grindery One Tokens to users without previous rewards.
@@ -14,7 +14,7 @@ async function distributeSignupRewards() {
   try {
     // Connect to the database
     const db = await Database.getInstance();
-    const rewardsCollection = db.collection("rewards");
+    const rewardsCollection = db.collection('rewards');
 
     // Obtain the initial PatchWallet access token
     let patchWalletAccessToken = await getPatchWalletAccessToken();
@@ -22,12 +22,12 @@ async function distributeSignupRewards() {
     // Track the time of the last token renewal
     let lastTokenRenewalTime = Date.now();
 
-    const allUsers = await db.collection("users").find({}).toArray();
+    const allUsers = await db.collection('users').find({}).toArray();
     let userCount = 0;
 
     // Load all rewards into memory for filtering
     const allRewards = await rewardsCollection
-      .find({ amount: "100" })
+      .find({ amount: '100' })
       .toArray();
 
     for (const user of allUsers) {
@@ -48,7 +48,7 @@ async function distributeSignupRewards() {
           patchWalletAccessToken = await getPatchWalletAccessToken();
           lastTokenRenewalTime = Date.now();
 
-          console.log("PatchWallet access token has been updated.");
+          console.log('PatchWallet access token has been updated.');
         }
 
         try {
@@ -56,7 +56,7 @@ async function distributeSignupRewards() {
           const txReward = await sendTokens(
             process.env.SOURCE_TG_ID, // Sender's Telegram ID
             user.patchwallet, // User's wallet address
-            "100", // Amount of the reward
+            '100', // Amount of the reward
             patchWalletAccessToken // Access token for PatchWallet API
           );
 
@@ -66,11 +66,11 @@ async function distributeSignupRewards() {
               userTelegramID: user.userTelegramID,
               responsePath: user.responsePath,
               walletAddress: user.patchwallet,
-              reason: "user_sign_up",
+              reason: 'user_sign_up',
               userHandle: user.userHandle,
               userName: user.userName,
-              amount: "100",
-              message: "Sign up reward",
+              amount: '100',
+              message: 'Sign up reward',
               transactionHash: txReward.data.txHash,
               dateAdded: new Date(Date.now()),
             });
@@ -81,16 +81,16 @@ async function distributeSignupRewards() {
           }
         } catch (error) {
           // Handle errors and log them
-          console.error("An error occurred during reward distribution:", error);
+          console.error('An error occurred during reward distribution:', error);
         }
       }
     }
 
     // Log completion message
-    console.log("All sign-up rewards have been distributed.");
+    console.log('All sign-up rewards have been distributed.');
   } catch (error) {
     // Handle errors and log them
-    console.error("An error occurred:", error);
+    console.error('An error occurred:', error);
   } finally {
     // Exit the script
     process.exit(0);
@@ -101,7 +101,7 @@ export async function distributeReferralRewards() {
   try {
     // Connect to the database
     const db = await Database.getInstance();
-    const rewardsCollection = db.collection("rewards");
+    const rewardsCollection = db.collection('rewards');
 
     // Obtain the initial PatchWallet access token
     let patchWalletAccessToken = await getPatchWalletAccessToken();
@@ -113,11 +113,11 @@ export async function distributeReferralRewards() {
     const rewardedUsers = [];
 
     // Export the users and rewards collections as arrays
-    const allUsers = await db.collection("users").find({}).toArray();
+    const allUsers = await db.collection('users').find({}).toArray();
     const allRewardsReferral = await rewardsCollection
-      .find({ reason: "2x_reward" })
+      .find({ reason: '2x_reward' })
       .toArray();
-    const allTransfers = await db.collection("transfers").find({}).toArray();
+    const allTransfers = await db.collection('transfers').find({}).toArray();
 
     let transferCount = 0;
 
@@ -153,7 +153,7 @@ export async function distributeReferralRewards() {
       if (Date.now() - lastTokenRenewalTime >= 50 * 60 * 1000) {
         patchWalletAccessToken = await getPatchWalletAccessToken();
         lastTokenRenewalTime = Date.now();
-        console.log("PatchWallet access token has been updated.");
+        console.log('PatchWallet access token has been updated.');
       }
 
       // Find information about the sender of the transaction
@@ -175,16 +175,16 @@ export async function distributeReferralRewards() {
 
           // Determine the reward amount based on the date and transfer amount
           let rewardAmount =
-            new Date(transfer.dateAdded) < new Date("2023-09-07T12:00:00Z") &&
+            new Date(transfer.dateAdded) < new Date('2023-09-07T12:00:00Z') &&
             Number(transfer.tokenAmount) < 1000
               ? (Number(transfer.tokenAmount) * 2).toString()
-              : "50";
+              : '50';
 
           let rewardMessage =
-            new Date(transfer.dateAdded) < new Date("2023-09-07T12:00:00Z") &&
+            new Date(transfer.dateAdded) < new Date('2023-09-07T12:00:00Z') &&
             Number(transfer.tokenAmount) < 1000
-              ? "2x Referral reward"
-              : "Referral reward";
+              ? '2x Referral reward'
+              : 'Referral reward';
 
           // Send a reward of 50 tokens using the Patch Wallet API
           const txReward = await sendTokens(
@@ -199,7 +199,7 @@ export async function distributeReferralRewards() {
             userTelegramID: senderUser.userTelegramID,
             responsePath: senderUser.responsePath,
             walletAddress: rewardWallet,
-            reason: "2x_reward",
+            reason: '2x_reward',
             userHandle: senderUser.userHandle,
             userName: senderUser.userName,
             amount: rewardAmount,
@@ -232,7 +232,7 @@ export async function distributeReferralRewards() {
           );
         } catch (error) {
           // Handle errors and log them
-          console.error("An error occurred during reward distribution:", error);
+          console.error('An error occurred during reward distribution:', error);
         }
       }
     }
@@ -240,7 +240,7 @@ export async function distributeReferralRewards() {
     console.log(`${rewardedUsers.length} users have been rewarded.`);
   } catch (error) {
     // Handle errors and log them
-    console.error("An error occurred:", error);
+    console.error('An error occurred:', error);
   } finally {
     // Exit the script
     process.exit(0);
@@ -255,26 +255,26 @@ const startImport = (fileName) => {
   const rewards = [];
   fs.createReadStream(fileName)
     .pipe(csv())
-    .on("data", (row) => {
+    .on('data', (row) => {
       rewards.push(row);
     })
-    .on("end", async () => {
+    .on('end', async () => {
       await saveRewards(rewards);
-      console.log("\n All data has been read \n");
+      console.log('\n All data has been read \n');
       process.exit(0);
     })
-    .on("error", (error) => {
-      console.log("\n Errors during CSV parsing \n");
+    .on('error', (error) => {
+      console.log('\n Errors during CSV parsing \n');
       process.exit(1);
     });
 };
 
 async function saveRewards(rewards) {
   const db = await Database.getInstance();
-  const collection = db.collection("rewards-test");
+  const collection = db.collection('rewards-test');
 
   // Step 1: Create a set of existing rewards hashes
-  const existingHashes = await collection.distinct("transactionHash");
+  const existingHashes = await collection.distinct('transactionHash');
 
   // Step 2: Filter the rewards to find the missing ones and format them
   const formattedMissingRewards = rewards
@@ -290,12 +290,12 @@ async function saveRewards(rewards) {
       const amount = String(Number(rewards.value) / 1e18);
       const message = generateRewardMessage(amount, rewards.evt_block_time);
       return {
-        userTelegramID: "",
-        responsePath: "",
+        userTelegramID: '',
+        responsePath: '',
         walletAddress: web3.utils.toChecksumAddress(rewards.to),
         reason: message.reason,
-        userHandle: "",
-        userName: "",
+        userHandle: '',
+        userName: '',
         amount: amount,
         message: message.description,
         transactionHash: rewards.evt_tx_hash,
@@ -333,29 +333,29 @@ async function saveRewards(rewards) {
   for (let i = 0; i < formattedMissingRewards.length; i += batchSize) {
     const batch = formattedMissingRewards.slice(i, i + batchSize);
     await collection.insertMany(batch);
-    console.log("Batch: ", i);
+    console.log('Batch: ', i);
   }
 }
 
 const generateRewardMessage = (amount, blockTime) => {
-  const transitionDate = new Date("2023-09-05T12:00:00Z");
+  const transitionDate = new Date('2023-09-05T12:00:00Z');
   const dateObj = new Date(blockTime);
   const isBeforeTuesdayNoon = dateObj < transitionDate;
 
-  if (amount === "100") {
+  if (amount === '100') {
     return {
-      reason: "user_sign_up",
-      description: "Sign up reward",
+      reason: 'user_sign_up',
+      description: 'Sign up reward',
     };
-  } else if (amount === "50" && isBeforeTuesdayNoon) {
+  } else if (amount === '50' && isBeforeTuesdayNoon) {
     return {
-      reason: "hunt",
-      description: "Product Hunt reward",
+      reason: 'hunt',
+      description: 'Product Hunt reward',
     };
-  } else if (amount === "50" && !isBeforeTuesdayNoon) {
+  } else if (amount === '50' && !isBeforeTuesdayNoon) {
     return {
-      reason: "2x_reward",
-      description: "2x Referral reward",
+      reason: '2x_reward',
+      description: '2x Referral reward',
     };
   } else {
     return {
@@ -377,22 +377,22 @@ async function updateRewardMessages() {
   let processedCount = 0;
 
   for (const reward of rewards) {
-    let updatedMessage = "";
+    let updatedMessage = '';
 
-    if (reward.amount === "100") {
-      updatedMessage = "Sign up reward";
+    if (reward.amount === '100') {
+      updatedMessage = 'Sign up reward';
     } else if (
-      reward.amount === "50" &&
-      reward.message.includes("Product Hunt")
+      reward.amount === '50' &&
+      reward.message.includes('Product Hunt')
     ) {
-      updatedMessage = "Product Hunt reward";
+      updatedMessage = 'Product Hunt reward';
     } else if (
-      reward.amount === "50" &&
-      !reward.message.includes("Product Hunt")
+      reward.amount === '50' &&
+      !reward.message.includes('Product Hunt')
     ) {
-      updatedMessage = "Referral reward";
+      updatedMessage = 'Referral reward';
     } else {
-      updatedMessage = "2x Referral reward";
+      updatedMessage = '2x Referral reward';
     }
 
     if (updatedMessage) {
@@ -414,7 +414,7 @@ async function updateRewardMessages() {
     await collection.bulkWrite(bulkUpdateOperations);
   }
 
-  console.log("\n All rewards have been updated \n");
+  console.log('\n All rewards have been updated \n');
   process.exit(0);
 }
 
@@ -424,22 +424,22 @@ async function updateRewardMessages() {
 // Example: rewardsCleanup("dune.csv");
 async function rewardsCleanup(fileName) {
   const db = await Database.getInstance();
-  const collection = db.collection("rewards-test");
+  const collection = db.collection('rewards-test');
   const hashesInCsv = [];
   let latestTimestamp = null;
 
   fs.createReadStream(fileName)
     .pipe(csv())
-    .on("data", (row) => {
+    .on('data', (row) => {
       hashesInCsv.push(row.evt_tx_hash);
       const rowTimestamp = new Date(row.evt_block_time);
       if (latestTimestamp === null || rowTimestamp > latestTimestamp) {
         latestTimestamp = rowTimestamp;
       }
     })
-    .on("end", async () => {
+    .on('end', async () => {
       if (latestTimestamp === null) {
-        console.log("No timestamp found in CSV.");
+        console.log('No timestamp found in CSV.');
         process.exit(1);
       }
 
@@ -454,7 +454,7 @@ async function rewardsCleanup(fileName) {
         .map((reward) => reward.transactionHash);
 
       if (hashesToDelete.length === 0) {
-        console.log("All rewards in database match the rewards in CSV.");
+        console.log('All rewards in database match the rewards in CSV.');
       } else {
         const deleteResult = await collection.deleteMany({
           transactionHash: { $in: hashesToDelete },
@@ -462,11 +462,11 @@ async function rewardsCleanup(fileName) {
         console.log(`${deleteResult.deletedCount} incomplete rewards deleted.`);
       }
 
-      console.log("\n All tasks completed \n");
+      console.log('\n All tasks completed \n');
       process.exit(0);
     })
-    .on("error", (error) => {
-      console.log("\n Errors during CSV parsing \n");
+    .on('error', (error) => {
+      console.log('\n Errors during CSV parsing \n');
       process.exit(1);
     });
 }

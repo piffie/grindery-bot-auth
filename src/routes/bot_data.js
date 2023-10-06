@@ -1,14 +1,14 @@
-import Web3 from "web3";
-import express from "express";
-import "dotenv/config";
-import ERC20 from "./abi/ERC20.json" assert { type: "json" };
-import BigNumber from "bignumber.js";
-import { CHAIN_MAPPING } from "../utils/chains.js";
-import axios from "axios";
-import { authenticateApiKey } from "../utils/auth.js";
+import Web3 from 'web3';
+import express from 'express';
+import 'dotenv/config';
+import ERC20 from './abi/ERC20.json' assert { type: 'json' };
+import BigNumber from 'bignumber.js';
+import { CHAIN_MAPPING } from '../utils/chains.js';
+import axios from 'axios';
+import { authenticateApiKey } from '../utils/auth.js';
 
 const router = express.Router();
-const g1PolygonAddress = "0xe36BD65609c08Cd17b53520293523CF4560533d0";
+const g1PolygonAddress = '0xe36BD65609c08Cd17b53520293523CF4560533d0';
 
 /**
  * POST /v1/data/
@@ -34,14 +34,14 @@ const g1PolygonAddress = "0xe36BD65609c08Cd17b53520293523CF4560533d0";
  *   "error": "Function not found in contract ABI."
  * }
  */
-router.post("/", async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const web3 = new Web3();
     const contract = new web3.eth.Contract(ERC20, req.body.contractAddress);
 
     const targetFunction = contract.methods[req.body.function];
     if (!targetFunction) {
-      res.status(400).json({ error: "Function not found in contract ABI." });
+      res.status(400).json({ error: 'Function not found in contract ABI.' });
       return;
     }
 
@@ -51,12 +51,12 @@ router.post("/", async (req, res) => {
       .status(200)
       .json({ encodedData: targetFunction(...inputArguments).encodeABI() });
   } catch (error) {
-    console.error("Error:", error);
+    console.error('Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post("/balance", async (req, res) => {
+router.post('/balance', async (req, res) => {
   try {
     const web3 = new Web3(CHAIN_MAPPING[req.body.chainId][1]);
     const contract = new web3.eth.Contract(ERC20, req.body.contractAddress);
@@ -74,12 +74,12 @@ router.post("/balance", async (req, res) => {
         .toString(),
     });
   } catch (error) {
-    console.error("Error:", error);
+    console.error('Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post("/balance", async (req, res) => {
+router.post('/balance', async (req, res) => {
   try {
     const web3 = new Web3(CHAIN_MAPPING[req.body.chainId][1]);
     const contract = new web3.eth.Contract(ERC20, req.body.contractAddress);
@@ -97,18 +97,18 @@ router.post("/balance", async (req, res) => {
         .toString(),
     });
   } catch (error) {
-    console.error("Error:", error);
+    console.error('Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post("/patchwallet", async (req, res) => {
+router.post('/patchwallet', async (req, res) => {
   try {
     const web3 = new Web3(CHAIN_MAPPING[req.body.chainId][1]);
     const contract = new web3.eth.Contract(ERC20, req.body.contractAddress);
 
     const patchWalletAddress = (
-      await axios.post("https://paymagicapi.com/v1/resolver", {
+      await axios.post('https://paymagicapi.com/v1/resolver', {
         userIds: `grindery:${req.body.tgId}`,
       })
     ).data.users[0].accountAddress;
@@ -125,16 +125,16 @@ router.post("/patchwallet", async (req, res) => {
       patchWalletAddress,
     });
   } catch (error) {
-    console.error("Error:", error);
+    console.error('Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post("/sendTokens", authenticateApiKey, async (req, res) => {
+router.post('/sendTokens', authenticateApiKey, async (req, res) => {
   try {
     const accessToken = (
       await axios.post(
-        "https://paymagicapi.com/v1/auth",
+        'https://paymagicapi.com/v1/auth',
         {
           client_id: process.env.CLIENT_ID,
           client_secret: process.env.CLIENT_SECRET,
@@ -150,7 +150,7 @@ router.post("/sendTokens", authenticateApiKey, async (req, res) => {
 
     const to = (
       await axios.post(
-        "https://paymagicapi.com/v1/resolver",
+        'https://paymagicapi.com/v1/resolver',
         {
           userIds: `grindery:${req.body.toTgId}`,
         },
@@ -161,32 +161,32 @@ router.post("/sendTokens", authenticateApiKey, async (req, res) => {
     ).data.users[0].accountAddress;
 
     const tokenTransferResponse = await axios.post(
-      "https://paymagicapi.com/v1/kernel/tx",
+      'https://paymagicapi.com/v1/kernel/tx',
       {
         userId: `grindery:${req.body.tgId}`,
-        chain: "matic",
+        chain: 'matic',
         to: [g1PolygonAddress],
-        value: ["0x00"],
+        value: ['0x00'],
         data: [
-          contract.methods["transfer"](
+          contract.methods['transfer'](
             to,
             Web3.utils.toWei(req.body.amount)
           ).encodeABI(),
         ],
-        auth: "",
+        auth: '',
       },
       {
         timeout: 100000,
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       }
     );
 
     res.status(200).json(tokenTransferResponse.data);
   } catch (error) {
-    console.error("Error:", error);
+    console.error('Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
