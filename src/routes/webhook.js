@@ -1,11 +1,11 @@
-import express from "express";
-import {PubSub} from "@google-cloud/pubsub";
-import {authenticateApiKey} from "../utils/auth.js";
+import express from 'express';
+import { PubSub } from '@google-cloud/pubsub';
+import { authenticateApiKey } from '../utils/auth.js';
 import {
   handleNewReward,
   handleNewTransaction,
   handleNewUser,
-} from "../utils/webhook.js";
+} from '../utils/webhook.js';
 
 /**
  * This is a generic and extendable implementation of a webhook endpoint and pub/sub messages queue.
@@ -50,22 +50,22 @@ const router = express.Router();
  *   "error": "error message"
  * }
  */
-router.post("/", authenticateApiKey, async (req, res) => {
+router.post('/', authenticateApiKey, async (req, res) => {
   try {
     const data = JSON.stringify(req.body);
     console.log(`Publishing message: ${data}`);
     const dataBuffer = Buffer.from(data);
     const messageId = await pubSubClient
       .topic(topicName)
-      .publishMessage({data: dataBuffer});
+      .publishMessage({ data: dataBuffer });
     if (messageId) {
-      res.json({success: true, messageId});
+      res.json({ success: true, messageId });
     } else {
-      res.status(500).json({success: false, error: "Event wasn't saved"});
+      res.status(500).json({ success: false, error: "Event wasn't saved" });
     }
   } catch (error) {
     console.error(`Received error while publishing: ${error.message}`);
-    res.status(500).json({success: false, error: error.message});
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -78,7 +78,7 @@ const listenForMessages = () => {
   const messageHandler = async (message) => {
     const messageDataString = message.data.toString();
     const messageData = JSON.parse(messageDataString);
-    console.log("Received message:", JSON.stringify(messageData, null, 2));
+    console.log('Received message:', JSON.stringify(messageData, null, 2));
 
     try {
       let processed = false; // Has event been processed. If not, message will be requeued.
@@ -88,15 +88,15 @@ const listenForMessages = () => {
       // Example events:
       switch (messageData.event) {
         // User initiated new transaction
-        case "new_transaction":
+        case 'new_transaction':
           processed = await handleNewTransaction(messageData.params);
           break;
         // User initiated new transaction batch
-        case "new_transaction_batch":
+        case 'new_transaction_batch':
           for (let singleTransaction of messageData.params) {
             // Publishing each transaction as a new event
             const transactionEvent = {
-              event: "new_transaction",
+              event: 'new_transaction',
               params: singleTransaction,
             };
             const transactionDataBuffer = Buffer.from(
@@ -104,16 +104,16 @@ const listenForMessages = () => {
             );
             await pubSubClient
               .topic(topicName)
-              .publishMessage({data: transactionDataBuffer});
+              .publishMessage({ data: transactionDataBuffer });
           }
           processed = true;
           break;
         // New user started the bot
-        case "new_user":
+        case 'new_user':
           processed = await handleNewUser(messageData.params);
           break;
         // New reward has been issued to user
-        case "new_reward":
+        case 'new_reward':
           processed = await handleNewReward(messageData.params);
           break;
         default:
@@ -122,21 +122,21 @@ const listenForMessages = () => {
       }
 
       if (!processed) {
-        throw new Error("Error processing event");
+        throw new Error('Error processing event');
       }
 
       console.log(
-        "Acknowledged message:",
+        'Acknowledged message:',
         JSON.stringify(messageData, null, 2)
       );
       message.ack(); // "Ack" (acknowledge receipt of) the message
     } catch (error) {
-      console.error("messageHandler error:", error);
+      console.error('messageHandler error:', error);
       message.nack(); // "Nack" (don't acknowledge receipt of) the message
     }
   };
 
-  subscription.on("message", messageHandler);
+  subscription.on('message', messageHandler);
 };
 
 // Start listening for pub/sub messages

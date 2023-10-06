@@ -1,5 +1,5 @@
-import "dotenv/config";
-import axios from "axios";
+import 'dotenv/config';
+import axios from 'axios';
 
 /**
  * Sends user identity information to Segment.
@@ -8,7 +8,7 @@ import axios from "axios";
  */
 export async function addIdentitySegment(user) {
   return await axios.post(
-    "https://api.segment.io/v1/identify",
+    'https://api.segment.io/v1/identify',
     {
       userId: user.userTelegramID,
       traits: {
@@ -35,14 +35,14 @@ export async function addIdentitySegment(user) {
  */
 export async function addTrackSegment(params) {
   return await axios.post(
-    "https://api.segment.io/v1/track",
+    'https://api.segment.io/v1/track',
     {
       userId: params.userTelegramID,
-      event: "Transfer",
+      event: 'Transfer',
       properties: {
         TxId: params.TxId,
-        chainId: "eip155:137",
-        tokenSymbol: "g1",
+        chainId: 'eip155:137',
+        tokenSymbol: 'g1',
         tokenAddress: process.env.G1_POLYGON_ADDRESS,
         senderTgId: params.senderTgId,
         senderWallet: params.senderWallet,

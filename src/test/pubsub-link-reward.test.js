@@ -1,4 +1,4 @@
-import chai from "chai";
+import chai from 'chai';
 import {
   collectionRewardsMock,
   dbMock,
@@ -14,23 +14,23 @@ import {
   patchwalletTxUrl,
   patchwalletResolverUrl,
   patchwalletAuthUrl,
-} from "./utils.js";
-import { handleLinkReward } from "../utils/webhook.js";
-import Sinon from "sinon";
-import axios from "axios";
-import "dotenv/config";
-import chaiExclude from "chai-exclude";
+} from './utils.js';
+import { handleLinkReward } from '../utils/webhook.js';
+import Sinon from 'sinon';
+import axios from 'axios';
+import 'dotenv/config';
+import chaiExclude from 'chai-exclude';
 
 chai.use(chaiExclude);
 
-describe("handleLinkReward function", async function () {
+describe('handleLinkReward function', async function () {
   let sandbox;
   let axiosStub;
 
   beforeEach(function () {
     sandbox = Sinon.createSandbox();
     axiosStub = sandbox
-      .stub(axios, "post")
+      .stub(axios, 'post')
       .callsFake(async (url, data, options) => {
         if (url === patchwalletAuthUrl) {
           return Promise.resolve({
@@ -58,7 +58,7 @@ describe("handleLinkReward function", async function () {
 
         if (url == process.env.FLOWXO_NEW_LINK_REWARD_WEBHOOK) {
           return Promise.resolve({
-            result: "success",
+            result: 'success',
           });
         }
       });
@@ -68,13 +68,13 @@ describe("handleLinkReward function", async function () {
     sandbox.restore();
   });
 
-  it("Should return true if referent is not a user", async function () {
+  it('Should return true if referent is not a user', async function () {
     chai.expect(
       await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1)
     ).to.be.true;
   });
 
-  it("Should not send tokens if referent is not a user", async function () {
+  it('Should not send tokens if referent is not a user', async function () {
     await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
 
     chai.expect(
@@ -82,7 +82,7 @@ describe("handleLinkReward function", async function () {
     ).to.be.undefined;
   });
 
-  it("Should return true if user already sponsored someone else", async function () {
+  it('Should return true if user already sponsored someone else', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID1,
     });
@@ -92,11 +92,11 @@ describe("handleLinkReward function", async function () {
       userTelegramID: mockUserTelegramID1,
       responsePath: mockResponsePath,
       walletAddress: mockWallet,
-      reason: "referral_link",
+      reason: 'referral_link',
       userHandle: mockUserHandle,
       userName: mockUserName,
-      amount: "10",
-      message: "Referral link",
+      amount: '10',
+      message: 'Referral link',
       transactionHash: mockTransactionHash,
     });
     chai.expect(
@@ -104,7 +104,7 @@ describe("handleLinkReward function", async function () {
     ).to.be.true;
   });
 
-  it("Should not send tokens if user already sponsored someone else", async function () {
+  it('Should not send tokens if user already sponsored someone else', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID1,
     });
@@ -114,11 +114,11 @@ describe("handleLinkReward function", async function () {
       userTelegramID: mockUserTelegramID1,
       responsePath: mockResponsePath,
       walletAddress: mockWallet,
-      reason: "referral_link",
+      reason: 'referral_link',
       userHandle: mockUserHandle,
       userName: mockUserName,
-      amount: "10",
-      message: "Referral link",
+      amount: '10',
+      message: 'Referral link',
       transactionHash: mockTransactionHash,
     });
     await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
@@ -128,7 +128,7 @@ describe("handleLinkReward function", async function () {
     ).to.be.undefined;
   });
 
-  it("Should call the sendTokens function properly if the user is new", async function () {
+  it('Should call the sendTokens function properly if the user is new', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID1,
     });
@@ -142,17 +142,17 @@ describe("handleLinkReward function", async function () {
       )
       .to.deep.equal({
         userId: `grindery:${process.env.SOURCE_TG_ID}`,
-        chain: "matic",
+        chain: 'matic',
         to: [process.env.G1_POLYGON_ADDRESS],
-        value: ["0x00"],
+        value: ['0x00'],
         data: [
-          "0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000008ac7230489e80000",
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000008ac7230489e80000',
         ],
-        auth: "",
+        auth: '',
       });
   });
 
-  it("Should insert a new element in the reward collection of the database if the user is new", async function () {
+  it('Should insert a new element in the reward collection of the database if the user is new', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID1,
       responsePath: mockResponsePath,
@@ -166,16 +166,16 @@ describe("handleLinkReward function", async function () {
     const rewards = await collectionRewardsMock.find({}).toArray();
 
     chai.expect(rewards.length).to.equal(1);
-    chai.expect(rewards[0]).excluding(["_id", "dateAdded"]).to.deep.equal({
+    chai.expect(rewards[0]).excluding(['_id', 'dateAdded']).to.deep.equal({
       sponsoredUserTelegramID: mockUserTelegramID,
       userTelegramID: mockUserTelegramID1,
       responsePath: mockResponsePath,
       walletAddress: mockWallet,
-      reason: "referral_link",
+      reason: 'referral_link',
       userHandle: mockUserHandle,
       userName: mockUserName,
-      amount: "10",
-      message: "Referral link",
+      amount: '10',
+      message: 'Referral link',
       transactionHash: mockTransactionHash,
     });
     chai
@@ -184,7 +184,7 @@ describe("handleLinkReward function", async function () {
     chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
   });
 
-  it("Should return true if the user is new", async function () {
+  it('Should return true if the user is new', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID1,
     });
@@ -193,7 +193,7 @@ describe("handleLinkReward function", async function () {
     ).to.be.true;
   });
 
-  it("Should call FlowXO webhook properly if the user is new", async function () {
+  it('Should call FlowXO webhook properly if the user is new', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID1,
       responsePath: mockResponsePath,
@@ -208,16 +208,16 @@ describe("handleLinkReward function", async function () {
       .find((e) => e.firstArg === process.env.FLOWXO_NEW_LINK_REWARD_WEBHOOK)
       .args[1];
 
-    chai.expect(FlowXOCallArgs).excluding(["dateAdded"]).to.deep.equal({
+    chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
       sponsoredUserTelegramID: mockUserTelegramID,
       userTelegramID: mockUserTelegramID1,
       responsePath: mockResponsePath,
       walletAddress: mockWallet,
-      reason: "referral_link",
+      reason: 'referral_link',
       userHandle: mockUserHandle,
       userName: mockUserName,
-      amount: "10",
-      message: "Referral link",
+      amount: '10',
+      message: 'Referral link',
       transactionHash: mockTransactionHash,
     });
 
@@ -227,10 +227,10 @@ describe("handleLinkReward function", async function () {
     chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
   });
 
-  it("Should return true if there is an error in FlowXO webhook call", async function () {
+  it('Should return true if there is an error in FlowXO webhook call', async function () {
     axiosStub
       .withArgs(process.env.FLOWXO_NEW_LINK_REWARD_WEBHOOK)
-      .rejects(new Error("Service not available"));
+      .rejects(new Error('Service not available'));
 
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID1,
@@ -241,11 +241,11 @@ describe("handleLinkReward function", async function () {
     ).to.be.true;
   });
 
-  describe("PatchWallet transaction error", function () {
-    it("Should return false if there is an error in the transaction", async function () {
+  describe('PatchWallet transaction error', function () {
+    it('Should return false if there is an error in the transaction', async function () {
       axiosStub
         .withArgs(patchwalletTxUrl)
-        .rejects(new Error("Service not available"));
+        .rejects(new Error('Service not available'));
 
       await collectionUsersMock.insertOne({
         userTelegramID: mockUserTelegramID1,
@@ -256,10 +256,10 @@ describe("handleLinkReward function", async function () {
       ).to.be.false;
     });
 
-    it("Should not add reward in the database if there is an error in the transaction", async function () {
+    it('Should not add reward in the database if there is an error in the transaction', async function () {
       axiosStub
         .withArgs(patchwalletTxUrl)
-        .rejects(new Error("Service not available"));
+        .rejects(new Error('Service not available'));
 
       await collectionUsersMock.insertOne({
         userTelegramID: mockUserTelegramID1,
@@ -269,10 +269,10 @@ describe("handleLinkReward function", async function () {
       chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
     });
 
-    it("Should not call FlowXO if there is an error in the transaction", async function () {
+    it('Should not call FlowXO if there is an error in the transaction', async function () {
       axiosStub
         .withArgs(patchwalletTxUrl)
-        .rejects(new Error("Service not available"));
+        .rejects(new Error('Service not available'));
 
       await collectionUsersMock.insertOne({
         userTelegramID: mockUserTelegramID1,
@@ -290,11 +290,11 @@ describe("handleLinkReward function", async function () {
     });
   });
 
-  describe("PatchWallet transaction without hash", function () {
-    it("Should return false if there is no hash in PatchWallet response", async function () {
+  describe('PatchWallet transaction without hash', function () {
+    it('Should return false if there is no hash in PatchWallet response', async function () {
       axiosStub.withArgs(patchwalletTxUrl).resolves({
         data: {
-          error: "service non available",
+          error: 'service non available',
         },
       });
 
@@ -307,10 +307,10 @@ describe("handleLinkReward function", async function () {
       ).to.be.false;
     });
 
-    it("Should not add reward in the database if there is no hash in PatchWallet response", async function () {
+    it('Should not add reward in the database if there is no hash in PatchWallet response', async function () {
       axiosStub.withArgs(patchwalletTxUrl).resolves({
         data: {
-          error: "service non available",
+          error: 'service non available',
         },
       });
 
@@ -322,10 +322,10 @@ describe("handleLinkReward function", async function () {
       chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
     });
 
-    it("Should not call FlowXO if there is no hash in PatchWallet response", async function () {
+    it('Should not call FlowXO if there is no hash in PatchWallet response', async function () {
       axiosStub.withArgs(patchwalletTxUrl).resolves({
         data: {
-          error: "service non available",
+          error: 'service non available',
         },
       });
 

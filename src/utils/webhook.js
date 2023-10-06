@@ -1,17 +1,17 @@
-import { Database } from "../db/conn.js";
+import { Database } from '../db/conn.js';
 import {
   REWARDS_COLLECTION,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
-} from "./constants.js";
+} from './constants.js';
 import {
   getPatchWalletAccessToken,
   getPatchWalletAddressFromTgId,
   sendTokens,
-} from "./patchwallet.js";
-import { addIdentitySegment, addTrackSegment } from "./segment.js";
-import axios from "axios";
-import "dotenv/config";
+} from './patchwallet.js';
+import { addIdentitySegment, addTrackSegment } from './segment.js';
+import axios from 'axios';
+import 'dotenv/config';
 
 /**
  * Handles a new user registration event.
@@ -66,7 +66,7 @@ export async function handleNewUser(params) {
     console.log(`[${params.userTelegramID}] user added to the database.`);
     return true;
   } catch (error) {
-    console.error("Error processing new user event:", error);
+    console.error('Error processing new user event:', error);
   }
   return false;
 }
@@ -84,7 +84,7 @@ export async function handleSignUpReward(
     if (
       await db.collection(REWARDS_COLLECTION).findOne({
         userTelegramID: userTelegramID,
-        reason: "user_sign_up",
+        reason: 'user_sign_up',
       })
     ) {
       // The user has already received a signup reward, stop processing
@@ -98,11 +98,11 @@ export async function handleSignUpReward(
       txReward = await sendTokens(
         process.env.SOURCE_TG_ID,
         rewardWallet,
-        "100",
+        '100',
         await getPatchWalletAccessToken()
       );
     } catch (error) {
-      console.error("Error processing PatchWallet token sending:", error);
+      console.error('Error processing PatchWallet token sending:', error);
       return false;
     }
 
@@ -114,11 +114,11 @@ export async function handleSignUpReward(
         userTelegramID: userTelegramID,
         responsePath: responsePath,
         walletAddress: rewardWallet,
-        reason: "user_sign_up",
+        reason: 'user_sign_up',
         userHandle: userHandle,
         userName: userName,
-        amount: "100",
-        message: "Sign up reward",
+        amount: '100',
+        message: 'Sign up reward',
         transactionHash: txReward.data.txHash,
         dateAdded: dateAdded,
       });
@@ -129,11 +129,11 @@ export async function handleSignUpReward(
         userTelegramID: userTelegramID,
         responsePath: responsePath,
         walletAddress: rewardWallet,
-        reason: "user_sign_up",
+        reason: 'user_sign_up',
         userHandle: userHandle,
         userName: userName,
-        amount: "100",
-        message: "Sign up reward",
+        amount: '100',
+        message: 'Sign up reward',
         transactionHash: txReward.data.txHash,
         dateAdded: dateAdded,
       });
@@ -143,7 +143,7 @@ export async function handleSignUpReward(
     }
     return false;
   } catch (error) {
-    console.error("Error processing signup reward event:", error);
+    console.error('Error processing signup reward event:', error);
   }
   return true;
 }
@@ -171,7 +171,7 @@ export async function handleReferralReward(
       .toArray()) {
       if (
         await db.collection(REWARDS_COLLECTION).findOne({
-          reason: "2x_reward",
+          reason: '2x_reward',
           parentTransactionHash: transfer.transactionHash,
         })
       ) {
@@ -193,11 +193,11 @@ export async function handleReferralReward(
         txReward = await sendTokens(
           process.env.SOURCE_TG_ID,
           senderWallet,
-          "50",
+          '50',
           await getPatchWalletAccessToken()
         );
       } catch (error) {
-        console.error("Error processing PatchWallet token sending:", error);
+        console.error('Error processing PatchWallet token sending:', error);
         processed = false;
         continue;
       }
@@ -210,11 +210,11 @@ export async function handleReferralReward(
           userTelegramID: senderInformation.userTelegramID,
           responsePath: senderInformation.responsePath,
           walletAddress: senderWallet,
-          reason: "2x_reward",
+          reason: '2x_reward',
           userHandle: senderInformation.userHandle,
           userName: senderInformation.userName,
-          amount: "50",
-          message: "Referral reward",
+          amount: '50',
+          message: 'Referral reward',
           transactionHash: txReward.data.txHash,
           dateAdded: dateAdded,
           parentTransactionHash: transfer.transactionHash,
@@ -229,11 +229,11 @@ export async function handleReferralReward(
           userTelegramID: senderInformation.userTelegramID,
           responsePath: senderInformation.responsePath,
           walletAddress: senderWallet,
-          reason: "2x_reward",
+          reason: '2x_reward',
           userHandle: senderInformation.userHandle,
           userName: senderInformation.userName,
-          amount: "50",
-          message: "Referral reward",
+          amount: '50',
+          message: 'Referral reward',
           transactionHash: txReward.data.txHash,
           dateAdded: dateAdded,
           parentTransactionHash: transfer.transactionHash,
@@ -250,7 +250,7 @@ export async function handleReferralReward(
 
     return processed;
   } catch (error) {
-    console.error("Error processing referral reward event:", error);
+    console.error('Error processing referral reward event:', error);
   }
 
   return true;
@@ -275,7 +275,7 @@ export async function handleLinkReward(
     if (
       await db.collection(REWARDS_COLLECTION).findOne({
         sponsoredUserTelegramID: userTelegramID,
-        reason: "referral_link",
+        reason: 'referral_link',
       })
     ) {
       // The user has already received a referral link reward, stop processing
@@ -296,11 +296,11 @@ export async function handleLinkReward(
       txReward = await sendTokens(
         process.env.SOURCE_TG_ID,
         rewardWallet,
-        "10",
+        '10',
         await getPatchWalletAccessToken()
       );
     } catch (error) {
-      console.error("Error processing PatchWallet token sending:", error);
+      console.error('Error processing PatchWallet token sending:', error);
       return false;
     }
 
@@ -312,11 +312,11 @@ export async function handleLinkReward(
         userTelegramID: referentUserTelegramID,
         responsePath: referent.responsePath,
         walletAddress: rewardWallet,
-        reason: "referral_link",
+        reason: 'referral_link',
         userHandle: referent.userHandle,
         userName: referent.userName,
-        amount: "10",
-        message: "Referral link",
+        amount: '10',
+        message: 'Referral link',
         transactionHash: txReward.data.txHash,
         dateAdded: dateAdded,
         sponsoredUserTelegramID: userTelegramID,
@@ -328,11 +328,11 @@ export async function handleLinkReward(
         userTelegramID: referentUserTelegramID,
         responsePath: referent.responsePath,
         walletAddress: rewardWallet,
-        reason: "referral_link",
+        reason: 'referral_link',
         userHandle: referent.userHandle,
         userName: referent.userName,
-        amount: "10",
-        message: "Referral link",
+        amount: '10',
+        message: 'Referral link',
         transactionHash: txReward.data.txHash,
         dateAdded: dateAdded,
         sponsoredUserTelegramID: userTelegramID,
@@ -343,7 +343,7 @@ export async function handleLinkReward(
 
     return false;
   } catch (error) {
-    console.error("Error processing referral link reward event:", error);
+    console.error('Error processing referral link reward event:', error);
   }
   return true;
 }
@@ -432,7 +432,7 @@ export async function handleNewReward(params) {
       dateAdded: dateAdded,
     });
   } catch (error) {
-    console.error("Error processing new user in Segment:", error);
+    console.error('Error processing new user in Segment:', error);
   }
 
   return true;
@@ -453,7 +453,7 @@ export async function handleNewTransaction(params) {
     .findOne({ userTelegramID: params.senderTgId });
 
   if (!senderInformation) {
-    console.error("Sender is not a user");
+    console.error('Sender is not a user');
     return true;
   }
 
@@ -475,7 +475,7 @@ export async function handleNewTransaction(params) {
       await getPatchWalletAccessToken()
     );
   } catch (error) {
-    console.error("Error processing PatchWallet token sending:", error);
+    console.error('Error processing PatchWallet token sending:', error);
     if (error?.response?.status === 470) {
       return true;
     }
@@ -488,8 +488,8 @@ export async function handleNewTransaction(params) {
     // Add the reward to the "rewards" collection
     await db.collection(TRANSFERS_COLLECTION).insertOne({
       TxId: tx.data.txHash.substring(1, 8),
-      chainId: "eip155:137",
-      tokenSymbol: "g1",
+      chainId: 'eip155:137',
+      tokenSymbol: 'g1',
       tokenAddress: process.env.G1_POLYGON_ADDRESS,
       senderTgId: params.senderTgId,
       senderWallet: senderInformation.patchwallet,
@@ -520,8 +520,8 @@ export async function handleNewTransaction(params) {
       await axios.post(process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK, {
         senderResponsePath: senderInformation.responsePath,
         TxId: tx.data.txHash.substring(1, 8),
-        chainId: "eip155:137",
-        tokenSymbol: "g1",
+        chainId: 'eip155:137',
+        tokenSymbol: 'g1',
         tokenAddress: process.env.G1_POLYGON_ADDRESS,
         senderTgId: params.senderTgId,
         senderWallet: senderInformation.patchwallet,
@@ -534,7 +534,7 @@ export async function handleNewTransaction(params) {
         dateAdded: dateAdded,
       });
     } catch (error) {
-      console.error("Error processing Segment or FlowXO webhook:", error);
+      console.error('Error processing Segment or FlowXO webhook:', error);
     }
 
     console.log(

@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: ["master", "main", "staging"]
+    branches: ['master', 'main', 'staging']
 
 jobs:
   call-deployer:

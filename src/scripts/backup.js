@@ -1,4 +1,4 @@
-import { Database } from "../db/conn.js";
+import { Database } from '../db/conn.js';
 
 // Usage: cloneCollection(sourceCollectionName, targetCollectionName)
 // - sourceCollectionName: The name of the source collection to clone.
@@ -28,7 +28,7 @@ async function cloneCollection(sourceCollectionName, targetCollectionName) {
       `Collection '${sourceCollectionName}' cloned to '${targetCollectionName}'`
     );
   } catch (error) {
-    console.error("Error cloning collection:", error);
+    console.error('Error cloning collection:', error);
   } finally {
     process.exit(0);
   }

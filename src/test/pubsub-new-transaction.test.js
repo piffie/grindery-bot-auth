@@ -1,4 +1,4 @@
-import chai from "chai";
+import chai from 'chai';
 import {
   mockResponsePath,
   mockUserName,
@@ -15,23 +15,23 @@ import {
   segmentIdentifyUrl,
   segmentTrackUrl,
   mockUserHandle,
-} from "./utils.js";
-import { handleNewTransaction } from "../utils/webhook.js";
-import Sinon from "sinon";
-import axios from "axios";
-import "dotenv/config";
-import chaiExclude from "chai-exclude";
+} from './utils.js';
+import { handleNewTransaction } from '../utils/webhook.js';
+import Sinon from 'sinon';
+import axios from 'axios';
+import 'dotenv/config';
+import chaiExclude from 'chai-exclude';
 
 chai.use(chaiExclude);
 
-describe("handleNewTransaction function", async function () {
+describe('handleNewTransaction function', async function () {
   let sandbox;
   let axiosStub;
 
   beforeEach(function () {
     sandbox = Sinon.createSandbox();
     axiosStub = sandbox
-      .stub(axios, "post")
+      .stub(axios, 'post')
       .callsFake(async (url, data, options) => {
         if (url === patchwalletResolverUrl) {
           return Promise.resolve({
@@ -59,13 +59,13 @@ describe("handleNewTransaction function", async function () {
 
         if (url == process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK) {
           return Promise.resolve({
-            result: "success",
+            result: 'success',
           });
         }
 
         if (url == segmentTrackUrl) {
           return Promise.resolve({
-            result: "success",
+            result: 'success',
           });
         }
       });
@@ -75,7 +75,7 @@ describe("handleNewTransaction function", async function () {
     sandbox.restore();
   });
 
-  it("Should add a new transaction record if everything goes well", async function () {
+  it('Should add a new transaction record if everything goes well', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
@@ -86,7 +86,7 @@ describe("handleNewTransaction function", async function () {
     chai.expect(
       await handleNewTransaction({
         senderTgId: mockUserTelegramID,
-        amount: "100",
+        amount: '100',
         recipientTgId: mockUserTelegramID1,
       })
     ).to.be.true;
@@ -95,12 +95,12 @@ describe("handleNewTransaction function", async function () {
 
     chai
       .expect(transfers[0])
-      .excluding(["dateAdded"])
-      .excluding(["_id"])
+      .excluding(['dateAdded'])
+      .excluding(['_id'])
       .to.deep.equal({
         TxId: mockTransactionHash.substring(1, 8),
-        chainId: "eip155:137",
-        tokenSymbol: "g1",
+        chainId: 'eip155:137',
+        tokenSymbol: 'g1',
         tokenAddress: process.env.G1_POLYGON_ADDRESS,
         senderTgId: mockUserTelegramID,
         senderWallet: mockWallet,
@@ -108,13 +108,13 @@ describe("handleNewTransaction function", async function () {
         senderHandle: mockUserHandle,
         recipientTgId: mockUserTelegramID1,
         recipientWallet: mockWallet,
-        tokenAmount: "100",
+        tokenAmount: '100',
         transactionHash: mockTransactionHash,
       });
-    chai.expect(transfers[0].dateAdded).to.be.a("date");
+    chai.expect(transfers[0].dateAdded).to.be.a('date');
   });
 
-  it("Should not add transaction in the database if there is an error in the send tokens request", async function () {
+  it('Should not add transaction in the database if there is an error in the send tokens request', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
@@ -124,20 +124,20 @@ describe("handleNewTransaction function", async function () {
 
     axiosStub.withArgs(patchwalletTxUrl).resolves({
       data: {
-        error: "service non available",
+        error: 'service non available',
       },
     });
 
     await handleNewTransaction({
       senderTgId: mockUserTelegramID,
-      amount: "100",
+      amount: '100',
       recipientTgId: mockUserTelegramID1,
     });
 
     chai.expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
   });
 
-  it("Should return false if there is an error in the send tokens request", async function () {
+  it('Should return false if there is an error in the send tokens request', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
@@ -147,20 +147,20 @@ describe("handleNewTransaction function", async function () {
 
     axiosStub.withArgs(patchwalletTxUrl).resolves({
       data: {
-        error: "service non available",
+        error: 'service non available',
       },
     });
 
     chai.expect(
       await handleNewTransaction({
         senderTgId: mockUserTelegramID,
-        amount: "100",
+        amount: '100',
         recipientTgId: mockUserTelegramID1,
       })
     ).to.be.false;
   });
 
-  it("Should populate the segment transfer properly", async function () {
+  it('Should populate the segment transfer properly', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
@@ -170,24 +170,24 @@ describe("handleNewTransaction function", async function () {
 
     await handleNewTransaction({
       senderTgId: mockUserTelegramID,
-      amount: "100",
+      amount: '100',
       recipientTgId: mockUserTelegramID1,
     });
 
     const segmentIdentityCall = axiosStub
       .getCalls()
-      .filter((e) => e.firstArg === "https://api.segment.io/v1/track");
+      .filter((e) => e.firstArg === 'https://api.segment.io/v1/track');
 
     chai
       .expect(segmentIdentityCall[0].args[1])
-      .excluding(["timestamp"])
+      .excluding(['timestamp'])
       .to.deep.equal({
         userId: mockUserTelegramID,
-        event: "Transfer",
+        event: 'Transfer',
         properties: {
           TxId: mockTransactionHash.substring(1, 8),
-          chainId: "eip155:137",
-          tokenSymbol: "g1",
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
           tokenAddress: process.env.G1_POLYGON_ADDRESS,
           senderTgId: mockUserTelegramID,
           senderWallet: mockWallet,
@@ -195,13 +195,13 @@ describe("handleNewTransaction function", async function () {
           senderHandle: mockUserHandle,
           recipientTgId: mockUserTelegramID1,
           recipientWallet: mockWallet,
-          tokenAmount: "100",
+          tokenAmount: '100',
           transactionHash: mockTransactionHash,
         },
       });
   });
 
-  it("Should not call segment if there is an error in the send tokens request", async function () {
+  it('Should not call segment if there is an error in the send tokens request', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
@@ -212,24 +212,24 @@ describe("handleNewTransaction function", async function () {
 
     axiosStub.withArgs(patchwalletTxUrl).resolves({
       data: {
-        error: "service non available",
+        error: 'service non available',
       },
     });
 
     await handleNewTransaction({
       senderTgId: mockUserTelegramID,
-      amount: "100",
+      amount: '100',
       recipientTgId: mockUserTelegramID1,
     });
 
     chai.expect(
       axiosStub
         .getCalls()
-        .find((e) => e.firstArg === "https://api.segment.io/v1/track")
+        .find((e) => e.firstArg === 'https://api.segment.io/v1/track')
     ).to.be.undefined;
   });
 
-  it("Should call FlowXO webhook properly for new transactions", async function () {
+  it('Should call FlowXO webhook properly for new transactions', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
@@ -240,7 +240,7 @@ describe("handleNewTransaction function", async function () {
 
     await handleNewTransaction({
       senderTgId: mockUserTelegramID,
-      amount: "100",
+      amount: '100',
       recipientTgId: mockUserTelegramID1,
     });
 
@@ -251,12 +251,12 @@ describe("handleNewTransaction function", async function () {
 
     chai
       .expect(FlowXOCallArgs)
-      .excluding(["dateAdded"])
+      .excluding(['dateAdded'])
       .to.deep.equal({
         senderResponsePath: mockResponsePath,
         TxId: mockTransactionHash.substring(1, 8),
-        chainId: "eip155:137",
-        tokenSymbol: "g1",
+        chainId: 'eip155:137',
+        tokenSymbol: 'g1',
         tokenAddress: process.env.G1_POLYGON_ADDRESS,
         senderTgId: mockUserTelegramID,
         senderWallet: mockWallet,
@@ -264,12 +264,12 @@ describe("handleNewTransaction function", async function () {
         senderHandle: mockUserHandle,
         recipientTgId: mockUserTelegramID1,
         recipientWallet: mockWallet,
-        tokenAmount: "100",
+        tokenAmount: '100',
         transactionHash: mockTransactionHash,
       });
   });
 
-  it("Should not call FlowXO if there is an error in the send tokens request", async function () {
+  it('Should not call FlowXO if there is an error in the send tokens request', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
@@ -280,13 +280,13 @@ describe("handleNewTransaction function", async function () {
 
     axiosStub.withArgs(patchwalletTxUrl).resolves({
       data: {
-        error: "service non available",
+        error: 'service non available',
       },
     });
 
     await handleNewTransaction({
       senderTgId: mockUserTelegramID,
-      amount: "100",
+      amount: '100',
       recipientTgId: mockUserTelegramID1,
     });
 
@@ -301,10 +301,10 @@ describe("handleNewTransaction function", async function () {
   // #######################################
   // #######################################
 
-  it("Should return true and no new transaction in database if sender is not a user", async function () {
+  it('Should return true and no new transaction in database if sender is not a user', async function () {
     const result = await handleNewTransaction({
       senderTgId: mockUserTelegramID,
-      amount: "100",
+      amount: '100',
       recipientTgId: mockUserTelegramID1,
     });
 
@@ -312,10 +312,10 @@ describe("handleNewTransaction function", async function () {
     chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
   });
 
-  it("Should return false and no new transaction in database if error in PatchWallet get address", async function () {
+  it('Should return false and no new transaction in database if error in PatchWallet get address', async function () {
     axiosStub
       .withArgs(patchwalletResolverUrl)
-      .rejects(new Error("Service not available"));
+      .rejects(new Error('Service not available'));
 
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
@@ -327,14 +327,14 @@ describe("handleNewTransaction function", async function () {
 
     const result = await handleNewTransaction({
       senderTgId: mockUserTelegramID,
-      amount: "100",
+      amount: '100',
       recipientTgId: mockUserTelegramID1,
     });
 
     chai.expect(result).to.be.false;
     chai
       .expect(await collectionUsersMock.find({}).toArray())
-      .excluding(["_id"])
+      .excluding(['_id'])
       .to.deep.equal([
         {
           userTelegramID: mockUserTelegramID,
@@ -346,10 +346,10 @@ describe("handleNewTransaction function", async function () {
       ]);
   });
 
-  it("Should return true if error in Segment Webhook", async function () {
+  it('Should return true if error in Segment Webhook', async function () {
     axiosStub
       .withArgs(segmentTrackUrl)
-      .rejects(new Error("Service not available"));
+      .rejects(new Error('Service not available'));
 
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
@@ -361,17 +361,17 @@ describe("handleNewTransaction function", async function () {
 
     const result = await handleNewTransaction({
       senderTgId: mockUserTelegramID,
-      amount: "100",
+      amount: '100',
       recipientTgId: mockUserTelegramID1,
     });
 
     chai.expect(result).to.be.true;
   });
 
-  it("Should return true if error in FlowXO Webhook", async function () {
+  it('Should return true if error in FlowXO Webhook', async function () {
     axiosStub
       .withArgs(process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK)
-      .rejects(new Error("Service not available"));
+      .rejects(new Error('Service not available'));
 
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
@@ -383,17 +383,17 @@ describe("handleNewTransaction function", async function () {
 
     const result = await handleNewTransaction({
       senderTgId: mockUserTelegramID,
-      amount: "100",
+      amount: '100',
       recipientTgId: mockUserTelegramID1,
     });
 
     chai.expect(result).to.be.true;
   });
 
-  it("Should return false and no new transaction in database if error in PatchWallet transaction", async function () {
+  it('Should return false and no new transaction in database if error in PatchWallet transaction', async function () {
     axiosStub
       .withArgs(patchwalletTxUrl)
-      .rejects(new Error("Service not available"));
+      .rejects(new Error('Service not available'));
 
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
@@ -405,7 +405,7 @@ describe("handleNewTransaction function", async function () {
 
     const result = await handleNewTransaction({
       senderTgId: mockUserTelegramID,
-      amount: "100",
+      amount: '100',
       recipientTgId: mockUserTelegramID1,
     });
 
@@ -413,7 +413,7 @@ describe("handleNewTransaction function", async function () {
     chai.expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
   });
 
-  it("Should return true and no new transaction in database if error 470 in PatchWallet transaction", async function () {
+  it('Should return true and no new transaction in database if error 470 in PatchWallet transaction', async function () {
     axiosStub.withArgs(patchwalletTxUrl).rejects({
       response: {
         status: 470,
@@ -430,7 +430,7 @@ describe("handleNewTransaction function", async function () {
 
     const result = await handleNewTransaction({
       senderTgId: mockUserTelegramID,
-      amount: "100",
+      amount: '100',
       recipientTgId: mockUserTelegramID1,
     });
 
@@ -438,10 +438,10 @@ describe("handleNewTransaction function", async function () {
     chai.expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
   });
 
-  it("Should return false and no new transaction in database if no hash in PatchWallet transaction", async function () {
+  it('Should return false and no new transaction in database if no hash in PatchWallet transaction', async function () {
     axiosStub.withArgs(patchwalletTxUrl).resolves({
       data: {
-        error: "service non available",
+        error: 'service non available',
       },
     });
 
@@ -455,14 +455,14 @@ describe("handleNewTransaction function", async function () {
 
     const result = await handleNewTransaction({
       senderTgId: mockUserTelegramID,
-      amount: "100",
+      amount: '100',
       recipientTgId: mockUserTelegramID1,
     });
 
     chai.expect(result).to.be.false;
     chai
       .expect(await collectionUsersMock.find({}).toArray())
-      .excluding(["_id"])
+      .excluding(['_id'])
       .to.deep.equal([
         {
           userTelegramID: mockUserTelegramID,
