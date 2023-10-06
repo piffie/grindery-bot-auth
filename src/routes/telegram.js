@@ -608,7 +608,7 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
  *   "error": "error details"
  * }
  */
-router.get('/leaderboard', telegramHashIsValid, async (req, res) => {
+router.get('/leaderboard', async (req, res) => {
   try {
     const chainId = req.query.chainId || "eip155:137";
 
@@ -679,7 +679,7 @@ router.get('/leaderboard', telegramHashIsValid, async (req, res) => {
         .balanceOf(user.wallet)
         .call();
 
-      user.balance = balance / 1e18;
+      user.balance = web3.utils.fromWei(balance);
     }
 
     return res.status(200).send(leaderboardData);
