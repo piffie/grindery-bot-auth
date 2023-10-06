@@ -641,12 +641,31 @@ router.get('/leaderboard', async (req, res) => {
         }
       },
       {
-        $project: {
-          userName: 1,
-          userHandle: 1,
-          wallet: "$patchwallet",
-          firstTxDate: { $min: "$transactions.dateAdded" },
-          lastTxDate: { $max: "$transactions.dateAdded" },
+        $addFields: {
+          firstTx: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: "$transactions",
+                  as: "transaction",
+                  cond: { $eq: ["$$transaction.dateAdded", { $min: "$transactions.dateAdded" }] }
+                }
+              },
+              0
+            ]
+          },
+          lastTx: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: "$transactions",
+                  as: "transaction",
+                  cond: { $eq: ["$$transaction.dateAdded", { $max: "$transactions.dateAdded" }] }
+                }
+              },
+              0
+            ]
+          },
           txCount: { $size: "$transactions" },
           rewardsCount: { $size: "$rewards" },
           referralsCount: {
@@ -658,6 +677,24 @@ router.get('/leaderboard', async (req, res) => {
               }
             }
           }
+        }
+      },
+      {
+        $project: {
+          user: {
+            _id: "$_id",
+            userTelegramID: "$userTelegramID",
+            responsePath: "$responsePath",
+            userHandle: "$userHandle",
+            userName: "$userName",
+            patchwallet: "$patchwallet",
+            dateAdded: "$dateAdded"
+          },
+          firstTx: 1,
+          lastTx: 1,
+          txCount: 1,
+          rewardsCount: 1,
+          referralsCount: 1
         }
       },
       {
