@@ -454,10 +454,14 @@ export async function handleNewTransaction(params) {
     {
       $setOnInsert: {
         eventId: params.eventId,
+        chainId: 'eip155:137',
+        tokenSymbol: 'g1',
+        tokenAddress: process.env.G1_POLYGON_ADDRESS,
         senderTgId: params.senderTgId,
         recipientTgId: params.recipientTgId,
         tokenAmount: params.amount.toString(),
         status: TRANSACTION_STATUS.PENDING,
+        dateAdded: new Date(),
       },
     },
     { upsert: true }

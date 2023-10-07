@@ -146,10 +146,13 @@ describe('handleNewTransaction function', async function () {
 
     chai
       .expect(await collectionTransfersMock.find({}).toArray())
-      .excluding(['_id'])
+      .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
           eventId: txId,
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: process.env.G1_POLYGON_ADDRESS,
           senderTgId: mockUserTelegramID,
           recipientTgId: mockUserTelegramID1,
           tokenAmount: '100',
@@ -367,10 +370,13 @@ describe('handleNewTransaction function', async function () {
     chai.expect(result).to.be.true;
     chai
       .expect(await collectionTransfersMock.find({}).toArray())
-      .excluding(['_id'])
+      .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
           eventId: txId,
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: process.env.G1_POLYGON_ADDRESS,
           senderTgId: mockUserTelegramID,
           recipientTgId: mockUserTelegramID1,
           tokenAmount: '100',
@@ -402,10 +408,13 @@ describe('handleNewTransaction function', async function () {
     chai.expect(result).to.be.false;
     chai
       .expect(await collectionTransfersMock.find({}).toArray())
-      .excluding(['_id'])
+      .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
           eventId: txId,
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: process.env.G1_POLYGON_ADDRESS,
           senderTgId: mockUserTelegramID,
           recipientTgId: mockUserTelegramID1,
           tokenAmount: '100',
@@ -483,10 +492,13 @@ describe('handleNewTransaction function', async function () {
     chai.expect(result).to.be.false;
     chai
       .expect(await collectionTransfersMock.find({}).toArray())
-      .excluding(['_id'])
+      .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
           eventId: txId,
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: process.env.G1_POLYGON_ADDRESS,
           senderTgId: mockUserTelegramID,
           recipientTgId: mockUserTelegramID1,
           tokenAmount: '100',
@@ -564,10 +576,13 @@ describe('handleNewTransaction function', async function () {
     chai.expect(result).to.be.false;
     chai
       .expect(await collectionTransfersMock.find({}).toArray())
-      .excluding('_id')
+      .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
           eventId: txId,
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: process.env.G1_POLYGON_ADDRESS,
           senderTgId: mockUserTelegramID,
           recipientTgId: mockUserTelegramID1,
           tokenAmount: '100',
