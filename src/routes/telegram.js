@@ -12,6 +12,7 @@ import { decrypt, encrypt } from '../utils/crypt.js';
 import Web3 from 'web3';
 import { CHAIN_MAPPING } from '../utils/chains.js';
 import ERC20 from './abi/ERC20.json' assert { type: 'json' };
+import { base } from '../utils/airtableClient.js';
 
 const router = express.Router();
 const operations = {};
@@ -571,7 +572,7 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
   }
 });
 
-/**
+/*
  * GET /leaderboard
  *
  * @summary Retrieve leaderboard data
@@ -730,6 +731,40 @@ router.get('/leaderboard', async (req, res) => {
     console.error('Error getting leaderboard data', error);
     return res.status(500).send({ msg: 'An error occurred', error });
   }
+
+ * GET /v1/telegram/config
+ *
+ * @summary Get wallet config
+ * @description Gets wallet config and dynamic data from Airtable
+ * @tags Telegram
+ * @security BearerAuth
+ * @return {object} 200 - Success response with an array of raw airtable records
+ * @return {object} 404 - Error response
+ * @example response - 200 - Success response example
+ *
+ */
+router.get('/config', telegramHashIsValid, async (req, res) => {
+  const configRecords = [];
+  base('Config')
+    .select({
+      maxRecords: 100,
+      view: 'API',
+    })
+    .eachPage(
+      function page(records, fetchNextPage) {
+        records.forEach(function (record) {
+          configRecords.push(record._rawJson);
+        });
+        fetchNextPage();
+      },
+      function done(err) {
+        if (err) {
+          console.error(err);
+          return res.status(500).send({ msg: 'An error occurred', error });
+        }
+        return res.status(200).json({ config: configRecords });
+      }
+    );
 });
 
 export default router;
