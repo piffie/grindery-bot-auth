@@ -617,7 +617,7 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
  */
 router.get('/leaderboard', async (req, res) => {
   try {
-    const chainId = req.query.chainId || "eip155:137";
+    const chainId = req.query.chainId || 'eip155:137';
 
     // pagination params
     const page = parseInt(req.query.page, 10) || 1;
@@ -625,102 +625,119 @@ router.get('/leaderboard', async (req, res) => {
     const skip = (page - 1) * limit;
 
     // sort params
-    const sortBy = req.query.sortBy || "txCount";
+    const sortBy = req.query.sortBy || 'txCount';
     let order = req.query.order === 'asc' ? 1 : -1;
 
     const db = await Database.getInstance(req);
 
-    const leaderboardData = await db.collection('users').aggregate([
-      {
-        $lookup: {
-          from: "transfers",
-          localField: "userTelegramID",
-          foreignField: "senderTgId",
-          as: "transactions"
-        }
-      },
-      {
-        $lookup: {
-          from: "rewards",
-          localField: "userTelegramID",
-          foreignField: "userTelegramID",
-          as: "rewards"
-        }
-      },
-      {
-        $addFields: {
-          firstTx: {
-            $arrayElemAt: [
-              {
+    const leaderboardData = await db
+      .collection('users')
+      .aggregate([
+        {
+          $lookup: {
+            from: 'transfers',
+            localField: 'userTelegramID',
+            foreignField: 'senderTgId',
+            as: 'transactions',
+          },
+        },
+        {
+          $lookup: {
+            from: 'rewards',
+            localField: 'userTelegramID',
+            foreignField: 'userTelegramID',
+            as: 'rewards',
+          },
+        },
+        {
+          $addFields: {
+            firstTx: {
+              $arrayElemAt: [
+                {
+                  $filter: {
+                    input: '$transactions',
+                    as: 'transaction',
+                    cond: {
+                      $eq: [
+                        '$$transaction.dateAdded',
+                        { $min: '$transactions.dateAdded' },
+                      ],
+                    },
+                  },
+                },
+                0,
+              ],
+            },
+            lastTx: {
+              $arrayElemAt: [
+                {
+                  $filter: {
+                    input: '$transactions',
+                    as: 'transaction',
+                    cond: {
+                      $eq: [
+                        '$$transaction.dateAdded',
+                        { $max: '$transactions.dateAdded' },
+                      ],
+                    },
+                  },
+                },
+                0,
+              ],
+            },
+            txCount: { $size: '$transactions' },
+            rewardsCount: { $size: '$rewards' },
+            referralsCount: {
+              $size: {
                 $filter: {
-                  input: "$transactions",
-                  as: "transaction",
-                  cond: { $eq: ["$$transaction.dateAdded", { $min: "$transactions.dateAdded" }] }
-                }
+                  input: '$rewards',
+                  as: 'reward',
+                  cond: { $eq: ['$$reward.reason', '2x_reward'] },
+                },
               },
-              0
-            ]
+            },
           },
-          lastTx: {
-            $arrayElemAt: [
-              {
-                $filter: {
-                  input: "$transactions",
-                  as: "transaction",
-                  cond: { $eq: ["$$transaction.dateAdded", { $max: "$transactions.dateAdded" }] }
-                }
-              },
-              0
-            ]
+        },
+        {
+          $project: {
+            user: {
+              _id: '$_id',
+              userTelegramID: '$userTelegramID',
+              responsePath: '$responsePath',
+              userHandle: '$userHandle',
+              userName: '$userName',
+              patchwallet: '$patchwallet',
+              dateAdded: '$dateAdded',
+            },
+            firstTx: 1,
+            lastTx: 1,
+            txCount: 1,
+            rewardsCount: 1,
+            referralsCount: 1,
           },
-          txCount: { $size: "$transactions" },
-          rewardsCount: { $size: "$rewards" },
-          referralsCount: {
-            $size: {
-              $filter: {
-                input: "$rewards",
-                as: "reward",
-                cond: { $eq: ["$$reward.reason", "2x_reward"] }
-              }
-            }
-          }
-        }
-      },
-      {
-        $project: {
-          user: {
-            _id: "$_id",
-            userTelegramID: "$userTelegramID",
-            responsePath: "$responsePath",
-            userHandle: "$userHandle",
-            userName: "$userName",
-            patchwallet: "$patchwallet",
-            dateAdded: "$dateAdded"
-          },
-          firstTx: 1,
-          lastTx: 1,
-          txCount: 1,
-          rewardsCount: 1,
-          referralsCount: 1
-        }
-      },
-      {
-        $sort: { [sortBy]: order }
-      },
-      {
-        $skip: skip
-      },
-      {
-        $limit: limit
-      }
-    ]).toArray();
+        },
+        {
+          $sort: { [sortBy]: order },
+        },
+        {
+          $skip: skip,
+        },
+        {
+          $limit: limit,
+        },
+      ])
+      .toArray();
 
     const web3 = new Web3(CHAIN_MAPPING[chainId][1]);
-    const contract = new web3.eth.Contract(ERC20, process.env.G1_POLYGON_ADDRESS);
+
+    const contract = new web3.eth.Contract(
+      ERC20,
+      process.env.G1_POLYGON_ADDRESS
+    );
 
     for (let user of leaderboardData) {
       const balance = await contract.methods
-        .balanceOf(user.wallet)
+        .balanceOf(user.user.patchwallet)
         .call();
 
       user.balance = web3.utils.fromWei(balance);
@@ -731,7 +748,9 @@ router.get('/leaderboard', async (req, res) => {
     console.error('Error getting leaderboard data', error);
     return res.status(500).send({ msg: 'An error occurred', error });
   }
+});
 
+/*
  * GET /v1/telegram/config
  *
  * @summary Get wallet config
