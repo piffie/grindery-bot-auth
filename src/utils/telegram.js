@@ -1,7 +1,7 @@
-import { Api } from "telegram";
-import { StringSession } from "telegram/sessions/index.js";
-import TGClient from "./telegramClient.js";
-import { decrypt } from "./crypt.js";
+import { Api } from 'telegram';
+import { StringSession } from 'telegram/sessions/index.js';
+import TGClient from './telegramClient.js';
+import { decrypt } from './crypt.js';
 
 /**
  * @summary Gets user object from authorization header
@@ -19,17 +19,17 @@ export const getUser = (req) => {
 /**
  * @summary Sends Telegram message on behalf of the user
  * @param {string} message - message to be sent
- * @param {string} recepientId  - recepient telegram user id
+ * @param {string} recipientId  - recipient telegram user id
  * @param {object} senderUser - sender user object
  * @returns {object} Promise object with a boolean `success` property, and a result `message` string
  */
-export const sendTelegramMessage = async (message, recepientId, senderUser) => {
+export const sendTelegramMessage = async (message, recipientId, senderUser) => {
   try {
-    if (!message) throw new Error("Message is required");
-    if (!recepientId) throw new Error("Recepient ID is required");
-    if (!senderUser.userHandle) throw new Error("Sender username not found");
+    if (!message) throw new Error('Message is required');
+    if (!recipientId) throw new Error('Recipient ID is required');
+    if (!senderUser.userHandle) throw new Error('Sender username not found');
     if (!senderUser.telegramSession)
-      throw new Error("Telegram session not found");
+      throw new Error('Telegram session not found');
 
     const client = TGClient(
       new StringSession(decrypt(senderUser.telegramSession))
@@ -38,34 +38,34 @@ export const sendTelegramMessage = async (message, recepientId, senderUser) => {
     await client.connect();
 
     if (!client.connected) {
-      throw new Error("Telegram client not connected");
+      throw new Error('Telegram client not connected');
     }
 
-    // get recepient handle
-    const recepient = await client.invoke(
+    // get recipient handle
+    const recipient = await client.invoke(
       new Api.users.GetFullUser({
-        id: recepientId,
+        id: recipientId,
       })
     );
 
-    const recepientHandle =
-      (recepient &&
-        recepient.users &&
-        recepient.users[0] &&
-        recepient.users[0].username) ||
-      "";
+    const recipientHandle =
+      (recipient &&
+        recipient.users &&
+        recipient.users[0] &&
+        recipient.users[0].username) ||
+      '';
 
     const data = {
-      peer: recepientHandle,
+      peer: recipientHandle,
       message: message,
     };
 
     const result = await client.invoke(new Api.messages.SendMessage(data));
 
     if (result) {
-      return { success: true, message: "Message sent successfully" };
+      return { success: true, message: 'Message sent successfully' };
     } else {
-      return { success: false, message: "Message sending failed" };
+      return { success: false, message: 'Message sending failed' };
     }
   } catch (error) {
     return { success: false, message: error.message };

@@ -8,11 +8,11 @@ import {
   getPatchWalletAccessToken,
   getPatchWalletAddressFromTgId,
   sendTokens,
-} from "./patchwallet.js";
-import { addIdentitySegment, addTrackSegment } from "./segment.js";
-import axios from "axios";
-import "dotenv/config";
-import { sendTelegramMessage } from "./telegram.js";
+} from './patchwallet.js';
+import { addIdentitySegment, addTrackSegment } from './segment.js';
+import axios from 'axios';
+import 'dotenv/config';
+import { sendTelegramMessage } from './telegram.js';
 
 /**
  * Handles a new user registration event.
@@ -535,31 +535,24 @@ export async function handleNewTransaction(params) {
         dateAdded: dateAdded,
       });
 
-      // send telegram message if params.message exists
-      if (params.message) {
-        const senderUser = await db
-          .collection(USERS_COLLECTION)
-          .findOne({ userTelegramID: params.senderTgId });
-
-        // only try to send if the sender has a telegram session
-        if (senderUser && senderUser.telegramSession) {
-          const messageSendingResult = await sendTelegramMessage(
-            params.message,
-            params.recipientTgId,
-            senderUser
+      // send telegram message if params.message exists and sender has a telegram session
+      if (params.message && senderInformation.telegramSession) {
+        const messageSendingResult = await sendTelegramMessage(
+          params.message,
+          params.recipientTgId,
+          senderInformation
+        );
+        // log error if message sending failed
+        if (!messageSendingResult.success) {
+          console.error(
+            'Error sending telegram message:',
+            messageSendingResult.message
           );
-          // log error if message sending failed
-          if (!messageSendingResult.success) {
-            console.error(
-              "Error sending telegram message:",
-              messageSendingResult.message
-            );
-          }
         }
       }
     } catch (error) {
       console.error(
-        "Error processing Segment or FlowXO webhook, or sending telegram message:",
+        'Error processing Segment or FlowXO webhook, or sending telegram message:',
         error
       );
     }
