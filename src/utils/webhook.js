@@ -1,4 +1,3 @@
-import { ObjectId } from 'mongodb';
 import { Database } from '../db/conn.js';
 import {
   REWARDS_COLLECTION,
