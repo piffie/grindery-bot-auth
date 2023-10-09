@@ -14,18 +14,22 @@ import {
   patchwalletTxUrl,
   patchwalletResolverUrl,
   patchwalletAuthUrl,
+  mockUserName1,
 } from './utils.js';
 import { handleLinkReward } from '../utils/webhook.js';
 import Sinon from 'sinon';
 import axios from 'axios';
 import 'dotenv/config';
 import chaiExclude from 'chai-exclude';
+import { v4 as uuidv4 } from 'uuid';
+import { TRANSACTION_STATUS } from '../utils/constants.js';
 
 chai.use(chaiExclude);
 
 describe('handleLinkReward function', async function () {
   let sandbox;
   let axiosStub;
+  let rewardId;
 
   beforeEach(function () {
     sandbox = Sinon.createSandbox();
@@ -62,6 +66,7 @@ describe('handleLinkReward function', async function () {
           });
         }
       });
+    rewardId = uuidv4();
   });
 
   afterEach(function () {
@@ -70,19 +75,29 @@ describe('handleLinkReward function', async function () {
 
   it('Should return true if referent is not a user', async function () {
     chai.expect(
-      await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1)
+      await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      )
     ).to.be.true;
   });
 
   it('Should not send tokens if referent is not a user', async function () {
-    await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
+    await handleLinkReward(
+      dbMock,
+      rewardId,
+      mockUserTelegramID,
+      mockUserTelegramID1
+    );
 
     chai.expect(
       axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
     ).to.be.undefined;
   });
 
-  it('Should return true if user already sponsored someone else', async function () {
+  it('Should return true and not sending reward if user already sponsored someone else in another reward process', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID1,
     });
@@ -100,29 +115,68 @@ describe('handleLinkReward function', async function () {
       transactionHash: mockTransactionHash,
     });
     chai.expect(
-      await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1)
+      await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      )
     ).to.be.true;
+    chai
+      .expect(await collectionRewardsMock.find({}).toArray())
+      .excluding(['_id', 'dateAdded'])
+      .to.deep.equal([
+        {
+          sponsoredUserTelegramID: mockUserTelegramID,
+          userTelegramID: mockUserTelegramID1,
+          responsePath: mockResponsePath,
+          walletAddress: mockWallet,
+          reason: 'referral_link',
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+          amount: '10',
+          message: 'Referral link',
+          transactionHash: mockTransactionHash,
+        },
+      ]);
+    chai.expect(
+      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+    ).to.be.undefined;
   });
 
-  it('Should not send tokens if user already sponsored someone else', async function () {
+  it('Should return true and not send new reward if the link reward is already success', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID1,
     });
 
     await collectionRewardsMock.insertOne({
+      eventId: rewardId,
       sponsoredUserTelegramID: mockUserTelegramID,
       userTelegramID: mockUserTelegramID1,
-      responsePath: mockResponsePath,
-      walletAddress: mockWallet,
       reason: 'referral_link',
-      userHandle: mockUserHandle,
-      userName: mockUserName,
-      amount: '10',
-      message: 'Referral link',
-      transactionHash: mockTransactionHash,
+      status: TRANSACTION_STATUS.SUCCESS,
     });
-    await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
 
+    const result = await handleLinkReward(
+      dbMock,
+      rewardId,
+      mockUserTelegramID,
+      mockUserTelegramID1
+    );
+
+    chai.expect(result).to.be.true;
+    chai
+      .expect(await collectionRewardsMock.find({}).toArray())
+      .excluding(['_id', 'dateAdded'])
+      .to.deep.equal([
+        {
+          eventId: rewardId,
+          sponsoredUserTelegramID: mockUserTelegramID,
+          userTelegramID: mockUserTelegramID1,
+          reason: 'referral_link',
+          status: TRANSACTION_STATUS.SUCCESS,
+        },
+      ]);
     chai.expect(
       axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
     ).to.be.undefined;
@@ -133,7 +187,12 @@ describe('handleLinkReward function', async function () {
       userTelegramID: mockUserTelegramID1,
     });
 
-    await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
+    await handleLinkReward(
+      dbMock,
+      rewardId,
+      mockUserTelegramID,
+      mockUserTelegramID1
+    );
 
     chai
       .expect(
@@ -161,12 +220,18 @@ describe('handleLinkReward function', async function () {
       patchwallet: mockWallet,
     });
 
-    await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
+    await handleLinkReward(
+      dbMock,
+      rewardId,
+      mockUserTelegramID,
+      mockUserTelegramID1
+    );
 
     const rewards = await collectionRewardsMock.find({}).toArray();
 
     chai.expect(rewards.length).to.equal(1);
     chai.expect(rewards[0]).excluding(['_id', 'dateAdded']).to.deep.equal({
+      eventId: rewardId,
       sponsoredUserTelegramID: mockUserTelegramID,
       userTelegramID: mockUserTelegramID1,
       responsePath: mockResponsePath,
@@ -177,6 +242,7 @@ describe('handleLinkReward function', async function () {
       amount: '10',
       message: 'Referral link',
       transactionHash: mockTransactionHash,
+      status: TRANSACTION_STATUS.SUCCESS,
     });
     chai
       .expect(rewards[0].dateAdded)
@@ -189,7 +255,12 @@ describe('handleLinkReward function', async function () {
       userTelegramID: mockUserTelegramID1,
     });
     chai.expect(
-      await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1)
+      await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      )
     ).to.be.true;
   });
 
@@ -201,7 +272,12 @@ describe('handleLinkReward function', async function () {
       userName: mockUserName,
       patchwallet: mockWallet,
     });
-    await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
+    await handleLinkReward(
+      dbMock,
+      rewardId,
+      mockUserTelegramID,
+      mockUserTelegramID1
+    );
 
     const FlowXOCallArgs = axiosStub
       .getCalls()
@@ -237,7 +313,12 @@ describe('handleLinkReward function', async function () {
     });
 
     chai.expect(
-      await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1)
+      await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      )
     ).to.be.true;
   });
 
@@ -252,21 +333,51 @@ describe('handleLinkReward function', async function () {
       });
 
       chai.expect(
-        await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1)
+        await handleLinkReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockUserTelegramID1
+        )
       ).to.be.false;
     });
 
-    it('Should not add reward in the database if there is an error in the transaction', async function () {
+    it('Should add pending reward in the database if there is an error in the transaction', async function () {
       axiosStub
         .withArgs(patchwalletTxUrl)
         .rejects(new Error('Service not available'));
 
       await collectionUsersMock.insertOne({
         userTelegramID: mockUserTelegramID1,
+        responsePath: mockResponsePath,
+        userHandle: mockUserHandle,
+        userName: mockUserName,
       });
 
-      await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
-      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+      await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      );
+      chai
+        .expect(await collectionRewardsMock.find({}).toArray())
+        .excluding(['_id', 'dateAdded'])
+        .to.deep.equal([
+          {
+            eventId: rewardId,
+            userTelegramID: mockUserTelegramID1,
+            responsePath: mockResponsePath,
+            walletAddress: mockWallet,
+            reason: 'referral_link',
+            userHandle: mockUserHandle,
+            userName: mockUserName,
+            amount: '10',
+            message: 'Referral link',
+            sponsoredUserTelegramID: mockUserTelegramID,
+            status: TRANSACTION_STATUS.PENDING,
+          },
+        ]);
     });
 
     it('Should not call FlowXO if there is an error in the transaction', async function () {
@@ -278,7 +389,12 @@ describe('handleLinkReward function', async function () {
         userTelegramID: mockUserTelegramID1,
       });
 
-      await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
+      await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      );
 
       chai.expect(
         axiosStub
@@ -300,14 +416,22 @@ describe('handleLinkReward function', async function () {
 
       await collectionUsersMock.insertOne({
         userTelegramID: mockUserTelegramID1,
+        responsePath: mockResponsePath,
+        userHandle: mockUserHandle,
+        userName: mockUserName,
       });
 
       chai.expect(
-        await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1)
+        await handleLinkReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockUserTelegramID1
+        )
       ).to.be.false;
     });
 
-    it('Should not add reward in the database if there is no hash in PatchWallet response', async function () {
+    it('Should add pending reward in the database if there is no hash in PatchWallet response', async function () {
       axiosStub.withArgs(patchwalletTxUrl).resolves({
         data: {
           error: 'service non available',
@@ -316,10 +440,35 @@ describe('handleLinkReward function', async function () {
 
       await collectionUsersMock.insertOne({
         userTelegramID: mockUserTelegramID1,
+        responsePath: mockResponsePath,
+        userHandle: mockUserHandle,
+        userName: mockUserName,
       });
 
-      await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
-      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+      await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      );
+      chai
+        .expect(await collectionRewardsMock.find({}).toArray())
+        .excluding(['_id', 'dateAdded'])
+        .to.deep.equal([
+          {
+            eventId: rewardId,
+            userTelegramID: mockUserTelegramID1,
+            responsePath: mockResponsePath,
+            walletAddress: mockWallet,
+            reason: 'referral_link',
+            userHandle: mockUserHandle,
+            userName: mockUserName,
+            amount: '10',
+            message: 'Referral link',
+            sponsoredUserTelegramID: mockUserTelegramID,
+            status: TRANSACTION_STATUS.PENDING,
+          },
+        ]);
     });
 
     it('Should not call FlowXO if there is no hash in PatchWallet response', async function () {
@@ -333,7 +482,12 @@ describe('handleLinkReward function', async function () {
         userTelegramID: mockUserTelegramID1,
       });
 
-      await handleLinkReward(dbMock, mockUserTelegramID, mockUserTelegramID1);
+      await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      );
 
       chai.expect(
         axiosStub

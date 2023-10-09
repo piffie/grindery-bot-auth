@@ -75,6 +75,7 @@ export async function handleNewUser(params) {
 
 export async function handleSignUpReward(
   db,
+  eventId,
   userTelegramID,
   responsePath,
   userHandle,
@@ -82,16 +83,40 @@ export async function handleSignUpReward(
   rewardWallet
 ) {
   try {
+    const reward = await db.collection(REWARDS_COLLECTION).findOne({
+      userTelegramID: userTelegramID,
+      eventId: eventId,
+      reason: 'user_sign_up',
+    });
+
     // Check if the user has already received a signup reward
     if (
-      await db.collection(REWARDS_COLLECTION).findOne({
+      reward?.status === TRANSACTION_STATUS.SUCCESS ||
+      (await db.collection(REWARDS_COLLECTION).findOne({
         userTelegramID: userTelegramID,
+        eventId: { $ne: eventId },
         reason: 'user_sign_up',
-      })
+      }))
     ) {
       // The user has already received a signup reward, stop processing
       console.log(`[${userTelegramID}] user already received signup reward.`);
       return true;
+    }
+
+    if (!reward) {
+      await db.collection(REWARDS_COLLECTION).insertOne({
+        eventId: eventId,
+        userTelegramID: userTelegramID,
+        responsePath: responsePath,
+        walletAddress: rewardWallet,
+        reason: 'user_sign_up',
+        userHandle: userHandle,
+        userName: userName,
+        amount: '100',
+        message: 'Sign up reward',
+        dateAdded: new Date(),
+        status: TRANSACTION_STATUS.PENDING,
+      });
     }
 
     let txReward = undefined;
@@ -112,18 +137,26 @@ export async function handleSignUpReward(
       const dateAdded = new Date();
 
       // Add the reward to the "rewards" collection
-      await db.collection(REWARDS_COLLECTION).insertOne({
-        userTelegramID: userTelegramID,
-        responsePath: responsePath,
-        walletAddress: rewardWallet,
-        reason: 'user_sign_up',
-        userHandle: userHandle,
-        userName: userName,
-        amount: '100',
-        message: 'Sign up reward',
-        transactionHash: txReward.data.txHash,
-        dateAdded: dateAdded,
-      });
+      await db.collection(REWARDS_COLLECTION).updateOne(
+        {
+          userTelegramID: userTelegramID,
+          eventId: eventId,
+          reason: 'user_sign_up',
+        },
+        {
+          $set: {
+            responsePath: responsePath,
+            walletAddress: rewardWallet,
+            userHandle: userHandle,
+            userName: userName,
+            amount: '100',
+            message: 'Sign up reward',
+            transactionHash: txReward.data.txHash,
+            dateAdded: dateAdded,
+            status: TRANSACTION_STATUS.SUCCESS,
+          },
+        }
+      );
 
       console.log(`[${userTelegramID}] signup reward added.`);
 
@@ -152,6 +185,7 @@ export async function handleSignUpReward(
 
 export async function handleReferralReward(
   db,
+  eventId,
   userTelegramID,
   responsePath,
   userHandle,
@@ -171,12 +205,12 @@ export async function handleReferralReward(
         recipientTgId: userTelegramID,
       })
       .toArray()) {
-      if (
-        await db.collection(REWARDS_COLLECTION).findOne({
-          reason: '2x_reward',
-          parentTransactionHash: transfer.transactionHash,
-        })
-      ) {
+      const reward = await db.collection(REWARDS_COLLECTION).findOne({
+        reason: '2x_reward',
+        parentTransactionHash: transfer.transactionHash,
+      });
+
+      if (reward?.status === TRANSACTION_STATUS.SUCCESS) {
         continue;
       }
 
@@ -186,8 +220,25 @@ export async function handleReferralReward(
         .findOne({ userTelegramID: transfer.senderTgId });
 
       const senderWallet =
-        senderInformation.patchwallet ??
+        senderInformation?.patchwallet ??
         (await getPatchWalletAddressFromTgId(senderInformation.userTelegramID));
+
+      if (!reward) {
+        await db.collection(REWARDS_COLLECTION).insertOne({
+          eventId: eventId,
+          userTelegramID: senderInformation.userTelegramID,
+          responsePath: senderInformation.responsePath,
+          walletAddress: senderWallet,
+          reason: '2x_reward',
+          userHandle: senderInformation.userHandle,
+          userName: senderInformation.userName,
+          amount: '50',
+          message: 'Referral reward',
+          dateAdded: new Date(),
+          parentTransactionHash: transfer.transactionHash,
+          status: TRANSACTION_STATUS.PENDING,
+        });
+      }
 
       let txReward = undefined;
 
@@ -207,20 +258,27 @@ export async function handleReferralReward(
       if (txReward.data.txHash) {
         const dateAdded = new Date();
 
-        // Add the reward to the "rewards" collection
-        await db.collection(REWARDS_COLLECTION).insertOne({
-          userTelegramID: senderInformation.userTelegramID,
-          responsePath: senderInformation.responsePath,
-          walletAddress: senderWallet,
-          reason: '2x_reward',
-          userHandle: senderInformation.userHandle,
-          userName: senderInformation.userName,
-          amount: '50',
-          message: 'Referral reward',
-          transactionHash: txReward.data.txHash,
-          dateAdded: dateAdded,
-          parentTransactionHash: transfer.transactionHash,
-        });
+        await db.collection(REWARDS_COLLECTION).updateOne(
+          {
+            reason: '2x_reward',
+            parentTransactionHash: transfer.transactionHash,
+          },
+          {
+            $set: {
+              userTelegramID: senderInformation.userTelegramID,
+              responsePath: senderInformation.responsePath,
+              walletAddress: senderWallet,
+              userHandle: senderInformation.userHandle,
+              userName: senderInformation.userName,
+              amount: '50',
+              message: 'Referral reward',
+              transactionHash: txReward.data.txHash,
+              dateAdded: dateAdded,
+              status: TRANSACTION_STATUS.SUCCESS,
+            },
+          },
+          { upsert: true }
+        );
 
         await axios.post(process.env.FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK, {
           newUserTgId: userTelegramID,
@@ -260,6 +318,7 @@ export async function handleReferralReward(
 
 export async function handleLinkReward(
   db,
+  eventId,
   userTelegramID,
   referentUserTelegramID
 ) {
@@ -274,23 +333,49 @@ export async function handleLinkReward(
       return true;
     }
 
+    const rewardWallet =
+      referent?.patchwallet ??
+      (await getPatchWalletAddressFromTgId(referentUserTelegramID));
+
+    const reward = await db.collection(REWARDS_COLLECTION).findOne({
+      eventId: eventId,
+      userTelegramID: referentUserTelegramID,
+      sponsoredUserTelegramID: userTelegramID,
+      reason: 'referral_link',
+    });
+
+    // Check if the user has already received a signup reward
     if (
-      await db.collection(REWARDS_COLLECTION).findOne({
+      reward?.status === TRANSACTION_STATUS.SUCCESS ||
+      (await db.collection(REWARDS_COLLECTION).findOne({
         sponsoredUserTelegramID: userTelegramID,
         reason: 'referral_link',
-      })
+        eventId: { $ne: eventId },
+      }))
     ) {
       // The user has already received a referral link reward, stop processing
       console.log(
         `[${userTelegramID}] already sponsored another user for a referral link reward.`
       );
-
       return true;
     }
 
-    const rewardWallet =
-      referent.patchwallet ??
-      (await getPatchWalletAddressFromTgId(referentUserTelegramID));
+    if (!reward) {
+      await db.collection(REWARDS_COLLECTION).insertOne({
+        eventId: eventId,
+        userTelegramID: referentUserTelegramID,
+        responsePath: referent.responsePath,
+        walletAddress: rewardWallet,
+        reason: 'referral_link',
+        userHandle: referent.userHandle,
+        userName: referent.userName,
+        amount: '10',
+        message: 'Referral link',
+        dateAdded: new Date(),
+        sponsoredUserTelegramID: userTelegramID,
+        status: TRANSACTION_STATUS.PENDING,
+      });
+    }
 
     let txReward = undefined;
 
@@ -310,19 +395,28 @@ export async function handleLinkReward(
       const dateAdded = new Date();
 
       // Add the reward to the "rewards" collection
-      await db.collection(REWARDS_COLLECTION).insertOne({
-        userTelegramID: referentUserTelegramID,
-        responsePath: referent.responsePath,
-        walletAddress: rewardWallet,
-        reason: 'referral_link',
-        userHandle: referent.userHandle,
-        userName: referent.userName,
-        amount: '10',
-        message: 'Referral link',
-        transactionHash: txReward.data.txHash,
-        dateAdded: dateAdded,
-        sponsoredUserTelegramID: userTelegramID,
-      });
+      await db.collection(REWARDS_COLLECTION).updateOne(
+        {
+          userTelegramID: referentUserTelegramID,
+          sponsoredUserTelegramID: userTelegramID,
+          reason: 'referral_link',
+        },
+        {
+          $set: {
+            eventId: eventId,
+            responsePath: referent.responsePath,
+            walletAddress: rewardWallet,
+            userHandle: referent.userHandle,
+            userName: referent.userName,
+            amount: '10',
+            message: 'Referral link',
+            transactionHash: txReward.data.txHash,
+            dateAdded: dateAdded,
+            status: TRANSACTION_STATUS.SUCCESS,
+          },
+        },
+        { upsert: true }
+      );
 
       console.log(`[${referentUserTelegramID}] referral link reward added.`);
 
@@ -380,6 +474,7 @@ export async function handleNewReward(params) {
 
   const signupReward = await webhook_utils.handleSignUpReward(
     db,
+    params.eventId,
     params.userTelegramID,
     params.responsePath,
     params.userHandle,
@@ -393,6 +488,7 @@ export async function handleNewReward(params) {
 
   const referralReward = await webhook_utils.handleReferralReward(
     db,
+    params.eventId,
     params.userTelegramID,
     params.responsePath,
     params.userHandle,
@@ -407,6 +503,7 @@ export async function handleNewReward(params) {
   if (params.referentUserTelegramID) {
     const referralLinkReward = await webhook_utils.handleLinkReward(
       db,
+      params.eventId,
       params.userTelegramID,
       params.referentUserTelegramID
     );

@@ -1,21 +1,12 @@
 import chai from 'chai';
 import {
-  collectionRewardsMock,
   mockResponsePath,
   mockUserHandle,
   mockUserName,
   mockUserTelegramID,
   mockWallet,
-  mockAccessToken,
-  mockTransactionHash,
   collectionUsersMock,
   mockUserTelegramID1,
-  collectionTransfersMock,
-  mockTransactionHash1,
-  mockResponsePath1,
-  mockUserHandle1,
-  mockUserName1,
-  mockWallet1,
   patchwalletResolverUrl,
   segmentIdentifyUrl,
 } from './utils.js';
@@ -24,13 +15,14 @@ import Sinon from 'sinon';
 import axios from 'axios';
 import 'dotenv/config';
 import chaiExclude from 'chai-exclude';
-import * as webhookModule from '../utils/webhook.js';
+import { v4 as uuidv4 } from 'uuid';
 
 chai.use(chaiExclude);
 
 describe('handleReferralReward function', function () {
   let sandbox;
   let axiosStub;
+  let eventId;
 
   beforeEach(function () {
     sandbox = Sinon.createSandbox();
@@ -66,6 +58,7 @@ describe('handleReferralReward function', function () {
       .callsFake(async function () {
         return true;
       });
+    eventId = uuidv4();
   });
 
   afterEach(function () {
@@ -78,6 +71,7 @@ describe('handleReferralReward function', function () {
     });
 
     const result = await handleNewReward({
+      eventId: eventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -97,6 +91,7 @@ describe('handleReferralReward function', function () {
 
   it('Should return true if user is new', async function () {
     const result = await handleNewReward({
+      eventId: eventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -112,6 +107,7 @@ describe('handleReferralReward function', function () {
     });
 
     const result = await handleNewReward({
+      eventId: eventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -128,6 +124,7 @@ describe('handleReferralReward function', function () {
     });
 
     let result = await handleNewReward({
+      eventId: eventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -142,6 +139,7 @@ describe('handleReferralReward function', function () {
 
     // Restart
     result = await handleNewReward({
+      eventId: eventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -172,6 +170,7 @@ describe('handleReferralReward function', function () {
 
     chai.expect(
       await handleNewReward({
+        eventId: eventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -187,6 +186,7 @@ describe('handleReferralReward function', function () {
     });
 
     let result = await handleNewReward({
+      eventId: eventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -201,6 +201,7 @@ describe('handleReferralReward function', function () {
     });
 
     result = await handleNewReward({
+      eventId: eventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -224,6 +225,7 @@ describe('handleReferralReward function', function () {
 
   it('Should return true and populate database correctly with referral link', async function () {
     const result = await handleNewReward({
+      eventId: eventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -252,6 +254,7 @@ describe('handleReferralReward function', function () {
     });
 
     let result = await handleNewReward({
+      eventId: eventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -267,6 +270,7 @@ describe('handleReferralReward function', function () {
     });
 
     result = await handleNewReward({
+      eventId: eventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -291,6 +295,7 @@ describe('handleReferralReward function', function () {
 
   it('Should populate the segment user properly', async function () {
     const result = await handleNewReward({
+      eventId: eventId,
       userTelegramID: 'newUserTgId',
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -327,6 +332,7 @@ describe('handleReferralReward function', function () {
       .rejects(new Error('Service not available'));
 
     const result = await handleNewReward({
+      eventId: eventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -344,6 +350,7 @@ describe('handleReferralReward function', function () {
       .rejects(new Error('Service not available'));
 
     const result = await handleNewReward({
+      eventId: eventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
