@@ -6,8 +6,148 @@ import {
   getOutgoingTxsUser,
   getRewardTxsUser,
 } from '../utils/transfers.js';
+import {
+  REWARDS_COLLECTION,
+  REWARDS_TESTS_COLLECTION,
+  TRANSACTION_STATUS,
+} from '../utils/constants.js';
+import Web3 from 'web3';
 
 const router = express.Router();
+
+// router.post('/reward', authenticateApiKey, async (req, res) => {
+//   try {
+//     const db = await Database.getInstance(req);
+//     const collection = db.collection(REWARDS_COLLECTION);
+
+//     if (Web3.utils.fromWei(req.body.amount, 'ether') === '100') {
+//       const reward = await collection.findOne({
+//         walletAddress: Web3.utils.toChecksumAddress(req.body.to),
+//         reason: 'user_sign_up',
+//         status: TRANSACTION_STATUS.PENDING,
+//       });
+
+//       if (!reward) {
+//         res.status(201).send({ message: 'No reward to complete.' });
+//       } else {
+//         await collection.updateOne(
+//           {
+//             _id: reward._id,
+//           },
+//           {
+//             $set: {
+//               transactionHash: req.body.transactionHash,
+//               status: TRANSACTION_STATUS.SUCCESS,
+//             },
+//           }
+//         );
+
+//         res.status(201).send({
+//           message: 'Reward updated.',
+//           transactionHash: req.body.transactionHash,
+//           mongoDbId: reward._id.toString(),
+//         });
+//       }
+//     } else if (Web3.utils.fromWei(req.body.amount, 'ether') === '50') {
+//       const reward = await collection.findOne({
+//         walletAddress: Web3.utils.toChecksumAddress(req.body.to),
+//         reason: '2x_reward',
+//         status: TRANSACTION_STATUS.PENDING,
+//       });
+
+//       if (!reward) {
+//         res.status(201).send({ message: 'No reward to complete.' });
+//       } else {
+//         await collection.updateOne(
+//           {
+//             _id: reward._id,
+//           },
+//           {
+//             $set: {
+//               transactionHash: req.body.transactionHash,
+//               status: TRANSACTION_STATUS.SUCCESS,
+//             },
+//           }
+//         );
+
+//         res.status(201).send({
+//           message: 'Reward updated.',
+//           transactionHash: req.body.transactionHash,
+//           mongoDbId: reward._id.toString(),
+//         });
+//       }
+//     } else if (Web3.utils.fromWei(req.body.amount, 'ether') === '10') {
+//       const reward = await collection.findOne({
+//         walletAddress: Web3.utils.toChecksumAddress(req.body.to),
+//         reason: 'referral_link',
+//         status: TRANSACTION_STATUS.PENDING,
+//       });
+
+//       if (!reward) {
+//         res.status(201).send({ message: 'No reward to complete.' });
+//       } else {
+//         await collection.updateOne(
+//           {
+//             _id: reward._id,
+//           },
+//           {
+//             $set: {
+//               transactionHash: req.body.transactionHash,
+//               status: TRANSACTION_STATUS.SUCCESS,
+//             },
+//           }
+//         );
+
+//         res.status(201).send({
+//           message: 'Reward updated.',
+//           transactionHash: req.body.transactionHash,
+//           mongoDbId: reward._id.toString(),
+//         });
+//       }
+//     } else {
+//       res.status(201).send({
+//         message: 'No reward found.',
+//       });
+//     }
+//   } catch (error) {
+//     return res.status(500).send({ msg: 'An error occurred', error });
+//   }
+// });
+
+router.post('/reward', authenticateApiKey, async (req, res) => {
+  try {
+    const db = await Database.getInstance(req);
+    const collection = db.collection(REWARDS_TESTS_COLLECTION);
+
+    const reward = await collection.findOne({
+      walletAddress: Web3.utils.toChecksumAddress(req.body.to),
+      amount: Web3.utils.fromWei(req.body.amount, 'ether'),
+      status: TRANSACTION_STATUS.PENDING,
+    });
+
+    if (!reward) {
+      res.status(201).send({ message: 'No reward to complete.' });
+    } else {
+      await collection.updateOne(
+        { _id: reward._id },
+        {
+          $set: {
+            transactionHash: req.body.transactionHash,
+            status: TRANSACTION_STATUS.SUCCESS,
+          },
+        }
+      );
+
+      res.status(201).send({
+        message: 'Reward updated.',
+        transactionHash: req.body.transactionHash,
+        mongoDbId: reward._id.toString(),
+      });
+    }
+  } catch (error) {
+    return res.status(500).send({ msg: 'An error occurred', error });
+  }
+});
 
 router.post('/:collectionName', authenticateApiKey, async (req, res) => {
   const collectionName = req.params.collectionName;
