@@ -539,6 +539,7 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
           recipientTgId: req.body.recipientTgId,
           amount: req.body.amount,
           senderTgId: user.id.toString(),
+          message: req.body.message,
         },
       };
     } else {
@@ -548,6 +549,7 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
           recipientTgId: id,
           amount: req.body.amount,
           senderTgId: user.id.toString(),
+          message: req.body.message,
         })),
       };
     }
@@ -562,6 +564,7 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
         },
       }
     );
+
     return res.status(200).json({ success: eventRes.data?.success || false });
   } catch (error) {
     console.error('Error sending transaction', error);
