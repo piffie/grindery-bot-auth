@@ -6,6 +6,7 @@ import {
   getOutgoingTxsUser,
   getRewardTxsUser,
 } from '../utils/transfers.js';
+import { TRANSFERS_COLLECTION, USERS_COLLECTION } from '../utils/constants.js';
 
 const router = express.Router();
 
@@ -38,6 +39,34 @@ router.get('/backlog-signup-rewards', authenticateApiKey, async (req, res) => {
         })
         .toArray()
     );
+  } catch (error) {
+    return res.status(500).send({ msg: 'An error occurred', error });
+  }
+});
+
+router.get('/transactions-total', authenticateApiKey, async (req, res) => {
+  try {
+    const db = await Database.getInstance(req);
+
+    res.status(200).send({
+      transactions_counts: await db
+        .collection(TRANSFERS_COLLECTION)
+        .countDocuments(),
+    });
+  } catch (error) {
+    return res.status(500).send({ msg: 'An error occurred', error });
+  }
+});
+
+router.get('/users-total', authenticateApiKey, async (req, res) => {
+  try {
+    const db = await Database.getInstance(req);
+
+    res.status(200).send({
+      transactions_counts: await db
+        .collection(USERS_COLLECTION)
+        .countDocuments(),
+    });
   } catch (error) {
     return res.status(500).send({ msg: 'An error occurred', error });
   }
