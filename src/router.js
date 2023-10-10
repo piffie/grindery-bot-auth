@@ -6,6 +6,7 @@ import telegram from './routes/telegram.js';
 import db from './routes/db.js';
 import support from './routes/support.js';
 import webhook from './routes/webhook.js';
+import bigquery from './routes/big_query.js';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/telegram', telegram);
 router.use('/db', db);
 router.use('/support', support);
 router.use('/webhook', webhook);
+router.use('/big-query', bigquery);
 
 export default router;
