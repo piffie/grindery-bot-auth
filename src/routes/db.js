@@ -3,7 +3,9 @@ import { Database } from '../db/conn.js';
 import { authenticateApiKey } from '../utils/auth.js';
 import {
   getIncomingTxsUser,
+  getOutgoingTxsToNewUsers,
   getOutgoingTxsUser,
+  getRewardLinkTxsUser,
   getRewardTxsUser,
 } from '../utils/transfers.js';
 import { TRANSFERS_COLLECTION, USERS_COLLECTION } from '../utils/constants.js';
@@ -181,6 +183,79 @@ router.get('/referral-link-count', authenticateApiKey, async (req, res) => {
     res
       .status(200)
       .send({ link_rewards: rewards, link_rewards_counts: rewards.length });
+  } catch (error) {
+    return res.status(500).send({ msg: 'An error occurred', error });
+  }
+});
+
+router.get(
+  '/format-transfers-new-users',
+  authenticateApiKey,
+  async (req, res) => {
+    try {
+      const db = await Database.getInstance(req);
+      const start =
+        parseInt(req.query.start) >= 0 ? parseInt(req.query.start) : 0;
+      const limit =
+        req.query.limit && parseInt(req.query.limit) > 0
+          ? parseInt(req.query.limit)
+          : 0;
+
+      let formattedTxs = '';
+
+      formattedTxs += await getOutgoingTxsToNewUsers(
+        db,
+        req.query.userId,
+        start,
+        limit
+      ).then((outgoingTxs) => {
+        return outgoingTxs.length > 0
+          ? `<b>Transfers to non-Grindery users:</b>\n${outgoingTxs
+              .map(
+                (transfer) =>
+                  `- ${transfer.tokenAmount} g1 to ${transfer.recipientTgId} on ${transfer.dateAdded} - <a href="https://t.me/GrinderyAIBot?followup_test=${transfer.recipientTgId}">Click to follow up!</a>
+                  `
+              )
+              .join('\n')}\n\n`
+          : '';
+      });
+
+      res.status(200).send({ formattedTxs: formattedTxs.trimEnd() });
+    } catch (error) {
+      return res.status(500).send({ msg: 'An error occurred', error });
+    }
+  }
+);
+
+router.get('/format-link-rewards', authenticateApiKey, async (req, res) => {
+  try {
+    const db = await Database.getInstance(req);
+    const start =
+      parseInt(req.query.start) >= 0 ? parseInt(req.query.start) : 0;
+    const limit =
+      req.query.limit && parseInt(req.query.limit) > 0
+        ? parseInt(req.query.limit)
+        : 0;
+
+    let formattedTxs = '';
+
+    formattedTxs += await getRewardLinkTxsUser(
+      db,
+      req.query.userId,
+      start,
+      limit
+    ).then((rewardTxs) => {
+      return rewardTxs.length > 0
+        ? `<b>Users who signed up via your referral link:</b>\n${rewardTxs
+            .map(
+              (reward) =>
+                `- @${reward.sponsoredUserHandle} on ${reward.dateAdded}`
+            )
+            .join('\n')}\n\n`
+        : '';
+    });
+
+    res.status(200).send({ formattedTxs: formattedTxs.trimEnd() });
   } catch (error) {
     return res.status(500).send({ msg: 'An error occurred', error });
   }
