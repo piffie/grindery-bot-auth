@@ -1,6 +1,6 @@
-import express from 'express';
-import { PubSub } from '@google-cloud/pubsub';
-import { authenticateApiKey } from '../utils/auth.js';
+import express from "express";
+import { PubSub } from "@google-cloud/pubsub";
+import { authenticateApiKey } from "../utils/auth.js";
 import {
   handleNewReward,
   handleNewTransaction,

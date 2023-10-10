@@ -9,6 +9,10 @@ import { Database } from '../db/conn.js';
 import { getUser } from '../utils/telegram.js';
 import axios from 'axios';
 import { decrypt, encrypt } from '../utils/crypt.js';
+import Web3 from 'web3';
+import { CHAIN_MAPPING } from '../utils/chains.js';
+import ERC20 from './abi/ERC20.json' assert { type: 'json' };
+import { base } from '../utils/airtableClient.js';
 
 const router = express.Router();
 const operations = {};
@@ -538,6 +542,7 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
           recipientTgId: req.body.recipientTgId,
           amount: req.body.amount,
           senderTgId: user.id.toString(),
+          message: req.body.message,
         },
       };
     } else {
@@ -547,6 +552,7 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
           recipientTgId: id,
           amount: req.body.amount,
           senderTgId: user.id.toString(),
+          message: req.body.message,
         })),
       };
     }
@@ -561,11 +567,226 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
         },
       }
     );
+
     return res.status(200).json({ success: eventRes.data?.success || false });
   } catch (error) {
     console.error('Error sending transaction', error);
     return res.status(500).send({ success: false, error: 'An error occurred' });
   }
+});
+
+/*
+ * GET /leaderboard
+ *
+ * @summary Retrieve leaderboard data
+ * @description Fetches leaderboard data by aggregating user statistics based on transaction and reward records. Allows sorting, pagination, and filter features. Additionally, retrieves users' balances using Web3 integration.
+ * @tags Leaderboard
+ * @param {string} request.query.chainId - The chain ID for Web3 operations. Defaults to "eip155:137".
+ * @param {number} request.query.page - Specifies the page number for pagination. Defaults to 1.
+ * @param {number} request.query.limit - Defines the number of results to return per page. Defaults to 10.
+ * @param {string} request.query.sortBy - Indicates the field by which to sort the results. Defaults to "txCount".
+ * @param {string} request.query.order - Dictates the sorting order. Can be either "asc" or "desc". Defaults to "desc".
+ * @return {object[]} 200 - Success response, returning an array of aggregated user statistics tailored for the leaderboard.
+ * @return {object} 500 - Error response containing an error message and details.
+ * @example request - Sample Request
+ * GET /leaderboard?page=1&limit=10&sortBy=txCount&order=desc
+ * @example response - 200 - Sample Success Response
+ * [
+ *   {
+ *     "user": {
+ *       "_id": "64f631feff2936fefd07ce3a",
+ *       "userTelegramID": "5221262822",
+ *       "responsePath": "64e6ba363157f90a8dfd82a4/c/5221262822",
+ *       "userHandle": "divadonate",
+ *       "userName": "Resa kikuk",
+ *       "patchwallet": "0x3EcD632C733feBfEcc8c199fB69149e1696Bb9a2",
+ *       "dateAdded": "2023-09-04T19:37:34.241Z"
+ *     },
+ *     "firstTx": {...},
+ *     "lastTx": {...},
+ *     "txCount": 5,
+ *     "rewardsCount": 3,
+ *     "referralsCount": 2,
+ *     "balance": 0.5
+ *   },
+ *   ...
+ * ]
+ *
+ * @example response - 500 - Sample Error Response
+ * {
+ *   "msg": "An error occurred",
+ *   "error": "Detailed error message here"
+ * }
+ */
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const chainId = req.query.chainId || 'eip155:137';
+
+    // pagination params
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    // sort params
+    const sortBy = req.query.sortBy || 'txCount';
+    let order = req.query.order === 'asc' ? 1 : -1;
+
+    const db = await Database.getInstance(req);
+
+    const leaderboardData = await db
+      .collection('users')
+      .aggregate([
+        {
+          $lookup: {
+            from: 'transfers',
+            localField: 'userTelegramID',
+            foreignField: 'senderTgId',
+            as: 'transactions',
+          },
+        },
+        {
+          $lookup: {
+            from: 'rewards',
+            localField: 'userTelegramID',
+            foreignField: 'userTelegramID',
+            as: 'rewards',
+          },
+        },
+        {
+          $addFields: {
+            firstTx: {
+              $arrayElemAt: [
+                {
+                  $filter: {
+                    input: '$transactions',
+                    as: 'transaction',
+                    cond: {
+                      $eq: [
+                        '$$transaction.dateAdded',
+                        { $min: '$transactions.dateAdded' },
+                      ],
+                    },
+                  },
+                },
+                0,
+              ],
+            },
+            lastTx: {
+              $arrayElemAt: [
+                {
+                  $filter: {
+                    input: '$transactions',
+                    as: 'transaction',
+                    cond: {
+                      $eq: [
+                        '$$transaction.dateAdded',
+                        { $max: '$transactions.dateAdded' },
+                      ],
+                    },
+                  },
+                },
+                0,
+              ],
+            },
+            txCount: { $size: '$transactions' },
+            rewardsCount: { $size: '$rewards' },
+            referralsCount: {
+              $size: {
+                $filter: {
+                  input: '$rewards',
+                  as: 'reward',
+                  cond: { $eq: ['$$reward.reason', '2x_reward'] },
+                },
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            user: {
+              _id: '$_id',
+              userTelegramID: '$userTelegramID',
+              responsePath: '$responsePath',
+              userHandle: '$userHandle',
+              userName: '$userName',
+              patchwallet: '$patchwallet',
+              dateAdded: '$dateAdded',
+            },
+            firstTx: 1,
+            lastTx: 1,
+            txCount: 1,
+            rewardsCount: 1,
+            referralsCount: 1,
+          },
+        },
+        {
+          $sort: { [sortBy]: order },
+        },
+        {
+          $skip: skip,
+        },
+        {
+          $limit: limit,
+        },
+      ])
+      .toArray();
+
+    const web3 = new Web3(CHAIN_MAPPING[chainId][1]);
+
+    const contract = new web3.eth.Contract(
+      ERC20,
+      process.env.G1_POLYGON_ADDRESS
+    );
+
+    for (let user of leaderboardData) {
+      const balance = await contract.methods
+        .balanceOf(user.user.patchwallet)
+        .call();
+
+      user.balance = web3.utils.fromWei(balance);
+    }
+
+    return res.status(200).send(leaderboardData);
+  } catch (error) {
+    console.error('Error getting leaderboard data', error);
+    return res.status(500).send({ msg: 'An error occurred', error });
+  }
+});
+
+/*
+ * GET /v1/telegram/config
+ *
+ * @summary Get wallet config
+ * @description Gets wallet config and dynamic data from Airtable
+ * @tags Telegram
+ * @security BearerAuth
+ * @return {object} 200 - Success response with an array of raw airtable records
+ * @return {object} 404 - Error response
+ * @example response - 200 - Success response example
+ *
+ */
+router.get('/config', telegramHashIsValid, async (req, res) => {
+  const configRecords = [];
+  base('Config')
+    .select({
+      maxRecords: 100,
+      view: 'API',
+    })
+    .eachPage(
+      function page(records, fetchNextPage) {
+        records.forEach(function (record) {
+          configRecords.push(record._rawJson);
+        });
+        fetchNextPage();
+      },
+      function done(err) {
+        if (err) {
+          console.error(err);
+          return res.status(500).send({ msg: 'An error occurred', error });
+        }
+        return res.status(200).json({ config: configRecords });
+      }
+    );
 });
 
 export default router;
