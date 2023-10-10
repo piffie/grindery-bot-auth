@@ -213,7 +213,7 @@ router.get(
           ? `<b>Transfers to non-Grindery users:</b>\n${outgoingTxs
               .map(
                 (transfer) =>
-                  `- ${transfer.tokenAmount} g1 to ${transfer.recipientTgId} on ${transfer.dateAdded} - <a href="https://t.me/GrinderyAIBot?followup_test=${transfer.recipientTgId}">Click to follow up!</a>
+                  `- ${transfer.tokenAmount} g1 to ${transfer.recipientTgId} on ${transfer.dateAdded} - <a href="tg://user?id=${transfer.recipientTgId}">Click to follow up!</a>
                   `
               )
               .join('\n')}\n\n`
