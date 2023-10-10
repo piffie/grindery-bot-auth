@@ -3,6 +3,7 @@ import { Database } from '../db/conn.js';
 import { authenticateApiKey } from '../utils/auth.js';
 import {
   getIncomingTxsUser,
+  getOutgoingTxsToNewUsers,
   getOutgoingTxsUser,
   getRewardTxsUser,
 } from '../utils/transfers.js';
@@ -158,6 +159,55 @@ router.get('/referral-link-count', authenticateApiKey, async (req, res) => {
     return res.status(500).send({ msg: 'An error occurred', error });
   }
 });
+
+// ##################################################
+// ##################################################
+// ##################################################
+
+router.get(
+  '/format-transfers-new-users',
+  authenticateApiKey,
+  async (req, res) => {
+    try {
+      const db = await Database.getInstance(req);
+      const start =
+        parseInt(req.query.start) >= 0 ? parseInt(req.query.start) : 0;
+      const limit =
+        req.query.limit && parseInt(req.query.limit) > 0
+          ? parseInt(req.query.limit)
+          : 0;
+
+      let formattedTxs = '';
+
+      formattedTxs += await getOutgoingTxsToNewUsers(
+        db,
+        req.query.userId,
+        start,
+        limit
+      ).then((outgoingTxs) => {
+        return outgoingTxs.length > 0
+          ? `<b>Transfers to non-Grindery users:</b>\n${outgoingTxs
+              .map(
+                (transfer) =>
+                  `- ${transfer.tokenAmount} g1 to ${transfer.recipientTgId} on ${transfer.dateAdded}; <a href="https://t.me/GrinderyAIBot?followup_test=${transfer.recipientTgId}">Click to follow-up</a>
+                  `
+              )
+              .join('\n')}\n\n`
+          : '';
+      });
+
+      console.log('tototototototo', start, limit, formattedTxs);
+
+      res.status(200).send({ formattedTxs: formattedTxs.trimEnd() });
+    } catch (error) {
+      return res.status(500).send({ msg: 'An error occurred', error });
+    }
+  }
+);
+
+// ##################################################
+// ##################################################
+// ##################################################
 
 router.get('/format-transfers-user', authenticateApiKey, async (req, res) => {
   try {
