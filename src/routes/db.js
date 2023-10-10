@@ -5,6 +5,7 @@ import {
   getIncomingTxsUser,
   getOutgoingTxsToNewUsers,
   getOutgoingTxsUser,
+  getRewardLinkTxsUser,
   getRewardTxsUser,
 } from '../utils/transfers.js';
 
@@ -160,10 +161,6 @@ router.get('/referral-link-count', authenticateApiKey, async (req, res) => {
   }
 });
 
-// ##################################################
-// ##################################################
-// ##################################################
-
 router.get(
   '/format-transfers-new-users',
   authenticateApiKey,
@@ -196,8 +193,6 @@ router.get(
           : '';
       });
 
-      console.log('tototototototo', start, limit, formattedTxs);
-
       res.status(200).send({ formattedTxs: formattedTxs.trimEnd() });
     } catch (error) {
       return res.status(500).send({ msg: 'An error occurred', error });
@@ -205,9 +200,39 @@ router.get(
   }
 );
 
-// ##################################################
-// ##################################################
-// ##################################################
+router.get('/format-link-rewards', authenticateApiKey, async (req, res) => {
+  try {
+    const db = await Database.getInstance(req);
+    const start =
+      parseInt(req.query.start) >= 0 ? parseInt(req.query.start) : 0;
+    const limit =
+      req.query.limit && parseInt(req.query.limit) > 0
+        ? parseInt(req.query.limit)
+        : 0;
+
+    let formattedTxs = '';
+
+    formattedTxs += await getRewardLinkTxsUser(
+      db,
+      req.query.userId,
+      start,
+      limit
+    ).then((rewardTxs) => {
+      return rewardTxs.length > 0
+        ? `<b>Users who signed up via your referral link:</b>\n${rewardTxs
+            .map(
+              (reward) =>
+                `- @${reward.sponsoredUserHandle} on ${reward.dateAdded}`
+            )
+            .join('\n')}\n\n`
+        : '';
+    });
+
+    res.status(200).send({ formattedTxs: formattedTxs.trimEnd() });
+  } catch (error) {
+    return res.status(500).send({ msg: 'An error occurred', error });
+  }
+});
 
 router.get('/format-transfers-user', authenticateApiKey, async (req, res) => {
   try {
