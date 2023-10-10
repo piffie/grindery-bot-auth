@@ -43,6 +43,122 @@ router.get('/backlog-signup-rewards', authenticateApiKey, async (req, res) => {
   }
 });
 
+router.get('/transactions-count', authenticateApiKey, async (req, res) => {
+  try {
+    const db = await Database.getInstance(req);
+    const txs = await db
+      .collection('transfers')
+      .find({ senderTgId: req.query.userId })
+      .toArray();
+    res
+      .status(200)
+      .send({ transactions: txs, transactions_counts: txs.length });
+  } catch (error) {
+    return res.status(500).send({ msg: 'An error occurred', error });
+  }
+});
+
+router.get('/transactions-new-users', authenticateApiKey, async (req, res) => {
+  try {
+    const db = await Database.getInstance(req);
+
+    const txs = await db
+      .collection('transfers')
+      .aggregate([
+        {
+          $match: {
+            senderTgId: req.query.userId,
+          },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'recipientTgId',
+            foreignField: 'userTelegramID',
+            as: 'user',
+          },
+        },
+        {
+          $match: {
+            user: { $size: 0 },
+          },
+        },
+        {
+          $project: {
+            user: 0,
+          },
+        },
+      ])
+      .toArray();
+
+    res
+      .status(200)
+      .send({ transactions: txs, transactions_counts: txs.length });
+  } catch (error) {
+    return res.status(500).send({ msg: 'An error occurred', error });
+  }
+});
+
+router.get(
+  '/transactions-existing-users',
+  authenticateApiKey,
+  async (req, res) => {
+    try {
+      const db = await Database.getInstance(req);
+
+      const txs = await db
+        .collection('transfers')
+        .aggregate([
+          {
+            $match: {
+              senderTgId: req.query.userId,
+            },
+          },
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'recipientTgId',
+              foreignField: 'userTelegramID',
+              as: 'user',
+            },
+          },
+          {
+            $match: {
+              user: { $ne: [] },
+            },
+          },
+          {
+            $project: {
+              user: 0,
+            },
+          },
+        ])
+        .toArray();
+
+      res
+        .status(200)
+        .send({ transactions: txs, transactions_counts: txs.length });
+    } catch (error) {
+      return res.status(500).send({ msg: 'An error occurred', error });
+    }
+  }
+);
+
+router.get('/referral-link-count', authenticateApiKey, async (req, res) => {
+  try {
+    const db = await Database.getInstance(req);
+    const rewards = await db
+      .collection('rewards')
+      .find({ userTelegramID: req.query.userId, reason: 'referral_link' })
+      .toArray();
+    res
+      .status(200)
+      .send({ link_rewards: rewards, link_rewards_counts: rewards.length });
+  } catch (error) {
+    return res.status(500).send({ msg: 'An error occurred', error });
+  }
+});
+
 router.get('/format-transfers-user', authenticateApiKey, async (req, res) => {
   try {
     const db = await Database.getInstance(req);
