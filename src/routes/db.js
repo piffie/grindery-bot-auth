@@ -63,9 +63,7 @@ router.get('/users-total', authenticateApiKey, async (req, res) => {
     const db = await Database.getInstance(req);
 
     res.status(200).send({
-      transactions_counts: await db
-        .collection(USERS_COLLECTION)
-        .countDocuments(),
+      users_counts: await db.collection(USERS_COLLECTION).countDocuments(),
     });
   } catch (error) {
     return res.status(500).send({ msg: 'An error occurred', error });
