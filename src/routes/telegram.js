@@ -704,11 +704,12 @@ router.get('/leaderboard', async (req, res) => {
             user: {
               _id: '$_id',
               userTelegramID: '$userTelegramID',
-              responsePath: '$responsePath',
               userHandle: '$userHandle',
               userName: '$userName',
               patchwallet: '$patchwallet',
               dateAdded: '$dateAdded',
+              telegramSession: '$telegramSession',
+              telegramSessionSavedDate: '$telegramSessionSavedDate',
             },
             firstTx: 1,
             lastTx: 1,
@@ -743,7 +744,6 @@ router.get('/leaderboard', async (req, res) => {
 
       user.balance = web3.utils.fromWei(balance);
       const userDoc = user.user;
-      delete userDoc.responsePath;
       if (userDoc.telegramSession) {
         userDoc.telegramSession = 'hidden';
       }
