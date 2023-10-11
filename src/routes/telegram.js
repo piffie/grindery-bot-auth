@@ -723,6 +723,7 @@ router.get('/leaderboard', async (req, res) => {
               dateAdded: '$dateAdded',
               telegramSession: '$telegramSession',
               telegramSessionSavedDate: '$telegramSessionSavedDate',
+              webAppOpenedFirstDate: '$webAppOpenedFirstDate',
             },
             firstTx: 1,
             lastTx: 1,
