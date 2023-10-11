@@ -576,7 +576,7 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
   }
 });
 
-/*
+/**
  * GET /v1/telegram/leaderboard
  *
  * @summary Get leaderboard list
