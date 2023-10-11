@@ -744,8 +744,9 @@ router.get('/leaderboard', async (req, res) => {
       user.balance = web3.utils.fromWei(balance);
       const userDoc = user.user;
       delete userDoc.responsePath;
-      delete userDoc.telegramSession;
-      delete userDoc.telegramSessionSavedDate;
+      if (userDoc.telegramSession) {
+        userDoc.telegramSession = 'hidden';
+      }
     }
 
     return res.status(200).send(leaderboardData);
