@@ -8,7 +8,11 @@ import {
   getRewardLinkTxsUser,
   getRewardTxsUser,
 } from '../utils/transfers.js';
-import { TRANSFERS_COLLECTION, USERS_COLLECTION } from '../utils/constants.js';
+import {
+  REWARDS_COLLECTION,
+  TRANSFERS_COLLECTION,
+  USERS_COLLECTION,
+} from '../utils/constants.js';
 
 const router = express.Router();
 
@@ -66,6 +70,92 @@ router.get('/users-total', authenticateApiKey, async (req, res) => {
 
     res.status(200).send({
       users_counts: await db.collection(USERS_COLLECTION).countDocuments(),
+    });
+  } catch (error) {
+    return res.status(500).send({ msg: 'An error occurred', error });
+  }
+});
+
+router.get('/rewards-amount', authenticateApiKey, async (req, res) => {
+  try {
+    const db = await Database.getInstance(req);
+    res.status(200).send({
+      total_rewards: (
+        await db
+          .collection(REWARDS_COLLECTION)
+          .find({ userTelegramID: req.query.userId })
+          .toArray()
+      ).reduce((acc, reward) => acc + parseFloat(reward.amount), 0),
+    });
+  } catch (error) {
+    return res.status(500).send({ msg: 'An error occurred', error });
+  }
+});
+
+router.get('/rewards-amount-reason', authenticateApiKey, async (req, res) => {
+  try {
+    const db = await Database.getInstance(req);
+    res.status(200).send({
+      total_rewards: (
+        await db
+          .collection(REWARDS_COLLECTION)
+          .find({ userTelegramID: req.query.userId, reason: req.query.reason })
+          .toArray()
+      ).reduce((acc, reward) => acc + parseFloat(reward.amount), 0),
+    });
+  } catch (error) {
+    return res.status(500).send({ msg: 'An error occurred', error });
+  }
+});
+
+router.get('/contacts-referred', authenticateApiKey, async (req, res) => {
+  try {
+    const db = await Database.getInstance(req);
+
+    const referred_users = await db
+      .collection(TRANSFERS_COLLECTION)
+      .aggregate([
+        {
+          $match: { senderTgId: req.query.userId },
+        },
+        {
+          $lookup: {
+            from: USERS_COLLECTION,
+            localField: 'recipientTgId',
+            foreignField: 'userTelegramID',
+            as: 'recipientUser',
+          },
+        },
+        {
+          $match: {
+            $or: [
+              { recipientUser: { $size: 0 } },
+              { recipientUser: { $size: 1 } },
+            ],
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            transfers: {
+              $push: '$$ROOT',
+            },
+          },
+        },
+      ])
+      .toArray();
+
+    const filteredTransfers = (referred_users[0]?.transfers || []).filter(
+      (transfer) =>
+        req.query.onlyNonUsers === '0'
+          ? !transfer.recipientUser[0] ||
+            transfer.dateAdded < transfer.recipientUser[0].dateAdded
+          : !transfer.recipientUser[0]
+    );
+
+    res.status(200).send({
+      referral_transactions: filteredTransfers,
+      nbr_contact_referred: filteredTransfers.length,
     });
   } catch (error) {
     return res.status(500).send({ msg: 'An error occurred', error });
