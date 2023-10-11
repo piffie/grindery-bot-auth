@@ -305,10 +305,9 @@ router.get(
           ? `<b>Transfers to non-Grindery users:</b>\n${outgoingTxs
               .map(
                 (transfer) =>
-                  `- ${transfer.tokenAmount} g1 to ${transfer.recipientTgId} on ${transfer.dateAdded} - <a href="tg://user?id=${transfer.recipientTgId}">Click to follow up!</a>
-                  `
+                  `${transfer.dateAdded} | ${transfer.tokenAmount} G1 | [<a href="tg://user?id=${transfer.recipientTgId}">Follow-up</a>]`
               )
-              .join('\n')}\n\n`
+              .join('\n')}`
           : '';
       });
 

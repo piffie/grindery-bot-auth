@@ -60,6 +60,7 @@ export async function getOutgoingTxsToNewUsers(db, userId, start, limit) {
           {
             $match: {
               senderTgId: userId,
+              recipientTgId: { $ne: null },
             },
           },
           {
