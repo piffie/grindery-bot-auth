@@ -582,11 +582,11 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
  * @summary Get leaderboard list
  * @description Fetches leaderboard data by aggregating user statistics based on transaction and reward records. Allows sorting, pagination, and filter features. Additionally, retrieves users' balances using Web3 integration.
  * @tags Telegram
- * @param {string} request.query.chainId - The chain ID for Web3 operations. Defaults to "eip155:137".
- * @param {number} request.query.page - Specifies the page number for pagination. Defaults to 1.
- * @param {number} request.query.limit - Defines the number of results to return per page. Defaults to 10.
- * @param {string} request.query.sortBy - Indicates the field by which to sort the results. Defaults to "txCount".
- * @param {string} request.query.order - Dictates the sorting order. Can be either "asc" or "desc". Defaults to "desc".
+ * @param {string} chainId.query - The chain ID for Web3 operations. Defaults to "eip155:137".
+ * @param {number} page.query - Specifies the page number for pagination. Defaults to 1.
+ * @param {number} limit.query - Defines the number of results to return per page. Defaults to 10.
+ * @param {string} sortBy.query - Indicates the field by which to sort the results. Defaults to "txCount".
+ * @param {string} order.query - Dictates the sorting order. Can be either "asc" or "desc". Defaults to "desc".
  * @return {object[]} 200 - Success response, returning an array of aggregated user statistics tailored for the leaderboard.
  * @return {object} 500 - Error response containing an error message and details.
  * @example request - Sample Request
