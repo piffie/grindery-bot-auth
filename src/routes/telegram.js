@@ -122,6 +122,7 @@ router.post('/callback', telegramHashIsValid, async (req, res) => {
         {
           $set: {
             telegramSession: encrypt(session),
+            telegramSessionSavedDate: new Date(),
           },
         }
       );
@@ -576,11 +577,11 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
 });
 
 /*
- * GET /leaderboard
+ * GET /v1/telegram/leaderboard
  *
- * @summary Retrieve leaderboard data
+ * @summary Get leaderboard list
  * @description Fetches leaderboard data by aggregating user statistics based on transaction and reward records. Allows sorting, pagination, and filter features. Additionally, retrieves users' balances using Web3 integration.
- * @tags Leaderboard
+ * @tags Telegram
  * @param {string} request.query.chainId - The chain ID for Web3 operations. Defaults to "eip155:137".
  * @param {number} request.query.page - Specifies the page number for pagination. Defaults to 1.
  * @param {number} request.query.limit - Defines the number of results to return per page. Defaults to 10.
@@ -589,29 +590,26 @@ router.post('/send', telegramHashIsValid, async (req, res) => {
  * @return {object[]} 200 - Success response, returning an array of aggregated user statistics tailored for the leaderboard.
  * @return {object} 500 - Error response containing an error message and details.
  * @example request - Sample Request
- * GET /leaderboard?page=1&limit=10&sortBy=txCount&order=desc
+ * GET /v1/telegram/leaderboard?page=1&limit=10&sortBy=txCount&order=desc
  * @example response - 200 - Sample Success Response
  * [
  *   {
  *     "user": {
  *       "_id": "64f631feff2936fefd07ce3a",
  *       "userTelegramID": "5221262822",
- *       "responsePath": "64e6ba363157f90a8dfd82a4/c/5221262822",
  *       "userHandle": "divadonate",
  *       "userName": "Resa kikuk",
  *       "patchwallet": "0x3EcD632C733feBfEcc8c199fB69149e1696Bb9a2",
  *       "dateAdded": "2023-09-04T19:37:34.241Z"
  *     },
- *     "firstTx": {...},
- *     "lastTx": {...},
+ *     "firstTx": {},
+ *     "lastTx": {},
  *     "txCount": 5,
  *     "rewardsCount": 3,
  *     "referralsCount": 2,
  *     "balance": 0.5
- *   },
- *   ...
+ *   }
  * ]
- *
  * @example response - 500 - Sample Error Response
  * {
  *   "msg": "An error occurred",
@@ -744,6 +742,8 @@ router.get('/leaderboard', async (req, res) => {
         .call();
 
       user.balance = web3.utils.fromWei(balance);
+      delete user.telegramSession;
+      delete user.responsePath;
     }
 
     return res.status(200).send(leaderboardData);
