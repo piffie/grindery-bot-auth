@@ -791,4 +791,57 @@ router.get('/config', telegramHashIsValid, async (req, res) => {
     );
 });
 
+/**
+ * GET /v1/telegram/stats
+ *
+ * @summary Get telegram user stats
+ * @description Gets telegram user stats, such as amount of transactions, rewards, and referrals.
+ * @tags Telegram
+ * @security BearerAuth
+ * @return {object} 200 - Success response with stats object
+ * @example response - 200 - Success response example
+ * {
+ *   "sentTransactions": 1,
+ *   "receivedTransactions": 1,
+ *   "rewards": 1,
+ *   "referrals": 1
+ * }
+ */
+router.get('/stats', telegramHashIsValid, async (req, res) => {
+  try {
+    const user = getUser(req);
+    if (!user?.id) {
+      return res.status(401).send({ msg: 'Invalid user' });
+    }
+    const db = await Database.getInstance(req);
+
+    const sentTransactions = await db
+      .collection('transfers')
+      .countDocuments({ senderTgId: user.id.toString() });
+
+    const receivedTransactions = await db
+      .collection('transfers')
+      .countDocuments({ recipientTgId: user.id.toString() });
+
+    const rewards = await db
+      .collection('rewards')
+      .countDocuments({ userTelegramID: user.id.toString() });
+
+    const referrals = await db.collection('rewards').countDocuments({
+      userTelegramID: user.id.toString(),
+      reason: '2x_reward',
+    });
+
+    return res.status(200).send({
+      sentTransactions,
+      receivedTransactions,
+      rewards,
+      referrals,
+    });
+  } catch (error) {
+    console.error('Error getting user', error);
+    return res.status(500).send({ msg: 'An error occurred', error });
+  }
+});
+
 export default router;
