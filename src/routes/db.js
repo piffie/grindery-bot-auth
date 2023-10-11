@@ -147,10 +147,12 @@ router.get('/contacts-referred', authenticateApiKey, async (req, res) => {
 
     const filteredTransfers = (referred_users[0]?.transfers || []).filter(
       (transfer) =>
-        req.query.onlyNonUsers === '0'
-          ? !transfer.recipientUser[0] ||
+        req.query.onlyUsers === '1'
+          ? transfer.dateAdded < transfer.recipientUser[0]?.dateAdded
+          : req.query.onlyNonUsers === '1'
+          ? !transfer.recipientUser[0]
+          : !transfer.recipientUser[0] ||
             transfer.dateAdded < transfer.recipientUser[0].dateAdded
-          : !transfer.recipientUser[0]
     );
 
     res.status(200).send({
