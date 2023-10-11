@@ -17,8 +17,8 @@ router.get('/', async (req, res) => {
     req.query.end_date,
     req.query.workflow_id
   );
-  await importToBigQuery(interactions);
-  res.status(200).send();
+  // await importToBigQuery(interactions);
+  res.status(201).send();
 });
 
 async function getInteractionsData(start_date, end_date, workflow_id) {
@@ -57,6 +57,7 @@ async function getAllInteractionsFromFlowXO(start_date, end_date, workflow_id) {
     page: 1,
     start: start_date,
     end: end_date,
+    limit: 100,
   };
 
   const allInteractions = [];
@@ -69,7 +70,7 @@ async function getAllInteractionsFromFlowXO(start_date, end_date, workflow_id) {
           Authorization: `Bearer ${process.env.FLOWXO_TOKEN}`,
         },
       });
-
+      console.log(response);
       if (response.status !== 200) {
         throw new Error(`Request failed with status: ${response.status}`);
       }
@@ -84,7 +85,6 @@ async function getAllInteractionsFromFlowXO(start_date, end_date, workflow_id) {
       console.log(
         `Getting all workflow (${workflow_id}) interactions from FlowXo - page ${queryParams.page} - total number of interactions ${response.data.total} - interactions retrieved ${response.data.skip}`
       );
-
       queryParams.page++;
     } catch (error) {
       console.error('Error fetching interactions:', error);
@@ -130,15 +130,15 @@ async function importToBigQuery(interactions) {
       console.log(`Table ${tableId} does not exist.`);
       const schema = [
         { name: 'task_log_type', type: 'STRING' },
-        { name: '_id', type: 'STRING' },
+        { name: '_id_interaction', type: 'STRING' },
         { name: 'workflow', type: 'STRING' },
         { name: 'workflow_name', type: 'STRING' },
-        { name: 'request', type: 'STRING' },
-        { name: 'result', type: 'STRING' },
+        { name: 'request_interaction', type: 'STRING' },
+        { name: 'result_interaction', type: 'STRING' },
         { name: 'bot', type: 'STRING' },
         { name: 'bot_name', type: 'STRING' },
         { name: 'bot_integration', type: 'STRING' },
-        { name: 'created_at', type: 'STRING' },
+        { name: 'created_at_interaction', type: 'STRING' },
         { name: '_id_task', type: 'STRING' },
         { name: 'result_task', type: 'STRING' },
         { name: 'task', type: 'STRING' },
@@ -150,9 +150,9 @@ async function importToBigQuery(interactions) {
         { name: 'service', type: 'STRING' },
         { name: 'method', type: 'STRING' },
         { name: 'group', type: 'STRING' },
-        // { name: 'filtered_detail:', type: 'STRING' },
+        { name: 'filtered_detail', type: 'STRING' },
         { name: 'response_path', type: 'STRING' },
-        // { name: 'input_data', type: 'STRING' },
+        { name: 'input_data', type: 'STRING' },
         { name: 'expires_at_task', type: 'STRING' },
         { name: 'created_at_task', type: 'STRING' },
         { name: 'input_data_labelled', type: 'STRING' },
@@ -168,7 +168,7 @@ async function importToBigQuery(interactions) {
         .dataset(datasetId)
         .createTable(tableId, options);
 
-      console.log(`Table ${table.id} created.`);
+      console.log(`Table ${table.id}  created.`);
     }
 
     await insertDataToBigQuery(interactions);
@@ -180,17 +180,18 @@ async function importToBigQuery(interactions) {
 async function insertDataToBigQuery(interactions) {
   let toSave = [];
   for (const task of interactions.tasks) {
+    console.log(task.filtered_detail);
     toSave.push({
+      _id_interaction: interactions.interaction._id,
       task_log_type: interactions.interaction.task_log_type,
-      _id: interactions.interaction._id,
       workflow: interactions.interaction.workflow,
       workflow_name: interactions.interaction.workflow_name,
-      request: interactions.interaction.request,
-      result: interactions.interaction.result,
+      request_interaction: interactions.interaction.request,
+      result_interaction: interactions.interaction.result,
       bot: interactions.interaction.bot,
       bot_name: interactions.interaction.bot_name,
       bot_integration: JSON.stringify(interactions.interaction.bot_integration),
-      created_at: interactions.interaction.created_at,
+      created_at_interaction: interactions.interaction.created_at,
       _id_task: task._id,
       result_task: task.result,
       task: task.task,
@@ -202,9 +203,9 @@ async function insertDataToBigQuery(interactions) {
       service: JSON.stringify(task.service),
       method: task.method,
       group: task.group,
-      // filtered_detail: JSON.stringify(task.filtered_detail),
+      filtered_detail: JSON.stringify(task.filtered_detail),
       response_path: task.response_path,
-      // input_data: JSON.stringify(task.input_data),
+      input_data: JSON.stringify(task.input_data),
       expires_at_task: task.expires_at,
       created_at_task: task.created_at,
       input_data_labelled: JSON.stringify(task.input_data_labelled),
