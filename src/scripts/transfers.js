@@ -269,4 +269,75 @@ async function checkMissingTransfers(fileName) {
     });
 }
 
-checkMissingTransfers('g1.csv');
+async function getUsersFollowUps() {
+  try {
+    const db = await Database.getInstance();
+    const transfersCollection = db.collection('transfers');
+    const usersCollection = db.collection('users');
+
+    const allTransfers = await transfersCollection.find({}).toArray();
+    const allUsers = await usersCollection.find({}).toArray();
+
+    const senderTgIdToFollowup = {};
+
+    const recipientTgIds = new Set(allUsers.map((user) => user.userTelegramID));
+
+    for (const transfer of allTransfers) {
+      const senderTgId = transfer.senderTgId;
+
+      if (!senderTgId) {
+        // Skip transfers without senderTgId
+        continue;
+      }
+
+      // Check if the recipientTgId is not in the set of recipientTgIds
+      if (!recipientTgIds.has(transfer.recipientTgId)) {
+        // If the recipientTgId is not found in the users collection, increment the followup count for the senderTgId
+        if (!senderTgIdToFollowup[senderTgId]) {
+          senderTgIdToFollowup[senderTgId] = {
+            count: 1,
+            userInfo: allUsers.find(
+              (user) => user.userTelegramID === senderTgId
+            ),
+          };
+        } else {
+          senderTgIdToFollowup[senderTgId].count++;
+        }
+      }
+    }
+
+    // Create an array with senderTgId, followup count, and user info
+    const senderTgIdInfoArray = [];
+    for (const senderTgId in senderTgIdToFollowup) {
+      senderTgIdInfoArray.push({
+        userTelegramID: senderTgId,
+        followupCount: senderTgIdToFollowup[senderTgId].count,
+        userHandle: senderTgIdToFollowup[senderTgId].userInfo?.userHandle,
+        userName: senderTgIdToFollowup[senderTgId].userInfo?.userName,
+        responsePath: senderTgIdToFollowup[senderTgId].userInfo?.responsePath,
+        patchwallet: senderTgIdToFollowup[senderTgId].userInfo?.patchwallet,
+      });
+    }
+
+    // Create a CSV writer
+    const csvWriter = createObjectCsvWriter({
+      path: 'sender_followup.csv',
+      header: [
+        { id: 'userTelegramID', title: 'User Telegram ID' },
+        { id: 'followupCount', title: 'Followup Count' },
+        { id: 'userHandle', title: 'User Handle' },
+        { id: 'userName', title: 'User Name' },
+        { id: 'responsePath', title: 'Response Path' },
+        { id: 'patchwallet', title: 'Patchwallet' },
+      ],
+    });
+    // Write the senderTgId information to a CSV file
+    await csvWriter.writeRecords(senderTgIdInfoArray);
+
+    console.log('CSV file created: sender_followup.csv');
+  } catch (error) {
+    console.error('An error occurred:', error);
+  } finally {
+    process.exit(0);
+  }
+}
