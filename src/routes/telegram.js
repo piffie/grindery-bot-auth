@@ -258,13 +258,26 @@ router.get('/me', telegramHashIsValid, async (req, res) => {
       return res.status(401).send({ msg: 'Invalid user' });
     }
     const db = await Database.getInstance(req);
-    return res
-      .status(200)
-      .send(
-        await db
-          .collection('users')
-          .findOne({ userTelegramID: user.id.toString() })
-      );
+    const userDoc = await db
+      .collection('users')
+      .findOne({ userTelegramID: user.id.toString() });
+    const updateData = {
+      $inc: { webAppOpened: 1 },
+      $set: {
+        webAppOpenedLastDate: new Date(),
+      },
+    };
+    if (!userDoc.webAppOpenedFirstDate) {
+      updateData.$set.webAppOpenedFirstDate = new Date();
+    }
+    if (!userDoc.telegramSessionSavedDate && userDoc.telegramSession) {
+      updateData.$set.telegramSessionSavedDate = new Date();
+    }
+    await db
+      .collection('users')
+      .updateOne({ userTelegramID: user.id.toString() }, updateData);
+
+    return res.status(200).send(userDoc);
   } catch (error) {
     console.error('Error getting user', error);
     return res.status(500).send({ msg: 'An error occurred', error });
@@ -704,11 +717,13 @@ router.get('/leaderboard', async (req, res) => {
             user: {
               _id: '$_id',
               userTelegramID: '$userTelegramID',
-              responsePath: '$responsePath',
               userHandle: '$userHandle',
               userName: '$userName',
               patchwallet: '$patchwallet',
               dateAdded: '$dateAdded',
+              telegramSession: '$telegramSession',
+              telegramSessionSavedDate: '$telegramSessionSavedDate',
+              webAppOpenedFirstDate: '$webAppOpenedFirstDate',
             },
             firstTx: 1,
             lastTx: 1,
@@ -743,9 +758,9 @@ router.get('/leaderboard', async (req, res) => {
 
       user.balance = web3.utils.fromWei(balance);
       const userDoc = user.user;
-      delete userDoc.responsePath;
-      delete userDoc.telegramSession;
-      delete userDoc.telegramSessionSavedDate;
+      if (userDoc.telegramSession) {
+        userDoc.telegramSession = 'hidden';
+      }
     }
 
     return res.status(200).send(leaderboardData);
