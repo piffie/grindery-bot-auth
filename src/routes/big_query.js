@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
         const conversations = data.conversations;
 
         console.log(
-          `total: ${data.total} - skip: ${data.skip} - limit ${data.limit}`
+          `BigQuery - total: ${data.total} - skip: ${data.skip} - limit ${data.limit}`
         );
 
         // Add the conversations to the array
@@ -50,14 +50,14 @@ router.get('/', async (req, res) => {
         }
       } else {
         console.error(
-          `Failed to fetch conversations. Status code: ${response.status}`
+          `BigQuery - Failed to fetch conversations. Status code: ${response.status}`
         );
         return res
           .status(400)
           .send({ message: 'Failed to fetch conversations' });
       }
     } catch (error) {
-      console.error('An error occurred:', error.message);
+      console.error('BigQuery - An error occurred:', error.message);
       return res
         .status(400)
         .send({ message: `An error occurred: ${error.message}` });
@@ -79,18 +79,18 @@ async function importToBigQuery(allConversations) {
 
     if (exists) {
       [dataset] = await bigqueryClient.dataset(datasetId).get();
-      console.log(`Dataset ${datasetId} exists.`);
+      console.log(`BigQuery - Dataset ${datasetId} exists.`);
     } else {
-      console.log(`Dataset ${datasetId} does not exist.`);
+      console.log(`BigQuery - Dataset ${datasetId} does not exist.`);
       [dataset] = await bigqueryClient.createDataset(datasetId, {});
-      console.log(`Dataset ${dataset.id} created.`);
+      console.log(`BigQuery - Dataset ${dataset.id} created.`);
     }
 
     const table = dataset.table(tableId);
     const [existsTable] = await table.exists();
 
     if (!existsTable) {
-      console.log(`Table ${tableId} does not exist.`);
+      console.log(`BigQuery - Table ${tableId} does not exist.`);
       const schema = [
         { name: 'id', type: 'STRING' },
         { name: 'id_url_encoded', type: 'STRING' },
@@ -120,17 +120,16 @@ async function importToBigQuery(allConversations) {
         .dataset(datasetId)
         .createTable(tableId, options);
 
-      console.log(`Table ${table.id}  created.`);
+      console.log(`BigQuery - Table ${table.id}  created.`);
     }
   } catch (error) {
-    console.error('Error checking dataset existence:', error);
+    console.error('BigQuery - Error checking dataset existence:', error);
   }
 }
 
 async function insertDataToBigQuery(allConversations) {
   let toSave = [];
   for (const conversation of allConversations) {
-    console.log(conversation);
     toSave.push({
       id: conversation.id,
       id_url_encoded: conversation.id_url_encoded,
@@ -187,11 +186,11 @@ async function insertDataToBigQuery(allConversations) {
     .dataset(datasetId)
     .table(tableId)
     .insert(toSave, function (err, response) {
-      console.log('\nerror:' + JSON.stringify(err));
-      console.log('\nresponse:' + JSON.stringify(response));
+      console.log('\nBigQuery - error:' + JSON.stringify(err));
+      console.log('\nBigQuery - response:' + JSON.stringify(response));
     });
 
-  console.log(`Inserted ${toSave.length} rows`);
+  console.log(`BigQuery - Inserted ${toSave.length} rows`);
 
   return toSave.length;
 }
