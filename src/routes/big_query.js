@@ -182,13 +182,20 @@ async function insertDataToBigQuery(allConversations) {
     });
   }
 
-  bigqueryClient
-    .dataset(datasetId)
-    .table(tableId)
-    .insert(toSave, function (err, response) {
-      console.log('\nBigQuery - error:' + JSON.stringify(err));
-      console.log('\nBigQuery - response:' + JSON.stringify(response));
-    });
+  const batchSize = 3000;
+  for (let i = 0; i < toSave.length; i += batchSize) {
+    const batch = toSave.slice(i, i + batchSize);
+    bigqueryClient
+      .dataset(datasetId)
+      .table(tableId)
+      .insert(batch, function (err, response) {
+        if (err) {
+          console.log('BigQuery - error:' + JSON.stringify(err));
+        } else {
+          console.log('BigQuery - response:' + JSON.stringify(response));
+        }
+      });
+  }
 
   console.log(`BigQuery - Inserted ${toSave.length} rows`);
 
