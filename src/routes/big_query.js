@@ -4,111 +4,74 @@ import axios from 'axios';
 
 const router = express.Router();
 const bigqueryClient = new BigQuery();
-const baseUrl = 'https://flowxo.com/api/interactions/';
-const headers = {
-  Authorization: `Bearer ${process.env.FLOWXO_TOKEN}`,
-};
+const apiUrl = 'https://flowxo.com/api/conversations';
 const datasetId = 'flowxo';
-const tableId = 'interactions';
+const tableId = 'conversations';
 
 router.get('/', async (req, res) => {
-  const interactions = await getInteractionsData(
-    req.query.start_date,
-    req.query.end_date,
-    req.query.workflow_id
-  );
-  // await importToBigQuery(interactions);
-  res.status(201).send();
-});
+  const allConversations = [];
 
-async function getInteractionsData(start_date, end_date, workflow_id) {
-  const interactions = await getAllInteractionsFromFlowXO(
-    start_date,
-    end_date,
-    workflow_id
-  );
-
-  for (const interaction of interactions) {
-    let toSave = {
-      interaction: { ...interaction },
-      tasks: [],
-    };
-
-    const iteractionData = await fetchInteractionDataFromFlowXO(
-      interaction.request
-    );
-
-    if (iteractionData.tasks) {
-      for (const task of iteractionData.tasks) {
-        toSave.tasks.push(task);
-      }
-    }
-
-    return toSave;
-  }
-
-  console.log(`All interactions retrieved fromw Workflow ${workflow_id}`);
-}
-
-async function getAllInteractionsFromFlowXO(start_date, end_date, workflow_id) {
-  const queryParams = {
-    status: 'completed',
-    workflow: workflow_id,
-    page: 1,
-    start: start_date,
-    end: end_date,
-    limit: 100,
-  };
-
-  const allInteractions = [];
+  let skip = 0;
+  const limit = 100;
 
   while (true) {
     try {
-      const response = await axios.get(baseUrl, {
-        params: queryParams,
+      // Make a GET request to the API with query parameters
+      const response = await axios.get(apiUrl, {
+        params: {
+          skip,
+          limit,
+          start: req.query.start,
+          end: req.query.end,
+        },
         headers: {
           Authorization: `Bearer ${process.env.FLOWXO_TOKEN}`,
         },
       });
-      console.log(response);
-      if (response.status !== 200) {
-        throw new Error(`Request failed with status: ${response.status}`);
+
+      // Check if the request was successful
+      if (response.status === 200) {
+        const data = response.data;
+        const conversations = data.conversations;
+
+        console.log(
+          `total: ${data.total} - skip: ${data.skip} - limit ${data.limit}`
+        );
+
+        // Add the conversations to the array
+        allConversations.push(...conversations);
+
+        // Update the skip value for the next page
+        skip += limit;
+
+        // Check if there are more conversations to fetch
+        if (skip >= data.total) {
+          break;
+        }
+      } else {
+        console.error(
+          `Failed to fetch conversations. Status code: ${response.status}`
+        );
+        return res
+          .status(400)
+          .send({ message: 'Failed to fetch conversations' });
       }
-
-      const { interactions, hasMore } = response.data;
-      allInteractions.push(...interactions);
-
-      if (!hasMore) {
-        break;
-      }
-
-      console.log(
-        `Getting all workflow (${workflow_id}) interactions from FlowXo - page ${queryParams.page} - total number of interactions ${response.data.total} - interactions retrieved ${response.data.skip}`
-      );
-      queryParams.page++;
     } catch (error) {
-      console.error('Error fetching interactions:', error);
+      console.error('An error occurred:', error.message);
+      return res
+        .status(400)
+        .send({ message: `An error occurred: ${error.message}` });
       break;
     }
   }
 
-  return allInteractions;
-}
+  importToBigQuery(allConversations);
+  const count = await insertDataToBigQuery(allConversations);
 
-async function fetchInteractionDataFromFlowXO(interactionId) {
-  const endpointUrl = baseUrl + interactionId;
+  res.status(200).send({ count });
+});
 
-  try {
-    return (await axios.get(endpointUrl, { headers })).data;
-  } catch (error) {
-    console.error(
-      `Error fetching data for Interaction ID ${interactionId}:`,
-      error.message
-    );
-  }
-}
-
-async function importToBigQuery(interactions) {
+async function importToBigQuery(allConversations) {
   let dataset;
 
   try {
@@ -129,34 +92,23 @@ async function importToBigQuery(interactions) {
     if (!existsTable) {
       console.log(`Table ${tableId} does not exist.`);
       const schema = [
-        { name: 'task_log_type', type: 'STRING' },
-        { name: '_id_interaction', type: 'STRING' },
-        { name: 'workflow', type: 'STRING' },
-        { name: 'workflow_name', type: 'STRING' },
-        { name: 'request_interaction', type: 'STRING' },
-        { name: 'result_interaction', type: 'STRING' },
-        { name: 'bot', type: 'STRING' },
+        { name: 'id', type: 'STRING' },
+        { name: 'id_url_encoded', type: 'STRING' },
+        { name: 'created_at', type: 'STRING' },
+        { name: 'bot_id', type: 'STRING' },
         { name: 'bot_name', type: 'STRING' },
-        { name: 'bot_integration', type: 'STRING' },
-        { name: 'created_at_interaction', type: 'STRING' },
-        { name: '_id_task', type: 'STRING' },
-        { name: 'result_task', type: 'STRING' },
-        { name: 'task', type: 'STRING' },
-        { name: 'user', type: 'STRING' },
-        { name: 'last_task_attempt_at', type: 'STRING' },
-        { name: 'task_kind', type: 'STRING' },
-        { name: 'task_type', type: 'STRING' },
-        { name: 'task_name', type: 'STRING' },
-        { name: 'service', type: 'STRING' },
-        { name: 'method', type: 'STRING' },
-        { name: 'group', type: 'STRING' },
-        { name: 'filtered_detail', type: 'STRING' },
-        { name: 'response_path', type: 'STRING' },
-        { name: 'input_data', type: 'STRING' },
-        { name: 'expires_at_task', type: 'STRING' },
-        { name: 'created_at_task', type: 'STRING' },
-        { name: 'input_data_labelled', type: 'STRING' },
-        { name: 'output_data_labelled', type: 'STRING' },
+        { name: 'platform', type: 'STRING' },
+        { name: 'user_id', type: 'STRING' },
+        { name: 'user_name', type: 'STRING' },
+        { name: 'last_message_id', type: 'STRING' },
+        { name: 'last_message_role', type: 'STRING' },
+        { name: 'last_message_conversation', type: 'STRING' },
+        { name: 'last_message_from', type: 'STRING' },
+        { name: 'last_message_agent_mode', type: 'STRING' },
+        { name: 'last_message_type', type: 'STRING' },
+        { name: 'last_message_message', type: 'STRING' },
+        { name: 'last_message_custom', type: 'STRING' },
+        { name: 'last_message_timestamp', type: 'STRING' },
       ];
       const options = {
         schema: schema,
@@ -170,50 +122,66 @@ async function importToBigQuery(interactions) {
 
       console.log(`Table ${table.id}  created.`);
     }
-
-    await insertDataToBigQuery(interactions);
   } catch (error) {
     console.error('Error checking dataset existence:', error);
   }
 }
 
-async function insertDataToBigQuery(interactions) {
+async function insertDataToBigQuery(allConversations) {
   let toSave = [];
-  for (const task of interactions.tasks) {
-    console.log(task.filtered_detail);
+  for (const conversation of allConversations) {
+    console.log(conversation);
     toSave.push({
-      _id_interaction: interactions.interaction._id,
-      task_log_type: interactions.interaction.task_log_type,
-      workflow: interactions.interaction.workflow,
-      workflow_name: interactions.interaction.workflow_name,
-      request_interaction: interactions.interaction.request,
-      result_interaction: interactions.interaction.result,
-      bot: interactions.interaction.bot,
-      bot_name: interactions.interaction.bot_name,
-      bot_integration: JSON.stringify(interactions.interaction.bot_integration),
-      created_at_interaction: interactions.interaction.created_at,
-      _id_task: task._id,
-      result_task: task.result,
-      task: task.task,
-      user: task.user,
-      last_task_attempt_at: task.last_task_attempt_at,
-      task_kind: task.task_kind,
-      task_type: task.task_type,
-      task_name: task.task_name,
-      service: JSON.stringify(task.service),
-      method: task.method,
-      group: task.group,
-      filtered_detail: JSON.stringify(task.filtered_detail),
-      response_path: task.response_path,
-      input_data: JSON.stringify(task.input_data),
-      expires_at_task: task.expires_at,
-      created_at_task: task.created_at,
-      input_data_labelled: JSON.stringify(task.input_data_labelled),
-      output_data_labelled: JSON.stringify(task.output_data_labelled),
+      id: conversation.id,
+      id_url_encoded: conversation.id_url_encoded,
+      created_at: conversation.created_at,
+      bot_id: conversation.bot_id,
+      bot_name: conversation.bot_name,
+      platform: conversation.platform,
+      user_id: conversation.user_id,
+      user_name: conversation.user_name,
+      last_message_id:
+        conversation.last_message && conversation.last_message.id
+          ? conversation.last_message.id
+          : '',
+      last_message_role:
+        conversation.last_message && conversation.last_message.role
+          ? conversation.last_message.role
+          : '',
+      last_message_conversation:
+        conversation.last_message && conversation.last_message.conversation
+          ? conversation.last_message.conversation
+          : '',
+      last_message_from:
+        conversation.last_message && conversation.last_message.from
+          ? conversation.last_message.from
+          : '',
+      last_message_agent_mode:
+        conversation.last_message && conversation.last_message.agent_mode
+          ? conversation.last_message.agent_mode
+          : '',
+      last_message_type:
+        conversation.last_message && conversation.last_message.type
+          ? conversation.last_message.type
+          : '',
+      last_message_message:
+        conversation.last_message && conversation.last_message.message
+          ? conversation.last_message.message
+          : '',
+      // last_message_options:
+      //   conversation.last_message && conversation.last_message.options
+      //     ? conversation.last_message.options
+      //     : '',
+      last_message_custom:
+        conversation.last_message && conversation.last_message.custom
+          ? conversation.last_message.custom
+          : '',
+      last_message_timestamp:
+        conversation.last_message && conversation.last_message.timestamp
+          ? conversation.last_message.timestamp
+          : '',
     });
   }
-
-  let error;
 
   bigqueryClient
     .dataset(datasetId)
@@ -224,6 +192,8 @@ async function insertDataToBigQuery(interactions) {
     });
 
   console.log(`Inserted ${toSave.length} rows`);
+
+  return toSave.length;
 }
 
 export default router;
