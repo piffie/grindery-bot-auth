@@ -207,10 +207,18 @@ export async function handleReferralReward(
       .toArray()) {
       const reward = await db.collection(REWARDS_COLLECTION).findOne({
         reason: '2x_reward',
+        eventId: eventId,
         parentTransactionHash: transfer.transactionHash,
       });
 
-      if (reward?.status === TRANSACTION_STATUS.SUCCESS) {
+      if (
+        reward?.status === TRANSACTION_STATUS.SUCCESS ||
+        (await db.collection(REWARDS_COLLECTION).findOne({
+          reason: '2x_reward',
+          eventId: { $ne: eventId },
+          parentTransactionHash: transfer.transactionHash,
+        }))
+      ) {
         continue;
       }
 
