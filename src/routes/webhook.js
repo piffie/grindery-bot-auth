@@ -1,13 +1,12 @@
-import express from "express";
-import { PubSub } from "@google-cloud/pubsub";
-import { authenticateApiKey } from "../utils/auth.js";
+import express from 'express';
+import { PubSub } from '@google-cloud/pubsub';
+import { authenticateApiKey } from '../utils/auth.js';
 import {
   handleNewReward,
   handleNewTransaction,
   handleNewUser,
 } from '../utils/webhook.js';
 import { v4 as uuidv4 } from 'uuid';
-import { v1 } from '@google-cloud/pubsub';
 
 /**
  * This is a generic and extendable implementation of a webhook endpoint and pub/sub messages queue.
@@ -20,15 +19,9 @@ import { v1 } from '@google-cloud/pubsub';
 // Init pub/sub client
 const pubSubClient = new PubSub();
 
-// Creates a publisher client.
-const publisherClient = new v1.PublisherClient({
-  // optional auth parameters
-});
-
 // Get topic and subscription names from env
 const topicName = process.env.PUBSUB_TOPIC_NAME;
 const subscriptionName = process.env.PUBSUB_SUBSCRIPTION_NAME;
-const projectId = process.env.PROJECT_ID;
 
 const router = express.Router();
 
@@ -65,71 +58,14 @@ router.post('/', authenticateApiKey, async (req, res) => {
           (transaction) => (transaction.eventId = uuidv4())
         )
       : (req.body.params.eventId = uuidv4());
-
     const data = JSON.stringify(req.body);
     console.log(`Publishing message: ${data}`);
-
-    const formattedTopic = publisherClient.projectTopicPath(
-      projectId,
-      topicName
-    );
-
-    // Publishes the message as a string, e.g. "Hello, world!" or JSON.stringify(someObject)
     const dataBuffer = Buffer.from(data);
-    const messagesElement = {
-      data: dataBuffer,
-    };
-    const messages = [messagesElement];
-
-    // Build the request
-    const request = {
-      topic: formattedTopic,
-      messages: messages,
-    };
-
-    // Retry settings control how the publisher handles retryable failures. Default values are shown.
-    // The `retryCodes` array determines which grpc errors will trigger an automatic retry.
-    // The `backoffSettings` object lets you specify the behaviour of retries over time.
-    const retrySettings = {
-      retryCodes: [
-        10, // 'ABORTED'
-        1, // 'CANCELLED',
-        4, // 'DEADLINE_EXCEEDED'
-        13, // 'INTERNAL'
-        8, // 'RESOURCE_EXHAUSTED'
-        14, // 'UNAVAILABLE'
-        2, // 'UNKNOWN'
-      ],
-      backoffSettings: {
-        // The initial delay time, in milliseconds, between the completion
-        // of the first failed request and the initiation of the first retrying request.
-        initialRetryDelayMillis: 3600000,
-        // The multiplier by which to increase the delay time between the completion
-        // of failed requests, and the initiation of the subsequent retrying request.
-        retryDelayMultiplier: 1.3,
-        // The maximum delay time, in milliseconds, between requests.
-        // When this value is reached, retryDelayMultiplier will no longer be used to increase delay time.
-        maxRetryDelayMillis: 60000,
-        // The initial timeout parameter to the request.
-        initialRpcTimeoutMillis: 5000,
-        // The multiplier by which to increase the timeout parameter between failed requests.
-        rpcTimeoutMultiplier: 1.0,
-        // The maximum timeout parameter, in milliseconds, for a request. When this value is reached,
-        // rpcTimeoutMultiplier will no longer be used to increase the timeout.
-        maxRpcTimeoutMillis: 600000,
-        // The total time, in milliseconds, starting from when the initial request is sent,
-        // after which an error will be returned, regardless of the retrying attempts made meanwhile.
-        totalTimeoutMillis: 600000,
-      },
-    };
-
-    const [response] = await publisherClient.publish(request, {
-      retry: retrySettings,
-    });
-    console.log(`Message ${response.messageIds} published.`);
-
-    if (response) {
-      res.json({ success: true, response });
+    const messageId = await pubSubClient
+      .topic(topicName)
+      .publishMessage({ data: dataBuffer });
+    if (messageId) {
+      res.json({ success: true, messageId });
     } else {
       res.status(500).json({ success: false, error: "Event wasn't saved" });
     }
