@@ -41,7 +41,9 @@ export async function handleSignUpReward(
       }))
     ) {
       // The user has already received a signup reward, stop processing
-      console.log(`[${userTelegramID}] user already received signup reward.`);
+      console.log(
+        `[${eventId}] ${userTelegramID} user already received signup reward.`
+      );
       return true;
     }
 
@@ -100,7 +102,9 @@ export async function handleSignUpReward(
         }
       );
 
-      console.log(`[${userTelegramID}] signup reward added.`);
+      console.log(
+        `[${txReward.data.txHash}] signup reward added for ${userTelegramID}.`
+      );
 
       await axios.post(process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK, {
         userTelegramID: userTelegramID,
@@ -496,23 +500,31 @@ export async function handleNewReward(params) {
 export async function handleNewTransaction(params) {
   const db = await Database.getInstance();
 
-  await db.collection(TRANSFERS_COLLECTION).updateOne(
-    { eventId: params.eventId },
-    {
-      $setOnInsert: {
-        eventId: params.eventId,
-        chainId: 'eip155:137',
-        tokenSymbol: 'g1',
-        tokenAddress: process.env.G1_POLYGON_ADDRESS,
-        senderTgId: params.senderTgId,
-        recipientTgId: params.recipientTgId,
-        tokenAmount: params.amount.toString(),
-        status: TRANSACTION_STATUS.PENDING,
-        dateAdded: new Date(),
-      },
-    },
-    { upsert: true }
-  );
+  const tx_db = await db
+    .collection(TRANSFERS_COLLECTION)
+    .findOne({ eventId: params.eventId });
+
+  if (!tx_db) {
+    await db.collection(TRANSFERS_COLLECTION).insertOne({
+      eventId: params.eventId,
+      chainId: 'eip155:137',
+      tokenSymbol: 'g1',
+      tokenAddress: process.env.G1_POLYGON_ADDRESS,
+      senderTgId: params.senderTgId,
+      recipientTgId: params.recipientTgId,
+      tokenAmount: params.amount.toString(),
+      status: TRANSACTION_STATUS.PENDING,
+      dateAdded: new Date(),
+    });
+  }
+
+  if (tx_db?.status === TRANSACTION_STATUS.SUCCESS) {
+    // The referent user is not in the database
+    console.log(
+      `[${tx_db?.transactionHash}] with event ID ${tx_db?.eventId} is already a success.`
+    );
+    return true;
+  }
 
   // Retrieve sender information from the "users" collection
   const senderInformation = await db
