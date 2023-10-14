@@ -15,64 +15,6 @@ import axios from 'axios';
 import 'dotenv/config';
 import { sendTelegramMessage } from './telegram.js';
 
-/**
- * Handles a new user registration event.
- * @param {object} params - User registration parameters.
- * @returns {Promise<boolean>} Returns a Promise that resolves to true if the user is successfully registered, false otherwise.
- */
-
-export async function handleNewUser(params) {
-  try {
-    const db = await Database.getInstance();
-
-    // Check if the user already exists in the "users" collection
-    const user = await db
-      .collection(USERS_COLLECTION)
-      .findOne({ userTelegramID: params.userTelegramID });
-    if (user) {
-      // The user already exists, stop processing
-      console.log(`[${user.userTelegramID}] user already exist.`);
-      return true;
-    }
-
-    const dateAdded = new Date();
-    const patchwallet = await getPatchWalletAddressFromTgId(
-      params.userTelegramID
-    );
-
-    // The user doesn't exist, add him to the "users" collection
-    await db.collection(USERS_COLLECTION).insertOne({
-      userTelegramID: params.userTelegramID,
-      responsePath: params.responsePath,
-      userHandle: params.userHandle,
-      userName: params.userName,
-      patchwallet: patchwallet,
-      dateAdded: dateAdded,
-    });
-
-    await addIdentitySegment({
-      ...params,
-      patchwallet: patchwallet,
-      dateAdded: dateAdded,
-    });
-
-    await axios.post(process.env.FLOWXO_NEW_USER_WEBHOOK, {
-      userTelegramID: params.userTelegramID,
-      responsePath: params.responsePath,
-      userHandle: params.userHandle,
-      userName: params.userName,
-      patchwallet: patchwallet,
-      dateAdded: dateAdded,
-    });
-
-    console.log(`[${params.userTelegramID}] user added to the database.`);
-    return true;
-  } catch (error) {
-    console.error('Error processing new user event:', error);
-  }
-  return false;
-}
-
 export async function handleSignUpReward(
   db,
   eventId,
