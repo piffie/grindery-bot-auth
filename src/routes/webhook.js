@@ -1,11 +1,12 @@
-import express from "express";
-import { PubSub } from "@google-cloud/pubsub";
-import { authenticateApiKey } from "../utils/auth.js";
+import express from 'express';
+import { PubSub } from '@google-cloud/pubsub';
+import { authenticateApiKey } from '../utils/auth.js';
 import {
   handleNewReward,
   handleNewTransaction,
   handleNewUser,
 } from '../utils/webhook.js';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * This is a generic and extendable implementation of a webhook endpoint and pub/sub messages queue.
@@ -52,6 +53,11 @@ const router = express.Router();
  */
 router.post('/', authenticateApiKey, async (req, res) => {
   try {
+    req.body.event === 'new_transaction_batch'
+      ? req.body.params.forEach(
+          (transaction) => (transaction.eventId = uuidv4())
+        )
+      : (req.body.params.eventId = uuidv4());
     const data = JSON.stringify(req.body);
     console.log(`Publishing message: ${data}`);
     const dataBuffer = Buffer.from(data);
