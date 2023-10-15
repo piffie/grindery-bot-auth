@@ -97,6 +97,17 @@ describe('handleLinkReward function', async function () {
     ).to.be.undefined;
   });
 
+  it('Should not fill the reward database if referent is not a user', async function () {
+    await handleLinkReward(
+      dbMock,
+      rewardId,
+      mockUserTelegramID,
+      mockUserTelegramID1
+    );
+
+    chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+  });
+
   it('Should return true and not sending reward if user already sponsored someone else in another reward process', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID1,
