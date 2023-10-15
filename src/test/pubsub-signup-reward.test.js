@@ -62,7 +62,7 @@ describe('handleSignUpReward function', async function () {
     sandbox.restore();
   });
 
-  it('Should return true if user already exists in the database and sign up reward was a success', async function () {
+  it('Should return true, not send tokens and not update the dabatase if user already exists in the database and sign up reward was a success', async function () {
     await collectionRewardsMock.insertOne({
       eventId: rewardId,
       userTelegramID: mockUserTelegramID,
@@ -70,28 +70,7 @@ describe('handleSignUpReward function', async function () {
       status: TRANSACTION_STATUS.SUCCESS,
     });
 
-    chai.expect(
-      await handleSignUpReward(
-        dbMock,
-        rewardId,
-        mockUserTelegramID,
-        mockResponsePath,
-        mockUserHandle,
-        mockUserName,
-        mockWallet
-      )
-    ).to.be.true;
-  });
-
-  it('Should not send tokens if user already exists in the database and sign up reward was a success', async function () {
-    await collectionRewardsMock.insertOne({
-      eventId: rewardId,
-      userTelegramID: mockUserTelegramID,
-      reason: 'user_sign_up',
-      status: TRANSACTION_STATUS.SUCCESS,
-    });
-
-    await handleSignUpReward(
+    const result = await handleSignUpReward(
       dbMock,
       rewardId,
       mockUserTelegramID,
@@ -101,28 +80,10 @@ describe('handleSignUpReward function', async function () {
       mockWallet
     );
 
+    chai.expect(result).to.be.true;
     chai.expect(
       axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
     ).to.be.undefined;
-  });
-
-  it('Should not add new reward to the database if user already exists in the database and sign up reward was a success', async function () {
-    await collectionRewardsMock.insertOne({
-      eventId: rewardId,
-      userTelegramID: mockUserTelegramID,
-      reason: 'user_sign_up',
-      status: TRANSACTION_STATUS.SUCCESS,
-    });
-
-    await handleSignUpReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
     chai
       .expect(await collectionRewardsMock.find({}).toArray())
       .excluding(['_id'])
@@ -136,7 +97,7 @@ describe('handleSignUpReward function', async function () {
       ]);
   });
 
-  it('Should return true and no token sending if another sign up reward exists', async function () {
+  it('Should return true and no token sending if another sign up reward exists without eventId', async function () {
     await collectionRewardsMock.insertOne({
       userTelegramID: mockUserTelegramID,
       reason: 'user_sign_up',
@@ -163,6 +124,147 @@ describe('handleSignUpReward function', async function () {
         {
           userTelegramID: mockUserTelegramID,
           reason: 'user_sign_up',
+        },
+      ]);
+  });
+
+  it('Should return true and no token sending if another sign up reward exists with another eventID', async function () {
+    await collectionRewardsMock.insertOne({
+      userTelegramID: mockUserTelegramID,
+      reason: 'user_sign_up',
+      eventId: 'another_event_id',
+    });
+
+    const result = await handleSignUpReward(
+      dbMock,
+      rewardId,
+      mockUserTelegramID,
+      mockResponsePath,
+      mockUserHandle,
+      mockUserName,
+      mockWallet
+    );
+
+    chai.expect(result).to.be.true;
+    chai.expect(
+      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+    ).to.be.undefined;
+    chai
+      .expect(await collectionRewardsMock.find({}).toArray())
+      .excluding(['_id'])
+      .to.deep.equal([
+        {
+          userTelegramID: mockUserTelegramID,
+          reason: 'user_sign_up',
+          eventId: 'another_event_id',
+        },
+      ]);
+  });
+
+  it('Should return true, call the sendTokens function properly and update reward status if status is pending', async function () {
+    await collectionRewardsMock.insertOne({
+      eventId: rewardId,
+      userTelegramID: mockUserTelegramID,
+      reason: 'user_sign_up',
+      status: TRANSACTION_STATUS.PENDING,
+    });
+
+    const result = await handleSignUpReward(
+      dbMock,
+      rewardId,
+      mockUserTelegramID,
+      mockResponsePath,
+      mockUserHandle,
+      mockUserName,
+      mockWallet
+    );
+
+    chai.expect(result).to.be.true;
+    chai
+      .expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+          .args[1]
+      )
+      .to.deep.equal({
+        userId: `grindery:${process.env.SOURCE_TG_ID}`,
+        chain: 'matic',
+        to: [process.env.G1_POLYGON_ADDRESS],
+        value: ['0x00'],
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+        ],
+        auth: '',
+      });
+    chai
+      .expect(await collectionRewardsMock.find({}).toArray())
+      .excluding(['_id', 'dateAdded'])
+      .to.deep.equal([
+        {
+          eventId: rewardId,
+          userTelegramID: mockUserTelegramID,
+          responsePath: mockResponsePath,
+          walletAddress: mockWallet,
+          reason: 'user_sign_up',
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+          amount: '100',
+          message: 'Sign up reward',
+          transactionHash: mockTransactionHash,
+          status: TRANSACTION_STATUS.SUCCESS,
+        },
+      ]);
+  });
+
+  it('Should return true, call the sendTokens function properly and update reward status if status is failure', async function () {
+    await collectionRewardsMock.insertOne({
+      eventId: rewardId,
+      userTelegramID: mockUserTelegramID,
+      reason: 'user_sign_up',
+      status: TRANSACTION_STATUS.FAILURE,
+    });
+
+    const result = await handleSignUpReward(
+      dbMock,
+      rewardId,
+      mockUserTelegramID,
+      mockResponsePath,
+      mockUserHandle,
+      mockUserName,
+      mockWallet
+    );
+
+    chai.expect(result).to.be.true;
+    chai
+      .expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+          .args[1]
+      )
+      .to.deep.equal({
+        userId: `grindery:${process.env.SOURCE_TG_ID}`,
+        chain: 'matic',
+        to: [process.env.G1_POLYGON_ADDRESS],
+        value: ['0x00'],
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+        ],
+        auth: '',
+      });
+    chai
+      .expect(await collectionRewardsMock.find({}).toArray())
+      .excluding(['_id', 'dateAdded'])
+      .to.deep.equal([
+        {
+          eventId: rewardId,
+          userTelegramID: mockUserTelegramID,
+          responsePath: mockResponsePath,
+          walletAddress: mockWallet,
+          reason: 'user_sign_up',
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+          amount: '100',
+          message: 'Sign up reward',
+          transactionHash: mockTransactionHash,
+          status: TRANSACTION_STATUS.SUCCESS,
         },
       ]);
   });

@@ -15,6 +15,18 @@ import axios from 'axios';
 import 'dotenv/config';
 import { sendTelegramMessage } from './telegram.js';
 
+/**
+ * Handles the signup reward for a user.
+ *
+ * @param {Object} db - The database object.
+ * @param {string} eventId - The event ID.
+ * @param {string} userTelegramID - The user's Telegram ID.
+ * @param {string} responsePath - The response path.
+ * @param {string} userHandle - The user's handle.
+ * @param {string} userName - The user's name.
+ * @param {string} rewardWallet - The wallet for the reward.
+ * @returns {Promise<boolean>} - Returns true if the operation was successful, false otherwise.
+ */
 export async function handleSignUpReward(
   db,
   eventId,
@@ -25,13 +37,13 @@ export async function handleSignUpReward(
   rewardWallet
 ) {
   try {
+    // Check if this event already exists
     const reward = await db.collection(REWARDS_COLLECTION).findOne({
       userTelegramID: userTelegramID,
       eventId: eventId,
       reason: 'user_sign_up',
     });
 
-    // Check if the user has already received a signup reward
     if (
       reward?.status === TRANSACTION_STATUS.SUCCESS ||
       (await db.collection(REWARDS_COLLECTION).findOne({
@@ -48,6 +60,7 @@ export async function handleSignUpReward(
     }
 
     if (!reward) {
+      // Create a new reward record
       await db.collection(REWARDS_COLLECTION).insertOne({
         eventId: eventId,
         userTelegramID: userTelegramID,
@@ -66,6 +79,7 @@ export async function handleSignUpReward(
     let txReward = undefined;
 
     try {
+      // Send tokens to the user
       txReward = await sendTokens(
         process.env.SOURCE_TG_ID,
         rewardWallet,
@@ -73,14 +87,16 @@ export async function handleSignUpReward(
         await getPatchWalletAccessToken()
       );
     } catch (error) {
-      console.error('Error processing PatchWallet token sending:', error);
+      console.error(
+        `[${eventId}] Error processing PatchWallet user sign up reward for ${userTelegramID}: ${error}`
+      );
       return false;
     }
 
     if (txReward.data.txHash) {
       const dateAdded = new Date();
 
-      // Add the reward to the "rewards" collection
+      // Update the reward record to mark it as successful
       await db.collection(REWARDS_COLLECTION).updateOne(
         {
           userTelegramID: userTelegramID,
@@ -102,6 +118,7 @@ export async function handleSignUpReward(
         }
       );
 
+      // Find the reward record by transaction hash
       const reward_db = await db
         .collection(REWARDS_COLLECTION)
         .findOne({ transactionHash: txReward.data.txHash });
@@ -112,6 +129,7 @@ export async function handleSignUpReward(
         }] signup reward added to Mongo DB with event ID ${eventId} and Object ID ${reward_db._id.toString()}.`
       );
 
+      // Notify external system about the reward
       await axios.post(process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK, {
         userTelegramID: userTelegramID,
         responsePath: responsePath,
