@@ -122,7 +122,7 @@ describe('handleReferralReward function', function () {
     ).to.be.undefined;
   });
 
-  it('Should not send any tokens and return true if the transaction is already rewarded', async function () {
+  it('Should not send any tokens, return true and not update the database if the transaction is already rewarded', async function () {
     await collectionUsersMock.insertMany([
       {
         patchwallet: mockWallet,
@@ -167,9 +167,20 @@ describe('handleReferralReward function', function () {
     chai.expect(
       axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
     ).to.be.undefined;
+    chai
+      .expect(await collectionRewardsMock.find({}).toArray())
+      .excluding(['_id', 'dateAdded'])
+      .to.deep.equal([
+        {
+          eventId: rewardId,
+          reason: '2x_reward',
+          parentTransactionHash: mockTransactionHash,
+          status: TRANSACTION_STATUS.SUCCESS,
+        },
+      ]);
   });
 
-  it('Should not send any tokens and return true if the transaction is already in rewarding process in another event', async function () {
+  it('Should not send any tokens, return true and no change to the database if the transaction is already in rewarding process in another event', async function () {
     await collectionUsersMock.insertMany([
       {
         patchwallet: mockWallet,
@@ -213,6 +224,188 @@ describe('handleReferralReward function', function () {
     chai.expect(
       axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
     ).to.be.undefined;
+    chai
+      .expect(await collectionRewardsMock.find({}).toArray())
+      .excluding(['_id', 'dateAdded'])
+      .to.deep.equal([
+        {
+          eventId: 'anotherEventId',
+          reason: '2x_reward',
+          parentTransactionHash: mockTransactionHash,
+        },
+      ]);
+  });
+
+  it('Should not send any tokens, return true and no change to the database if the transaction is already in rewarding process in another event without eventId', async function () {
+    await collectionUsersMock.insertMany([
+      {
+        patchwallet: mockWallet,
+        userTelegramID: mockUserTelegramID,
+        responsePath: mockResponsePath,
+        userHandle: mockUserHandle,
+        userName: mockUserName,
+      },
+      {
+        patchwallet: mockWallet,
+        userTelegramID: mockUserTelegramID1,
+        responsePath: mockResponsePath,
+        userHandle: mockUserHandle,
+        userName: mockUserName,
+      },
+    ]);
+
+    await collectionTransfersMock.insertOne({
+      transactionHash: mockTransactionHash,
+      senderTgId: mockUserTelegramID1,
+      recipientTgId: mockUserTelegramID,
+    });
+
+    await collectionRewardsMock.insertOne({
+      reason: '2x_reward',
+      parentTransactionHash: mockTransactionHash,
+    });
+
+    const result = await handleReferralReward(
+      dbMock,
+      rewardId,
+      mockUserTelegramID,
+      mockResponsePath,
+      mockUserHandle,
+      mockUserName,
+      mockWallet
+    );
+
+    chai.expect(result).to.be.true;
+    chai.expect(
+      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+    ).to.be.undefined;
+    chai
+      .expect(await collectionRewardsMock.find({}).toArray())
+      .excluding(['_id', 'dateAdded'])
+      .to.deep.equal([
+        {
+          reason: '2x_reward',
+          parentTransactionHash: mockTransactionHash,
+        },
+      ]);
+  });
+
+  it('Should return true, call the sendTokens function properly and add success reward in database if the reward is pending', async function () {
+    await collectionUsersMock.insertOne({
+      userTelegramID: mockUserTelegramID1,
+      responsePath: mockResponsePath,
+      userHandle: mockUserHandle,
+      userName: mockUserName,
+      patchwallet: mockWallet,
+    });
+    await collectionTransfersMock.insertMany([
+      {
+        transactionHash: mockTransactionHash,
+        senderTgId: mockUserTelegramID1,
+        recipientTgId: mockUserTelegramID,
+      },
+      {
+        transactionHash: mockTransactionHash1,
+        senderTgId: mockUserTelegramID1,
+        recipientTgId: mockUserTelegramID,
+      },
+    ]);
+
+    await collectionRewardsMock.insertMany([
+      {
+        eventId: rewardId,
+        reason: '2x_reward',
+        parentTransactionHash: mockTransactionHash,
+        status: TRANSACTION_STATUS.PENDING,
+      },
+      {
+        eventId: rewardId,
+        reason: '2x_reward',
+        parentTransactionHash: mockTransactionHash1,
+        status: TRANSACTION_STATUS.PENDING,
+      },
+    ]);
+
+    const result = await handleReferralReward(
+      dbMock,
+      rewardId,
+      mockUserTelegramID,
+      mockResponsePath,
+      mockUserHandle,
+      mockUserName,
+      mockWallet
+    );
+
+    const sendTokensCalls = axiosStub
+      .getCalls()
+      .filter((e) => e.firstArg === patchwalletTxUrl);
+
+    chai.expect(result).to.be.true;
+    chai.expect(sendTokensCalls.length).to.equal(2);
+    chai.expect(sendTokensCalls[0].args[1]).to.deep.equal({
+      userId: `grindery:${process.env.SOURCE_TG_ID}`,
+      chain: 'matic',
+      to: [process.env.G1_POLYGON_ADDRESS],
+      value: ['0x00'],
+      data: [
+        '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe5000000000000000000000000000000000000000000000002b5e3af16b1880000',
+      ],
+      auth: '',
+    });
+    chai.expect(sendTokensCalls[1].args[1]).to.deep.equal({
+      userId: `grindery:${process.env.SOURCE_TG_ID}`,
+      chain: 'matic',
+      to: [process.env.G1_POLYGON_ADDRESS],
+      value: ['0x00'],
+      data: [
+        '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe5000000000000000000000000000000000000000000000002b5e3af16b1880000',
+      ],
+      auth: '',
+    });
+
+    const rewards = await collectionRewardsMock.find({}).toArray();
+    chai.expect(rewards.length).to.equal(2);
+    chai
+      .expect(rewards)
+      .excluding(['_id', 'dateAdded'])
+      .to.deep.equal([
+        {
+          eventId: rewardId,
+          userTelegramID: mockUserTelegramID1,
+          responsePath: mockResponsePath,
+          walletAddress: mockWallet,
+          reason: '2x_reward',
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+          amount: '50',
+          message: 'Referral reward',
+          transactionHash: mockTransactionHash,
+          parentTransactionHash: mockTransactionHash,
+          status: TRANSACTION_STATUS.SUCCESS,
+        },
+        {
+          eventId: rewardId,
+          userTelegramID: mockUserTelegramID1,
+          responsePath: mockResponsePath,
+          walletAddress: mockWallet,
+          reason: '2x_reward',
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+          amount: '50',
+          message: 'Referral reward',
+          transactionHash: mockTransactionHash,
+          parentTransactionHash: mockTransactionHash1,
+          status: TRANSACTION_STATUS.SUCCESS,
+        },
+      ]);
+    chai
+      .expect(rewards[0].dateAdded)
+      .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
+    chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
+    chai
+      .expect(rewards[1].dateAdded)
+      .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
+    chai.expect(rewards[1].dateAdded).to.be.lessThanOrEqual(new Date());
   });
 
   it('Should call the sendTokens function properly if the user is new', async function () {

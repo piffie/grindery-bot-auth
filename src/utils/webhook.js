@@ -153,6 +153,18 @@ export async function handleSignUpReward(
   return true;
 }
 
+/**
+ * Handles the referral reward for a user.
+ *
+ * @param {Object} db - The database object.
+ * @param {string} eventId - The event ID.
+ * @param {string} userTelegramID - The user's Telegram ID.
+ * @param {string} responsePath - The response path.
+ * @param {string} userHandle - The user's handle.
+ * @param {string} userName - The user's name.
+ * @param {string} patchwallet - The user's Patchwallet.
+ * @returns {Promise<boolean>} - Returns true if the operation was successful, false otherwise.
+ */
 export async function handleReferralReward(
   db,
   eventId,
