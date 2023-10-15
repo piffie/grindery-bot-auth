@@ -152,7 +152,9 @@ export async function handleSignUpReward(
     }
     return false;
   } catch (error) {
-    console.error('Error processing signup reward event:', error);
+    console.error(
+      `[${eventId}] Error processing sign up reward event: ${error}`
+    );
   }
   return true;
 }
@@ -244,7 +246,9 @@ export async function handleReferralReward(
           await getPatchWalletAccessToken()
         );
       } catch (error) {
-        console.error('Error processing PatchWallet token sending:', error);
+        console.error(
+          `[${eventId}] Error processing PatchWallet referral reward for ${senderWallet}: ${error}`
+        );
         processed = false;
         continue;
       }
@@ -302,7 +306,7 @@ export async function handleReferralReward(
         });
 
         console.log(
-          `[${senderInformation.userTelegramID}] referral reward added.`
+          `[${txReward.data.txHash}] referral reward sent to FlowXO with event ID ${eventId}.`
         );
       } else {
         // If a transaction fails, set the flag to false
@@ -312,12 +316,23 @@ export async function handleReferralReward(
 
     return processed;
   } catch (error) {
-    console.error('Error processing referral reward event:', error);
+    console.error(
+      `[${eventId}] Error processing referral reward event: ${error}`
+    );
   }
 
   return true;
 }
 
+/**
+ * Handles the referral link reward for a user.
+ *
+ * @param {Object} db - The database object.
+ * @param {string} eventId - The event ID.
+ * @param {string} userTelegramID - The user's Telegram ID.
+ * @param {string} referentUserTelegramID - The Telegram ID of the referent user.
+ * @returns {Promise<boolean>} - Returns true if the operation was successful, false otherwise.
+ */
 export async function handleLinkReward(
   db,
   eventId,
@@ -389,7 +404,9 @@ export async function handleLinkReward(
         await getPatchWalletAccessToken()
       );
     } catch (error) {
-      console.error('Error processing PatchWallet token sending:', error);
+      console.error(
+        `[${eventId}] Error processing PatchWallet link reward for ${rewardWallet}: ${error}`
+      );
       return false;
     }
 
@@ -448,17 +465,17 @@ export async function handleLinkReward(
 
     return false;
   } catch (error) {
-    console.error('Error processing referral link reward event:', error);
+    console.error(`[${eventId}] Error processing link reward event: ${error}`);
   }
   return true;
 }
 
 /**
- * Handles a new sign-up reward event.
- * @param {object} params - Sign-up reward parameters.
- * @returns {Promise<boolean>} Returns a Promise that resolves to true if the reward is successfully processed, false otherwise.
+ * Handles the processing of a new reward for a user.
+ *
+ * @param {Object} params - The parameters containing user and event details.
+ * @returns {Promise<boolean>} - Returns true if the operation was successful, false otherwise.
  */
-
 export async function handleNewReward(params) {
   const db = await Database.getInstance();
 
@@ -551,7 +568,6 @@ export async function handleNewReward(params) {
  * @param {object} params - Transaction parameters.
  * @returns {Promise<boolean>} Returns a Promise that resolves to true if the transaction is successfully processed, false otherwise.
  */
-
 export async function handleNewTransaction(params) {
   const db = await Database.getInstance();
 
