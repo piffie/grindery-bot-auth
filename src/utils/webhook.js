@@ -102,8 +102,16 @@ export async function handleSignUpReward(
         }
       );
 
+
+
+      const reward_db = await db
+        .collection(REWARDS_COLLECTION)
+        .findOne({ transactionHash: txReward.data.txHash });
+
       console.log(
-        `[${txReward.data.txHash}] signup reward added for ${userTelegramID}.`
+        `[${
+          txReward.data.txHash
+        }] signup reward added to Mongo DB with event ID ${eventId} and Object ID ${reward_db._id.toString()}.`
       );
 
       await axios.post(process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK, {
@@ -232,6 +240,11 @@ export async function handleReferralReward(
             },
           },
           { upsert: true }
+        );
+
+
+        console.log(
+          `[${txReward.data.txHash}] referral reward added to Mongo DB with event ID ${eventId}.`
         );
 
         await axios.post(process.env.FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK, {
@@ -370,6 +383,10 @@ export async function handleLinkReward(
           },
         },
         { upsert: true }
+      );
+
+      console.log(
+        `[${txReward.data.txHash}] link reward added to Mongo DB with event ID ${eventId}.`
       );
 
       console.log(`[${referentUserTelegramID}] referral link reward added.`);
@@ -604,6 +621,18 @@ export async function handleNewTransaction(params) {
           status: TRANSACTION_STATUS.SUCCESS,
         },
       }
+    );
+
+    const tx_db = await db
+      .collection(TRANSFERS_COLLECTION)
+      .findOne({ transactionHash: tx.data.txHash });
+
+    console.log(
+      `[${tx.data.txHash}] transaction with event ID ${params.eventId} from ${
+        params.senderTgId
+      } to ${
+        params.recipientTgId
+      } for ${params.amount.toString()} added to MongoDB with Object ID ${tx_db._id.toString()}.`
     );
 
     try {
