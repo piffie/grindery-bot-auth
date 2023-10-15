@@ -74,6 +74,7 @@ export async function handleNewUser(params) {
 
 export async function handleSignUpReward(
   db,
+  eventId,
   userTelegramID,
   responsePath,
   userHandle,
@@ -112,6 +113,7 @@ export async function handleSignUpReward(
 
       // Add the reward to the "rewards" collection
       await db.collection(REWARDS_COLLECTION).insertOne({
+        eventId: eventId,
         userTelegramID: userTelegramID,
         responsePath: responsePath,
         walletAddress: rewardWallet,
@@ -124,7 +126,15 @@ export async function handleSignUpReward(
         dateAdded: dateAdded,
       });
 
-      console.log(`[${userTelegramID}] signup reward added.`);
+      const reward_db = await db
+        .collection(REWARDS_COLLECTION)
+        .findOne({ transactionHash: txReward.data.txHash });
+
+      console.log(
+        `[${
+          txReward.data.txHash
+        }] signup reward added to Mongo DB with event ID ${eventId} and Object ID ${reward_db._id.toString()}.`
+      );
 
       await axios.post(process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK, {
         userTelegramID: userTelegramID,
@@ -151,6 +161,7 @@ export async function handleSignUpReward(
 
 export async function handleReferralReward(
   db,
+  eventId,
   userTelegramID,
   responsePath,
   userHandle,
@@ -208,6 +219,7 @@ export async function handleReferralReward(
 
         // Add the reward to the "rewards" collection
         await db.collection(REWARDS_COLLECTION).insertOne({
+          eventId: eventId,
           userTelegramID: senderInformation.userTelegramID,
           responsePath: senderInformation.responsePath,
           walletAddress: senderWallet,
@@ -220,6 +232,10 @@ export async function handleReferralReward(
           dateAdded: dateAdded,
           parentTransactionHash: transfer.transactionHash,
         });
+
+        console.log(
+          `[${txReward.data.txHash}] referral reward added to Mongo DB with event ID ${eventId}.`
+        );
 
         await axios.post(process.env.FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK, {
           newUserTgId: userTelegramID,
@@ -259,6 +275,7 @@ export async function handleReferralReward(
 
 export async function handleLinkReward(
   db,
+  eventId,
   userTelegramID,
   referentUserTelegramID
 ) {
@@ -310,6 +327,7 @@ export async function handleLinkReward(
 
       // Add the reward to the "rewards" collection
       await db.collection(REWARDS_COLLECTION).insertOne({
+        eventId: eventId,
         userTelegramID: referentUserTelegramID,
         responsePath: referent.responsePath,
         walletAddress: rewardWallet,
@@ -322,6 +340,10 @@ export async function handleLinkReward(
         dateAdded: dateAdded,
         sponsoredUserTelegramID: userTelegramID,
       });
+
+      console.log(
+        `[${txReward.data.txHash}] link reward added to Mongo DB with event ID ${eventId}.`
+      );
 
       console.log(`[${referentUserTelegramID}] referral link reward added.`);
 
@@ -379,6 +401,7 @@ export async function handleNewReward(params) {
 
   const signupReward = await webhook_utils.handleSignUpReward(
     db,
+    params.eventId,
     params.userTelegramID,
     params.responsePath,
     params.userHandle,
@@ -392,6 +415,7 @@ export async function handleNewReward(params) {
 
   const referralReward = await webhook_utils.handleReferralReward(
     db,
+    params.eventId,
     params.userTelegramID,
     params.responsePath,
     params.userHandle,
@@ -406,6 +430,7 @@ export async function handleNewReward(params) {
   if (params.referentUserTelegramID) {
     const referralLinkReward = await webhook_utils.handleLinkReward(
       db,
+      params.eventId,
       params.userTelegramID,
       params.referentUserTelegramID
     );
@@ -488,6 +513,7 @@ export async function handleNewTransaction(params) {
 
     // Add the reward to the "rewards" collection
     await db.collection(TRANSFERS_COLLECTION).insertOne({
+      eventId: params.eventId,
       TxId: tx.data.txHash.substring(1, 8),
       chainId: 'eip155:137',
       tokenSymbol: 'g1',
@@ -502,6 +528,18 @@ export async function handleNewTransaction(params) {
       transactionHash: tx.data.txHash,
       dateAdded: dateAdded,
     });
+
+    const tx_db = await db
+      .collection(TRANSFERS_COLLECTION)
+      .findOne({ transactionHash: tx.data.txHash });
+
+    console.log(
+      `[${tx.data.txHash}] transaction with event ID ${params.eventId} from ${
+        params.senderTgId
+      } to ${
+        params.recipientTgId
+      } for ${params.amount.toString()} added to MongoDB with Object ID ${tx_db._id.toString()}.`
+    );
 
     try {
       await addTrackSegment({
