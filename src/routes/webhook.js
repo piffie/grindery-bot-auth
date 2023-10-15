@@ -1,11 +1,7 @@
 import express from 'express';
 import { PubSub } from '@google-cloud/pubsub';
 import { authenticateApiKey } from '../utils/auth.js';
-import {
-  handleNewReward,
-  handleNewTransaction,
-  handleNewUser,
-} from '../utils/webhook.js';
+import { handleNewReward, handleNewTransaction } from '../utils/webhook.js';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -113,10 +109,6 @@ const listenForMessages = () => {
               .publishMessage({ data: transactionDataBuffer });
           }
           processed = true;
-          break;
-        // New user started the bot
-        case 'new_user':
-          processed = await handleNewUser(messageData.params);
           break;
         // New reward has been issued to user
         case 'new_reward':

@@ -12,7 +12,6 @@ import {
   patchwalletResolverUrl,
   patchwalletTxUrl,
   patchwalletAuthUrl,
-  segmentIdentifyUrl,
   segmentTrackUrl,
   mockUserHandle,
 } from './utils.js';
@@ -21,14 +20,18 @@ import Sinon from 'sinon';
 import axios from 'axios';
 import 'dotenv/config';
 import chaiExclude from 'chai-exclude';
+import { TRANSACTION_STATUS } from '../utils/constants.js';
+import { ObjectId } from 'mongodb';
+import { v4 as uuidv4 } from 'uuid';
 
 chai.use(chaiExclude);
 
 describe('handleNewTransaction function', async function () {
   let sandbox;
   let axiosStub;
+  let txId;
 
-  beforeEach(function () {
+  beforeEach(async function () {
     sandbox = Sinon.createSandbox();
     axiosStub = sandbox
       .stub(axios, 'post')
@@ -69,6 +72,8 @@ describe('handleNewTransaction function', async function () {
           });
         }
       });
+
+    txId = uuidv4();
   });
 
   afterEach(function () {
@@ -88,33 +93,115 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
+        eventId: txId,
       })
     ).to.be.true;
 
     const transfers = await collectionTransfersMock.find({}).toArray();
 
     chai
-      .expect(transfers[0])
-      .excluding(['dateAdded'])
-      .excluding(['_id'])
-      .to.deep.equal({
-        TxId: mockTransactionHash.substring(1, 8),
-        chainId: 'eip155:137',
-        tokenSymbol: 'g1',
-        tokenAddress: process.env.G1_POLYGON_ADDRESS,
-        senderTgId: mockUserTelegramID,
-        senderWallet: mockWallet,
-        senderName: mockUserName,
-        senderHandle: mockUserHandle,
-        recipientTgId: mockUserTelegramID1,
-        recipientWallet: mockWallet,
-        tokenAmount: '100',
-        transactionHash: mockTransactionHash,
-      });
+      .expect(transfers)
+      .excluding(['dateAdded', '_id'])
+      .to.deep.equal([
+        {
+          eventId: txId,
+          TxId: mockTransactionHash.substring(1, 8),
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: process.env.G1_POLYGON_ADDRESS,
+          senderTgId: mockUserTelegramID,
+          senderWallet: mockWallet,
+          senderName: mockUserName,
+          senderHandle: mockUserHandle,
+          recipientTgId: mockUserTelegramID1,
+          recipientWallet: mockWallet,
+          tokenAmount: '100',
+          transactionHash: mockTransactionHash,
+          status: TRANSACTION_STATUS.SUCCESS,
+        },
+      ]);
     chai.expect(transfers[0].dateAdded).to.be.a('date');
   });
 
-  it('Should not add transaction in the database if there is an error in the send tokens request', async function () {
+  it('Should return true and no token sending if transaction is already a success', async function () {
+    await collectionUsersMock.insertOne({
+      userTelegramID: mockUserTelegramID,
+      userName: mockUserName,
+      userHandle: mockUserHandle,
+      patchwallet: mockWallet,
+    });
+
+    await collectionTransfersMock.insertOne({
+      eventId: txId,
+      status: TRANSACTION_STATUS.SUCCESS,
+    });
+
+    chai.expect(
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      })
+    ).to.be.true;
+
+    const transfers = await collectionTransfersMock.find({}).toArray();
+
+    chai
+      .expect(transfers)
+      .excluding(['_id'])
+      .to.deep.equal([
+        {
+          eventId: txId,
+          status: TRANSACTION_STATUS.SUCCESS,
+        },
+      ]);
+
+    chai.expect(
+      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+    ).to.be.undefined;
+  });
+
+  it('Should return true and no token sending if transaction is already a failure', async function () {
+    await collectionUsersMock.insertOne({
+      userTelegramID: mockUserTelegramID,
+      userName: mockUserName,
+      userHandle: mockUserHandle,
+      patchwallet: mockWallet,
+    });
+
+    await collectionTransfersMock.insertOne({
+      eventId: txId,
+      status: TRANSACTION_STATUS.FAILURE,
+    });
+
+    chai.expect(
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      })
+    ).to.be.true;
+
+    const transfers = await collectionTransfersMock.find({}).toArray();
+
+    chai
+      .expect(transfers)
+      .excluding(['_id'])
+      .to.deep.equal([
+        {
+          eventId: txId,
+          status: TRANSACTION_STATUS.FAILURE,
+        },
+      ]);
+
+    chai.expect(
+      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+    ).to.be.undefined;
+  });
+
+  it('Should not modify transaction status in the database if there is an error in the send tokens request', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
       userName: mockUserName,
@@ -132,9 +219,56 @@ describe('handleNewTransaction function', async function () {
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
+      eventId: txId,
     });
 
-    chai.expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
+    chai
+      .expect(await collectionTransfersMock.find({}).toArray())
+      .excluding(['_id', 'dateAdded'])
+      .to.deep.equal([
+        {
+          eventId: txId,
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: process.env.G1_POLYGON_ADDRESS,
+          senderTgId: mockUserTelegramID,
+          recipientTgId: mockUserTelegramID1,
+          tokenAmount: '100',
+          status: TRANSACTION_STATUS.PENDING,
+        },
+      ]);
+  });
+
+  it('Should not add new transaction if one with the same eventId already exists', async function () {
+    await collectionTransfersMock.insertOne({
+      eventId: txId,
+    });
+
+    const objectId = (
+      await collectionTransfersMock.findOne({
+        eventId: txId,
+      })
+    )._id.toString();
+
+    await collectionUsersMock.insertOne({
+      userTelegramID: mockUserTelegramID,
+      userName: mockUserName,
+      userHandle: mockUserHandle,
+      patchwallet: mockWallet,
+    });
+
+    await handleNewTransaction({
+      senderTgId: mockUserTelegramID,
+      amount: '100',
+      recipientTgId: mockUserTelegramID1,
+      eventId: txId,
+    });
+
+    chai
+      .expect(
+        (await collectionTransfersMock.find({}).toArray())[0]._id.toString()
+      )
+      .to.equal(objectId);
   });
 
   it('Should return false if there is an error in the send tokens request', async function () {
@@ -156,6 +290,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
+        eventId: txId,
       })
     ).to.be.false;
   });
@@ -172,6 +307,7 @@ describe('handleNewTransaction function', async function () {
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
+      eventId: txId,
     });
 
     const segmentIdentityCall = axiosStub
@@ -197,6 +333,7 @@ describe('handleNewTransaction function', async function () {
           recipientWallet: mockWallet,
           tokenAmount: '100',
           transactionHash: mockTransactionHash,
+          eventId: txId,
         },
       });
   });
@@ -220,6 +357,7 @@ describe('handleNewTransaction function', async function () {
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
+      eventId: txId,
     });
 
     chai.expect(
@@ -242,6 +380,7 @@ describe('handleNewTransaction function', async function () {
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
+      eventId: txId,
     });
 
     const FlowXOCallArgs = axiosStub
@@ -288,6 +427,7 @@ describe('handleNewTransaction function', async function () {
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
+      eventId: txId,
     });
 
     chai.expect(
@@ -297,22 +437,33 @@ describe('handleNewTransaction function', async function () {
     ).to.be.undefined;
   });
 
-  // #######################################
-  // #######################################
-  // #######################################
-
-  it('Should return true and no new transaction in database if sender is not a user', async function () {
+  it('Should return true and no modification of status in database if sender is not a user', async function () {
     const result = await handleNewTransaction({
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
+      eventId: txId,
     });
 
     chai.expect(result).to.be.true;
-    chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
+    chai
+      .expect(await collectionTransfersMock.find({}).toArray())
+      .excluding(['_id', 'dateAdded'])
+      .to.deep.equal([
+        {
+          eventId: txId,
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: process.env.G1_POLYGON_ADDRESS,
+          senderTgId: mockUserTelegramID,
+          recipientTgId: mockUserTelegramID1,
+          tokenAmount: '100',
+          status: TRANSACTION_STATUS.PENDING,
+        },
+      ]);
   });
 
-  it('Should return false and no new transaction in database if error in PatchWallet get address', async function () {
+  it('Should return false and no transaction status modification in database if error in PatchWallet get address', async function () {
     axiosStub
       .withArgs(patchwalletResolverUrl)
       .rejects(new Error('Service not available'));
@@ -329,19 +480,23 @@ describe('handleNewTransaction function', async function () {
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
+      eventId: txId,
     });
 
     chai.expect(result).to.be.false;
     chai
-      .expect(await collectionUsersMock.find({}).toArray())
-      .excluding(['_id'])
+      .expect(await collectionTransfersMock.find({}).toArray())
+      .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
-          userTelegramID: mockUserTelegramID,
-          userName: mockUserName,
-          userHandle: mockUserHandle,
-          patchwallet: mockWallet,
-          responsePath: mockResponsePath,
+          eventId: txId,
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: process.env.G1_POLYGON_ADDRESS,
+          senderTgId: mockUserTelegramID,
+          recipientTgId: mockUserTelegramID1,
+          tokenAmount: '100',
+          status: TRANSACTION_STATUS.PENDING,
         },
       ]);
   });
@@ -363,6 +518,7 @@ describe('handleNewTransaction function', async function () {
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
+      eventId: txId,
     });
 
     chai.expect(result).to.be.true;
@@ -385,12 +541,13 @@ describe('handleNewTransaction function', async function () {
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
+      eventId: txId,
     });
 
     chai.expect(result).to.be.true;
   });
 
-  it('Should return false and no new transaction in database if error in PatchWallet transaction', async function () {
+  it('Should return false and no transaction status modification in database if error in PatchWallet transaction', async function () {
     axiosStub
       .withArgs(patchwalletTxUrl)
       .rejects(new Error('Service not available'));
@@ -407,13 +564,28 @@ describe('handleNewTransaction function', async function () {
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
+      eventId: txId,
     });
 
     chai.expect(result).to.be.false;
-    chai.expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
+    chai
+      .expect(await collectionTransfersMock.find({}).toArray())
+      .excluding(['_id', 'dateAdded'])
+      .to.deep.equal([
+        {
+          eventId: txId,
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: process.env.G1_POLYGON_ADDRESS,
+          senderTgId: mockUserTelegramID,
+          recipientTgId: mockUserTelegramID1,
+          tokenAmount: '100',
+          status: TRANSACTION_STATUS.PENDING,
+        },
+      ]);
   });
 
-  it('Should return true and no new transaction in database if error 470 in PatchWallet transaction', async function () {
+  it('Should return true and transaction status to failure in database if error 470 in PatchWallet transaction', async function () {
     axiosStub.withArgs(patchwalletTxUrl).rejects({
       response: {
         status: 470,
@@ -432,13 +604,32 @@ describe('handleNewTransaction function', async function () {
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
+      eventId: txId,
     });
 
     chai.expect(result).to.be.true;
-    chai.expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
+    chai
+      .expect(await collectionTransfersMock.find({}).toArray())
+      .excluding(['dateAdded', '_id'])
+      .to.deep.equal([
+        {
+          eventId: txId,
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: process.env.G1_POLYGON_ADDRESS,
+          senderTgId: mockUserTelegramID,
+          senderWallet: mockWallet,
+          senderName: mockUserName,
+          senderHandle: mockUserHandle,
+          recipientTgId: mockUserTelegramID1,
+          recipientWallet: mockWallet,
+          tokenAmount: '100',
+          status: TRANSACTION_STATUS.FAILURE,
+        },
+      ]);
   });
 
-  it('Should return false and no new transaction in database if no hash in PatchWallet transaction', async function () {
+  it('Should return false and no transaction status modification in database if no hash in PatchWallet transaction', async function () {
     axiosStub.withArgs(patchwalletTxUrl).resolves({
       data: {
         error: 'service non available',
@@ -457,19 +648,23 @@ describe('handleNewTransaction function', async function () {
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
+      eventId: txId,
     });
 
     chai.expect(result).to.be.false;
     chai
-      .expect(await collectionUsersMock.find({}).toArray())
-      .excluding(['_id'])
+      .expect(await collectionTransfersMock.find({}).toArray())
+      .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
-          userTelegramID: mockUserTelegramID,
-          userName: mockUserName,
-          userHandle: mockUserHandle,
-          patchwallet: mockWallet,
-          responsePath: mockResponsePath,
+          eventId: txId,
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: process.env.G1_POLYGON_ADDRESS,
+          senderTgId: mockUserTelegramID,
+          recipientTgId: mockUserTelegramID1,
+          tokenAmount: '100',
+          status: TRANSACTION_STATUS.PENDING,
         },
       ]);
   });
