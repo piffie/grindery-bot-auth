@@ -182,6 +182,72 @@ describe('handleLinkReward function', async function () {
     ).to.be.undefined;
   });
 
+  it('Should return true and not send new reward if another link reward for the sponsored user already in process', async function () {
+    await collectionUsersMock.insertOne({
+      userTelegramID: mockUserTelegramID1,
+    });
+
+    await collectionRewardsMock.insertOne({
+      eventId: 'another_link_reward',
+      sponsoredUserTelegramID: mockUserTelegramID,
+      reason: 'referral_link',
+    });
+
+    const result = await handleLinkReward(
+      dbMock,
+      rewardId,
+      mockUserTelegramID,
+      mockUserTelegramID1
+    );
+
+    chai.expect(result).to.be.true;
+    chai
+      .expect(await collectionRewardsMock.find({}).toArray())
+      .excluding(['_id', 'dateAdded'])
+      .to.deep.equal([
+        {
+          eventId: 'another_link_reward',
+          sponsoredUserTelegramID: mockUserTelegramID,
+          reason: 'referral_link',
+        },
+      ]);
+    chai.expect(
+      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+    ).to.be.undefined;
+  });
+
+  it('Should return true and not send new reward if another link reward for the sponsored user already in process with no eventId', async function () {
+    await collectionUsersMock.insertOne({
+      userTelegramID: mockUserTelegramID1,
+    });
+
+    await collectionRewardsMock.insertOne({
+      sponsoredUserTelegramID: mockUserTelegramID,
+      reason: 'referral_link',
+    });
+
+    const result = await handleLinkReward(
+      dbMock,
+      rewardId,
+      mockUserTelegramID,
+      mockUserTelegramID1
+    );
+
+    chai.expect(result).to.be.true;
+    chai
+      .expect(await collectionRewardsMock.find({}).toArray())
+      .excluding(['_id', 'dateAdded'])
+      .to.deep.equal([
+        {
+          sponsoredUserTelegramID: mockUserTelegramID,
+          reason: 'referral_link',
+        },
+      ]);
+    chai.expect(
+      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+    ).to.be.undefined;
+  });
+
   it('Should call the sendTokens function properly if the user is new', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID1,

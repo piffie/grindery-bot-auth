@@ -74,6 +74,8 @@ export async function handleSignUpReward(
         dateAdded: new Date(),
         status: TRANSACTION_STATUS.PENDING,
       });
+
+      console.log(`[${eventId}] pending sign up reward added to the database.`);
     }
 
     let txReward = undefined;
@@ -234,6 +236,10 @@ export async function handleReferralReward(
           parentTransactionHash: transfer.transactionHash,
           status: TRANSACTION_STATUS.PENDING,
         });
+
+        console.log(
+          `[${eventId}] pending referral reward for ${senderWallet} about ${transfer.transactionHash} added to the database.`
+        );
       }
 
       let txReward = undefined;
@@ -346,7 +352,9 @@ export async function handleLinkReward(
 
     if (!referent) {
       // The referent user is not in the database
-      console.log(`[${referentUserTelegramID}] referent user is not a user.`);
+      console.log(
+        `[${eventId}] ${referentUserTelegramID} referent user is not a user to process the link reward.`
+      );
       return true;
     }
 
@@ -372,7 +380,7 @@ export async function handleLinkReward(
     ) {
       // The user has already received a referral link reward, stop processing
       console.log(
-        `[${userTelegramID}] already sponsored another user for a referral link reward.`
+        `[${eventId}] ${userTelegramID} already sponsored another user for a referral link reward.`
       );
       return true;
     }
@@ -392,6 +400,10 @@ export async function handleLinkReward(
         sponsoredUserTelegramID: userTelegramID,
         status: TRANSACTION_STATUS.PENDING,
       });
+
+      console.log(
+        `[${eventId}] pending link reward for ${rewardWallet} about sponsoring ${userTelegramID} added to the database.`
+      );
     }
 
     let txReward = undefined;
@@ -444,8 +456,6 @@ export async function handleLinkReward(
         `[${txReward.data.txHash}] link reward added to Mongo DB with event ID ${eventId}.`
       );
 
-      console.log(`[${referentUserTelegramID}] referral link reward added.`);
-
       await axios.post(process.env.FLOWXO_NEW_LINK_REWARD_WEBHOOK, {
         userTelegramID: referentUserTelegramID,
         responsePath: referent.responsePath,
@@ -459,6 +469,10 @@ export async function handleLinkReward(
         dateAdded: dateAdded,
         sponsoredUserTelegramID: userTelegramID,
       });
+
+      console.log(
+        `[${txReward.data.txHash}] link reward sent to FlowXO with event ID ${eventId}.`
+      );
 
       return true;
     }
@@ -486,7 +500,9 @@ export async function handleNewReward(params) {
 
   if (user) {
     // The user already exists, stop processing
-    console.log(`[${user.userTelegramID}] user already exist.`);
+    console.log(
+      `[${params.eventId}] ${user.userTelegramID} user already exists.`
+    );
     return true;
   }
 
@@ -550,6 +566,10 @@ export async function handleNewReward(params) {
     dateAdded: dateAdded,
   });
 
+  console.log(
+    `[${params.eventId}] ${params.userTelegramID} added to the user database.`
+  );
+
   try {
     await addIdentitySegment({
       ...params,
@@ -557,7 +577,9 @@ export async function handleNewReward(params) {
       dateAdded: dateAdded,
     });
   } catch (error) {
-    console.error('Error processing new user in Segment:', error);
+    console.error(
+      `[${params.eventId}] Error processing new user in Segment: ${error}`
+    );
   }
 
   return true;
