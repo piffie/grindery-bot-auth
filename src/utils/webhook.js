@@ -102,8 +102,6 @@ export async function handleSignUpReward(
         }
       );
 
-
-
       const reward_db = await db
         .collection(REWARDS_COLLECTION)
         .findOne({ transactionHash: txReward.data.txHash });
@@ -241,7 +239,6 @@ export async function handleReferralReward(
           },
           { upsert: true }
         );
-
 
         console.log(
           `[${txReward.data.txHash}] referral reward added to Mongo DB with event ID ${eventId}.`
