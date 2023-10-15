@@ -576,6 +576,10 @@ export async function handleNewReward(params) {
       patchwallet: patchwallet,
       dateAdded: dateAdded,
     });
+
+    console.log(
+      `[${params.eventId}] ${params.userTelegramID} added to Segment.`
+    );
   } catch (error) {
     console.error(
       `[${params.eventId}] Error processing new user in Segment: ${error}`
@@ -609,12 +613,23 @@ export async function handleNewTransaction(params) {
       status: TRANSACTION_STATUS.PENDING,
       dateAdded: new Date(),
     });
+    console.log(
+      `[${params.eventId}] transaction from ${params.senderTgId} to ${
+        params.recipientTgId
+      } for ${params.amount.toString()} added to MongoDB as pending.`
+    );
   }
 
   if (tx_db?.status === TRANSACTION_STATUS.SUCCESS) {
-    // The referent user is not in the database
     console.log(
       `[${tx_db?.transactionHash}] with event ID ${tx_db?.eventId} is already a success.`
+    );
+    return true;
+  }
+
+  if (tx_db?.status === TRANSACTION_STATUS.FAILURE) {
+    console.log(
+      `[${tx_db?.transactionHash}] with event ID ${tx_db?.eventId} is already a failure.`
     );
     return true;
   }
@@ -625,7 +640,9 @@ export async function handleNewTransaction(params) {
     .findOne({ userTelegramID: params.senderTgId });
 
   if (!senderInformation) {
-    console.error('Sender is not a user');
+    console.error(
+      `[${params.eventId}] Sender ${params.senderTgId} is not a user`
+    );
     return true;
   }
 
@@ -647,7 +664,11 @@ export async function handleNewTransaction(params) {
       await getPatchWalletAccessToken()
     );
   } catch (error) {
-    console.error('Error processing PatchWallet token sending:', error);
+    console.error(
+      `[${params.eventId}] transaction from ${params.senderTgId} to ${
+        params.recipientTgId
+      } for ${params.amount.toString()} - Error processing PatchWallet token sending: ${error}`
+    );
     if (error?.response?.status === 470) {
       await db.collection(TRANSFERS_COLLECTION).updateOne(
         { eventId: params.eventId },
@@ -729,6 +750,14 @@ export async function handleNewTransaction(params) {
         eventId: params.eventId,
       });
 
+      console.log(
+        `[${tx.data.txHash}] transaction with event ID ${params.eventId} from ${
+          params.senderTgId
+        } to ${
+          params.recipientTgId
+        } for ${params.amount.toString()} added to Segment.`
+      );
+
       await axios.post(process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK, {
         senderResponsePath: senderInformation.responsePath,
         TxId: tx.data.txHash.substring(1, 8),
@@ -745,6 +774,14 @@ export async function handleNewTransaction(params) {
         transactionHash: tx.data.txHash,
         dateAdded: dateAdded,
       });
+
+      console.log(
+        `[${tx.data.txHash}] transaction with event ID ${params.eventId} from ${
+          params.senderTgId
+        } to ${
+          params.recipientTgId
+        } for ${params.amount.toString()} sent to FlowXO.`
+      );
 
       // send telegram message if params.message exists and sender has a telegram session
       if (params.message && senderInformation.telegramSession) {
@@ -763,15 +800,16 @@ export async function handleNewTransaction(params) {
       }
     } catch (error) {
       console.error(
-        'Error processing Segment or FlowXO webhook, or sending telegram message:',
-        error
+        `[${params.eventId}] Error processing Segment or FlowXO webhook, or sending telegram message: ${error}`
       );
     }
 
     console.log(
       `[${tx.data.txHash}] transaction from ${params.senderTgId} to ${
         params.recipientTgId
-      } for ${params.amount.toString()} added.`
+      } for ${params.amount.toString()} with event ID ${
+        params.eventId
+      } finished.`
     );
     return true;
   }
