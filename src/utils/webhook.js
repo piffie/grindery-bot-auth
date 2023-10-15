@@ -105,6 +105,9 @@ export async function handleSignUpReward(
         },
         {
           $set: {
+            userTelegramID: userTelegramID,
+            eventId: eventId,
+            reason: 'user_sign_up',
             responsePath: responsePath,
             walletAddress: rewardWallet,
             userHandle: userHandle,
@@ -115,7 +118,8 @@ export async function handleSignUpReward(
             dateAdded: dateAdded,
             status: TRANSACTION_STATUS.SUCCESS,
           },
-        }
+        },
+        { upsert: true }
       );
 
       // Find the reward record by transaction hash
@@ -250,11 +254,15 @@ export async function handleReferralReward(
 
         await db.collection(REWARDS_COLLECTION).updateOne(
           {
+            eventId: eventId,
             reason: '2x_reward',
             parentTransactionHash: transfer.transactionHash,
           },
           {
             $set: {
+              eventId: eventId,
+              reason: '2x_reward',
+              parentTransactionHash: transfer.transactionHash,
               userTelegramID: senderInformation.userTelegramID,
               responsePath: senderInformation.responsePath,
               walletAddress: senderWallet,
@@ -397,6 +405,9 @@ export async function handleLinkReward(
         },
         {
           $set: {
+            userTelegramID: referentUserTelegramID,
+            sponsoredUserTelegramID: userTelegramID,
+            reason: 'referral_link',
             eventId: eventId,
             responsePath: referent.responsePath,
             walletAddress: rewardWallet,
@@ -632,6 +643,7 @@ export async function handleNewTransaction(params) {
       { eventId: params.eventId },
       {
         $set: {
+          eventId: params.eventId,
           TxId: tx.data.txHash.substring(1, 8),
           chainId: 'eip155:137',
           tokenSymbol: 'g1',
@@ -647,7 +659,8 @@ export async function handleNewTransaction(params) {
           dateAdded: dateAdded,
           status: TRANSACTION_STATUS.SUCCESS,
         },
-      }
+      },
+      { upsert: true }
     );
 
     const tx_db = await db
