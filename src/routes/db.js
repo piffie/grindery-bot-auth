@@ -57,7 +57,7 @@ router.get('/transactions-total', authenticateApiKey, async (req, res) => {
     res.status(200).send({
       transactions_counts: await db
         .collection(TRANSFERS_COLLECTION)
-        .countDocuments(),
+        .estimatedDocumentCount(),
     });
   } catch (error) {
     return res.status(500).send({ msg: 'An error occurred', error });
@@ -69,7 +69,9 @@ router.get('/users-total', authenticateApiKey, async (req, res) => {
     const db = await Database.getInstance(req);
 
     res.status(200).send({
-      users_counts: await db.collection(USERS_COLLECTION).countDocuments(),
+      users_counts: await db
+        .collection(USERS_COLLECTION)
+        .estimatedDocumentCount(),
     });
   } catch (error) {
     return res.status(500).send({ msg: 'An error occurred', error });
