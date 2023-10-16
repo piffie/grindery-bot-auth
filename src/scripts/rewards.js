@@ -612,3 +612,57 @@ async function updateParentTransactionHash() {
     process.exit(0);
   }
 }
+
+/**
+ * Calculate the average reward amount for unique users
+ */
+async function calculateAverageRewardAmount() {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+    const rewardsCollection = db.collection(REWARDS_COLLECTION); // Make sure to use the correct collection
+
+    // Get all rewards from the collection
+    const allRewards = await rewardsCollection.find({}).toArray();
+
+    // Create an object to store the total reward amount per user
+    const totalRewardAmounts = {};
+
+    // Iterate through all rewards to calculate the total per user
+    for (const reward of allRewards) {
+      const userTelegramID = reward.userTelegramID;
+      const amount = parseFloat(reward.amount); // Convert the string to a number
+
+      // Check if the user is already in the totalRewardAmounts object
+      if (totalRewardAmounts[userTelegramID]) {
+        totalRewardAmounts[userTelegramID] += amount;
+      } else {
+        totalRewardAmounts[userTelegramID] = amount;
+      }
+    }
+
+    // Count the number of unique users
+    const uniqueUserCount = Object.keys(totalRewardAmounts).length;
+
+    console.log('uniqueUserCount', uniqueUserCount);
+
+    // Calculate the average amount
+    let totalAmount = 0;
+    for (const userTelegramID in totalRewardAmounts) {
+      totalAmount += totalRewardAmounts[userTelegramID];
+    }
+    const averageAmount = totalAmount / uniqueUserCount;
+
+    // Display the average amount
+    console.log(`Average reward amount per user: ${averageAmount}`);
+  } catch (error) {
+    // Handle errors and log them
+    console.error(
+      'An error occurred while calculating the average reward amount:',
+      error
+    );
+  } finally {
+    // Exit the script
+    process.exit(0);
+  }
+}
