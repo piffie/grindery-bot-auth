@@ -28,9 +28,17 @@ export const mockTransactionHash =
   '0xd7ca91c2ed1c33fc97366861487e731f0eacbec2bdb76cd09b34679e6cade9b3';
 export const mockTransactionHash1 =
   '0x93c0ca80f2171b05b68531d176183efcbad940265be5e21b1c12d6f321bd44b9';
+export const mockTransactionHash2 =
+  '0x88be0d614f53ab6cc1339194356980711765ea1511105d4c582e79c099402911';
+export const mockUserOpHash =
+  '0x938cfe7b1fd476d96965d0dfecf86097bb05502856c8eabf175deac507328f3e';
+export const mockUserOpHash1 =
+  '0xacdf0f6fa96a50ca250f759dcd9502c3a16c65b076d6114fc5c53a832897e0a0';
 
 export const segmentIdentifyUrl = 'https://api.segment.io/v1/identify';
 export const segmentTrackUrl = 'https://api.segment.io/v1/track';
 export const patchwalletResolverUrl = 'https://paymagicapi.com/v1/resolver';
 export const patchwalletAuthUrl = 'https://paymagicapi.com/v1/auth';
 export const patchwalletTxUrl = 'https://paymagicapi.com/v1/kernel/tx';
+export const patchwalletTxStatusUrl =
+  'https://paymagicapi.com/v1/kernel/userOpHash';

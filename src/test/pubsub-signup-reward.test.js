@@ -12,6 +12,9 @@ import {
   collectionUsersMock,
   patchwalletAuthUrl,
   patchwalletTxUrl,
+  mockUserOpHash,
+  patchwalletTxStatusUrl,
+  mockUserOpHash1,
 } from './utils.js';
 import { handleSignUpReward } from '../utils/webhook.js';
 import Sinon from 'sinon';
@@ -45,6 +48,16 @@ describe('handleSignUpReward function', async function () {
           return Promise.resolve({
             data: {
               txHash: mockTransactionHash,
+              userOpHash: mockUserOpHash,
+            },
+          });
+        }
+
+        if (url === patchwalletTxStatusUrl) {
+          return Promise.resolve({
+            data: {
+              txHash: mockTransactionHash,
+              userOpHash: mockUserOpHash,
             },
           });
         }
@@ -537,7 +550,6 @@ describe('handleSignUpReward function', async function () {
             userName: mockUserName,
             amount: '100',
             message: 'Sign up reward',
-            dateAdded: new Date(),
             status: TRANSACTION_STATUS.PENDING,
           },
         ]);
@@ -565,6 +577,612 @@ describe('handleSignUpReward function', async function () {
             (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
           )
       ).to.be.undefined;
+    });
+  });
+
+  describe('Get transaction hash via userOpHash if transaction hash is empty first', async function () {
+    describe('Transaction hash is empty in tx PatchWallet endpoint', async function () {
+      beforeEach(async function () {
+        axiosStub.withArgs(patchwalletTxUrl).resolves({
+          data: {
+            txHash: '',
+            userOpHash: mockUserOpHash,
+          },
+        });
+      });
+
+      it('Should return false if transaction hash is empty in tx PatchWallet endpoint', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(result).to.be.false;
+      });
+
+      it('Should update reward database with a pending_hash status and userOpHash if transaction hash is empty in tx PatchWallet endpoint', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai
+          .expect(await collectionRewardsMock.find({}).toArray())
+          .excluding(['_id', 'dateAdded'])
+          .to.deep.equal([
+            {
+              eventId: rewardId,
+              userTelegramID: mockUserTelegramID,
+              responsePath: mockResponsePath,
+              walletAddress: mockWallet,
+              reason: 'user_sign_up',
+              userHandle: mockUserHandle,
+              userName: mockUserName,
+              amount: '100',
+              message: 'Sign up reward',
+              status: TRANSACTION_STATUS.PENDING_HASH,
+              userOpHash: mockUserOpHash,
+            },
+          ]);
+      });
+
+      it('Should not call FlowXO webhook if transaction hash is empty in tx PatchWallet endpoint', async function () {
+        await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(
+          axiosStub
+            .getCalls()
+            .find(
+              (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+            )
+        ).to.be.undefined;
+      });
+    });
+
+    describe('Transaction hash is present in PatchWallet status endpoint', async function () {
+      beforeEach(async function () {
+        await collectionRewardsMock.insertOne({
+          eventId: rewardId,
+          userTelegramID: mockUserTelegramID,
+          responsePath: mockResponsePath,
+          walletAddress: mockWallet,
+          reason: 'user_sign_up',
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+          amount: '100',
+          message: 'Sign up reward',
+          status: TRANSACTION_STATUS.PENDING_HASH,
+          userOpHash: mockUserOpHash,
+        });
+      });
+
+      it('Should return true if transaction hash is present in PatchWallet status endpoint', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(result).to.be.true;
+      });
+
+      it('Should not send tokens if transaction hash is present in PatchWallet status endpoint', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+        ).to.be.undefined;
+      });
+
+      it('Should update the database with a success status if transaction hash is present in PatchWallet status endpoint', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai
+          .expect(await collectionRewardsMock.find({}).toArray())
+          .excluding(['_id', 'dateAdded'])
+          .to.deep.equal([
+            {
+              eventId: rewardId,
+              userTelegramID: mockUserTelegramID,
+              responsePath: mockResponsePath,
+              walletAddress: mockWallet,
+              reason: 'user_sign_up',
+              userHandle: mockUserHandle,
+              userName: mockUserName,
+              amount: '100',
+              message: 'Sign up reward',
+              status: TRANSACTION_STATUS.SUCCESS,
+              transactionHash: mockTransactionHash,
+              userOpHash: mockUserOpHash,
+            },
+          ]);
+      });
+
+      it('Should call FlowXO webhook properly if transaction hash is present in PatchWallet status endpoint', async function () {
+        await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        const FlowXOCallArgs = axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+          ).args[1];
+
+        chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+          userTelegramID: mockUserTelegramID,
+          responsePath: mockResponsePath,
+          walletAddress: mockWallet,
+          reason: 'user_sign_up',
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+          amount: '100',
+          message: 'Sign up reward',
+          transactionHash: mockTransactionHash,
+        });
+
+        chai
+          .expect(FlowXOCallArgs.dateAdded)
+          .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
+        chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+      });
+    });
+
+    describe('Transaction hash is not present in PatchWallet status endpoint', async function () {
+      beforeEach(async function () {
+        await collectionRewardsMock.insertOne({
+          eventId: rewardId,
+          userTelegramID: mockUserTelegramID,
+          responsePath: mockResponsePath,
+          walletAddress: mockWallet,
+          reason: 'user_sign_up',
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+          amount: '100',
+          message: 'Sign up reward',
+          status: TRANSACTION_STATUS.PENDING_HASH,
+          userOpHash: mockUserOpHash,
+        });
+
+        axiosStub.withArgs(patchwalletTxStatusUrl).resolves({
+          data: {
+            txHash: '',
+            userOpHash: mockUserOpHash,
+          },
+        });
+      });
+
+      it('Should return false if transaction hash is not present in PatchWallet status endpoint', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(result).to.be.false;
+      });
+
+      it('Should not send tokens if transaction hash is not present in PatchWallet status endpoint', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+        ).to.be.undefined;
+      });
+
+      it('Should not update database if transaction hash is not present in PatchWallet status endpoint', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai
+          .expect(await collectionRewardsMock.find({}).toArray())
+          .excluding(['_id', 'dateAdded'])
+          .to.deep.equal([
+            {
+              eventId: rewardId,
+              userTelegramID: mockUserTelegramID,
+              responsePath: mockResponsePath,
+              walletAddress: mockWallet,
+              reason: 'user_sign_up',
+              userHandle: mockUserHandle,
+              userName: mockUserName,
+              amount: '100',
+              message: 'Sign up reward',
+              status: TRANSACTION_STATUS.PENDING_HASH,
+              userOpHash: mockUserOpHash,
+            },
+          ]);
+      });
+
+      it('Should not call FlowXO webhook if transaction hash is not present in PatchWallet status endpoint', async function () {
+        await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(
+          axiosStub
+            .getCalls()
+            .find(
+              (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+            )
+        ).to.be.undefined;
+      });
+    });
+
+    describe('Error in PatchWallet get status endpoint', async function () {
+      beforeEach(async function () {
+        await collectionRewardsMock.insertOne({
+          eventId: rewardId,
+          userTelegramID: mockUserTelegramID,
+          responsePath: mockResponsePath,
+          walletAddress: mockWallet,
+          reason: 'user_sign_up',
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+          amount: '100',
+          message: 'Sign up reward',
+          status: TRANSACTION_STATUS.PENDING_HASH,
+          userOpHash: mockUserOpHash,
+        });
+
+        axiosStub
+          .withArgs(patchwalletTxStatusUrl)
+          .rejects(new Error('Service not available'));
+      });
+
+      it('Should return false if Error in PatchWallet get status endpoint', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(result).to.be.false;
+      });
+
+      it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+        ).to.be.undefined;
+      });
+
+      it('Should not update database if Error in PatchWallet get status endpoint', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai
+          .expect(await collectionRewardsMock.find({}).toArray())
+          .excluding(['_id', 'dateAdded'])
+          .to.deep.equal([
+            {
+              eventId: rewardId,
+              userTelegramID: mockUserTelegramID,
+              responsePath: mockResponsePath,
+              walletAddress: mockWallet,
+              reason: 'user_sign_up',
+              userHandle: mockUserHandle,
+              userName: mockUserName,
+              amount: '100',
+              message: 'Sign up reward',
+              status: TRANSACTION_STATUS.PENDING_HASH,
+              userOpHash: mockUserOpHash,
+            },
+          ]);
+      });
+
+      it('Should not call FlowXO webhook if Error in PatchWallet get status endpoint', async function () {
+        await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(
+          axiosStub
+            .getCalls()
+            .find(
+              (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+            )
+        ).to.be.undefined;
+      });
+    });
+
+    describe('Transaction is set to success without transaction hash if pending_hash without userOpHash', async function () {
+      beforeEach(async function () {
+        await collectionRewardsMock.insertOne({
+          eventId: rewardId,
+          userTelegramID: mockUserTelegramID,
+          responsePath: mockResponsePath,
+          walletAddress: mockWallet,
+          reason: 'user_sign_up',
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+          amount: '100',
+          message: 'Sign up reward',
+          status: TRANSACTION_STATUS.PENDING_HASH,
+        });
+      });
+
+      it('Should return true if transaction hash is pending_hash without userOpHash', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(result).to.be.true;
+      });
+
+      it('Should not send tokens if transaction hash is pending_hash without userOpHash', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+        ).to.be.undefined;
+      });
+
+      it('Should update reward database with a success status if transaction hash is pending_hash without userOpHash', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai
+          .expect(await collectionRewardsMock.find({}).toArray())
+          .excluding(['_id', 'dateAdded'])
+          .to.deep.equal([
+            {
+              eventId: rewardId,
+              userTelegramID: mockUserTelegramID,
+              responsePath: mockResponsePath,
+              walletAddress: mockWallet,
+              reason: 'user_sign_up',
+              userHandle: mockUserHandle,
+              userName: mockUserName,
+              amount: '100',
+              message: 'Sign up reward',
+              status: TRANSACTION_STATUS.SUCCESS,
+            },
+          ]);
+      });
+
+      it('Should not call FlowXO webhook if transaction hash is empty in tx PatchWallet endpoint', async function () {
+        await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(
+          axiosStub
+            .getCalls()
+            .find(
+              (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+            )
+        ).to.be.undefined;
+      });
+    });
+
+    describe('Transaction is considered as failure after 10 min of trying to get status', async function () {
+      beforeEach(async function () {
+        await collectionRewardsMock.insertOne({
+          eventId: rewardId,
+          userTelegramID: mockUserTelegramID,
+          responsePath: mockResponsePath,
+          walletAddress: mockWallet,
+          reason: 'user_sign_up',
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+          amount: '100',
+          message: 'Sign up reward',
+          status: TRANSACTION_STATUS.PENDING_HASH,
+          userOpHash: mockUserOpHash,
+          dateAdded: new Date(Date.now() - 12 * 60 * 1000),
+        });
+
+        axiosStub.withArgs(patchwalletTxStatusUrl).resolves({
+          data: {
+            txHash: '',
+            userOpHash: mockUserOpHash,
+          },
+        });
+      });
+
+      it('Should return true after 10 min of trying to get status', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(result).to.be.true;
+      });
+
+      it('Should not send tokens after 10 min of trying to get status', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+        ).to.be.undefined;
+      });
+
+      it('Should update reward database with a failure status after 10 min of trying to get status', async function () {
+        const result = await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai
+          .expect(await collectionRewardsMock.find({}).toArray())
+          .excluding(['_id', 'dateAdded'])
+          .to.deep.equal([
+            {
+              eventId: rewardId,
+              userTelegramID: mockUserTelegramID,
+              responsePath: mockResponsePath,
+              walletAddress: mockWallet,
+              reason: 'user_sign_up',
+              userHandle: mockUserHandle,
+              userName: mockUserName,
+              amount: '100',
+              message: 'Sign up reward',
+              userOpHash: mockUserOpHash,
+              status: TRANSACTION_STATUS.FAILURE,
+            },
+          ]);
+      });
+
+      it('Should not call FlowXO webhook after 10 min of trying to get status', async function () {
+        await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        );
+
+        chai.expect(
+          axiosStub
+            .getCalls()
+            .find(
+              (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+            )
+        ).to.be.undefined;
+      });
     });
   });
 });
