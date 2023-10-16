@@ -227,7 +227,7 @@ async function removeRewardFromTransfers() {
 async function updateTransfersStatus() {
   try {
     const db = await Database.getInstance();
-    const transfersCollection = db.collection('transfers-test');
+    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
     const transfersToUpdate = await transfersCollection
       .find({ status: { $exists: false } })
       .toArray();

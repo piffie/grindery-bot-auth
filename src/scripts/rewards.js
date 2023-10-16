@@ -474,7 +474,7 @@ async function rewardsCleanup(fileName) {
 async function updateRewardsStatus() {
   try {
     const db = await Database.getInstance();
-    const rewardsCollection = db.collection('rewards');
+    const rewardsCollection = db.collection(REWARDS_COLLECTION);
     const rewardsToUpdate = await rewardsCollection
       .find({ status: { $exists: false } })
       .toArray();
