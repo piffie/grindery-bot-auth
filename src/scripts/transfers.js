@@ -223,3 +223,42 @@ async function removeRewardFromTransfers() {
     process.exit(0);
   }
 }
+
+async function updateTransfersStatus() {
+  try {
+    const db = await Database.getInstance();
+    const transfersCollection = db.collection('transfers-test');
+    const transfersToUpdate = await transfersCollection
+      .find({ status: { $exists: false } })
+      .toArray();
+    const bulkWriteOperations = [];
+
+    for (const transfer of transfersToUpdate) {
+      console.log('processing...');
+      const updateOperation = {
+        updateOne: {
+          filter: { _id: transfer._id },
+          update: { $set: { status: 'success' } },
+        },
+      };
+
+      bulkWriteOperations.push(updateOperation);
+    }
+
+    console.log('finish processing');
+
+    if (bulkWriteOperations.length > 0) {
+      const result = await transfersCollection.bulkWrite(bulkWriteOperations);
+
+      console.log(
+        `Updated ${result.modifiedCount} transfers with status: success`
+      );
+    } else {
+      console.log('No transfers to update.');
+    }
+  } catch (error) {
+    console.error('An error occurred:', error);
+  } finally {
+    process.exit(0);
+  }
+}

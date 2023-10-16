@@ -470,3 +470,42 @@ async function rewardsCleanup(fileName) {
       process.exit(1);
     });
 }
+
+async function updateRewardsStatus() {
+  try {
+    const db = await Database.getInstance();
+    const rewardsCollection = db.collection('rewards');
+    const rewardsToUpdate = await rewardsCollection
+      .find({ status: { $exists: false } })
+      .toArray();
+    const bulkWriteOperations = [];
+
+    for (const reward of rewardsToUpdate) {
+      console.log('Processing reward...');
+      const updateOperation = {
+        updateOne: {
+          filter: { _id: reward._id },
+          update: { $set: { status: 'success' } },
+        },
+      };
+
+      bulkWriteOperations.push(updateOperation);
+    }
+
+    console.log('Finished processing rewards');
+
+    if (bulkWriteOperations.length > 0) {
+      const result = await rewardsCollection.bulkWrite(bulkWriteOperations);
+
+      console.log(
+        `Updated ${result.modifiedCount} rewards with status: success`w
+      );
+    } else {
+      console.log('No rewards to update.');
+    }
+  } catch (error) {
+    console.error('An error occurred:', error);
+  } finally {
+    process.exit(0);
+  }
+}
