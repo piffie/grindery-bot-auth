@@ -340,7 +340,7 @@ describe('handleSignUpReward function', async function () {
   // ############################
   // ############################
 
-  describe('Sign up reward status pending with same eventID', async function () {
+  describe('Sign up reward status pending at the beginning with same eventID', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertOne({
         eventId: rewardId,
@@ -350,7 +350,7 @@ describe('handleSignUpReward function', async function () {
       });
     });
 
-    it('Should return true if Sign up reward status pending with same eventID', async function () {
+    it('Should return true if Sign up reward status pending at the beginning with same eventID', async function () {
       const result = await handleSignUpReward(
         dbMock,
         rewardId,
@@ -364,7 +364,7 @@ describe('handleSignUpReward function', async function () {
       chai.expect(result).to.be.true;
     });
 
-    it('Should call the sendTokens function properly if Sign up reward status pending with same eventID', async function () {
+    it('Should call the sendTokens function properly if Sign up reward status pending at the beginning with same eventID', async function () {
       const result = await handleSignUpReward(
         dbMock,
         rewardId,
@@ -392,7 +392,7 @@ describe('handleSignUpReward function', async function () {
         });
     });
 
-    it('Should update the database with a success if Sign up reward status pending with same eventID', async function () {
+    it('Should update the database with a success if Sign up reward status pending at the beginning with same eventID', async function () {
       const result = await handleSignUpReward(
         dbMock,
         rewardId,
@@ -423,7 +423,7 @@ describe('handleSignUpReward function', async function () {
         ]);
     });
 
-    it('Should call FlowXO properly if Sign up reward status pending with same eventID', async function () {
+    it('Should call FlowXO properly if Sign up reward status pending at the beginning with same eventID', async function () {
       const result = await handleSignUpReward(
         dbMock,
         rewardId,
@@ -463,59 +463,139 @@ describe('handleSignUpReward function', async function () {
   // ############################
   // ############################
 
-  it('Should return true, call the sendTokens function properly and update reward status if status is failure', async function () {
-    await collectionRewardsMock.insertOne({
-      eventId: rewardId,
-      userTelegramID: mockUserTelegramID,
-      reason: 'user_sign_up',
-      status: TRANSACTION_STATUS.FAILURE,
+  // ############################
+  // ############################
+  // ############################
+
+  describe('Sign up reward status failure at the beginning with same eventID', async function () {
+    beforeEach(async function () {
+      await collectionRewardsMock.insertOne({
+        eventId: rewardId,
+        userTelegramID: mockUserTelegramID,
+        reason: 'user_sign_up',
+        status: TRANSACTION_STATUS.FAILURE,
+      });
     });
 
-    const result = await handleSignUpReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
+    it('Should return true if Sign up reward status is failure at beginning with same eventID', async function () {
+      const result = await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
 
-    chai.expect(result).to.be.true;
-    chai
-      .expect(
-        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
-          .args[1]
-      )
-      .to.deep.equal({
-        userId: `grindery:${process.env.SOURCE_TG_ID}`,
-        chain: 'matic',
-        to: [process.env.G1_POLYGON_ADDRESS],
-        value: ['0x00'],
-        data: [
-          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
-        ],
-        auth: '',
+      chai.expect(result).to.be.true;
+    });
+
+    it('Should call the sendTokens function properly if Sign up reward status is failure at beginning with same eventID', async function () {
+      const result = await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai
+        .expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+            .args[1]
+        )
+        .to.deep.equal({
+          userId: `grindery:${process.env.SOURCE_TG_ID}`,
+          chain: 'matic',
+          to: [process.env.G1_POLYGON_ADDRESS],
+          value: ['0x00'],
+          data: [
+            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+          ],
+          auth: '',
+        });
+    });
+
+    it('Should update reward status if Sign up reward status is failure at beginning with same eventID', async function () {
+      const result = await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      const rewards = await collectionRewardsMock.find({}).toArray();
+
+      chai
+        .expect(rewards)
+        .excluding(['_id', 'dateAdded'])
+        .to.deep.equal([
+          {
+            eventId: rewardId,
+            userTelegramID: mockUserTelegramID,
+            responsePath: mockResponsePath,
+            walletAddress: mockWallet,
+            reason: 'user_sign_up',
+            userHandle: mockUserHandle,
+            userName: mockUserName,
+            amount: '100',
+            message: 'Sign up reward',
+            transactionHash: mockTransactionHash,
+            status: TRANSACTION_STATUS.SUCCESS,
+          },
+        ]);
+
+      chai
+        .expect(rewards[0].dateAdded)
+        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
+      chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
+    });
+
+    it('Should call FlowXO properly if Sign up reward status is failure at beginning with same eventID', async function () {
+      const result = await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      const FlowXOCallArgs = axiosStub
+        .getCalls()
+        .find(
+          (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+        ).args[1];
+
+      chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+        userTelegramID: mockUserTelegramID,
+        responsePath: mockResponsePath,
+        walletAddress: mockWallet,
+        reason: 'user_sign_up',
+        userHandle: mockUserHandle,
+        userName: mockUserName,
+        amount: '100',
+        message: 'Sign up reward',
+        transactionHash: mockTransactionHash,
       });
-    chai
-      .expect(await collectionRewardsMock.find({}).toArray())
-      .excluding(['_id', 'dateAdded'])
-      .to.deep.equal([
-        {
-          eventId: rewardId,
-          userTelegramID: mockUserTelegramID,
-          responsePath: mockResponsePath,
-          walletAddress: mockWallet,
-          reason: 'user_sign_up',
-          userHandle: mockUserHandle,
-          userName: mockUserName,
-          amount: '100',
-          message: 'Sign up reward',
-          transactionHash: mockTransactionHash,
-          status: TRANSACTION_STATUS.SUCCESS,
-        },
-      ]);
+
+      chai
+        .expect(FlowXOCallArgs.dateAdded)
+        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
+      chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+    });
   });
+
+  // ############################
+  // ############################
+  // ############################
 
   it('Should call the sendTokens function properly if the user is new', async function () {
     await handleSignUpReward(
