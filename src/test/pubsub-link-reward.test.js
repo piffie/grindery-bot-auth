@@ -14,7 +14,6 @@ import {
   patchwalletTxUrl,
   patchwalletResolverUrl,
   patchwalletAuthUrl,
-  mockUserName1,
   patchwalletTxStatusUrl,
   mockUserOpHash,
 } from './utils.js';

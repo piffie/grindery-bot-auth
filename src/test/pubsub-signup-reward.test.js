@@ -14,7 +14,6 @@ import {
   patchwalletTxUrl,
   mockUserOpHash,
   patchwalletTxStatusUrl,
-  mockUserOpHash1,
 } from './utils.js';
 import { handleSignUpReward } from '../utils/webhook.js';
 import Sinon from 'sinon';

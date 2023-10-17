@@ -23,7 +23,6 @@ import axios from 'axios';
 import 'dotenv/config';
 import chaiExclude from 'chai-exclude';
 import { TRANSACTION_STATUS } from '../utils/constants.js';
-import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 
 chai.use(chaiExclude);
