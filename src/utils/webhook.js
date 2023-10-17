@@ -300,10 +300,15 @@ export async function handleReferralReward(
         recipientTgId: userTelegramID,
       })
       .toArray()) {
+      // Retrieve sender information from the "users" collection
+      const senderInformation = await db
+        .collection(USERS_COLLECTION)
+        .findOne({ userTelegramID: transfer.senderTgId });
+
       const reward = await db.collection(REWARDS_COLLECTION).findOne({
         reason: '2x_reward',
         eventId: eventId,
-        parentTransactionHash: transfer.transactionHash,
+        userTelegramID: senderInformation.userTelegramID,
       });
 
       if (
@@ -311,16 +316,12 @@ export async function handleReferralReward(
         (await db.collection(REWARDS_COLLECTION).findOne({
           reason: '2x_reward',
           eventId: { $ne: eventId },
+          userTelegramID: senderInformation.userTelegramID,
           parentTransactionHash: transfer.transactionHash,
         }))
       ) {
         continue;
       }
-
-      // Retrieve sender information from the "users" collection
-      const senderInformation = await db
-        .collection(USERS_COLLECTION)
-        .findOne({ userTelegramID: transfer.senderTgId });
 
       const senderWallet =
         senderInformation?.patchwallet ??
@@ -359,7 +360,7 @@ export async function handleReferralReward(
             {
               eventId: eventId,
               reason: '2x_reward',
-              parentTransactionHash: transfer.transactionHash,
+              userTelegramID: senderInformation.userTelegramID,
             },
             {
               $set: {
@@ -398,7 +399,7 @@ export async function handleReferralReward(
             {
               eventId: eventId,
               reason: '2x_reward',
-              parentTransactionHash: transfer.transactionHash,
+              userTelegramID: senderInformation.userTelegramID,
             },
             {
               $set: {
@@ -446,7 +447,7 @@ export async function handleReferralReward(
           {
             eventId: eventId,
             reason: '2x_reward',
-            parentTransactionHash: transfer.transactionHash,
+            userTelegramID: senderInformation.userTelegramID,
           },
           {
             $set: {
@@ -499,7 +500,7 @@ export async function handleReferralReward(
           {
             eventId: eventId,
             reason: '2x_reward',
-            parentTransactionHash: transfer.transactionHash,
+            userTelegramID: senderInformation.userTelegramID,
           },
           {
             $set: {

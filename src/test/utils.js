@@ -22,6 +22,18 @@ export const mockUserHandle1 = 'myUserHandle1';
 export const mockUserName1 = 'myUserName1';
 export const mockWallet1 = '0x594CfCaa67Bc8789D17D39eb5F1DfC7dD95242cd';
 
+export const mockUserTelegramID2 = '2114276931';
+export const mockResponsePath2 = '64d170d6dc5a2a45328ad6f6/c/43320453';
+export const mockUserHandle2 = 'myUserHandle2';
+export const mockUserName2 = 'myUserName2';
+export const mockWallet2 = '0x699791A03Ac2B58E1B7cA29B601C69F223c78e9c';
+
+export const mockUserTelegramID3 = '2114276967';
+export const mockResponsePath3 = '64d170d6dc5a2a45328ad6f6/c/43322353';
+export const mockUserHandle3 = 'myUserHandle3';
+export const mockUserName3 = 'myUserName3';
+export const mockWallet3 = '0x51a1449b3B6D635EddeC781cD47a99221712De97';
+
 export const mockAccessToken =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 export const mockTransactionHash =
@@ -34,6 +46,8 @@ export const mockUserOpHash =
   '0x938cfe7b1fd476d96965d0dfecf86097bb05502856c8eabf175deac507328f3e';
 export const mockUserOpHash1 =
   '0xacdf0f6fa96a50ca250f759dcd9502c3a16c65b076d6114fc5c53a832897e0a0';
+export const mockUserOpHash2 =
+  '0x072d67eb495c7be8d14f188043065e3c7054a1d12bb15101710c90fea11330cd';
 
 export const segmentIdentifyUrl = 'https://api.segment.io/v1/identify';
 export const segmentTrackUrl = 'https://api.segment.io/v1/track';
