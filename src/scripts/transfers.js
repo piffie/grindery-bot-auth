@@ -284,10 +284,8 @@ async function importMissingTransferFromCSV(fileName) {
       transfers.push(row);
     })
     .on('end', async () => {
-      // Step 1: Create a set of existing transaction hashes
       const existingHashes = await collection.distinct('transactionHash');
 
-      // Step 2: Filter the transfers to find the missing ones
       const missingTransfers = transfers.filter(
         (transfer) => !existingHashes.includes(transfer.transaction_hash)
       );
@@ -302,13 +300,11 @@ async function importMissingTransferFromCSV(fileName) {
         missingTransfers.length
       );
 
-      // Step 3: Format missing transfers
       let count = 1;
       for (const transfer of missingTransfers) {
         console.log(
           `Formating transfer index: ${count} - total: ${missingTransfers.length} `
         );
-        // Retrieve user information for sender
         const senderUser = await usersCollection.findOne({
           patchwallet: web3.utils.toChecksumAddress(transfer.from_address),
         });
@@ -316,7 +312,6 @@ async function importMissingTransferFromCSV(fileName) {
         const senderName = senderUser ? senderUser.userName : undefined;
         const senderHandle = senderUser ? senderUser.userHandle : undefined;
 
-        // Retrieve user information for recipient
         const recipientUser = await usersCollection.findOne({
           patchwallet: web3.utils.toChecksumAddress(transfer.to_address),
         });
@@ -343,7 +338,6 @@ async function importMissingTransferFromCSV(fileName) {
         count++;
       }
 
-      // Step 4: Batch insert the missing transfers into the collection
       if (formattedMissingTransfers.length > 0) {
         const collectionTest = db.collection('transfers-test');
 

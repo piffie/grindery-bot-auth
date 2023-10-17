@@ -588,14 +588,13 @@ async function importMissingRewardsFromCSV(fileName) {
         count++;
       }
 
-      // Step 4: Batch insert the missing rewards into the collection
-      // if (formattedMissingRewards.length > 0) {
-      //   for (let i = 0; i < formattedMissingRewards.length; i += batchSize) {
-      //     const batch = formattedMissingRewards.slice(i, i + batchSize);
-      //     await rewardsCollection.insertMany(batch);
-      //     console.log(`Inserted batch ${i / batchSize + 1}`);
-      //   }
-      // }
+      if (formattedMissingRewards.length > 0) {
+        for (let i = 0; i < formattedMissingRewards.length; i += batchSize) {
+          const batch = formattedMissingRewards.slice(i, i + batchSize);
+          await rewardsCollection.insertMany(batch);
+          console.log(`Inserted batch ${i / batchSize + 1}`);
+        }
+      }
 
       console.log('\n All data has been read \n');
     })
