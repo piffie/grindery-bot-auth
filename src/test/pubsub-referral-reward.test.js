@@ -192,221 +192,404 @@ describe('handleReferralReward function', function () {
   // ###########################################
   // ###########################################
 
-  it('Should return true and not send any tokens if there are no proper transactions', async function () {
-    await collectionUsersMock.insertMany([
-      {
-        patchwallet: mockWallet,
-        userTelegramID: mockUserTelegramID,
-        responsePath: mockResponsePath,
-        userHandle: mockUserHandle,
-        userName: mockUserName,
-      },
-      {
-        patchwallet: mockWallet,
-        userTelegramID: mockUserTelegramID1,
-        responsePath: mockResponsePath,
-        userHandle: mockUserHandle,
-        userName: mockUserName,
-      },
-    ]);
+  // ###########################################
+  // ###########################################
+  // ###########################################
 
-    await collectionTransfersMock.insertMany([
-      {
-        transactionHash: mockTransactionHash,
-        senderTgId: mockUserTelegramID,
-        recipientTgId: 'anotherRecipient',
-      },
-      {
-        transactionHash: mockTransactionHash1,
-        senderTgId: mockUserTelegramID1,
-        recipientTgId: 'anotherRecipient1',
-      },
-    ]);
+  describe('The transaction is already rewarded with the same eventId', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertMany([
+        {
+          patchwallet: mockWallet,
+          userTelegramID: mockUserTelegramID,
+          responsePath: mockResponsePath,
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+        },
+        {
+          patchwallet: mockWallet,
+          userTelegramID: mockUserTelegramID1,
+          responsePath: mockResponsePath,
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+        },
+      ]);
 
-    const result = await handleReferralReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
+      await collectionTransfersMock.insertMany([
+        {
+          transactionHash: mockTransactionHash,
+          senderTgId: mockUserTelegramID,
+          recipientTgId: 'anotherRecipient',
+        },
+        {
+          transactionHash: mockTransactionHash1,
+          senderTgId: mockUserTelegramID1,
+          recipientTgId: 'anotherRecipient1',
+        },
+      ]);
 
-    chai.expect(result).to.be.true;
-
-    chai.expect(
-      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
-    ).to.be.undefined;
-  });
-
-  it('Should not send any tokens, return true and not update the database if the transaction is already rewarded', async function () {
-    await collectionUsersMock.insertMany([
-      {
-        patchwallet: mockWallet,
-        userTelegramID: mockUserTelegramID,
-        responsePath: mockResponsePath,
-        userHandle: mockUserHandle,
-        userName: mockUserName,
-      },
-      {
-        patchwallet: mockWallet,
-        userTelegramID: mockUserTelegramID1,
-        responsePath: mockResponsePath,
-        userHandle: mockUserHandle,
-        userName: mockUserName,
-      },
-    ]);
-
-    await collectionTransfersMock.insertOne({
-      transactionHash: mockTransactionHash,
-      senderTgId: mockUserTelegramID1,
-      recipientTgId: mockUserTelegramID,
-    });
-
-    await collectionRewardsMock.insertOne({
-      eventId: rewardId,
-      reason: '2x_reward',
-      parentTransactionHash: mockTransactionHash,
-      status: TRANSACTION_STATUS.SUCCESS,
-    });
-
-    const result = await handleReferralReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
-
-    chai.expect(result).to.be.true;
-    chai.expect(
-      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
-    ).to.be.undefined;
-    chai
-      .expect(await collectionRewardsMock.find({}).toArray())
-      .excluding(['_id', 'dateAdded'])
-      .to.deep.equal([
+      await collectionRewardsMock.insertMany([
         {
           eventId: rewardId,
           reason: '2x_reward',
           parentTransactionHash: mockTransactionHash,
           status: TRANSACTION_STATUS.SUCCESS,
         },
+        {
+          eventId: rewardId,
+          reason: '2x_reward',
+          parentTransactionHash: mockTransactionHash1,
+          status: TRANSACTION_STATUS.SUCCESS,
+        },
       ]);
+    });
+
+    it('Should return true if The transaction is already rewarded with the same eventId', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(result).to.be.true;
+    });
+
+    it('Should not send any tokens if The transaction is already rewarded with the same eventId', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+    });
+
+    it('Should not update the database if The transaction is already rewarded with the same eventId', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai
+        .expect(await collectionRewardsMock.find({}).toArray())
+        .excluding(['_id', 'dateAdded'])
+        .to.deep.equal([
+          {
+            eventId: rewardId,
+            reason: '2x_reward',
+            parentTransactionHash: mockTransactionHash,
+            status: TRANSACTION_STATUS.SUCCESS,
+          },
+          {
+            eventId: rewardId,
+            reason: '2x_reward',
+            parentTransactionHash: mockTransactionHash1,
+            status: TRANSACTION_STATUS.SUCCESS,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if The transaction is already rewarded with the same eventId', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
   });
 
-  it('Should not send any tokens, return true and no change to the database if the transaction is already in rewarding process in another event', async function () {
-    await collectionUsersMock.insertMany([
-      {
-        patchwallet: mockWallet,
-        userTelegramID: mockUserTelegramID,
-        responsePath: mockResponsePath,
-        userHandle: mockUserHandle,
-        userName: mockUserName,
-      },
-      {
-        patchwallet: mockWallet,
-        userTelegramID: mockUserTelegramID1,
-        responsePath: mockResponsePath,
-        userHandle: mockUserHandle,
-        userName: mockUserName,
-      },
-    ]);
+  // ###########################################
+  // ###########################################
+  // ###########################################
 
-    await collectionTransfersMock.insertOne({
-      transactionHash: mockTransactionHash,
-      senderTgId: mockUserTelegramID1,
-      recipientTgId: mockUserTelegramID,
-    });
+  // ###########################################
+  // ###########################################
+  // ###########################################
 
-    await collectionRewardsMock.insertOne({
-      eventId: 'anotherEventId',
-      reason: '2x_reward',
-      parentTransactionHash: mockTransactionHash,
-    });
+  describe('The transaction is already rewarded with another eventId', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertMany([
+        {
+          patchwallet: mockWallet,
+          userTelegramID: mockUserTelegramID,
+          responsePath: mockResponsePath,
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+        },
+        {
+          patchwallet: mockWallet,
+          userTelegramID: mockUserTelegramID1,
+          responsePath: mockResponsePath,
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+        },
+      ]);
 
-    const result = await handleReferralReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
+      await collectionTransfersMock.insertMany([
+        {
+          transactionHash: mockTransactionHash,
+          senderTgId: mockUserTelegramID,
+          recipientTgId: 'anotherRecipient',
+        },
+        {
+          transactionHash: mockTransactionHash1,
+          senderTgId: mockUserTelegramID1,
+          recipientTgId: 'anotherRecipient1',
+        },
+      ]);
 
-    chai.expect(result).to.be.true;
-    chai.expect(
-      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
-    ).to.be.undefined;
-    chai
-      .expect(await collectionRewardsMock.find({}).toArray())
-      .excluding(['_id', 'dateAdded'])
-      .to.deep.equal([
+      await collectionRewardsMock.insertMany([
         {
           eventId: 'anotherEventId',
           reason: '2x_reward',
           parentTransactionHash: mockTransactionHash,
         },
+        {
+          eventId: 'anotherEventId',
+          reason: '2x_reward',
+          parentTransactionHash: mockTransactionHash1,
+        },
       ]);
+    });
+
+    it('Should return true if The transaction is already rewarded with another eventId', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(result).to.be.true;
+    });
+
+    it('Should not send any tokens if The transaction is already rewarded with another eventId', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+    });
+
+    it('Should not update the database if The transaction is already rewarded with another eventId', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai
+        .expect(await collectionRewardsMock.find({}).toArray())
+        .excluding(['_id', 'dateAdded'])
+        .to.deep.equal([
+          {
+            eventId: 'anotherEventId',
+            reason: '2x_reward',
+            parentTransactionHash: mockTransactionHash,
+          },
+          {
+            eventId: 'anotherEventId',
+            reason: '2x_reward',
+            parentTransactionHash: mockTransactionHash1,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if The transaction is already rewarded with another eventId', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
   });
 
-  it('Should not send any tokens, return true and no change to the database if the transaction is already in rewarding process in another event without eventId', async function () {
-    await collectionUsersMock.insertMany([
-      {
-        patchwallet: mockWallet,
-        userTelegramID: mockUserTelegramID,
-        responsePath: mockResponsePath,
-        userHandle: mockUserHandle,
-        userName: mockUserName,
-      },
-      {
-        patchwallet: mockWallet,
-        userTelegramID: mockUserTelegramID1,
-        responsePath: mockResponsePath,
-        userHandle: mockUserHandle,
-        userName: mockUserName,
-      },
-    ]);
+  // ###########################################
+  // ###########################################
+  // ###########################################
 
-    await collectionTransfersMock.insertOne({
-      transactionHash: mockTransactionHash,
-      senderTgId: mockUserTelegramID1,
-      recipientTgId: mockUserTelegramID,
-    });
+  // ###########################################
+  // ###########################################
+  // ###########################################
 
-    await collectionRewardsMock.insertOne({
-      reason: '2x_reward',
-      parentTransactionHash: mockTransactionHash,
-    });
+  describe('The transaction is already rewarded with no eventId', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertMany([
+        {
+          patchwallet: mockWallet,
+          userTelegramID: mockUserTelegramID,
+          responsePath: mockResponsePath,
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+        },
+        {
+          patchwallet: mockWallet,
+          userTelegramID: mockUserTelegramID1,
+          responsePath: mockResponsePath,
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+        },
+      ]);
 
-    const result = await handleReferralReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
+      await collectionTransfersMock.insertMany([
+        {
+          transactionHash: mockTransactionHash,
+          senderTgId: mockUserTelegramID,
+          recipientTgId: 'anotherRecipient',
+        },
+        {
+          transactionHash: mockTransactionHash1,
+          senderTgId: mockUserTelegramID1,
+          recipientTgId: 'anotherRecipient1',
+        },
+      ]);
 
-    chai.expect(result).to.be.true;
-    chai.expect(
-      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
-    ).to.be.undefined;
-    chai
-      .expect(await collectionRewardsMock.find({}).toArray())
-      .excluding(['_id', 'dateAdded'])
-      .to.deep.equal([
+      await collectionRewardsMock.insertMany([
         {
           reason: '2x_reward',
           parentTransactionHash: mockTransactionHash,
         },
+        {
+          reason: '2x_reward',
+          parentTransactionHash: mockTransactionHash1,
+        },
       ]);
+    });
+
+    it('Should return true if The transaction is already rewarded with no eventId', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(result).to.be.true;
+    });
+
+    it('Should not send any tokens if The transaction is already rewarded with no eventId', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+    });
+
+    it('Should not update the database if The transaction is already rewarded with no eventId', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai
+        .expect(await collectionRewardsMock.find({}).toArray())
+        .excluding(['_id', 'dateAdded'])
+        .to.deep.equal([
+          {
+            reason: '2x_reward',
+            parentTransactionHash: mockTransactionHash,
+          },
+          {
+            reason: '2x_reward',
+            parentTransactionHash: mockTransactionHash1,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if The transaction is already rewarded with no eventId', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
   });
+
+  // ###########################################
+  // ###########################################
+  // ###########################################
 
   it('Should return true, call the sendTokens function properly and add success reward in database if the reward is pending', async function () {
     await collectionUsersMock.insertOne({
