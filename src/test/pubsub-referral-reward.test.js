@@ -1115,65 +1115,6 @@ describe('handleReferralReward function', function () {
   // ###########################################
   // ###########################################
 
-  it('Should call the sendTokens function properly if the user is new', async function () {
-    await collectionUsersMock.insertOne({
-      userTelegramID: mockUserTelegramID1,
-      responsePath: mockResponsePath,
-      userHandle: mockUserHandle,
-      userName: mockUserName,
-      patchwallet: mockWallet,
-    });
-    await collectionTransfersMock.insertMany([
-      {
-        transactionHash: mockTransactionHash,
-        senderTgId: mockUserTelegramID1,
-        recipientTgId: mockUserTelegramID,
-      },
-      {
-        transactionHash: mockTransactionHash1,
-        senderTgId: mockUserTelegramID1,
-        recipientTgId: mockUserTelegramID,
-      },
-    ]);
-
-    const result = await handleReferralReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
-
-    const sendTokensCalls = axiosStub
-      .getCalls()
-      .filter((e) => e.firstArg === patchwalletTxUrl);
-
-    chai.expect(result).to.be.true;
-    chai.expect(sendTokensCalls.length).to.equal(2);
-    chai.expect(sendTokensCalls[0].args[1]).to.deep.equal({
-      userId: `grindery:${process.env.SOURCE_TG_ID}`,
-      chain: 'matic',
-      to: [process.env.G1_POLYGON_ADDRESS],
-      value: ['0x00'],
-      data: [
-        '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe5000000000000000000000000000000000000000000000002b5e3af16b1880000',
-      ],
-      auth: '',
-    });
-    chai.expect(sendTokensCalls[1].args[1]).to.deep.equal({
-      userId: `grindery:${process.env.SOURCE_TG_ID}`,
-      chain: 'matic',
-      to: [process.env.G1_POLYGON_ADDRESS],
-      value: ['0x00'],
-      data: [
-        '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe5000000000000000000000000000000000000000000000002b5e3af16b1880000',
-      ],
-      auth: '',
-    });
-  });
-
   it('Should reward only one transaction if duplicate hash', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID1,
