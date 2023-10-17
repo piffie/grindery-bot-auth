@@ -84,124 +84,238 @@ describe('handleLinkReward function', async function () {
     sandbox.restore();
   });
 
-  it('Should return true if referent is not a user', async function () {
-    chai.expect(
+  describe('Referent is not a user', async function () {
+    it('Should return true if referent is not a user', async function () {
+      chai.expect(
+        await handleLinkReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockUserTelegramID1
+        )
+      ).to.be.true;
+    });
+
+    it('Should not send tokens if referent is not a user', async function () {
       await handleLinkReward(
         dbMock,
         rewardId,
         mockUserTelegramID,
         mockUserTelegramID1
-      )
-    ).to.be.true;
-  });
+      );
 
-  it('Should not send tokens if referent is not a user', async function () {
-    await handleLinkReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockUserTelegramID1
-    );
-
-    chai.expect(
-      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
-    ).to.be.undefined;
-  });
-
-  it('Should not fill the reward database if referent is not a user', async function () {
-    await handleLinkReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockUserTelegramID1
-    );
-
-    chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
-  });
-
-  it('Should return true and not sending reward if user already sponsored someone else in another reward process', async function () {
-    await collectionUsersMock.insertOne({
-      userTelegramID: mockUserTelegramID1,
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
     });
 
-    await collectionRewardsMock.insertOne({
-      sponsoredUserTelegramID: mockUserTelegramID,
-      userTelegramID: mockUserTelegramID1,
-      responsePath: mockResponsePath,
-      walletAddress: mockWallet,
-      reason: 'referral_link',
-      userHandle: mockUserHandle,
-      userName: mockUserName,
-      amount: '10',
-      message: 'Referral link',
-      transactionHash: mockTransactionHash,
-    });
-    chai.expect(
+    it('Should not fill the reward database if referent is not a user', async function () {
       await handleLinkReward(
         dbMock,
         rewardId,
         mockUserTelegramID,
         mockUserTelegramID1
-      )
-    ).to.be.true;
-    chai
-      .expect(await collectionRewardsMock.find({}).toArray())
-      .excluding(['_id', 'dateAdded'])
-      .to.deep.equal([
-        {
-          sponsoredUserTelegramID: mockUserTelegramID,
-          userTelegramID: mockUserTelegramID1,
-          responsePath: mockResponsePath,
-          walletAddress: mockWallet,
-          reason: 'referral_link',
-          userHandle: mockUserHandle,
-          userName: mockUserName,
-          amount: '10',
-          message: 'Referral link',
-          transactionHash: mockTransactionHash,
-        },
-      ]);
-    chai.expect(
-      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
-    ).to.be.undefined;
+      );
+
+      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+    });
+
+    it('Should not call FlowXO if referent is not a user', async function () {
+      await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      );
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_LINK_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
   });
 
-  it('Should return true and not send new reward if the link reward is already success', async function () {
-    await collectionUsersMock.insertOne({
-      userTelegramID: mockUserTelegramID1,
+  describe('User already sponsored someone else', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID1,
+      });
+
+      await collectionRewardsMock.insertOne({
+        sponsoredUserTelegramID: mockUserTelegramID,
+        userTelegramID: mockUserTelegramID1,
+        responsePath: mockResponsePath,
+        walletAddress: mockWallet,
+        reason: 'referral_link',
+        userHandle: mockUserHandle,
+        userName: mockUserName,
+        amount: '10',
+        message: 'Referral link',
+        transactionHash: mockTransactionHash,
+      });
     });
 
-    await collectionRewardsMock.insertOne({
-      eventId: rewardId,
-      sponsoredUserTelegramID: mockUserTelegramID,
-      userTelegramID: mockUserTelegramID1,
-      reason: 'referral_link',
-      status: TRANSACTION_STATUS.SUCCESS,
+    it('Should return true if user already sponsored someone else in another reward process', async function () {
+      chai.expect(
+        await handleLinkReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockUserTelegramID1
+        )
+      ).to.be.true;
     });
 
-    const result = await handleLinkReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockUserTelegramID1
-    );
+    it('Should not send tokens if user already sponsored someone else in another reward process', async function () {
+      const result = await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      );
 
-    chai.expect(result).to.be.true;
-    chai
-      .expect(await collectionRewardsMock.find({}).toArray())
-      .excluding(['_id', 'dateAdded'])
-      .to.deep.equal([
-        {
-          eventId: rewardId,
-          sponsoredUserTelegramID: mockUserTelegramID,
-          userTelegramID: mockUserTelegramID1,
-          reason: 'referral_link',
-          status: TRANSACTION_STATUS.SUCCESS,
-        },
-      ]);
-    chai.expect(
-      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
-    ).to.be.undefined;
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+    });
+
+    it('Should not update the database if user already sponsored someone else in another reward process', async function () {
+      const result = await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      );
+      chai
+        .expect(await collectionRewardsMock.find({}).toArray())
+        .excluding(['_id', 'dateAdded'])
+        .to.deep.equal([
+          {
+            sponsoredUserTelegramID: mockUserTelegramID,
+            userTelegramID: mockUserTelegramID1,
+            responsePath: mockResponsePath,
+            walletAddress: mockWallet,
+            reason: 'referral_link',
+            userHandle: mockUserHandle,
+            userName: mockUserName,
+            amount: '10',
+            message: 'Referral link',
+            transactionHash: mockTransactionHash,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if user already sponsored someone else in another reward process', async function () {
+      const result = await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      );
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_LINK_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
+  });
+
+  describe('This eventId link reward is already a success', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID1,
+      });
+
+      await collectionRewardsMock.insertOne({
+        eventId: rewardId,
+        sponsoredUserTelegramID: mockUserTelegramID,
+        userTelegramID: mockUserTelegramID1,
+        responsePath: mockResponsePath,
+        walletAddress: mockWallet,
+        reason: 'referral_link',
+        userHandle: mockUserHandle,
+        userName: mockUserName,
+        amount: '10',
+        message: 'Referral link',
+        transactionHash: mockTransactionHash,
+        status: TRANSACTION_STATUS.SUCCESS,
+      });
+    });
+
+    it('Should return true if This eventId link reward is already a success', async function () {
+      chai.expect(
+        await handleLinkReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockUserTelegramID1
+        )
+      ).to.be.true;
+    });
+
+    it('Should not send tokens if This eventId link reward is already a success', async function () {
+      const result = await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      );
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+    });
+
+    it('Should not update the database if This eventId link reward is already a success', async function () {
+      const result = await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      );
+      chai
+        .expect(await collectionRewardsMock.find({}).toArray())
+        .excluding(['_id', 'dateAdded'])
+        .to.deep.equal([
+          {
+            eventId: rewardId,
+            sponsoredUserTelegramID: mockUserTelegramID,
+            userTelegramID: mockUserTelegramID1,
+            responsePath: mockResponsePath,
+            walletAddress: mockWallet,
+            reason: 'referral_link',
+            userHandle: mockUserHandle,
+            userName: mockUserName,
+            amount: '10',
+            message: 'Referral link',
+            transactionHash: mockTransactionHash,
+            status: TRANSACTION_STATUS.SUCCESS,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if This eventId link reward is already a success', async function () {
+      const result = await handleLinkReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockUserTelegramID1
+      );
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_LINK_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
   });
 
   it('Should return true and not send new reward if another link reward for the sponsored user already in process', async function () {
