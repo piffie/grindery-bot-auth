@@ -1,5 +1,5 @@
 import express from 'express';
-import { PubSub } from '@google-cloud/pubsub';
+import { PubSub, Duration } from '@google-cloud/pubsub';
 import { authenticateApiKey } from '../utils/auth.js';
 import { handleNewReward, handleNewTransaction } from '../utils/webhook.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -75,8 +75,8 @@ router.post('/', authenticateApiKey, async (req, res) => {
 const listenForMessages = () => {
   // get subscription
   const subscription = pubSubClient.subscription(subscriptionName, {
-    minAckDeadline: 60,
-    maxAckDeadline: 1200,
+    minAckDeadline: new Duration(60 * 1000),
+    maxAckDeadline: new Duration(1200 * 1000),
     flowControl: {
       maxMessages: 5
     }
