@@ -826,48 +826,94 @@ describe('handleNewTransaction function', async function () {
     });
   });
 
-  it('Should return true and transaction status to failure in database if error 470 in PatchWallet transaction', async function () {
-    axiosStub.withArgs(patchwalletTxUrl).rejects({
-      response: {
-        status: 470,
-      },
-    });
-
-    await collectionUsersMock.insertOne({
-      userTelegramID: mockUserTelegramID,
-      userName: mockUserName,
-      userHandle: mockUserHandle,
-      patchwallet: mockWallet,
-      responsePath: mockResponsePath,
-    });
-
-    const result = await handleNewTransaction({
-      senderTgId: mockUserTelegramID,
-      amount: '100',
-      recipientTgId: mockUserTelegramID1,
-      eventId: txId,
-    });
-
-    chai.expect(result).to.be.true;
-    chai
-      .expect(await collectionTransfersMock.find({}).toArray())
-      .excluding(['dateAdded', '_id'])
-      .to.deep.equal([
-        {
-          eventId: txId,
-          chainId: 'eip155:137',
-          tokenSymbol: 'g1',
-          tokenAddress: process.env.G1_POLYGON_ADDRESS,
-          senderTgId: mockUserTelegramID,
-          senderWallet: mockWallet,
-          senderName: mockUserName,
-          senderHandle: mockUserHandle,
-          recipientTgId: mockUserTelegramID1,
-          recipientWallet: mockWallet,
-          tokenAmount: '100',
-          status: TRANSACTION_STATUS.FAILURE,
+  describe('PatchWallet 470 error', async function () {
+    beforeEach(async function () {
+      axiosStub.withArgs(patchwalletTxUrl).rejects({
+        response: {
+          status: 470,
         },
-      ]);
+      });
+
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+        responsePath: mockResponsePath,
+      });
+    });
+
+    it('Should return true if error 470 in PatchWallet transaction', async function () {
+      const result = await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai.expect(result).to.be.true;
+    });
+
+    it('Should complete db status to failure in database if error 470 in PatchWallet transaction', async function () {
+      const result = await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai
+        .expect(await collectionTransfersMock.find({}).toArray())
+        .excluding(['dateAdded', '_id'])
+        .to.deep.equal([
+          {
+            eventId: txId,
+            chainId: 'eip155:137',
+            tokenSymbol: 'g1',
+            tokenAddress: process.env.G1_POLYGON_ADDRESS,
+            senderTgId: mockUserTelegramID,
+            senderWallet: mockWallet,
+            senderName: mockUserName,
+            senderHandle: mockUserHandle,
+            recipientTgId: mockUserTelegramID1,
+            recipientWallet: mockWallet,
+            tokenAmount: '100',
+            status: TRANSACTION_STATUS.FAILURE,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if error 470 in PatchWallet transaction', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
+
+    it('Should not call Segment if error 470 in PatchWallet transaction', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === 'https://api.segment.io/v1/track')
+      ).to.be.undefined;
+    });
   });
 
   it('Should return false and no transaction status modification in database if no hash in PatchWallet transaction', async function () {
