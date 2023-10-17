@@ -160,10 +160,6 @@ describe('handleSignUpReward function', async function () {
     });
   });
 
-  // ############################
-  // ############################
-  // ############################
-
   describe('Sign up reward already exists with another eventId', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertOne({
@@ -332,14 +328,6 @@ describe('handleSignUpReward function', async function () {
     });
   });
 
-  // ############################
-  // ############################
-  // ############################
-
-  // ############################
-  // ############################
-  // ############################
-
   describe('Sign up reward status pending at the beginning with same eventID', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertOne({
@@ -458,14 +446,6 @@ describe('handleSignUpReward function', async function () {
       chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
     });
   });
-
-  // ############################
-  // ############################
-  // ############################
-
-  // ############################
-  // ############################
-  // ############################
 
   describe('Sign up reward status failure at the beginning with same eventID', async function () {
     beforeEach(async function () {
@@ -593,14 +573,6 @@ describe('handleSignUpReward function', async function () {
     });
   });
 
-  // ############################
-  // ############################
-  // ############################
-
-  // ############################
-  // ############################
-  // ############################
-
   describe('Normal process with a new user', async function () {
     it('Should call the sendTokens function properly if the user is new', async function () {
       await handleSignUpReward(
@@ -726,10 +698,6 @@ describe('handleSignUpReward function', async function () {
     });
   });
 
-  // ############################
-  // ############################
-  // ############################
-
   it('Should return true if there is an error in FlowXO', async function () {
     axiosStub
       .withArgs(process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK)
@@ -826,13 +794,16 @@ describe('handleSignUpReward function', async function () {
     });
   });
 
-  describe('PatchWallet transaction without hash', function () {
-    it('Should return false if there is no hash in PatchWallet response', async function () {
+  describe('PatchWallet transaction without hash field in response', function () {
+    beforeEach(async function () {
       axiosStub.withArgs(patchwalletTxUrl).resolves({
         data: {
           error: 'service non available',
         },
       });
+    });
+
+    it('Should return false if there is no hash in PatchWallet response', async function () {
       chai.expect(
         await handleSignUpReward(
           dbMock,
@@ -847,11 +818,6 @@ describe('handleSignUpReward function', async function () {
     });
 
     it('Should set signup reward to pending in db if there is no hash in PatchWallet response', async function () {
-      axiosStub.withArgs(patchwalletTxUrl).resolves({
-        data: {
-          error: 'service non available',
-        },
-      });
       await handleSignUpReward(
         dbMock,
         rewardId,
@@ -882,11 +848,6 @@ describe('handleSignUpReward function', async function () {
     });
 
     it('Should not call FlowXO if there is no hash in PatchWallet response', async function () {
-      axiosStub.withArgs(patchwalletTxUrl).resolves({
-        data: {
-          error: 'service non available',
-        },
-      });
       await handleSignUpReward(
         dbMock,
         rewardId,
