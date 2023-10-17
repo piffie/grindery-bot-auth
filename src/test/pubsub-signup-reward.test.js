@@ -249,6 +249,89 @@ describe('handleSignUpReward function', async function () {
     });
   });
 
+  describe('Sign up reward already exists with no eventId', async function () {
+    beforeEach(async function () {
+      await collectionRewardsMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        reason: 'user_sign_up',
+        status: TRANSACTION_STATUS.SUCCESS,
+      });
+    });
+
+    it('Should return true if Sign up reward already exists with no eventId', async function () {
+      const result = await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(result).to.be.true;
+    });
+
+    it('Should send tokens if Sign up reward already exists with no eventId', async function () {
+      const result = await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+    });
+
+    it('Should not update the dabatase if Sign up reward already exists with no eventId', async function () {
+      const result = await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai
+        .expect(await collectionRewardsMock.find({}).toArray())
+        .excluding(['_id'])
+        .to.deep.equal([
+          {
+            userTelegramID: mockUserTelegramID,
+            reason: 'user_sign_up',
+            status: TRANSACTION_STATUS.SUCCESS,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if Sign up reward already exists with no eventId', async function () {
+      const result = await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
+  });
+
   // ############################
   // ############################
   // ############################
