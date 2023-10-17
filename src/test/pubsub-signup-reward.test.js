@@ -597,103 +597,12 @@ describe('handleSignUpReward function', async function () {
   // ############################
   // ############################
 
-  it('Should call the sendTokens function properly if the user is new', async function () {
-    await handleSignUpReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
+  // ############################
+  // ############################
+  // ############################
 
-    chai
-      .expect(
-        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
-          .args[1]
-      )
-      .to.deep.equal({
-        userId: `grindery:${process.env.SOURCE_TG_ID}`,
-        chain: 'matic',
-        to: [process.env.G1_POLYGON_ADDRESS],
-        value: ['0x00'],
-        data: [
-          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
-        ],
-        auth: '',
-      });
-  });
-
-  it('Should insert a new element in the reward collection of the database if the user is new', async function () {
-    await handleSignUpReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
-
-    const rewards = await collectionRewardsMock.find({}).toArray();
-
-    chai.expect(rewards.length).to.equal(1);
-    chai.expect(rewards[0]).excluding(['_id', 'dateAdded']).to.deep.equal({
-      eventId: rewardId,
-      userTelegramID: mockUserTelegramID,
-      responsePath: mockResponsePath,
-      walletAddress: mockWallet,
-      reason: 'user_sign_up',
-      userHandle: mockUserHandle,
-      userName: mockUserName,
-      amount: '100',
-      message: 'Sign up reward',
-      transactionHash: mockTransactionHash,
-      status: TRANSACTION_STATUS.SUCCESS,
-    });
-    chai
-      .expect(rewards[0].dateAdded)
-      .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-    chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
-  });
-
-  it('Should call FlowXO webhook properly if the user is new', async function () {
-    await handleSignUpReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
-
-    const FlowXOCallArgs = axiosStub
-      .getCalls()
-      .find((e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK)
-      .args[1];
-
-    chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
-      userTelegramID: mockUserTelegramID,
-      responsePath: mockResponsePath,
-      walletAddress: mockWallet,
-      reason: 'user_sign_up',
-      userHandle: mockUserHandle,
-      userName: mockUserName,
-      amount: '100',
-      message: 'Sign up reward',
-      transactionHash: mockTransactionHash,
-    });
-
-    chai
-      .expect(FlowXOCallArgs.dateAdded)
-      .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-    chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
-  });
-
-  it('Should return true if the user is new', async function () {
-    chai.expect(
+  describe('Normal process with a new user', async function () {
+    it('Should call the sendTokens function properly if the user is new', async function () {
       await handleSignUpReward(
         dbMock,
         rewardId,
@@ -702,22 +611,124 @@ describe('handleSignUpReward function', async function () {
         mockUserHandle,
         mockUserName,
         mockWallet
-      )
-    ).to.be.true;
+      );
+
+      chai
+        .expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+            .args[1]
+        )
+        .to.deep.equal({
+          userId: `grindery:${process.env.SOURCE_TG_ID}`,
+          chain: 'matic',
+          to: [process.env.G1_POLYGON_ADDRESS],
+          value: ['0x00'],
+          data: [
+            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+          ],
+          auth: '',
+        });
+    });
+
+    it('Should insert a new element in the reward collection of the database if the user is new', async function () {
+      await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      const rewards = await collectionRewardsMock.find({}).toArray();
+
+      chai.expect(rewards.length).to.equal(1);
+      chai.expect(rewards[0]).excluding(['_id', 'dateAdded']).to.deep.equal({
+        eventId: rewardId,
+        userTelegramID: mockUserTelegramID,
+        responsePath: mockResponsePath,
+        walletAddress: mockWallet,
+        reason: 'user_sign_up',
+        userHandle: mockUserHandle,
+        userName: mockUserName,
+        amount: '100',
+        message: 'Sign up reward',
+        transactionHash: mockTransactionHash,
+        status: TRANSACTION_STATUS.SUCCESS,
+      });
+      chai
+        .expect(rewards[0].dateAdded)
+        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
+      chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
+    });
+
+    it('Should call FlowXO webhook properly if the user is new', async function () {
+      await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      const FlowXOCallArgs = axiosStub
+        .getCalls()
+        .find(
+          (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+        ).args[1];
+
+      chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+        userTelegramID: mockUserTelegramID,
+        responsePath: mockResponsePath,
+        walletAddress: mockWallet,
+        reason: 'user_sign_up',
+        userHandle: mockUserHandle,
+        userName: mockUserName,
+        amount: '100',
+        message: 'Sign up reward',
+        transactionHash: mockTransactionHash,
+      });
+
+      chai
+        .expect(FlowXOCallArgs.dateAdded)
+        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
+      chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+    });
+
+    it('Should return true if the user is new', async function () {
+      chai.expect(
+        await handleSignUpReward(
+          dbMock,
+          rewardId,
+          mockUserTelegramID,
+          mockResponsePath,
+          mockUserHandle,
+          mockUserName,
+          mockWallet
+        )
+      ).to.be.true;
+    });
+
+    it('Should not add the user in the database (in handleSignUpReward) if the user is new', async function () {
+      await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+      chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
+    });
   });
 
-  it('Should not add the user in the database (in handleSignUpReward) if the user is new', async function () {
-    await handleSignUpReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
-    chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
-  });
+  // ############################
+  // ############################
+  // ############################
 
   it('Should return true if there is an error in FlowXO', async function () {
     axiosStub
