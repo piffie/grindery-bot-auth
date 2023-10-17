@@ -86,6 +86,112 @@ describe('handleReferralReward function', function () {
     sandbox.restore();
   });
 
+  // ###########################################
+  // ###########################################
+  // ###########################################
+
+  describe('No transactions are eligible for a reward', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertMany([
+        {
+          patchwallet: mockWallet,
+          userTelegramID: mockUserTelegramID,
+          responsePath: mockResponsePath,
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+        },
+        {
+          patchwallet: mockWallet,
+          userTelegramID: mockUserTelegramID1,
+          responsePath: mockResponsePath,
+          userHandle: mockUserHandle,
+          userName: mockUserName,
+        },
+      ]);
+
+      await collectionTransfersMock.insertMany([
+        {
+          transactionHash: mockTransactionHash,
+          senderTgId: mockUserTelegramID,
+          recipientTgId: 'anotherRecipient',
+        },
+        {
+          transactionHash: mockTransactionHash1,
+          senderTgId: mockUserTelegramID1,
+          recipientTgId: 'anotherRecipient1',
+        },
+      ]);
+    });
+
+    it('Should return true if No transactions are eligible for a reward', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(result).to.be.true;
+    });
+
+    it('Should not send any tokens if No transactions are eligible for a reward', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+    });
+
+    it('Should not update the reward database if No transactions are eligible for a reward', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+    });
+
+    it('Should not call FlowXO if No transactions are eligible for a reward', async function () {
+      const result = await handleReferralReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
+  });
+
+  // ###########################################
+  // ###########################################
+  // ###########################################
+
   it('Should return true and not send any tokens if there are no proper transactions', async function () {
     await collectionUsersMock.insertMany([
       {
