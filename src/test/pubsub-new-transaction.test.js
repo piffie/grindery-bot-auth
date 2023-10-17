@@ -516,30 +516,74 @@ describe('handleNewTransaction function', async function () {
       .to.equal(objectId);
   });
 
-  it('Should return true and no modification of status in database if sender is not a user', async function () {
-    const result = await handleNewTransaction({
-      senderTgId: mockUserTelegramID,
-      amount: '100',
-      recipientTgId: mockUserTelegramID1,
-      eventId: txId,
+  describe('Sender is not a user', async function () {
+    it('Should return true if sender is not a user', async function () {
+      const result = await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai.expect(result).to.be.true;
     });
 
-    chai.expect(result).to.be.true;
-    chai
-      .expect(await collectionTransfersMock.find({}).toArray())
-      .excluding(['_id', 'dateAdded'])
-      .to.deep.equal([
-        {
-          eventId: txId,
-          chainId: 'eip155:137',
-          tokenSymbol: 'g1',
-          tokenAddress: process.env.G1_POLYGON_ADDRESS,
-          senderTgId: mockUserTelegramID,
-          recipientTgId: mockUserTelegramID1,
-          tokenAmount: '100',
-          status: TRANSACTION_STATUS.PENDING,
-        },
-      ]);
+    it('Should not modify status in database if sender is not a user', async function () {
+      const result = await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai
+        .expect(await collectionTransfersMock.find({}).toArray())
+        .excluding(['_id', 'dateAdded'])
+        .to.deep.equal([
+          {
+            eventId: txId,
+            chainId: 'eip155:137',
+            tokenSymbol: 'g1',
+            tokenAddress: process.env.G1_POLYGON_ADDRESS,
+            senderTgId: mockUserTelegramID,
+            recipientTgId: mockUserTelegramID1,
+            tokenAmount: '100',
+            status: TRANSACTION_STATUS.PENDING,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if sender is not a user', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
+
+    it('Should not call Segment if sender is not a user', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === 'https://api.segment.io/v1/track')
+      ).to.be.undefined;
+    });
   });
 
   it('Should return false and no transaction status modification in database if error in PatchWallet get address', async function () {
