@@ -1,5 +1,4 @@
 import { Database } from '../db/conn.js';
-import { REWARDS_COLLECTION } from '../utils/constants.js';
 
 export const mochaHooks = {
   afterEach: async function () {

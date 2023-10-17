@@ -55,4 +55,4 @@ export const patchwalletResolverUrl = 'https://paymagicapi.com/v1/resolver';
 export const patchwalletAuthUrl = 'https://paymagicapi.com/v1/auth';
 export const patchwalletTxUrl = 'https://paymagicapi.com/v1/kernel/tx';
 export const patchwalletTxStatusUrl =
-  'https://paymagicapi.com/v1/kernel/userOpHash';
+  'https://paymagicapi.com/v1/kernel/txStatus';

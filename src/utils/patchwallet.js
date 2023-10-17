@@ -73,7 +73,7 @@ export async function getTxStatus(userOpHash) {
     process.env.G1_POLYGON_ADDRESS
   );
   return await axios.post(
-    'https://paymagicapi.com/v1/kernel/userOpHash',
+    'https://paymagicapi.com/v1/kernel/txStatus',
     {
       userOpHash: userOpHash,
     },
