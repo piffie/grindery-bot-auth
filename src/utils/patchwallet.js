@@ -68,10 +68,6 @@ export async function sendTokens(
 }
 
 export async function getTxStatus(userOpHash) {
-  const g1Contract = new new Web3().eth.Contract(
-    ERC20,
-    process.env.G1_POLYGON_ADDRESS
-  );
   return await axios.post(
     'https://paymagicapi.com/v1/kernel/txStatus',
     {
