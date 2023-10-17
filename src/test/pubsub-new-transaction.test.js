@@ -91,31 +91,116 @@ describe('handleNewTransaction function', async function () {
     sandbox.restore();
   });
 
-  it('Should add a new transaction record if everything goes well', async function () {
-    await collectionUsersMock.insertOne({
-      userTelegramID: mockUserTelegramID,
-      userName: mockUserName,
-      userHandle: mockUserHandle,
-      patchwallet: mockWallet,
+  describe('Normal process to handle a transaction', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+        responsePath: mockResponsePath,
+      });
     });
 
-    chai.expect(
+    it('Should return true', async function () {
+      chai.expect(
+        await handleNewTransaction({
+          senderTgId: mockUserTelegramID,
+          amount: '100',
+          recipientTgId: mockUserTelegramID1,
+          eventId: txId,
+        })
+      ).to.be.true;
+    });
+
+    it('Should populate transfers database', async function () {
+      const result = await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      const transfers = await collectionTransfersMock.find({}).toArray();
+
+      chai
+        .expect(transfers)
+        .excluding(['dateAdded', '_id'])
+        .to.deep.equal([
+          {
+            eventId: txId,
+            TxId: mockTransactionHash.substring(1, 8),
+            chainId: 'eip155:137',
+            tokenSymbol: 'g1',
+            tokenAddress: process.env.G1_POLYGON_ADDRESS,
+            senderTgId: mockUserTelegramID,
+            senderWallet: mockWallet,
+            senderName: mockUserName,
+            senderHandle: mockUserHandle,
+            recipientTgId: mockUserTelegramID1,
+            recipientWallet: mockWallet,
+            tokenAmount: '100',
+            transactionHash: mockTransactionHash,
+            status: TRANSACTION_STATUS.SUCCESS,
+          },
+        ]);
+      chai.expect(transfers[0].dateAdded).to.be.a('date');
+    });
+
+    it('Should populate the segment transfer properly', async function () {
       await handleNewTransaction({
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
         eventId: txId,
-      })
-    ).to.be.true;
+      });
 
-    const transfers = await collectionTransfersMock.find({}).toArray();
+      const segmentIdentityCall = axiosStub
+        .getCalls()
+        .filter((e) => e.firstArg === 'https://api.segment.io/v1/track');
 
-    chai
-      .expect(transfers)
-      .excluding(['dateAdded', '_id'])
-      .to.deep.equal([
-        {
-          eventId: txId,
+      chai
+        .expect(segmentIdentityCall[0].args[1])
+        .excluding(['timestamp'])
+        .to.deep.equal({
+          userId: mockUserTelegramID,
+          event: 'Transfer',
+          properties: {
+            TxId: mockTransactionHash.substring(1, 8),
+            chainId: 'eip155:137',
+            tokenSymbol: 'g1',
+            tokenAddress: process.env.G1_POLYGON_ADDRESS,
+            senderTgId: mockUserTelegramID,
+            senderWallet: mockWallet,
+            senderName: mockUserName,
+            senderHandle: mockUserHandle,
+            recipientTgId: mockUserTelegramID1,
+            recipientWallet: mockWallet,
+            tokenAmount: '100',
+            transactionHash: mockTransactionHash,
+            eventId: txId,
+          },
+        });
+    });
+
+    it('Should call FlowXO webhook properly for new transactions', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      const FlowXOCallArgs = axiosStub
+        .getCalls()
+        .find((e) => e.firstArg === process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK)
+        .args[1];
+
+      chai
+        .expect(FlowXOCallArgs)
+        .excluding(['dateAdded'])
+        .to.deep.equal({
+          senderResponsePath: mockResponsePath,
           TxId: mockTransactionHash.substring(1, 8),
           chainId: 'eip155:137',
           tokenSymbol: 'g1',
@@ -128,10 +213,8 @@ describe('handleNewTransaction function', async function () {
           recipientWallet: mockWallet,
           tokenAmount: '100',
           transactionHash: mockTransactionHash,
-          status: TRANSACTION_STATUS.SUCCESS,
-        },
-      ]);
-    chai.expect(transfers[0].dateAdded).to.be.a('date');
+        });
+    });
   });
 
   it('Should return true and no token sending if transaction is already a success', async function () {
@@ -306,49 +389,6 @@ describe('handleNewTransaction function', async function () {
     ).to.be.false;
   });
 
-  it('Should populate the segment transfer properly', async function () {
-    await collectionUsersMock.insertOne({
-      userTelegramID: mockUserTelegramID,
-      userName: mockUserName,
-      userHandle: mockUserHandle,
-      patchwallet: mockWallet,
-    });
-
-    await handleNewTransaction({
-      senderTgId: mockUserTelegramID,
-      amount: '100',
-      recipientTgId: mockUserTelegramID1,
-      eventId: txId,
-    });
-
-    const segmentIdentityCall = axiosStub
-      .getCalls()
-      .filter((e) => e.firstArg === 'https://api.segment.io/v1/track');
-
-    chai
-      .expect(segmentIdentityCall[0].args[1])
-      .excluding(['timestamp'])
-      .to.deep.equal({
-        userId: mockUserTelegramID,
-        event: 'Transfer',
-        properties: {
-          TxId: mockTransactionHash.substring(1, 8),
-          chainId: 'eip155:137',
-          tokenSymbol: 'g1',
-          tokenAddress: process.env.G1_POLYGON_ADDRESS,
-          senderTgId: mockUserTelegramID,
-          senderWallet: mockWallet,
-          senderName: mockUserName,
-          senderHandle: mockUserHandle,
-          recipientTgId: mockUserTelegramID1,
-          recipientWallet: mockWallet,
-          tokenAmount: '100',
-          transactionHash: mockTransactionHash,
-          eventId: txId,
-        },
-      });
-  });
-
   it('Should not call segment if there is an error in the send tokens request', async function () {
     await collectionUsersMock.insertOne({
       userTelegramID: mockUserTelegramID,
@@ -376,47 +416,6 @@ describe('handleNewTransaction function', async function () {
         .getCalls()
         .find((e) => e.firstArg === 'https://api.segment.io/v1/track')
     ).to.be.undefined;
-  });
-
-  it('Should call FlowXO webhook properly for new transactions', async function () {
-    await collectionUsersMock.insertOne({
-      userTelegramID: mockUserTelegramID,
-      userName: mockUserName,
-      userHandle: mockUserHandle,
-      patchwallet: mockWallet,
-      responsePath: mockResponsePath,
-    });
-
-    await handleNewTransaction({
-      senderTgId: mockUserTelegramID,
-      amount: '100',
-      recipientTgId: mockUserTelegramID1,
-      eventId: txId,
-    });
-
-    const FlowXOCallArgs = axiosStub
-      .getCalls()
-      .find((e) => e.firstArg === process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK)
-      .args[1];
-
-    chai
-      .expect(FlowXOCallArgs)
-      .excluding(['dateAdded'])
-      .to.deep.equal({
-        senderResponsePath: mockResponsePath,
-        TxId: mockTransactionHash.substring(1, 8),
-        chainId: 'eip155:137',
-        tokenSymbol: 'g1',
-        tokenAddress: process.env.G1_POLYGON_ADDRESS,
-        senderTgId: mockUserTelegramID,
-        senderWallet: mockWallet,
-        senderName: mockUserName,
-        senderHandle: mockUserHandle,
-        recipientTgId: mockUserTelegramID1,
-        recipientWallet: mockWallet,
-        tokenAmount: '100',
-        transactionHash: mockTransactionHash,
-      });
   });
 
   it('Should not call FlowXO if there is an error in the send tokens request', async function () {
