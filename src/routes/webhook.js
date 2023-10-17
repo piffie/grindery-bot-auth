@@ -86,7 +86,7 @@ const listenForMessages = () => {
   const messageHandler = async (message) => {
     const messageDataString = message.data.toString();
     const messageData = JSON.parse(messageDataString);
-    console.log(`Received message [${message.id},${message.deliveryAttempt}]:`, JSON.stringify(messageData, null, 2));
+    console.log(`Received message [${message.id},${message.deliveryAttempt},${message.publishTime.toISOString()}]:`, JSON.stringify(messageData, null, 2));
     const deadline = Date.now() / 1000 - 60 * 60 * 24; // 1 day ago{
     if ((message.deliveryAttempt || 0) > 2 && message.publishTime.toStruct().seconds < deadline) {
       console.log(`Dropping old message ${message.id}, publishTime=${message.publishTime.toISOString()}`);
