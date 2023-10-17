@@ -553,6 +553,19 @@ describe('handleNewTransaction function', async function () {
         ]);
     });
 
+    it('Should not send tokens if sender is not a user', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+    });
+
     it('Should not call FlowXO if sender is not a user', async function () {
       await handleNewTransaction({
         senderTgId: mockUserTelegramID,
