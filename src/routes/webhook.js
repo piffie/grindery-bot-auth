@@ -74,7 +74,13 @@ router.post('/', authenticateApiKey, async (req, res) => {
 // Subscribe to messages from Pub/Sub
 const listenForMessages = () => {
   // get subscription
-  const subscription = pubSubClient.subscription(subscriptionName);
+  const subscription = pubSubClient.subscription(subscriptionName, {
+    minAckDeadline: 60,
+    maxAckDeadline: 1200,
+    flowControl: {
+      maxMessages: 5
+    }
+  });
 
   // Process and acknowledge pub/sub message
   const messageHandler = async (message) => {
