@@ -75,39 +75,89 @@ describe('handleSignUpReward function', async function () {
     sandbox.restore();
   });
 
-  it('Should return true, not send tokens and not update the dabatase if user already exists in the database and sign up reward was a success', async function () {
-    await collectionRewardsMock.insertOne({
-      eventId: rewardId,
-      userTelegramID: mockUserTelegramID,
-      reason: 'user_sign_up',
-      status: TRANSACTION_STATUS.SUCCESS,
+  describe('Sign up reward already exists with same eventId and is a success', async function () {
+    beforeEach(async function () {
+      await collectionRewardsMock.insertOne({
+        eventId: rewardId,
+        userTelegramID: mockUserTelegramID,
+        reason: 'user_sign_up',
+        status: TRANSACTION_STATUS.SUCCESS,
+      });
     });
 
-    const result = await handleSignUpReward(
-      dbMock,
-      rewardId,
-      mockUserTelegramID,
-      mockResponsePath,
-      mockUserHandle,
-      mockUserName,
-      mockWallet
-    );
+    it('Should return true if Sign up reward already exists with same eventId and is a success', async function () {
+      const result = await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
 
-    chai.expect(result).to.be.true;
-    chai.expect(
-      axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
-    ).to.be.undefined;
-    chai
-      .expect(await collectionRewardsMock.find({}).toArray())
-      .excluding(['_id'])
-      .to.deep.equal([
-        {
-          eventId: rewardId,
-          userTelegramID: mockUserTelegramID,
-          reason: 'user_sign_up',
-          status: TRANSACTION_STATUS.SUCCESS,
-        },
-      ]);
+      chai.expect(result).to.be.true;
+    });
+
+    it('Should send tokens if Sign up reward already exists with same eventId and is a success', async function () {
+      const result = await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+    });
+
+    it('Should not update the dabatase if Sign up reward already exists with same eventId and is a success', async function () {
+      const result = await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai
+        .expect(await collectionRewardsMock.find({}).toArray())
+        .excluding(['_id'])
+        .to.deep.equal([
+          {
+            eventId: rewardId,
+            userTelegramID: mockUserTelegramID,
+            reason: 'user_sign_up',
+            status: TRANSACTION_STATUS.SUCCESS,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if Sign up reward already exists with same eventId and is a success', async function () {
+      const result = await handleSignUpReward(
+        dbMock,
+        rewardId,
+        mockUserTelegramID,
+        mockResponsePath,
+        mockUserHandle,
+        mockUserName,
+        mockWallet
+      );
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
   });
 
   it('Should return true and no token sending if another sign up reward exists without eventId', async function () {
