@@ -498,7 +498,7 @@ async function updateRewardsStatus() {
       const result = await rewardsCollection.bulkWrite(bulkWriteOperations);
 
       console.log(
-        `Updated ${result.modifiedCount} rewards with status: success`w
+        `Updated ${result.modifiedCount} rewards with status: success`
       );
     } else {
       console.log('No rewards to update.');
@@ -508,4 +508,99 @@ async function updateRewardsStatus() {
   } finally {
     process.exit(0);
   }
+}
+
+async function importMissingRewardsFromCSV(fileName) {
+  const db = await Database.getInstance();
+  const rewardsCollection = db.collection(REWARDS_COLLECTION);
+  const usersCollection = db.collection(USERS_COLLECTION);
+
+  const batchSize = 10000;
+  const rewards = [];
+  const formattedMissingRewards = [];
+
+  if (!fs.existsSync(fileName)) {
+    console.log(`File ${fileName} does not exist.`);
+    process.exit(1);
+  }
+
+  fs.createReadStream(fileName)
+    .pipe(csv())
+    .on('data', (row) => {
+      rewards.push(row);
+    })
+    .on('end', async () => {
+      if (rewards.length === 0) {
+        console.log('CSV file is empty.');
+        process.exit(1);
+      }
+
+      const existingHashes = await rewardsCollection
+        .aggregate([
+          { $group: { _id: '$transactionHash' } },
+          { $project: { _id: 0, transactionHash: '$_id' } },
+        ])
+        .toArray();
+
+      const missingRewards = rewards.filter(
+        (reward) => !existingHashes.includes(reward.transaction_hash)
+      );
+
+      console.log('Number of rewards in csv file: ', rewards.length);
+      console.log(
+        'Number of rewards in `rewards` collection: ',
+        existingHashes.length
+      );
+      console.log(
+        'Number of missing rewards in `rewards` collection: ',
+        missingRewards.length
+      );
+
+      let count = 1;
+      for (const reward of missingRewards) {
+        console.log(
+          `Formatting reward index: ${count} - total: ${missingRewards.length}`
+        );
+
+        const senderUser = await usersCollection.findOne({
+          walletAddress: web3.utils.toChecksumAddress(reward.from_address),
+        });
+        const senderTgId = senderUser ? senderUser.userTelegramID : undefined;
+        const senderName = senderUser ? senderUser.userName : undefined;
+        const senderHandle = senderUser ? senderUser.userHandle : undefined;
+        const senderResponsePath = senderUser
+          ? senderUser.responsePath
+          : undefined;
+
+        formattedMissingRewards.push({
+          userTelegramID: senderTgId,
+          responsePath: senderResponsePath,
+          walletAddress: web3.utils.toChecksumAddress(reward.from_address),
+          reason: 'hunt',
+          userHandle: senderHandle,
+          userName: senderName,
+          amount: String(Number(reward.value) / 1e18),
+          transactionHash: reward.transaction_hash,
+          dateAdded: new Date(reward.block_timestamp),
+          status: 'success',
+          message: 'Product Hunt reward',
+        });
+        count++;
+      }
+
+      // Step 4: Batch insert the missing rewards into the collection
+      // if (formattedMissingRewards.length > 0) {
+      //   for (let i = 0; i < formattedMissingRewards.length; i += batchSize) {
+      //     const batch = formattedMissingRewards.slice(i, i + batchSize);
+      //     await rewardsCollection.insertMany(batch);
+      //     console.log(`Inserted batch ${i / batchSize + 1}`);
+      //   }
+      // }
+
+      console.log('\n All data has been read \n');
+    })
+    .on('error', (error) => {
+      console.error('Errors during CSV parsing:', error);
+      process.exit(1);
+    });
 }
