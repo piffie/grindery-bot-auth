@@ -5,6 +5,7 @@ import web3 from 'web3';
 import {
   REWARDS_COLLECTION,
   TRANSFERS_COLLECTION,
+  USERS_COLLECTION,
 } from '../utils/constants.js';
 
 // Example usage of the functions:
@@ -261,4 +262,101 @@ async function updateTransfersStatus() {
   } finally {
     process.exit(0);
   }
+}
+
+async function importMissingTransferFromCSV(fileName) {
+  const db = await Database.getInstance();
+  const collection = db.collection(TRANSFERS_COLLECTION);
+  const usersCollection = db.collection(USERS_COLLECTION);
+
+  const batchSize = 10000;
+  const transfers = [];
+  const formattedMissingTransfers = [];
+
+  if (!fs.existsSync(fileName)) {
+    console.log(`File ${fileName} does not exist.`);
+    process.exit(1);
+  }
+
+  fs.createReadStream(fileName)
+    .pipe(csv())
+    .on('data', (row) => {
+      transfers.push(row);
+    })
+    .on('end', async () => {
+      // Step 1: Create a set of existing transaction hashes
+      const existingHashes = await collection.distinct('transactionHash');
+
+      // Step 2: Filter the transfers to find the missing ones
+      const missingTransfers = transfers.filter(
+        (transfer) => !existingHashes.includes(transfer.transaction_hash)
+      );
+
+      console.log('Number of transfers in csv file: ', transfers.length);
+      console.log(
+        'Number of transfers in `transfers` collection: ',
+        existingHashes.length
+      );
+      console.log(
+        'Number of missing transfers in `transfers` collection: ',
+        missingTransfers.length
+      );
+
+      // Step 3: Format missing transfers
+      let count = 1;
+      for (const transfer of missingTransfers) {
+        console.log(
+          `Formating transfer index: ${count} - total: ${missingTransfers.length} `
+        );
+        // Retrieve user information for sender
+        const senderUser = await usersCollection.findOne({
+          patchwallet: web3.utils.toChecksumAddress(transfer.from_address),
+        });
+        const senderTgId = senderUser ? senderUser.userTelegramID : undefined;
+        const senderName = senderUser ? senderUser.userName : undefined;
+        const senderHandle = senderUser ? senderUser.userHandle : undefined;
+
+        // Retrieve user information for recipient
+        const recipientUser = await usersCollection.findOne({
+          patchwallet: web3.utils.toChecksumAddress(transfer.to_address),
+        });
+        const recipientTgId = recipientUser
+          ? recipientUser.userTelegramID
+          : undefined;
+
+        formattedMissingTransfers.push({
+          TxId: transfer.transaction_hash.substring(1, 8),
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: '0xe36BD65609c08Cd17b53520293523CF4560533d0',
+          senderTgId: senderTgId,
+          senderWallet: web3.utils.toChecksumAddress(transfer.from_address),
+          senderName: senderName,
+          recipientTgId: recipientTgId,
+          recipientWallet: web3.utils.toChecksumAddress(transfer.to_address),
+          tokenAmount: String(Number(transfer.value) / 1e18),
+          transactionHash: transfer.transaction_hash,
+          dateAdded: new Date(transfer.block_timestamp),
+          status: 'success',
+          senderHandle: senderHandle,
+        });
+        count++;
+      }
+
+      // Step 4: Batch insert the missing transfers into the collection
+      if (formattedMissingTransfers.length > 0) {
+        const collectionTest = db.collection('transfers-test');
+
+        for (let i = 0; i < formattedMissingTransfers.length; i += batchSize) {
+          const batch = formattedMissingTransfers.slice(i, i + batchSize);
+          await collectionTest.insertMany(batch);
+          console.log(`Inserted batch ${i / batchSize + 1}`);
+        }
+      }
+
+      console.log('\n All data has been read \n');
+    })
+    .on('error', (error) => {
+      console.log('\n Errors during CSV parsing \n', error);
+    });
 }
