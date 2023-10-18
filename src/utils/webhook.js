@@ -669,7 +669,15 @@ export async function handleNewTransaction(params) {
         params.recipientTgId
       } for ${params.amount.toString()} - Error processing PatchWallet token sending: ${error}`
     );
+    let drop = false;
+    if (!/^\d+$/.test(params.amount.toString())) {
+      console.warn(`Potentially invalid amount: ${params.amount}, dropping`);
+      drop = true;
+    }
     if (error?.response?.status === 470) {
+      drop = true;
+    }
+    if (drop) {
       await db.collection(TRANSFERS_COLLECTION).updateOne(
         { eventId: params.eventId },
         {
