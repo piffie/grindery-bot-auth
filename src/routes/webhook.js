@@ -49,6 +49,30 @@ const router = express.Router();
  */
 router.post('/', authenticateApiKey, async (req, res) => {
   try {
+    if (req.body.event === 'new_transaction_batch') {
+      req.body.params = req.body.params.filter((transaction) => {
+        return /^\d+$/.test(amount) && parseInt(amount) > 0;
+      });
+
+      if (req.body.params.length === 0) {
+        res
+          .status(400)
+          .json({ success: false, message: 'all token amounts incorrect' });
+      }
+    }
+
+    if (req.body.event === 'new_transaction') {
+      if (
+        !/^\d+$/.test(req.body.params.amount) ||
+        parseInt(req.body.params.amount) <= 0
+      ) {
+        res
+          .status(400)
+          .json({ success: false, message: 'token amount incorrect' });
+        return;
+      }
+    }
+
     req.body.event === 'new_transaction_batch'
       ? req.body.params.forEach(
           (transaction) => (transaction.eventId = uuidv4())
