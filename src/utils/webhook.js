@@ -188,13 +188,12 @@ export async function handleReferralReward(
 
     // Retrieve all transfers where this user is the recipient
     // For each transfer, award a reward to the sender
-    for (const transfer of await db
+    for await (const transfer of db
       .collection(TRANSFERS_COLLECTION)
       .find({
         senderTgId: { $ne: userTelegramID },
         recipientTgId: userTelegramID,
-      })
-      .toArray()) {
+      })) {
       const reward = await db.collection(REWARDS_COLLECTION).findOne({
         reason: '2x_reward',
         eventId: eventId,
