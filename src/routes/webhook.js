@@ -139,10 +139,10 @@ const listenForMessages = () => {
         'Acknowledged message:',
         JSON.stringify(messageData, null, 2)
       );
-      message.ack(); // "Ack" (acknowledge receipt of) the message
+      setTimeout(() => message.ack(), Math.floor(Math.random() * 100)); // "Ack" (acknowledge receipt of) the message
     } catch (error) {
       console.error('messageHandler error:', error);
-      message.nack(); // "Nack" (don't acknowledge receipt of) the message
+      setTimeout(() => message.nack(), Math.floor(Math.random() * 2000)); // "Nack" (don't acknowledge receipt of) the message
     }
   };
 
