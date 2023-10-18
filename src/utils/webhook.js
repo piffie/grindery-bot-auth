@@ -293,13 +293,10 @@ export async function handleReferralReward(
 
     // Retrieve all transfers where this user is the recipient
     // For each transfer, award a reward to the sender
-    for await (const transfer of db
-      .collection(TRANSFERS_COLLECTION)
-      .find({
-        senderTgId: { $ne: userTelegramID },
-        recipientTgId: userTelegramID,
-      })
-      .toArray()) {
+    for await (const transfer of db.collection(TRANSFERS_COLLECTION).find({
+      senderTgId: { $ne: userTelegramID },
+      recipientTgId: userTelegramID,
+    })) {
       // Retrieve sender information from the "users" collection
       const senderInformation = await db
         .collection(USERS_COLLECTION)
@@ -973,7 +970,6 @@ export async function handleNewTransaction(params) {
         `[${params.eventId}] was stopped due to too long treatment duration (> 10 min).`
       );
 
-
       await db.collection(TRANSFERS_COLLECTION).updateOne(
         { eventId: params.eventId },
         {
@@ -1047,7 +1043,16 @@ export async function handleNewTransaction(params) {
           params.recipientTgId
         } for ${params.amount.toString()} - Error processing PatchWallet token sending: ${error}`
       );
+
+      let drop = false;
+      if (!/^\d+$/.test(params.amount.toString())) {
+        console.warn(`Potentially invalid amount: ${params.amount}, dropping`);
+        drop = true;
+      }
       if (error?.response?.status === 470) {
+        drop = true;
+      }
+      if (drop) {
         await db.collection(TRANSFERS_COLLECTION).updateOne(
           { eventId: params.eventId },
           {
