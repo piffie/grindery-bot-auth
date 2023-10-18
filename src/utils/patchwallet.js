@@ -66,3 +66,18 @@ export async function sendTokens(
     }
   );
 }
+
+export async function getTxStatus(userOpHash) {
+  return await axios.post(
+    'https://paymagicapi.com/v1/kernel/txStatus',
+    {
+      userOpHash: userOpHash,
+    },
+    {
+      timeout: 100000,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+}
