@@ -99,10 +99,10 @@ router.post('/', authenticateApiKey, async (req, res) => {
 const listenForMessages = () => {
   // get subscription
   const subscription = pubSubClient.subscription(subscriptionName, {
-    minAckDeadline: new Duration(60 * 1000),
-    maxAckDeadline: new Duration(1200 * 1000),
+    minAckDeadline: new Duration(parseInt(process.env.PUBSUB_MIN_ACK_DEADLINE, 10) || 60 * 1000),
+    maxAckDeadline: new Duration(parseInt(process.env.PUBSUB_MAX_ACK_DEADLINE, 10) || 1200 * 1000),
     flowControl: {
-      maxMessages: 5
+      maxMessages: parseInt(process.env.PUBSUB_CONCURRENCY, 10) || 50
     }
   });
 
@@ -163,10 +163,10 @@ const listenForMessages = () => {
         'Acknowledged message:',
         JSON.stringify(messageData, null, 2)
       );
-      setTimeout(() => message.ack(), Math.floor(Math.random() * 100)); // "Ack" (acknowledge receipt of) the message
+      setTimeout(() => message.ack(), 0); // "Ack" (acknowledge receipt of) the message
     } catch (error) {
       console.error('messageHandler error:', error);
-      setTimeout(() => message.nack(), Math.floor(Math.random() * 2000)); // "Nack" (don't acknowledge receipt of) the message
+      setTimeout(() => message.nack(), 0); // "Nack" (don't acknowledge receipt of) the message
     }
   };
 
