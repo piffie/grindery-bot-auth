@@ -1,5 +1,5 @@
 import express from 'express';
-import { PubSub } from '@google-cloud/pubsub';
+import { PubSub, Duration } from '@google-cloud/pubsub';
 import { authenticateApiKey } from '../utils/auth.js';
 import { handleNewReward, handleNewTransaction } from '../utils/webhook.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -49,6 +49,30 @@ const router = express.Router();
  */
 router.post('/', authenticateApiKey, async (req, res) => {
   try {
+    if (req.body.event === 'new_transaction_batch') {
+      req.body.params = req.body.params.filter((transaction) => {
+        return /^\d+$/.test(amount) && parseInt(amount) > 0;
+      });
+
+      if (req.body.params.length === 0) {
+        res
+          .status(400)
+          .json({ success: false, message: 'all token amounts incorrect' });
+      }
+    }
+
+    if (req.body.event === 'new_transaction') {
+      if (
+        !/^\d+$/.test(req.body.params.amount) ||
+        parseInt(req.body.params.amount) <= 0
+      ) {
+        res
+          .status(400)
+          .json({ success: false, message: 'token amount incorrect' });
+        return;
+      }
+    }
+
     req.body.event === 'new_transaction_batch'
       ? req.body.params.forEach(
           (transaction) => (transaction.eventId = uuidv4())
@@ -74,13 +98,25 @@ router.post('/', authenticateApiKey, async (req, res) => {
 // Subscribe to messages from Pub/Sub
 const listenForMessages = () => {
   // get subscription
-  const subscription = pubSubClient.subscription(subscriptionName);
+  const subscription = pubSubClient.subscription(subscriptionName, {
+    minAckDeadline: new Duration(60 * 1000),
+    maxAckDeadline: new Duration(1200 * 1000),
+    flowControl: {
+      maxMessages: 5
+    }
+  });
 
   // Process and acknowledge pub/sub message
   const messageHandler = async (message) => {
     const messageDataString = message.data.toString();
     const messageData = JSON.parse(messageDataString);
-    console.log('Received message:', JSON.stringify(messageData, null, 2));
+    console.log(`Received message [${message.id},${message.deliveryAttempt},${message.publishTime.toISOString()}]:`, JSON.stringify(messageData, null, 2));
+    const deadline = Date.now() / 1000 - 60 * 60 * 24; // 1 day ago{
+    if ((message.deliveryAttempt || 0) > 2 && message.publishTime.toStruct().seconds < deadline) {
+      console.log(`Dropping old message ${message.id}, publishTime=${message.publishTime.toISOString()}`);
+      message.ack();
+      return;
+    }
 
     try {
       let processed = false; // Has event been processed. If not, message will be requeued.
@@ -127,10 +163,10 @@ const listenForMessages = () => {
         'Acknowledged message:',
         JSON.stringify(messageData, null, 2)
       );
-      message.ack(); // "Ack" (acknowledge receipt of) the message
+      setTimeout(() => message.ack(), Math.floor(Math.random() * 100)); // "Ack" (acknowledge receipt of) the message
     } catch (error) {
       console.error('messageHandler error:', error);
-      message.nack(); // "Nack" (don't acknowledge receipt of) the message
+      setTimeout(() => message.nack(), Math.floor(Math.random() * 2000)); // "Nack" (don't acknowledge receipt of) the message
     }
   };
 

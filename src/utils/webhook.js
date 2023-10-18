@@ -293,7 +293,7 @@ export async function handleReferralReward(
 
     // Retrieve all transfers where this user is the recipient
     // For each transfer, award a reward to the sender
-    for (const transfer of await db
+    for await (const transfer of db
       .collection(TRANSFERS_COLLECTION)
       .find({
         senderTgId: { $ne: userTelegramID },
@@ -972,6 +972,7 @@ export async function handleNewTransaction(params) {
       console.log(
         `[${params.eventId}] was stopped due to too long treatment duration (> 10 min).`
       );
+
 
       await db.collection(TRANSFERS_COLLECTION).updateOne(
         { eventId: params.eventId },
