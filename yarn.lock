@@ -702,6 +702,13 @@
     retry-request "^6.0.0"
     teeny-request "^9.0.0"
 
+"@google-cloud/monitoring@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.npmjs.org/@google-cloud/monitoring/-/monitoring-4.0.0.tgz"
+  integrity sha512-7HBEWbusYzcaNr6aZHqM4sUmqYS7BCh5VashxHrurXU45yTwiYgfmqhHd4P1yO5J/zpVEDXPZBI+a+8nacQoqw==
+  dependencies:
+    google-gax "^4.0.3"
+
 "@google-cloud/paginator@^5.0.0":
   version "5.0.0"
   resolved "https://registry.npmjs.org/@google-cloud/paginator/-/paginator-5.0.0.tgz"
@@ -2838,7 +2845,7 @@ google-auth-library@^9.0.0:
     jws "^4.0.0"
     lru-cache "^6.0.0"
 
-google-gax@^4.0.2:
+google-gax@^4.0.2, google-gax@^4.0.3:
   version "4.0.3"
   resolved "https://registry.npmjs.org/google-gax/-/google-gax-4.0.3.tgz"
   integrity sha512-gllHYRhZvpz0LcVN+xtyzBeUa/ZYiLGF4JNBECrvL/LxDkaJc09hHoQ+KzRBI2Ewqgrjj7V3QrOC2pGno5ropw==

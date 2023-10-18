@@ -3,6 +3,7 @@ import { PubSub, Duration } from '@google-cloud/pubsub';
 import { authenticateApiKey } from '../utils/auth.js';
 import { handleNewReward, handleNewTransaction } from '../utils/webhook.js';
 import { v4 as uuidv4 } from 'uuid';
+import { MetricServiceClient } from '@google-cloud/monitoring';
 
 /**
  * This is a generic and extendable implementation of a webhook endpoint and pub/sub messages queue.
@@ -20,6 +21,48 @@ const topicName = process.env.PUBSUB_TOPIC_NAME;
 const subscriptionName = process.env.PUBSUB_SUBSCRIPTION_NAME;
 
 const router = express.Router();
+
+router.get('/unacked-messages', async (req, res) => {
+  try {
+    const client = new MetricServiceClient();
+
+    const timeSeries = await client.listTimeSeries({
+      name: client.projectPath(process.env.PROJECT_ID),
+      filter: `metric.type="pubsub.googleapis.com/subscription/num_unacked_messages_by_region"`,
+      interval: {
+        // Limit results to the last 20 minutes
+        startTime: {
+          seconds: Date.now() / 1000 - 60 * 20,
+        },
+        endTime: {
+          seconds: Date.now() / 1000,
+        },
+      },
+    });
+
+    // Initialize the sum and count variables for calculating the average
+    let sum = 0;
+    let count = 0;
+
+    // Iterate through the timeSeries to calculate the sum
+    timeSeries?.forEach((series) => {
+      series?.forEach((serie) => {
+        serie?.points?.forEach((point) => {
+          sum += parseFloat(point.value.int64Value);
+          count++;
+        });
+      });
+    });
+
+    // Calculate the average
+    const average = count > 0 ? sum / count : 0;
+
+    // Return the result in JSON format
+    res.json({ num_unacked_messages: average });
+  } catch (error) {
+    console.error('Error querying metrics:', error);
+  }
+});
 
 /**
  * POST /v1/webhook
