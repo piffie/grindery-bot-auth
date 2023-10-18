@@ -1001,6 +1001,29 @@ export async function handleNewTransaction(params) {
         console.error(
           `[${params.eventId}] Error processing PatchWallet transaction status: ${error}`
         );
+        if (error?.response?.status === 470) {
+          await db.collection(TRANSFERS_COLLECTION).updateOne(
+            { eventId: params.eventId },
+            {
+              $set: {
+                chainId: 'eip155:137',
+                tokenSymbol: 'g1',
+                tokenAddress: process.env.G1_POLYGON_ADDRESS,
+                senderTgId: params.senderTgId,
+                senderWallet: senderInformation.patchwallet,
+                senderName: senderInformation.userName,
+                senderHandle: senderInformation.userHandle,
+                recipientTgId: params.recipientTgId,
+                recipientWallet: recipientWallet,
+                tokenAmount: params.amount.toString(),
+                dateAdded: new Date(),
+                status: TRANSACTION_STATUS.FAILURE,
+              },
+            },
+            { upsert: true }
+          );
+          return true;
+        }
         return false;
       }
     } else {
