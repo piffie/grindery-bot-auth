@@ -666,3 +666,75 @@ async function calculateAverageRewardAmount() {
     process.exit(0);
   }
 }
+
+/**
+ * Retrieve transaction and recipient statistics for a user and export to CSV.
+ *
+ * @param {string} userId - The user's Telegram ID.
+ * @returns {void}
+ */
+async function getTransactionsAndRecipientsFromId(userId) {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+    const rewardsCollection = db.collection('rewards');
+    const transfersCollection = db.collection('transfers');
+
+    const rewards = await rewardsCollection
+      .find({ userTelegramID: userId, reason: 'referral_link' })
+      .toArray();
+
+    // Obtenir les sponsoredUserTelegramID uniques
+    const uniqueSponsoredUserIDs = [
+      ...new Set(rewards.map((item) => item.sponsoredUserTelegramID)),
+    ];
+
+    // Importer tous les documents de la collection transfers
+    const allTransfers = await transfersCollection.find().toArray();
+
+    // Configurer le writer CSV
+    const csvWriter = createCsvWriter({
+      path: 'transaction_stats.csv',
+      header: [
+        { id: 'userID', title: 'User ID' },
+        { id: 'transactionsDone', title: 'Transactions Done' },
+        { id: 'distinctRecipients', title: 'Distinct Recipients' },
+      ],
+    });
+
+    const csvData = [];
+
+    for (let i = 0; i < uniqueSponsoredUserIDs.length; i++) {
+      const userID = uniqueSponsoredUserIDs[i];
+      const transactionsDone = allTransfers.filter(
+        (transfer) => transfer.senderTgId === userID
+      ).length;
+
+      const distinctRecipients = new Set(
+        allTransfers
+          .filter((transfer) => transfer.senderTgId === userID)
+          .map((transfer) => transfer.recipientTgId)
+      );
+
+      csvData.push({
+        userID: userID,
+        transactionsDone: transactionsDone,
+        distinctRecipients: distinctRecipients.size,
+      });
+
+      // Afficher la progression
+      console.log(`Progress: ${i + 1} / ${uniqueSponsoredUserIDs.length}`);
+    }
+
+    // Écrire les données CSV dans le fichier
+    await csvWriter.writeRecords(csvData);
+
+    console.log('Exported transaction stats to transaction_stats.csv');
+  } catch (error) {
+    // Handle errors and log them
+    console.error('An error occurred:', error);
+  } finally {
+    // Exit the script
+    process.exit(0);
+  }
+}

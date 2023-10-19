@@ -6,6 +6,7 @@ import {
   REWARDS_COLLECTION,
   TRANSFERS_COLLECTION,
 } from '../utils/constants.js';
+import { createObjectCsvWriter as createCsvWriter } from 'csv-writer';
 
 // Example usage of the functions:
 // removeDuplicateTransfers();
@@ -335,6 +336,79 @@ async function getUsersFollowUps() {
     await csvWriter.writeRecords(senderTgIdInfoArray);
 
     console.log('CSV file created: sender_followup.csv');
+  } catch (error) {
+    console.error('An error occurred:', error);
+  } finally {
+    process.exit(0);
+  }
+}
+
+/**
+ * Asynchronous function to retrieve and export transactions statistics.
+ */
+async function getDoubleTxs() {
+  try {
+    const db = await Database.getInstance();
+    const collection = db.collection('transfers');
+
+    const csvWriter = createCsvWriter({
+      path: 'matched_transactions.csv',
+      header: [
+        { id: 'senderWallet', title: 'Sender Wallet' },
+        { id: 'recipientWallet', title: 'Recipient Wallet' },
+        { id: 'amount', title: 'Amount' },
+        { id: 'numberOfTransactions', title: 'Number of Transactions' },
+        { id: 'amountToRepay', title: 'Amount to Repay' },
+      ],
+    });
+
+    // Define the date range
+    const startDate = new Date('2023-10-13T09:00:00.000Z'); // Converted to UTC
+    const endDate = new Date('2023-10-15T04:00:00.000Z'); // Converted to UTC
+
+    // Filter transactions within the date range
+    const transactions = await collection
+      .find({
+        dateAdded: {
+          $gte: startDate,
+          $lte: endDate,
+        },
+      })
+      .toArray();
+
+    // Create an object to store matching transactions
+    const matchedTransactions = {};
+
+    // Analyze the transactions
+    transactions.forEach((transaction) => {
+      if (transaction.transactionHash) {
+        const key = `${transaction.senderWallet} - ${transaction.recipientWallet} - ${transaction.tokenAmount}`;
+        if (!matchedTransactions[key]) {
+          matchedTransactions[key] = {
+            senderWallet: transaction.senderWallet,
+            recipientWallet: transaction.recipientWallet,
+            amount: parseInt(transaction.tokenAmount),
+            numberOfTransactions: 1,
+            amountToRepay: 0,
+          };
+        } else {
+          matchedTransactions[key].numberOfTransactions += 1;
+          matchedTransactions[key].amountToRepay += parseInt(
+            transaction.tokenAmount
+          );
+        }
+        console.log(`Transaction ${transaction.transactionHash} done.`);
+      }
+    });
+
+    // Filter elements where numberOfTransactions > 1
+    const filteredTransactions = Object.values(matchedTransactions).filter(
+      (transaction) => transaction.numberOfTransactions > 1
+    );
+
+    // Export the filtered data to a CSV file
+    await csvWriter.writeRecords(filteredTransactions);
+    console.log('Exported matched transactions to matched_transactions.csv');
   } catch (error) {
     console.error('An error occurred:', error);
   } finally {
