@@ -22,7 +22,7 @@ const subscriptionName = process.env.PUBSUB_SUBSCRIPTION_NAME;
 
 const router = express.Router();
 
-router.get('/unacked-messages', async (req, res) => {
+router.get('/unacked-messages', authenticateApiKey, async (req, res) => {
   try {
     const client = new MetricServiceClient();
 
@@ -142,21 +142,37 @@ router.post('/', authenticateApiKey, async (req, res) => {
 const listenForMessages = () => {
   // get subscription
   const subscription = pubSubClient.subscription(subscriptionName, {
-    minAckDeadline: new Duration(parseInt(process.env.PUBSUB_MIN_ACK_DEADLINE, 10) || 60 * 1000),
-    maxAckDeadline: new Duration(parseInt(process.env.PUBSUB_MAX_ACK_DEADLINE, 10) || 1200 * 1000),
+    minAckDeadline: new Duration(
+      parseInt(process.env.PUBSUB_MIN_ACK_DEADLINE, 10) || 60 * 1000
+    ),
+    maxAckDeadline: new Duration(
+      parseInt(process.env.PUBSUB_MAX_ACK_DEADLINE, 10) || 1200 * 1000
+    ),
     flowControl: {
-      maxMessages: parseInt(process.env.PUBSUB_CONCURRENCY, 10) || 50
-    }
+      maxMessages: parseInt(process.env.PUBSUB_CONCURRENCY, 10) || 50,
+    },
   });
 
   // Process and acknowledge pub/sub message
   const messageHandler = async (message) => {
     const messageDataString = message.data.toString();
     const messageData = JSON.parse(messageDataString);
-    console.log(`Received message [${message.id},${message.deliveryAttempt},${message.publishTime.toISOString()}]:`, JSON.stringify(messageData, null, 2));
+    console.log(
+      `Received message [${message.id},${
+        message.deliveryAttempt
+      },${message.publishTime.toISOString()}]:`,
+      JSON.stringify(messageData, null, 2)
+    );
     const deadline = Date.now() / 1000 - 60 * 60 * 24; // 1 day ago{
-    if ((message.deliveryAttempt || 0) > 2 && message.publishTime.toStruct().seconds < deadline) {
-      console.log(`Dropping old message ${message.id}, publishTime=${message.publishTime.toISOString()}`);
+    if (
+      (message.deliveryAttempt || 0) > 2 &&
+      message.publishTime.toStruct().seconds < deadline
+    ) {
+      console.log(
+        `Dropping old message ${
+          message.id
+        }, publishTime=${message.publishTime.toISOString()}`
+      );
       message.ack();
       return;
     }
