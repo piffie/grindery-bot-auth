@@ -1411,6 +1411,111 @@ describe('handleNewTransaction function', async function () {
       });
     });
 
+    describe('Error 470 in PatchWallet get status endpoint', async function () {
+      beforeEach(async function () {
+        await collectionUsersMock.insertOne({
+          userTelegramID: mockUserTelegramID,
+          userName: mockUserName,
+          userHandle: mockUserHandle,
+          patchwallet: mockWallet,
+          responsePath: mockResponsePath,
+        });
+
+        await collectionTransfersMock.insertOne({
+          eventId: txId,
+          chainId: 'eip155:137',
+          tokenSymbol: 'g1',
+          tokenAddress: process.env.G1_POLYGON_ADDRESS,
+          senderTgId: mockUserTelegramID,
+          senderWallet: mockWallet,
+          senderName: mockUserName,
+          senderHandle: mockUserHandle,
+          recipientTgId: mockUserTelegramID1,
+          recipientWallet: mockWallet,
+          tokenAmount: '100',
+          status: TRANSACTION_STATUS.PENDING_HASH,
+          userOpHash: mockUserOpHash,
+        });
+
+        axiosStub.withArgs(patchwalletTxStatusUrl).rejects({
+          response: {
+            status: 470,
+          },
+        });
+      });
+
+      it('Should return true if Error 470 in PatchWallet get status endpoint', async function () {
+        const result = await handleNewTransaction({
+          senderTgId: mockUserTelegramID,
+          amount: '100',
+          recipientTgId: mockUserTelegramID1,
+          eventId: txId,
+        });
+
+        chai.expect(result).to.be.true;
+      });
+
+      it('Should not send tokens if Error 470 in PatchWallet get status endpoint', async function () {
+        const result = await handleNewTransaction({
+          senderTgId: mockUserTelegramID,
+          amount: '100',
+          recipientTgId: mockUserTelegramID1,
+          eventId: txId,
+        });
+
+        chai.expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+        ).to.be.undefined;
+      });
+
+      it('Should update database with failure status if Error 470 in PatchWallet get status endpoint', async function () {
+        const result = await handleNewTransaction({
+          senderTgId: mockUserTelegramID,
+          amount: '100',
+          recipientTgId: mockUserTelegramID1,
+          eventId: txId,
+        });
+
+        chai
+          .expect(await collectionTransfersMock.find({}).toArray())
+          .excluding(['_id', 'dateAdded'])
+          .to.deep.equal([
+            {
+              eventId: txId,
+              chainId: 'eip155:137',
+              tokenSymbol: 'g1',
+              tokenAddress: process.env.G1_POLYGON_ADDRESS,
+              senderTgId: mockUserTelegramID,
+              senderWallet: mockWallet,
+              senderName: mockUserName,
+              senderHandle: mockUserHandle,
+              recipientTgId: mockUserTelegramID1,
+              recipientWallet: mockWallet,
+              tokenAmount: '100',
+              status: TRANSACTION_STATUS.FAILURE,
+              userOpHash: mockUserOpHash,
+            },
+          ]);
+      });
+
+      it('Should not call FlowXO webhook if Error 470 in PatchWallet get status endpoint', async function () {
+        const result = await handleNewTransaction({
+          senderTgId: mockUserTelegramID,
+          amount: '100',
+          recipientTgId: mockUserTelegramID1,
+          eventId: txId,
+        });
+
+        chai.expect(
+          axiosStub
+            .getCalls()
+            .find(
+              (e) => e.firstArg === process.env.FLOWXO_NEW_TRANSACTION_WEBHOOK
+            )
+        ).to.be.undefined;
+      });
+    });
+
     describe('Transaction is set to success without transaction hash if pending_hash without userOpHash', async function () {
       beforeEach(async function () {
         await collectionUsersMock.insertOne({
