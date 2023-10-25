@@ -4,7 +4,11 @@ import { createObjectCsvWriter as createCsvWriter } from 'csv-writer';
 import fs from 'fs';
 import csv from 'csv-parser';
 import web3 from 'web3';
-import { REWARDS_COLLECTION, USERS_COLLECTION } from '../utils/constants.js';
+import {
+  REWARDS_COLLECTION,
+  TRANSFERS_COLLECTION,
+  USERS_COLLECTION,
+} from '../utils/constants.js';
 import { ObjectId } from 'mongodb';
 
 /**
@@ -732,6 +736,90 @@ async function getTransactionsAndRecipientsFromId(userId) {
     console.log('Exported transaction stats to transaction_stats.csv');
   } catch (error) {
     // Handle errors and log them
+    console.error('An error occurred:', error);
+  } finally {
+    // Exit the script
+    process.exit(0);
+  }
+}
+
+async function cleanupRewardsDB() {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+
+    const rewardsCollection = db.collection(REWARDS_COLLECTION);
+    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
+    const usersCollection = db.collection(USERS_COLLECTION);
+
+    // UPDATE EMPTY USERID IN REWARD DB
+    const rewardsToUpdate = await rewardsCollection
+      .find({
+        parentTransactionHash: { $ne: '' },
+        userTelegramID: '',
+      })
+      .toArray();
+
+    if (rewardsToUpdate.length > 0) {
+      console.log(`${rewardsToUpdate.length} rewards to update.`);
+
+      const bulkOps = await Promise.all(
+        rewardsToUpdate.map(async (reward, index) => {
+          console.log(`Updating reward ${index + 1}`);
+          // Find the corresponding transfer document
+          const transfer = await transfersCollection.findOne({
+            transactionHash: reward.parentTransactionHash,
+          });
+
+          if (transfer) {
+            // Find user information based on senderTgId
+            const user = await usersCollection.findOne({
+              userTelegramID: transfer.senderTgId,
+            });
+
+            if (user) {
+              // Update the reward document with user information
+              return {
+                updateOne: {
+                  filter: { _id: reward._id },
+                  update: {
+                    $set: {
+                      userTelegramID: user.userTelegramID,
+                      responsePath: user.responsePath,
+                      walletAddress: user.patchwallet,
+                      userHandle: user.userHandle,
+                      userName: user.userName,
+                    },
+                  },
+                },
+              };
+            }
+          }
+
+          return null; // Reward couldn't be updated
+        })
+      );
+
+      const bulkWriteOps = bulkOps.filter((op) => op !== null);
+
+      if (bulkWriteOps.length > 0) {
+        const result = await rewardsCollection.bulkWrite(bulkWriteOps);
+        console.log(`${result.modifiedCount} rewards have been updated.`);
+      } else {
+        console.log('No rewards updated.');
+      }
+    } else {
+      console.log('No rewards to update.');
+    }
+
+    // CLEAN UP REWARD DB BY REMOVING REWARDS TO SOURCE WALLET
+    const result = await rewardsCollection.deleteMany({
+      walletAddress: process.env.SOURCE_WALLET_ADDRESS,
+    });
+    console.log(
+      `${result.deletedCount} reward documents to our source wallet have been deleted.`
+    );
+  } catch (error) {
     console.error('An error occurred:', error);
   } finally {
     // Exit the script
