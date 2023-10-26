@@ -15,6 +15,7 @@ import { addIdentitySegment, addTrackSegment } from './segment.js';
 import axios from 'axios';
 import 'dotenv/config';
 import { sendTelegramMessage } from './telegram.js';
+import { reward_helpers } from './rewardHelpers.js'
 
 /**
  * Handles the signup reward for a user.
@@ -81,29 +82,21 @@ export async function handleSignUpReward(db, params) {
           `[${params.eventId}] was stopped due to too long treatment duration (> 10 min).`
         );
 
-        await db.collection(REWARDS_COLLECTION).updateOne(
+        await reward_helpers.updateRewardDB(
+          db,
           {
             userTelegramID: params.userTelegramID,
             eventId: params.eventId,
             reason: 'user_sign_up',
-          },
-          {
-            $set: {
-              userTelegramID: params.userTelegramID,
-              eventId: params.eventId,
-              reason: 'user_sign_up',
-              responsePath: params.responsePath,
-              walletAddress: params.patchwallet,
-              userHandle: params.userHandle,
-              userName: params.userName,
-              amount: '100',
-              message: 'Sign up reward',
-              status: TRANSACTION_STATUS.FAILURE,
-            },
-          },
-          { upsert: true }
-        );
-
+            responsePath: params.responsePath,
+            walletAddress: params.patchwallet,
+            userHandle: params.userHandle,
+            userName: params.userName,
+            amount: '100',
+            message: 'Sign up reward',
+            status: TRANSACTION_STATUS.FAILURE
+          }
+        )
         return true;
       }
 
@@ -118,29 +111,22 @@ export async function handleSignUpReward(db, params) {
         }
       } else {
         // Update the reward record to mark it as successful
-        await db.collection(REWARDS_COLLECTION).updateOne(
+        await reward_helpers.updateRewardDB(
+          db,
           {
             userTelegramID: params.userTelegramID,
             eventId: params.eventId,
             reason: 'user_sign_up',
-          },
-          {
-            $set: {
-              userTelegramID: params.userTelegramID,
-              eventId: params.eventId,
-              reason: 'user_sign_up',
-              responsePath: params.responsePath,
-              walletAddress: params.patchwallet,
-              userHandle: params.userHandle,
-              userName: params.userName,
-              amount: '100',
-              message: 'Sign up reward',
-              dateAdded: new Date(),
-              status: TRANSACTION_STATUS.SUCCESS,
-            },
-          },
-          { upsert: true }
-        );
+            responsePath: params.responsePath,
+            walletAddress: params.patchwallet,
+            userHandle: params.userHandle,
+            userName: params.userName,
+            amount: '100',
+            message: 'Sign up reward',
+            status: TRANSACTION_STATUS.SUCCESS,
+            dateAdded: new Date(),
+          }
+        )
         return true;
       }
     }
@@ -166,29 +152,22 @@ export async function handleSignUpReward(db, params) {
       const dateAdded = new Date();
 
       // Update the reward record to mark it as successful
-      await db.collection(REWARDS_COLLECTION).updateOne(
+      await reward_helpers.updateRewardDB(
+        db,
         {
           userTelegramID: params.userTelegramID,
           eventId: params.eventId,
           reason: 'user_sign_up',
-        },
-        {
-          $set: {
-            userTelegramID: params.userTelegramID,
-            eventId: params.eventId,
-            reason: 'user_sign_up',
-            responsePath: params.responsePath,
-            walletAddress: params.patchwallet,
-            userHandle: params.userHandle,
-            userName: params.userName,
-            amount: '100',
-            message: 'Sign up reward',
-            transactionHash: txReward.data.txHash,
-            dateAdded: dateAdded,
-            status: TRANSACTION_STATUS.SUCCESS,
-          },
-        },
-        { upsert: true }
+          responsePath: params.responsePath,
+          walletAddress: params.patchwallet,
+          userHandle: params.userHandle,
+          userName: params.userName,
+          amount: '100',
+          message: 'Sign up reward',
+          status: TRANSACTION_STATUS.SUCCESS,
+          transactionHash: txReward.data.txHash,
+          dateAdded: new Date(),
+        }
       );
 
       // Find the reward record by transaction hash
@@ -223,22 +202,15 @@ export async function handleSignUpReward(db, params) {
     }
 
     if (txReward.data.userOpHash) {
-      await db.collection(REWARDS_COLLECTION).updateOne(
+      await reward_helpers.updateRewardDB(
+        db,
         {
           userTelegramID: params.userTelegramID,
           eventId: params.eventId,
           reason: 'user_sign_up',
-        },
-        {
-          $set: {
-            userTelegramID: params.userTelegramID,
-            eventId: params.eventId,
-            reason: 'user_sign_up',
-            status: TRANSACTION_STATUS.PENDING_HASH,
-            userOpHash: txReward.data.userOpHash,
-          },
-        },
-        { upsert: true }
+          status: TRANSACTION_STATUS.PENDING_HASH,
+          userOpHash: txReward.data.userOpHash,
+        }
       );
 
       // Find the reward record by transaction hash
@@ -363,14 +335,9 @@ export async function handleReferralReward(db, params) {
           `[${params.eventId}] was stopped due to too long treatment duration (> 10 min).`
         );
 
-        await db.collection(REWARDS_COLLECTION).updateOne(
+        await reward_helpers.updateRewardDB(
+          db,
           {
-            eventId: params.eventId,
-            reason: '2x_reward',
-            userTelegramID: senderInformation.userTelegramID,
-          },
-          {
-            $set: {
               eventId: params.eventId,
               reason: '2x_reward',
               parentTransactionHash: parentTx.transactionHash,
@@ -383,9 +350,7 @@ export async function handleReferralReward(db, params) {
               message: 'Referral reward',
               status: TRANSACTION_STATUS.FAILURE,
               newUserAddress: params.patchwallet,
-            },
-          },
-          { upsert: true }
+          }
         );
 
         return true;
@@ -402,30 +367,26 @@ export async function handleReferralReward(db, params) {
         }
       } else {
         // Update the reward record to mark it as successful
-        await db.collection(REWARDS_COLLECTION).updateOne(
+        await reward_helpers.updateRewardDB(
+          db,
           {
             eventId: params.eventId,
             reason: '2x_reward',
             userTelegramID: senderInformation.userTelegramID,
-          },
-          {
-            $set: {
-              eventId: params.eventId,
-              reason: '2x_reward',
-              parentTransactionHash: parentTx.transactionHash,
-              userTelegramID: senderInformation.userTelegramID,
-              responsePath: senderInformation.responsePath,
-              walletAddress: senderWallet,
-              userHandle: senderInformation.userHandle,
-              userName: senderInformation.userName,
-              amount: '50',
-              message: 'Referral reward',
-              dateAdded: new Date(),
-              status: TRANSACTION_STATUS.SUCCESS,
-              newUserAddress: params.patchwallet,
-            },
-          },
-          { upsert: true }
+            eventId: params.eventId,
+            reason: '2x_reward',
+            parentTransactionHash: parentTx.transactionHash,
+            userTelegramID: senderInformation.userTelegramID,
+            responsePath: senderInformation.responsePath,
+            walletAddress: senderWallet,
+            userHandle: senderInformation.userHandle,
+            userName: senderInformation.userName,
+            amount: '50',
+            message: 'Referral reward',
+            dateAdded: new Date(),
+            status: TRANSACTION_STATUS.SUCCESS,
+            newUserAddress: params.patchwallet,
+          }
         );
         return true;
       }
@@ -450,31 +411,24 @@ export async function handleReferralReward(db, params) {
     if (txReward.data.txHash) {
       const dateAdded = new Date();
 
-      await db.collection(REWARDS_COLLECTION).updateOne(
+      await reward_helpers.updateRewardDB(
+        db,
         {
           eventId: params.eventId,
           reason: '2x_reward',
+          parentTransactionHash: parentTx.transactionHash,
           userTelegramID: senderInformation.userTelegramID,
-        },
-        {
-          $set: {
-            eventId: params.eventId,
-            reason: '2x_reward',
-            parentTransactionHash: parentTx.transactionHash,
-            userTelegramID: senderInformation.userTelegramID,
-            responsePath: senderInformation.responsePath,
-            walletAddress: senderWallet,
-            userHandle: senderInformation.userHandle,
-            userName: senderInformation.userName,
-            amount: '50',
-            message: 'Referral reward',
-            transactionHash: txReward.data.txHash,
-            dateAdded: dateAdded,
-            status: TRANSACTION_STATUS.SUCCESS,
-            newUserAddress: params.patchwallet,
-          },
-        },
-        { upsert: true }
+          responsePath: senderInformation.responsePath,
+          walletAddress: senderWallet,
+          userHandle: senderInformation.userHandle,
+          userName: senderInformation.userName,
+          amount: '50',
+          message: 'Referral reward',
+          transactionHash: txReward.data.txHash,
+          dateAdded: dateAdded,
+          status: TRANSACTION_STATUS.SUCCESS,
+          newUserAddress: params.patchwallet,
+        }
       );
 
       console.log(
@@ -508,34 +462,26 @@ export async function handleReferralReward(db, params) {
     }
 
     if (txReward.data.userOpHash) {
-      await db.collection(REWARDS_COLLECTION).updateOne(
+      await reward_helpers.updateRewardDB(
+        db,
         {
           eventId: params.eventId,
           reason: '2x_reward',
+          parentTransactionHash: parentTx.transactionHash,
           userTelegramID: senderInformation.userTelegramID,
-        },
-        {
-          $set: {
-            eventId: params.eventId,
-            reason: '2x_reward',
-            parentTransactionHash: parentTx.transactionHash,
-            userTelegramID: senderInformation.userTelegramID,
-            responsePath: senderInformation.responsePath,
-            walletAddress: senderWallet,
-            userHandle: senderInformation.userHandle,
-            userName: senderInformation.userName,
-            amount: '50',
-            message: 'Referral reward',
-            dateAdded: new Date(),
-            userOpHash: txReward.data.userOpHash,
-            status: TRANSACTION_STATUS.PENDING_HASH,
-            newUserAddress: params.patchwallet,
-          },
-        },
-        { upsert: true }
+          responsePath: senderInformation.responsePath,
+          walletAddress: senderWallet,
+          userHandle: senderInformation.userHandle,
+          userName: senderInformation.userName,
+          amount: '50',
+          message: 'Referral reward',
+          dateAdded: new Date(),
+          userOpHash: txReward.data.userOpHash,
+          status: TRANSACTION_STATUS.PENDING_HASH,
+          newUserAddress: params.patchwallet,
+        }
       );
     }
-
     return false;
   } catch (error) {
     console.error(
@@ -630,29 +576,23 @@ export async function handleLinkReward(
           `[${eventId}] was stopped due to too long treatment duration (> 10 min).`
         );
 
-        await db.collection(REWARDS_COLLECTION).updateOne(
+        await reward_helpers.updateRewardDB(
+          db,
           {
             userTelegramID: referentUserTelegramID,
             eventId: eventId,
             reason: 'referral_link',
-          },
-          {
-            $set: {
-              eventId: eventId,
-              userTelegramID: referentUserTelegramID,
-              responsePath: referent.responsePath,
-              walletAddress: rewardWallet,
-              reason: 'referral_link',
-              userHandle: referent.userHandle,
-              userName: referent.userName,
-              amount: '10',
-              message: 'Referral link',
-              dateAdded: new Date(),
-              sponsoredUserTelegramID: userTelegramID,
-              status: TRANSACTION_STATUS.FAILURE,
-            },
-          },
-          { upsert: true }
+            responsePath: referent.responsePath,
+            walletAddress: rewardWallet,
+            reason: 'referral_link',
+            userHandle: referent.userHandle,
+            userName: referent.userName,
+            amount: '10',
+            message: 'Referral link',
+            dateAdded: new Date(),
+            sponsoredUserTelegramID: userTelegramID,
+            status: TRANSACTION_STATUS.FAILURE,
+          }
         );
 
         return true;
@@ -669,29 +609,22 @@ export async function handleLinkReward(
         }
       } else {
         // Update the reward record to mark it as successful
-        await db.collection(REWARDS_COLLECTION).updateOne(
+        await reward_helpers.updateRewardDB(
+          db,
           {
-            userTelegramID: referentUserTelegramID,
             eventId: eventId,
+            userTelegramID: referentUserTelegramID,
+            responsePath: referent.responsePath,
+            walletAddress: rewardWallet,
             reason: 'referral_link',
-          },
-          {
-            $set: {
-              eventId: eventId,
-              userTelegramID: referentUserTelegramID,
-              responsePath: referent.responsePath,
-              walletAddress: rewardWallet,
-              reason: 'referral_link',
-              userHandle: referent.userHandle,
-              userName: referent.userName,
-              amount: '10',
-              message: 'Referral link',
-              dateAdded: new Date(),
-              sponsoredUserTelegramID: userTelegramID,
-              status: TRANSACTION_STATUS.SUCCESS,
-            },
-          },
-          { upsert: true }
+            userHandle: referent.userHandle,
+            userName: referent.userName,
+            amount: '10',
+            message: 'Referral link',
+            dateAdded: new Date(),
+            sponsoredUserTelegramID: userTelegramID,
+            status: TRANSACTION_STATUS.SUCCESS,
+          }
         );
         return true;
       }
@@ -717,30 +650,23 @@ export async function handleLinkReward(
       const dateAdded = new Date();
 
       // Add the reward to the "rewards" collection
-      await db.collection(REWARDS_COLLECTION).updateOne(
+      await reward_helpers.updateRewardDB(
+        db,
         {
           userTelegramID: referentUserTelegramID,
           sponsoredUserTelegramID: userTelegramID,
           reason: 'referral_link',
-        },
-        {
-          $set: {
-            userTelegramID: referentUserTelegramID,
-            sponsoredUserTelegramID: userTelegramID,
-            reason: 'referral_link',
-            eventId: eventId,
-            responsePath: referent.responsePath,
-            walletAddress: rewardWallet,
-            userHandle: referent.userHandle,
-            userName: referent.userName,
-            amount: '10',
-            message: 'Referral link',
-            transactionHash: txReward.data.txHash,
-            dateAdded: dateAdded,
-            status: TRANSACTION_STATUS.SUCCESS,
-          },
-        },
-        { upsert: true }
+          eventId: eventId,
+          responsePath: referent.responsePath,
+          walletAddress: rewardWallet,
+          userHandle: referent.userHandle,
+          userName: referent.userName,
+          amount: '10',
+          message: 'Referral link',
+          transactionHash: txReward.data.txHash,
+          dateAdded: dateAdded,
+          status: TRANSACTION_STATUS.SUCCESS,
+        }
       );
 
       console.log(
@@ -769,29 +695,22 @@ export async function handleLinkReward(
     }
 
     if (txReward.data.userOpHash) {
-      await db.collection(REWARDS_COLLECTION).updateOne(
+      await reward_helpers.updateRewardDB(
+        db,
         {
           userTelegramID: referentUserTelegramID,
           sponsoredUserTelegramID: userTelegramID,
           reason: 'referral_link',
-        },
-        {
-          $set: {
-            userTelegramID: referentUserTelegramID,
-            sponsoredUserTelegramID: userTelegramID,
-            reason: 'referral_link',
-            eventId: eventId,
-            responsePath: referent.responsePath,
-            walletAddress: rewardWallet,
-            userHandle: referent.userHandle,
-            userName: referent.userName,
-            amount: '10',
-            message: 'Referral link',
-            status: TRANSACTION_STATUS.PENDING_HASH,
-            userOpHash: txReward.data.userOpHash,
-          },
-        },
-        { upsert: true }
+          eventId: eventId,
+          responsePath: referent.responsePath,
+          walletAddress: rewardWallet,
+          userHandle: referent.userHandle,
+          userName: referent.userName,
+          amount: '10',
+          message: 'Referral link',
+          status: TRANSACTION_STATUS.PENDING_HASH,
+          userOpHash: txReward.data.userOpHash,
+        }
       );
     }
 
