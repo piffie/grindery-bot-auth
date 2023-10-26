@@ -2,7 +2,7 @@ import {
   REWARDS_COLLECTION,
 } from './constants.js';
 
-async function insertReferralReward(db, params) {
+async function insertRewardDB(db, params) {
   try {
     const set = {};
   
@@ -73,5 +73,5 @@ async function updateRewardDB(
   
 export const reward_helpers = {
   updateRewardDB,
-  insertReferralReward
+  insertRewardDB
 };
