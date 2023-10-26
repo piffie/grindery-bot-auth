@@ -82,7 +82,7 @@ export async function handleSignUpReward(db, params) {
           `[${params.eventId}] was stopped due to too long treatment duration (> 10 min).`
         );
 
-        await reward_helpers.updateReferralReward(
+        await reward_helpers.updateRewardDB(
           db,
           {
             userTelegramID: params.userTelegramID,
@@ -111,7 +111,7 @@ export async function handleSignUpReward(db, params) {
         }
       } else {
         // Update the reward record to mark it as successful
-        await reward_helpers.updateReferralReward(
+        await reward_helpers.updateRewardDB(
           db,
           {
             userTelegramID: params.userTelegramID,
@@ -152,7 +152,7 @@ export async function handleSignUpReward(db, params) {
       const dateAdded = new Date();
 
       // Update the reward record to mark it as successful
-      await reward_helpers.updateReferralReward(
+      await reward_helpers.updateRewardDB(
         db,
         {
           userTelegramID: params.userTelegramID,
@@ -202,13 +202,12 @@ export async function handleSignUpReward(db, params) {
     }
 
     if (txReward.data.userOpHash) {
-      await reward_helpers.updateReferralReward(
+      await reward_helpers.updateRewardDB(
         db,
         {
           userTelegramID: params.userTelegramID,
           eventId: params.eventId,
           reason: 'user_sign_up',
-          //responsePath: responsePath,
           status: TRANSACTION_STATUS.PENDING_HASH,
           userOpHash: txReward.data.userOpHash,
         }
@@ -336,7 +335,7 @@ export async function handleReferralReward(db, params) {
           `[${params.eventId}] was stopped due to too long treatment duration (> 10 min).`
         );
 
-        await reward_helpers.updateReferralReward(
+        await reward_helpers.updateRewardDB(
           db,
           {
               eventId: params.eventId,
@@ -368,7 +367,7 @@ export async function handleReferralReward(db, params) {
         }
       } else {
         // Update the reward record to mark it as successful
-        await reward_helpers.updateReferralReward(
+        await reward_helpers.updateRewardDB(
           db,
           {
             eventId: params.eventId,
@@ -412,7 +411,7 @@ export async function handleReferralReward(db, params) {
     if (txReward.data.txHash) {
       const dateAdded = new Date();
 
-      await reward_helpers.updateReferralReward(
+      await reward_helpers.updateRewardDB(
         db,
         {
           eventId: params.eventId,
@@ -463,7 +462,7 @@ export async function handleReferralReward(db, params) {
     }
 
     if (txReward.data.userOpHash) {
-      await reward_helpers.updateReferralReward(
+      await reward_helpers.updateRewardDB(
         db,
         {
           eventId: params.eventId,
@@ -577,7 +576,7 @@ export async function handleLinkReward(
           `[${eventId}] was stopped due to too long treatment duration (> 10 min).`
         );
 
-        await reward_helpers.updateReferralReward(
+        await reward_helpers.updateRewardDB(
           db,
           {
             userTelegramID: referentUserTelegramID,
@@ -610,7 +609,7 @@ export async function handleLinkReward(
         }
       } else {
         // Update the reward record to mark it as successful
-        await reward_helpers.updateReferralReward(
+        await reward_helpers.updateRewardDB(
           db,
           {
             eventId: eventId,
@@ -651,7 +650,7 @@ export async function handleLinkReward(
       const dateAdded = new Date();
 
       // Add the reward to the "rewards" collection
-      await reward_helpers.updateReferralReward(
+      await reward_helpers.updateRewardDB(
         db,
         {
           userTelegramID: referentUserTelegramID,
@@ -696,7 +695,7 @@ export async function handleLinkReward(
     }
 
     if (txReward.data.userOpHash) {
-      await reward_helpers.updateReferralReward(
+      await reward_helpers.updateRewardDB(
         db,
         {
           userTelegramID: referentUserTelegramID,

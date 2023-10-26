@@ -1,9 +1,11 @@
-async function updateReferralReward(
+import {
+  REWARDS_COLLECTION,
+} from './constants.js';
+
+async function updateRewardDB(
     db,
     params
   ) {
-    const REWARDS_COLLECTION = 'rewards';
-  
     try {
       const $set = {};
   
@@ -43,5 +45,5 @@ async function updateReferralReward(
 }
   
 export const reward_helpers = {
-    updateReferralReward
+  updateRewardDB
 };
