@@ -55,7 +55,7 @@ export async function handleSignUpReward(db, params) {
 
     if (!reward) {
       // Create a new reward record
-      await db.collection(REWARDS_COLLECTION).insertOne({
+      await reward_helpers.insertRewardDB(db, {
         eventId: params.eventId,
         userTelegramID: params.userTelegramID,
         responsePath: params.responsePath,
@@ -306,7 +306,7 @@ export async function handleReferralReward(db, params) {
       (await getPatchWalletAddressFromTgId(senderInformation.userTelegramID));
 
     if (!reward) {
-      await db.collection(REWARDS_COLLECTION).insertOne({
+      await reward_helpers.insertRewardDB(db, {
         eventId: params.eventId,
         userTelegramID: senderInformation.userTelegramID,
         responsePath: senderInformation.responsePath,
@@ -548,7 +548,7 @@ export async function handleLinkReward(
     }
 
     if (!reward) {
-      await db.collection(REWARDS_COLLECTION).insertOne({
+      await reward_helpers.insertRewardDB(db, {
         eventId: eventId,
         userTelegramID: referentUserTelegramID,
         responsePath: referent.responsePath,
