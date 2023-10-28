@@ -16,6 +16,7 @@ import axios from 'axios';
 import 'dotenv/config';
 import { sendTelegramMessage } from './telegram.js';
 import { reward_helpers } from './rewardHelpers.js';
+import { UserTelegram, createUserTelegram } from './user.js';
 
 /**
  * Handles the signup reward for a user.
@@ -694,12 +695,14 @@ export async function handleLinkReward(
 export async function handleNewReward(params) {
   const db = await Database.getInstance();
 
-  // Check if the user already exists in the "users" collection
-  const user = await db
-    .collection(USERS_COLLECTION)
-    .findOne({ userTelegramID: params.userTelegramID });
+  const user = await createUserTelegram(
+    params.userTelegramID,
+    params.responsePath,
+    params.userHandle,
+    params.userName
+  );
 
-  if (user) {
+  if (user.isInDatabase) {
     // The user already exists, stop processing
     console.log(
       `[${params.eventId}] ${user.userTelegramID} user already exists.`
@@ -707,75 +710,43 @@ export async function handleNewReward(params) {
     return true;
   }
 
-  let patchwallet = undefined;
-
-  try {
-    patchwallet = await getPatchWalletAddressFromTgId(params.userTelegramID);
-  } catch (error) {
+  if (!user.patchwallet) {
     return false;
   }
 
-  const signupReward = await webhook_utils.handleSignUpReward(db, {
-    ...params,
-    patchwallet,
-  });
-
-  if (!signupReward) {
+  if (
+    !(await webhook_utils.handleSignUpReward(db, {
+      ...params,
+      patchwallet: user.patchwallet,
+    }))
+  ) {
     return false;
   }
 
-  const referralReward = await webhook_utils.handleReferralReward(db, {
-    ...params,
-    patchwallet,
-  });
-
-  if (!referralReward) {
+  if (
+    !(await webhook_utils.handleReferralReward(db, {
+      ...params,
+      patchwallet: user.patchwallet,
+    }))
+  ) {
     return false;
   }
 
   if (params.referentUserTelegramID) {
-    const referralLinkReward = await webhook_utils.handleLinkReward(
-      db,
-      params.eventId,
-      params.userTelegramID,
-      params.referentUserTelegramID
-    );
-
-    if (!referralLinkReward) {
+    if (
+      !(await webhook_utils.handleLinkReward(
+        db,
+        params.eventId,
+        params.userTelegramID,
+        params.referentUserTelegramID
+      ))
+    ) {
       return false;
     }
   }
 
-  const dateAdded = new Date();
-  // The user doesn't exist, add him to the "users" collection
-  await db.collection(USERS_COLLECTION).insertOne({
-    userTelegramID: params.userTelegramID,
-    userHandle: params.userHandle,
-    userName: params.userName,
-    responsePath: params.responsePath,
-    patchwallet: patchwallet,
-    dateAdded: dateAdded,
-  });
-
-  console.log(
-    `[${params.eventId}] ${params.userTelegramID} added to the user database.`
-  );
-
-  try {
-    await addIdentitySegment({
-      ...params,
-      patchwallet: patchwallet,
-      dateAdded: dateAdded,
-    });
-
-    console.log(
-      `[${params.eventId}] ${params.userTelegramID} added to Segment.`
-    );
-  } catch (error) {
-    console.error(
-      `[${params.eventId}] Error processing new user in Segment: ${error}`
-    );
-  }
+  await user.saveToDatabase(params.eventId);
+  await user.saveToSegment(params.eventId);
 
   return true;
 }
