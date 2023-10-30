@@ -1,13 +1,14 @@
 import { Database } from '../db/conn.js';
 import { BigQuery } from '@google-cloud/bigquery';
+import { USERS_COLLECTION } from '../utils/constants.js';
 
 const bigqueryClient = new BigQuery();
 const datasetId = 'telegram';
 
 const importUsers = async () => {
-    const tableId = 'users_copy';
+    const tableId = 'users';
     const db = await Database.getInstance();
-    const collection = db.collection('users');
+    const collection = db.collection(USERS_COLLECTION);
   
     // Get all users from the database
     const allUsers = await collection.find({}).toArray();
@@ -73,5 +74,3 @@ async function getExistingPatchwallets(tableId) {
 
   return rows.map((row) => row.patchwallet);
 }
-
-importUsers();
