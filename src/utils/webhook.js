@@ -748,6 +748,7 @@ export async function handleNewReward(params) {
   await user.saveToDatabase(params.eventId);
   await user.saveToSegment(params.eventId);
 
+
   return true;
 }
 
