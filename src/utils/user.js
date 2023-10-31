@@ -79,14 +79,20 @@ export class UserTelegram {
   async saveToDatabase(eventId) {
     if (this.isInDatabase) return undefined;
 
-    const user = await this.db.collection(USERS_COLLECTION).insertOne({
-      userTelegramID: this.telegramID,
-      userHandle: this.userHandle,
-      userName: this.userName,
-      responsePath: this.responsePath,
-      patchwallet: this.patchwallet,
-      dateAdded: new Date(),
-    });
+    const user = await this.db.collection(USERS_COLLECTION).updateOne(
+      { userTelegramID: this.telegramID },
+      {
+        $set: {
+          userTelegramID: this.telegramID,
+          userHandle: this.userHandle,
+          userName: this.userName,
+          responsePath: this.responsePath,
+          patchwallet: this.patchwallet,
+          dateAdded: new Date(),
+        },
+      },
+      { upsert: true }
+    );
 
     console.log(`[${eventId}] ${this.telegramID} added to the user database.`);
 
