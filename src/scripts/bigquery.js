@@ -17,15 +17,14 @@ const importUsers = async () => {
       console.log('No users found in MongoDB.');
       return;
     }
-  
+
     const batchSize = 3000;
     let importedCount = 0
-  
+
     const existingPatchwallets = await getExistingPatchwallets(tableId);
-    console.log('BIGQUERY - existingPatchwallets');
-    console.log(existingPatchwallets)
+
     for (let i = 0; i < allUsers.length; i += batchSize) {
-      console.log(`BIGQUERY - importedCount ${importedCount} allUsers ${allUsers.length} i ${i}`);
+      console.log(`BIGQUERY - importedCount ${importedCount} i ${i} allUsers ${allUsers.length}`);
       const batch = allUsers.slice(i, i + batchSize);
   
       const filteredBatch = batch.filter((user) => {
@@ -65,6 +64,8 @@ const importUsers = async () => {
   
        importedCount += filteredBatch.length;
     }
+
+    process.exit(0);
 }
   
 
