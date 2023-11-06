@@ -17,7 +17,7 @@ import {
   patchwalletTxStatusUrl,
   mockUserOpHash,
 } from './utils.js';
-import { handleNewTransaction } from '../utils/webhook.js';
+import { handleNewTransaction } from '../utils/webhooks/webhook.js';
 import Sinon from 'sinon';
 import axios from 'axios';
 import 'dotenv/config';
