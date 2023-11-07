@@ -1,22 +1,22 @@
-import { Database } from '../db/conn.js';
+import { Database } from '../../db/conn.js';
 import {
   REWARDS_COLLECTION,
   TRANSACTION_STATUS,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
-} from './constants.js';
+} from '../constants.js';
 import {
   getPatchWalletAccessToken,
   getPatchWalletAddressFromTgId,
   getTxStatus,
   sendTokens,
-} from './patchwallet.js';
-import { addIdentitySegment, addTrackSegment } from './segment.js';
+} from '../patchwallet.js';
+import { addTrackSegment } from '../segment.js';
 import axios from 'axios';
 import 'dotenv/config';
-import { sendTelegramMessage } from './telegram.js';
-import { reward_helpers } from './rewardHelpers.js';
-import { UserTelegram, createUserTelegram } from './user.js';
+import { sendTelegramMessage } from '../telegram.js';
+import { reward_helpers } from '../rewardHelpers.js';
+import { createUserTelegram } from '../user.js';
 
 /**
  * Handles the signup reward for a user.
@@ -222,6 +222,7 @@ export async function handleSignUpReward(db, params) {
       `[${params.eventId}] Error processing sign up reward event: ${error}`
     );
   }
+
   return true;
 }
 

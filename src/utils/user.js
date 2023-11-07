@@ -9,7 +9,7 @@ import { addIdentitySegment } from './segment.js';
  * @param {string} responsePath - The response path.
  * @param {string} userHandle - The user's handle.
  * @param {string} userName - The user's name.
- * @returns {UserTelegram} - The initialized UserTelegram instance.
+ * @returns {Promise<UserTelegram>} - The initialized UserTelegram instance.
  */
 export async function createUserTelegram(
   telegramID,

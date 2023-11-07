@@ -10,7 +10,7 @@ import {
   patchwalletResolverUrl,
   segmentIdentifyUrl,
 } from './utils.js';
-import { handleNewReward, webhook_utils } from '../utils/webhook.js';
+import { handleNewReward, webhook_utils } from '../utils/webhooks/webhook.js';
 import Sinon from 'sinon';
 import axios from 'axios';
 import 'dotenv/config';
