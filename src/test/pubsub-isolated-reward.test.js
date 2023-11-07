@@ -14,18 +14,19 @@ import {
   patchwalletTxUrl,
   mockUserOpHash,
   patchwalletTxStatusUrl,
+  mockUserTelegramID1,
 } from './utils.js';
-import { handleSignUpReward } from '../utils/webhooks/webhook.js';
 import Sinon from 'sinon';
 import axios from 'axios';
 import 'dotenv/config';
 import chaiExclude from 'chai-exclude';
 import { v4 as uuidv4 } from 'uuid';
 import { TRANSACTION_STATUS } from '../utils/constants.js';
+import { handleIsolatedReward } from '../utils/webhooks/isolated-reward.js';
 
 chai.use(chaiExclude);
 
-describe('handleSignUpReward function', async function () {
+describe('handleIsolatedReward function', async function () {
   let sandbox;
   let axiosStub;
   let rewardId;
@@ -61,7 +62,7 @@ describe('handleSignUpReward function', async function () {
           });
         }
 
-        if (url == process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK) {
+        if (url == process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK) {
           return Promise.resolve({
             result: 'success',
           });
@@ -74,37 +75,157 @@ describe('handleSignUpReward function', async function () {
     sandbox.restore();
   });
 
-  describe('Sign up reward already exists with same eventId and is a success', async function () {
-    beforeEach(async function () {
-      await collectionRewardsMock.insertOne({
+  describe('Missing fields', async function () {
+    it('Should not do anything if userTelegramID is missing', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
-        userTelegramID: mockUserTelegramID,
-        reason: 'user_sign_up',
-        status: TRANSACTION_STATUS.SUCCESS,
+        userTelegramID: '',
+        responsePath: mockResponsePath,
+        userHandle: mockUserHandle,
+        userName: mockUserName,
+        patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
+
+      chai.expect(result).to.be.true;
+
+      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
     });
 
-    it('Should return true if Sign up reward already exists with same eventId and is a success', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should not do anything if eventId is missing', async function () {
+      const result = await handleIsolatedReward({
+        eventId: '',
+        userTelegramID: mockUserTelegramID,
+        responsePath: mockResponsePath,
+        userHandle: mockUserHandle,
+        userName: mockUserName,
+        patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
+      });
+
+      chai.expect(result).to.be.true;
+
+      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
+
+    it('Should not do anything if amount is missing', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '',
+      });
+
+      chai.expect(result).to.be.true;
+
+      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
+
+    it('Should not do anything if reason is missing', async function () {
+      const result = await handleIsolatedReward({
+        eventId: rewardId,
+        userTelegramID: mockUserTelegramID,
+        responsePath: mockResponsePath,
+        userHandle: mockUserHandle,
+        userName: mockUserName,
+        patchwallet: mockWallet,
+        reason: '',
+        message: 'isolated message 1',
+        amount: '34',
+      });
+
+      chai.expect(result).to.be.true;
+
+      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find(
+            (e) => e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
+          )
+      ).to.be.undefined;
+    });
+  });
+
+  describe('Isolated reward already exists with same eventId and is a success', async function () {
+    beforeEach(async function () {
+      await collectionRewardsMock.insertOne({
+        eventId: rewardId,
+        userTelegramID: mockUserTelegramID,
+        reason: 'isolated_reason_1',
+        status: TRANSACTION_STATUS.SUCCESS,
+      });
+    });
+
+    it('Should return true if Isolated reward already exists with same eventId and is a success', async function () {
+      const result = await handleIsolatedReward({
+        eventId: rewardId,
+        userTelegramID: mockUserTelegramID,
+        responsePath: mockResponsePath,
+        userHandle: mockUserHandle,
+        userName: mockUserName,
+        patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
 
       chai.expect(result).to.be.true;
     });
 
-    it('Should send tokens if Sign up reward already exists with same eventId and is a success', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should not send tokens if Isolated reward already exists with same eventId and is a success', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
 
       chai.expect(
@@ -112,14 +233,17 @@ describe('handleSignUpReward function', async function () {
       ).to.be.undefined;
     });
 
-    it('Should not update the dabatase if Sign up reward already exists with same eventId and is a success', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should not update the dabatase if Isolated reward already exists with same eventId and is a success', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
 
       chai
@@ -129,63 +253,72 @@ describe('handleSignUpReward function', async function () {
           {
             eventId: rewardId,
             userTelegramID: mockUserTelegramID,
-            reason: 'user_sign_up',
+            reason: 'isolated_reason_1',
             status: TRANSACTION_STATUS.SUCCESS,
           },
         ]);
     });
 
-    it('Should not call FlowXO if Sign up reward already exists with same eventId and is a success', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should not call FlowXO if Isolated reward already exists with same eventId and is a success', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
 
       chai.expect(
         axiosStub
           .getCalls()
           .find(
-            (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+            (e) => e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
           )
       ).to.be.undefined;
     });
   });
 
-  describe('Sign up reward already exists with another eventId', async function () {
+  describe('Isolated reward already exists with another eventId', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertOne({
         eventId: 'anotherEventId',
         userTelegramID: mockUserTelegramID,
-        reason: 'user_sign_up',
+        reason: 'isolated_reason_1',
         status: TRANSACTION_STATUS.SUCCESS,
       });
     });
 
-    it('Should return true if Sign up reward already exists with another eventId', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should return true if Isolated reward already exists with another eventId', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
 
       chai.expect(result).to.be.true;
     });
 
-    it('Should send tokens if Sign up reward already exists with another eventId', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should not send tokens if Isolated reward already exists with another eventId', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
 
       chai.expect(
@@ -193,14 +326,17 @@ describe('handleSignUpReward function', async function () {
       ).to.be.undefined;
     });
 
-    it('Should not update the dabatase if Sign up reward already exists with another eventId', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should not update the dabatase if Isolated reward already exists with another eventId', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
 
       chai
@@ -210,62 +346,71 @@ describe('handleSignUpReward function', async function () {
           {
             eventId: 'anotherEventId',
             userTelegramID: mockUserTelegramID,
-            reason: 'user_sign_up',
+            reason: 'isolated_reason_1',
             status: TRANSACTION_STATUS.SUCCESS,
           },
         ]);
     });
 
-    it('Should not call FlowXO if Sign up reward already exists with another eventId', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should not call FlowXO if Isolated reward already exists with another eventId', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
 
       chai.expect(
         axiosStub
           .getCalls()
           .find(
-            (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+            (e) => e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
           )
       ).to.be.undefined;
     });
   });
 
-  describe('Sign up reward already exists with no eventId', async function () {
+  describe('Isolated reward already exists with no eventId', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertOne({
         userTelegramID: mockUserTelegramID,
-        reason: 'user_sign_up',
+        reason: 'isolated_reason_1',
         status: TRANSACTION_STATUS.SUCCESS,
       });
     });
 
-    it('Should return true if Sign up reward already exists with no eventId', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should return true if Isolated reward already exists with no eventId', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
 
       chai.expect(result).to.be.true;
     });
 
-    it('Should send tokens if Sign up reward already exists with no eventId', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should not send tokens if Isolated reward already exists with no eventId', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
 
       chai.expect(
@@ -273,14 +418,17 @@ describe('handleSignUpReward function', async function () {
       ).to.be.undefined;
     });
 
-    it('Should not update the dabatase if Sign up reward already exists with no eventId', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should not update the dabatase if Isolated reward already exists with no eventId', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
 
       chai
@@ -289,63 +437,72 @@ describe('handleSignUpReward function', async function () {
         .to.deep.equal([
           {
             userTelegramID: mockUserTelegramID,
-            reason: 'user_sign_up',
+            reason: 'isolated_reason_1',
             status: TRANSACTION_STATUS.SUCCESS,
           },
         ]);
     });
 
-    it('Should not call FlowXO if Sign up reward already exists with no eventId', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should not call FlowXO if Isolated reward already exists with no eventId', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
 
       chai.expect(
         axiosStub
           .getCalls()
           .find(
-            (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+            (e) => e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
           )
       ).to.be.undefined;
     });
   });
 
-  describe('Sign up reward status pending at the beginning with same eventID', async function () {
+  describe('Isolated reward status pending at the beginning with same eventID', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertOne({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
-        reason: 'user_sign_up',
+        reason: 'isolated_reason_1',
         status: TRANSACTION_STATUS.PENDING,
       });
     });
 
-    it('Should return true if Sign up reward status pending at the beginning with same eventID', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should return true if Isolated reward status pending at the beginning with same eventID', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '100',
       });
 
       chai.expect(result).to.be.true;
     });
 
-    it('Should call the sendTokens function properly if Sign up reward status pending at the beginning with same eventID', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should call the sendTokens function properly if Isolated reward status pending at the beginning with same eventID', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '100',
       });
 
       chai
@@ -365,14 +522,17 @@ describe('handleSignUpReward function', async function () {
         });
     });
 
-    it('Should update the database with a success if Sign up reward status pending at the beginning with same eventID', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should update the database with a success if Isolated reward status pending at the beginning with same eventID', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '100',
       });
 
       chai
@@ -384,42 +544,45 @@ describe('handleSignUpReward function', async function () {
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
-            reason: 'user_sign_up',
+            reason: 'isolated_reason_1',
             userHandle: mockUserHandle,
             userName: mockUserName,
             amount: '100',
-            message: 'Sign up reward',
+            message: 'isolated message 1',
             transactionHash: mockTransactionHash,
             status: TRANSACTION_STATUS.SUCCESS,
           },
         ]);
     });
 
-    it('Should call FlowXO properly if Sign up reward status pending at the beginning with same eventID', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should call FlowXO properly if Isolated reward status pending at the beginning with same eventID', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '100',
       });
 
       const FlowXOCallArgs = axiosStub
         .getCalls()
         .find(
-          (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+          (e) => e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
         ).args[1];
 
       chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
-        reason: 'user_sign_up',
+        reason: 'isolated_reason_1',
         userHandle: mockUserHandle,
         userName: mockUserName,
         amount: '100',
-        message: 'Sign up reward',
+        message: 'isolated message 1',
         transactionHash: mockTransactionHash,
       });
 
@@ -430,37 +593,43 @@ describe('handleSignUpReward function', async function () {
     });
   });
 
-  describe('Sign up reward status failure at the beginning with same eventID', async function () {
+  describe('Isolated reward status failure at the beginning with same eventID', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertOne({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
-        reason: 'user_sign_up',
+        reason: 'isolated_reason_1',
         status: TRANSACTION_STATUS.FAILURE,
       });
     });
 
-    it('Should return true if Sign up reward status is failure at beginning with same eventID', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should return true if Isolated reward status is failure at beginning with same eventID', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '100',
       });
 
       chai.expect(result).to.be.true;
     });
 
-    it('Should call the sendTokens function properly if Sign up reward status is failure at beginning with same eventID', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should call the sendTokens function properly if Isolated reward status is failure at beginning with same eventID', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '100',
       });
 
       chai
@@ -480,14 +649,17 @@ describe('handleSignUpReward function', async function () {
         });
     });
 
-    it('Should update reward status if Sign up reward status is failure at beginning with same eventID', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should update reward status if Isolated reward status is failure at beginning with same eventID', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '100',
       });
 
       const rewards = await collectionRewardsMock.find({}).toArray();
@@ -501,11 +673,11 @@ describe('handleSignUpReward function', async function () {
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
-            reason: 'user_sign_up',
+            reason: 'isolated_reason_1',
             userHandle: mockUserHandle,
             userName: mockUserName,
             amount: '100',
-            message: 'Sign up reward',
+            message: 'isolated message 1',
             transactionHash: mockTransactionHash,
             status: TRANSACTION_STATUS.SUCCESS,
           },
@@ -517,31 +689,34 @@ describe('handleSignUpReward function', async function () {
       chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
     });
 
-    it('Should call FlowXO properly if Sign up reward status is failure at beginning with same eventID', async function () {
-      const result = await handleSignUpReward(dbMock, {
+    it('Should call FlowXO properly if Isolated reward status is failure at beginning with same eventID', async function () {
+      const result = await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '100',
       });
 
       const FlowXOCallArgs = axiosStub
         .getCalls()
         .find(
-          (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+          (e) => e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
         ).args[1];
 
       chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
-        reason: 'user_sign_up',
+        reason: 'isolated_reason_1',
         userHandle: mockUserHandle,
         userName: mockUserName,
         amount: '100',
-        message: 'Sign up reward',
+        message: 'isolated message 1',
         transactionHash: mockTransactionHash,
       });
 
@@ -553,16 +728,35 @@ describe('handleSignUpReward function', async function () {
   });
 
   describe('Normal process with a new user', async function () {
-    it('Should call the sendTokens function properly if the user is new', async function () {
-      await handleSignUpReward(dbMock, {
+    beforeEach(async function () {
+      await collectionRewardsMock.insertMany([
+        {
+          eventId: 'eventID1',
+          userTelegramID: mockUserTelegramID,
+          reason: 'isolated_reason_2',
+          status: TRANSACTION_STATUS.SUCCESS,
+        },
+        {
+          eventId: 'eventID2',
+          userTelegramID: mockUserTelegramID1,
+          reason: 'isolated_reason_1',
+          status: TRANSACTION_STATUS.SUCCESS,
+        },
+      ]);
+    });
+
+    it('Should call the sendTokens function properly if the reason is new for this user', async function () {
+      await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '100',
       });
-
       chai
         .expect(
           axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
@@ -580,111 +774,118 @@ describe('handleSignUpReward function', async function () {
         });
     });
 
-    it('Should insert a new element in the reward collection of the database if the user is new', async function () {
-      await handleSignUpReward(dbMock, {
+    it('Should insert a new element in the reward collection of the database if the reason is new for this user', async function () {
+      await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
-      });
-
-      const rewards = await collectionRewardsMock.find({}).toArray();
-
-      chai.expect(rewards.length).to.equal(1);
-      chai.expect(rewards[0]).excluding(['_id', 'dateAdded']).to.deep.equal({
-        eventId: rewardId,
-        userTelegramID: mockUserTelegramID,
-        responsePath: mockResponsePath,
-        walletAddress: mockWallet,
-        reason: 'user_sign_up',
-        userHandle: mockUserHandle,
-        userName: mockUserName,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
         amount: '100',
-        message: 'Sign up reward',
-        transactionHash: mockTransactionHash,
-        status: TRANSACTION_STATUS.SUCCESS,
       });
+      const rewards = await collectionRewardsMock.find({}).toArray();
       chai
-        .expect(rewards[0].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
+        .expect(rewards)
+        .excluding(['_id', 'dateAdded'])
+        .to.deep.equal([
+          {
+            eventId: 'eventID1',
+            userTelegramID: mockUserTelegramID,
+            reason: 'isolated_reason_2',
+            status: TRANSACTION_STATUS.SUCCESS,
+          },
+          {
+            eventId: 'eventID2',
+            userTelegramID: mockUserTelegramID1,
+            reason: 'isolated_reason_1',
+            status: TRANSACTION_STATUS.SUCCESS,
+          },
+          {
+            eventId: rewardId,
+            userTelegramID: mockUserTelegramID,
+            responsePath: mockResponsePath,
+            walletAddress: mockWallet,
+            reason: 'isolated_reason_1',
+            userHandle: mockUserHandle,
+            userName: mockUserName,
+            amount: '100',
+            message: 'isolated message 1',
+            transactionHash: mockTransactionHash,
+            status: TRANSACTION_STATUS.SUCCESS,
+          },
+        ]);
     });
 
-    it('Should call FlowXO webhook properly if the user is new', async function () {
-      await handleSignUpReward(dbMock, {
+    it('Should call FlowXO webhook properly if the reason is new for this user', async function () {
+      await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '100',
       });
-
       const FlowXOCallArgs = axiosStub
         .getCalls()
         .find(
-          (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+          (e) => e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
         ).args[1];
-
       chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
-        reason: 'user_sign_up',
+        reason: 'isolated_reason_1',
         userHandle: mockUserHandle,
         userName: mockUserName,
         amount: '100',
-        message: 'Sign up reward',
+        message: 'isolated message 1',
         transactionHash: mockTransactionHash,
       });
-
       chai
         .expect(FlowXOCallArgs.dateAdded)
         .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
       chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
     });
 
-    it('Should return true if the user is new', async function () {
+    it('Should return true if the reason is new for this user', async function () {
       chai.expect(
-        await handleSignUpReward(dbMock, {
+        await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '100',
+          message: 'isolated message 1',
         })
       ).to.be.true;
-    });
-
-    it('Should not add the user in the database (in handleSignUpReward) if the user is new', async function () {
-      await handleSignUpReward(dbMock, {
-        eventId: rewardId,
-        userTelegramID: mockUserTelegramID,
-        responsePath: mockResponsePath,
-        userHandle: mockUserHandle,
-        userName: mockUserName,
-        patchwallet: mockWallet,
-      });
-      chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
     });
   });
 
   it('Should return true if there is an error in FlowXO', async function () {
     axiosStub
-      .withArgs(process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK)
+      .withArgs(process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK)
       .rejects(new Error('Service not available'));
 
     chai.expect(
-      await handleSignUpReward(dbMock, {
+      await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       })
     ).to.be.true;
   });
@@ -694,31 +895,35 @@ describe('handleSignUpReward function', async function () {
       axiosStub
         .withArgs(patchwalletTxUrl)
         .rejects(new Error('Service not available'));
-
       chai.expect(
-        await handleSignUpReward(dbMock, {
+        await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          message: 'isolated message 1',
+          amount: '34',
         })
       ).to.be.false;
     });
 
-    it('Should set signup reward to pending in db if there is an error in the transaction', async function () {
+    it('Should set isolated reward to pending in db if there is an error in the transaction', async function () {
       axiosStub
         .withArgs(patchwalletTxUrl)
         .rejects(new Error('Service not available'));
-
-      await handleSignUpReward(dbMock, {
+      await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
       chai
         .expect(await collectionRewardsMock.find({}).toArray())
@@ -729,11 +934,11 @@ describe('handleSignUpReward function', async function () {
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
-            reason: 'user_sign_up',
+            reason: 'isolated_reason_1',
             userHandle: mockUserHandle,
             userName: mockUserName,
-            amount: '100',
-            message: 'Sign up reward',
+            amount: '34',
+            message: 'isolated message 1',
             dateAdded: new Date(),
             status: TRANSACTION_STATUS.PENDING,
           },
@@ -744,21 +949,22 @@ describe('handleSignUpReward function', async function () {
       axiosStub
         .withArgs(patchwalletTxUrl)
         .rejects(new Error('Service not available'));
-
-      await handleSignUpReward(dbMock, {
+      await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
-
       chai.expect(
         axiosStub
           .getCalls()
           .find(
-            (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+            (e) => e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
           )
       ).to.be.undefined;
     });
@@ -775,25 +981,31 @@ describe('handleSignUpReward function', async function () {
 
     it('Should return false if there is no hash in PatchWallet response', async function () {
       chai.expect(
-        await handleSignUpReward(dbMock, {
+        await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          message: 'isolated message 1',
+          amount: '34',
         })
       ).to.be.false;
     });
 
-    it('Should set signup reward to pending in db if there is no hash in PatchWallet response', async function () {
-      await handleSignUpReward(dbMock, {
+    it('Should set isolated reward to pending in db if there is no hash in PatchWallet response', async function () {
+      await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
 
       chai
@@ -805,30 +1017,33 @@ describe('handleSignUpReward function', async function () {
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
-            reason: 'user_sign_up',
+            reason: 'isolated_reason_1',
             userHandle: mockUserHandle,
             userName: mockUserName,
-            amount: '100',
-            message: 'Sign up reward',
+            amount: '34',
+            message: 'isolated message 1',
             status: TRANSACTION_STATUS.PENDING,
           },
         ]);
     });
 
     it('Should not call FlowXO if there is no hash in PatchWallet response', async function () {
-      await handleSignUpReward(dbMock, {
+      await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
         userName: mockUserName,
         patchwallet: mockWallet,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '34',
       });
       chai.expect(
         axiosStub
           .getCalls()
           .find(
-            (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+            (e) => e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
           )
       ).to.be.undefined;
     });
@@ -844,30 +1059,33 @@ describe('handleSignUpReward function', async function () {
           },
         });
       });
-
       it('Should return false if transaction hash is empty in tx PatchWallet endpoint', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          message: 'isolated message 1',
+          amount: '34',
         });
-
         chai.expect(result).to.be.false;
       });
 
       it('Should update reward database with a pending_hash status and userOpHash if transaction hash is empty in tx PatchWallet endpoint', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          message: 'isolated message 1',
+          amount: '34',
         });
-
         chai
           .expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
@@ -877,11 +1095,11 @@ describe('handleSignUpReward function', async function () {
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: 'isolated_reason_1',
               userHandle: mockUserHandle,
               userName: mockUserName,
-              amount: '100',
-              message: 'Sign up reward',
+              amount: '34',
+              message: 'isolated message 1',
               status: TRANSACTION_STATUS.PENDING_HASH,
               userOpHash: mockUserOpHash,
             },
@@ -889,20 +1107,23 @@ describe('handleSignUpReward function', async function () {
       });
 
       it('Should not call FlowXO webhook if transaction hash is empty in tx PatchWallet endpoint', async function () {
-        await handleSignUpReward(dbMock, {
+        await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          message: 'isolated message 1',
+          amount: '34',
         });
-
         chai.expect(
           axiosStub
             .getCalls()
             .find(
-              (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+              (e) =>
+                e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
             )
         ).to.be.undefined;
       });
@@ -915,54 +1136,60 @@ describe('handleSignUpReward function', async function () {
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
           userHandle: mockUserHandle,
           userName: mockUserName,
-          amount: '100',
-          message: 'Sign up reward',
           status: TRANSACTION_STATUS.PENDING_HASH,
           userOpHash: mockUserOpHash,
+          reason: 'isolated_reason_1',
+          message: 'isolated message 1',
+          amount: '34',
         });
       });
 
       it('Should return true if transaction hash is present in PatchWallet status endpoint', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          message: 'isolated message 1',
+          amount: '34',
         });
-
         chai.expect(result).to.be.true;
       });
 
       it('Should not send tokens if transaction hash is present in PatchWallet status endpoint', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          message: 'isolated message 1',
+          amount: '34',
         });
-
         chai.expect(
           axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
         ).to.be.undefined;
       });
 
       it('Should update the database with a success status if transaction hash is present in PatchWallet status endpoint', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          message: 'isolated message 1',
+          amount: '34',
         });
-
         chai
           .expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
@@ -972,11 +1199,11 @@ describe('handleSignUpReward function', async function () {
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: 'isolated_reason_1',
               userHandle: mockUserHandle,
               userName: mockUserName,
-              amount: '100',
-              message: 'Sign up reward',
+              amount: '34',
+              message: 'isolated message 1',
               status: TRANSACTION_STATUS.SUCCESS,
               transactionHash: mockTransactionHash,
               userOpHash: mockUserOpHash,
@@ -985,33 +1212,33 @@ describe('handleSignUpReward function', async function () {
       });
 
       it('Should call FlowXO webhook properly if transaction hash is present in PatchWallet status endpoint', async function () {
-        await handleSignUpReward(dbMock, {
+        await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          message: 'isolated message 1',
+          amount: '34',
         });
-
         const FlowXOCallArgs = axiosStub
           .getCalls()
           .find(
-            (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+            (e) => e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
           ).args[1];
-
         chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
+          reason: 'isolated_reason_1',
           userHandle: mockUserHandle,
           userName: mockUserName,
-          amount: '100',
-          message: 'Sign up reward',
+          amount: '34',
+          message: 'isolated message 1',
           transactionHash: mockTransactionHash,
         });
-
         chai
           .expect(FlowXOCallArgs.dateAdded)
           .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
@@ -1026,15 +1253,14 @@ describe('handleSignUpReward function', async function () {
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
+          reason: 'isolated_reason_1',
           userHandle: mockUserHandle,
           userName: mockUserName,
-          amount: '100',
-          message: 'Sign up reward',
+          amount: '34',
+          message: 'isolated message 1',
           status: TRANSACTION_STATUS.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
-
         axiosStub.withArgs(patchwalletTxStatusUrl).resolves({
           data: {
             txHash: '',
@@ -1044,43 +1270,49 @@ describe('handleSignUpReward function', async function () {
       });
 
       it('Should return false if transaction hash is not present in PatchWallet status endpoint', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai.expect(result).to.be.false;
       });
 
       it('Should not send tokens if transaction hash is not present in PatchWallet status endpoint', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai.expect(
           axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
         ).to.be.undefined;
       });
 
       it('Should not update database if transaction hash is not present in PatchWallet status endpoint', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai
           .expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
@@ -1090,11 +1322,11 @@ describe('handleSignUpReward function', async function () {
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: 'isolated_reason_1',
               userHandle: mockUserHandle,
               userName: mockUserName,
-              amount: '100',
-              message: 'Sign up reward',
+              amount: '34',
+              message: 'isolated message 1',
               status: TRANSACTION_STATUS.PENDING_HASH,
               userOpHash: mockUserOpHash,
             },
@@ -1102,25 +1334,27 @@ describe('handleSignUpReward function', async function () {
       });
 
       it('Should not call FlowXO webhook if transaction hash is not present in PatchWallet status endpoint', async function () {
-        await handleSignUpReward(dbMock, {
+        await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai.expect(
           axiosStub
             .getCalls()
             .find(
-              (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+              (e) =>
+                e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
             )
         ).to.be.undefined;
       });
     });
-
     describe('Error in PatchWallet get status endpoint', async function () {
       beforeEach(async function () {
         await collectionRewardsMock.insertOne({
@@ -1128,58 +1362,63 @@ describe('handleSignUpReward function', async function () {
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
           userHandle: mockUserHandle,
           userName: mockUserName,
-          amount: '100',
-          message: 'Sign up reward',
           status: TRANSACTION_STATUS.PENDING_HASH,
           userOpHash: mockUserOpHash,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         axiosStub
           .withArgs(patchwalletTxStatusUrl)
           .rejects(new Error('Service not available'));
       });
 
       it('Should return false if Error in PatchWallet get status endpoint', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai.expect(result).to.be.false;
       });
 
       it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai.expect(
           axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
         ).to.be.undefined;
       });
 
       it('Should not update database if Error in PatchWallet get status endpoint', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai
           .expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
@@ -1189,32 +1428,34 @@ describe('handleSignUpReward function', async function () {
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: 'isolated_reason_1',
               userHandle: mockUserHandle,
               userName: mockUserName,
-              amount: '100',
-              message: 'Sign up reward',
+              amount: '34',
+              message: 'isolated message 1',
               status: TRANSACTION_STATUS.PENDING_HASH,
               userOpHash: mockUserOpHash,
             },
           ]);
       });
-
       it('Should not call FlowXO webhook if Error in PatchWallet get status endpoint', async function () {
-        await handleSignUpReward(dbMock, {
+        await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai.expect(
           axiosStub
             .getCalls()
             .find(
-              (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+              (e) =>
+                e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
             )
         ).to.be.undefined;
       });
@@ -1227,53 +1468,59 @@ describe('handleSignUpReward function', async function () {
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
           userHandle: mockUserHandle,
           userName: mockUserName,
-          amount: '100',
-          message: 'Sign up reward',
           status: TRANSACTION_STATUS.PENDING_HASH,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
       });
 
       it('Should return true if transaction hash is pending_hash without userOpHash', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai.expect(result).to.be.true;
       });
 
       it('Should not send tokens if transaction hash is pending_hash without userOpHash', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai.expect(
           axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
         ).to.be.undefined;
       });
 
       it('Should update reward database with a success status if transaction hash is pending_hash without userOpHash', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai
           .expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
@@ -1283,31 +1530,34 @@ describe('handleSignUpReward function', async function () {
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: 'isolated_reason_1',
               userHandle: mockUserHandle,
               userName: mockUserName,
-              amount: '100',
-              message: 'Sign up reward',
+              amount: '34',
+              message: 'isolated message 1',
               status: TRANSACTION_STATUS.SUCCESS,
             },
           ]);
       });
 
       it('Should not call FlowXO webhook if transaction hash is empty in tx PatchWallet endpoint', async function () {
-        await handleSignUpReward(dbMock, {
+        await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai.expect(
           axiosStub
             .getCalls()
             .find(
-              (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+              (e) =>
+                e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
             )
         ).to.be.undefined;
       });
@@ -1320,16 +1570,15 @@ describe('handleSignUpReward function', async function () {
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
           userHandle: mockUserHandle,
           userName: mockUserName,
-          amount: '100',
-          message: 'Sign up reward',
           status: TRANSACTION_STATUS.PENDING_HASH,
           userOpHash: mockUserOpHash,
           dateAdded: new Date(Date.now() - 12 * 60 * 1000),
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         axiosStub.withArgs(patchwalletTxStatusUrl).resolves({
           data: {
             txHash: '',
@@ -1337,45 +1586,50 @@ describe('handleSignUpReward function', async function () {
           },
         });
       });
-
       it('Should return true after 10 min of trying to get status', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai.expect(result).to.be.true;
       });
 
       it('Should not send tokens after 10 min of trying to get status', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai.expect(
           axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
         ).to.be.undefined;
       });
 
       it('Should update reward database with a failure status after 10 min of trying to get status', async function () {
-        const result = await handleSignUpReward(dbMock, {
+        const result = await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai
           .expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
@@ -1385,11 +1639,11 @@ describe('handleSignUpReward function', async function () {
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: 'isolated_reason_1',
               userHandle: mockUserHandle,
               userName: mockUserName,
-              amount: '100',
-              message: 'Sign up reward',
+              amount: '34',
+              message: 'isolated message 1',
               userOpHash: mockUserOpHash,
               status: TRANSACTION_STATUS.FAILURE,
             },
@@ -1397,20 +1651,23 @@ describe('handleSignUpReward function', async function () {
       });
 
       it('Should not call FlowXO webhook after 10 min of trying to get status', async function () {
-        await handleSignUpReward(dbMock, {
+        await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
           userName: mockUserName,
           patchwallet: mockWallet,
+          reason: 'isolated_reason_1',
+          amount: '34',
+          message: 'isolated message 1',
         });
-
         chai.expect(
           axiosStub
             .getCalls()
             .find(
-              (e) => e.firstArg === process.env.FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK
+              (e) =>
+                e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
             )
         ).to.be.undefined;
       });

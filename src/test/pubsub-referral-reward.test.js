@@ -36,7 +36,7 @@ import {
   mockUserName3,
   mockWallet3,
 } from './utils.js';
-import { handleReferralReward } from '../utils/webhook.js';
+import { handleReferralReward } from '../utils/webhooks/webhook.js';
 import Sinon from 'sinon';
 import axios from 'axios';
 import 'dotenv/config';

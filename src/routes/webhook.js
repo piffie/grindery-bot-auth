@@ -1,10 +1,18 @@
 import express from 'express';
 import { PubSub, Duration } from '@google-cloud/pubsub';
 import { authenticateApiKey } from '../utils/auth.js';
-import { handleNewReward, handleNewTransaction } from '../utils/webhook.js';
+import {
+  handleNewReward,
+  handleNewTransaction,
+} from '../utils/webhooks/webhook.js';
 import { v4 as uuidv4 } from 'uuid';
 import { MetricServiceClient } from '@google-cloud/monitoring';
+<<<<<<< HEAD
 tettes
+=======
+import { handleIsolatedReward } from '../utils/webhooks/isolated-reward.js';
+
+>>>>>>> 57d5aea11e834a7463a9c9f9bb461550e7c37204
 /**
  * This is a generic and extendable implementation of a webhook endpoint and pub/sub messages queue.
  * It can be used to catch any webhook event and push it to the queue for processing.
@@ -116,6 +124,18 @@ router.post('/', authenticateApiKey, async (req, res) => {
       }
     }
 
+    if (req.body.event === 'isolated_reward') {
+      if (!req.body.params.userTelegramID) {
+        res
+          .status(400)
+          .json({ success: false, message: 'User Telegram ID is missing' });
+      } else if (!req.body.params.amount) {
+        res.status(400).json({ success: false, message: 'Amount is missing' });
+      } else if (!req.body.params.reason) {
+        res.status(400).json({ success: false, message: 'Reason is missing' });
+      }
+    }
+
     req.body.event === 'new_transaction_batch'
       ? req.body.params.forEach(
           (transaction) => (transaction.eventId = uuidv4())
@@ -208,6 +228,10 @@ const listenForMessages = () => {
         // New reward has been issued to user
         case 'new_reward':
           processed = await handleNewReward(messageData.params);
+          break;
+        // Isolated reward
+        case 'isolated_reward':
+          processed = await handleIsolatedReward(messageData.params);
           break;
         default:
           processed = true;
