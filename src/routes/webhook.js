@@ -120,6 +120,18 @@ router.post('/', authenticateApiKey, async (req, res) => {
       }
     }
 
+    if (req.body.event === 'isolated_reward') {
+      if (!req.body.params.userTelegramID) {
+        res
+          .status(400)
+          .json({ success: false, message: 'User Telegram ID is missing' });
+      } else if (!req.body.params.amount) {
+        res.status(400).json({ success: false, message: 'Amount is missing' });
+      } else if (!req.body.params.reason) {
+        res.status(400).json({ success: false, message: 'Reason is missing' });
+      }
+    }
+
     req.body.event === 'new_transaction_batch'
       ? req.body.params.forEach(
           (transaction) => (transaction.eventId = uuidv4())
