@@ -266,13 +266,13 @@ async function updateTransfersStatus() {
 
 async function importMissingTransferFromCSV(fileName) {
   const collectionName = '';
-  const db = await Database.getInstance(collectionName);
-  const collection = db.collection();
+  const db = await Database.getInstance();
+  const collection = db.collection(collectionName);
   const usersCollection = db.collection(USERS_COLLECTION);
   const groups = new Map();
 
-  const startDate = new Date('2023-11-07T00:00:00Z');
-  const endDate = new Date('2023-11-07T23:59:59Z');
+  const startDate = new Date('2023-11-08T00:00:00Z');
+  const endDate = new Date('2023-11-08T23:59:59Z');
 
   if (!fs.existsSync(fileName)) {
     console.log(`File ${fileName} does not exist.`);
@@ -301,7 +301,6 @@ async function importMissingTransferFromCSV(fileName) {
 
   csvStream.on('end', async () => {
     const bulkOps = [];
-    const batchSize = 20;
     let i = 1;
     const insertedDocs = [];
 
@@ -331,7 +330,7 @@ async function importMissingTransferFromCSV(fileName) {
       const countInDB = await collection.countDocuments({
         senderWallet: web3.utils.toChecksumAddress(senderWallet),
         recipientWallet: web3.utils.toChecksumAddress(recipientWallet),
-        tokenAmount: Number(tokenAmount) / 1e18,
+        tokenAmount: String(Number(tokenAmount) / 1e18),
         transactionHash,
       });
       console.log('countInDB ', countInDB);
@@ -376,21 +375,14 @@ async function importMissingTransferFromCSV(fileName) {
               },
             },
           });
-
-          if (bulkOps.length >= batchSize) {
-            const collectionMissingTransfer = db.collection(collectionName);
-            await collectionMissingTransfer.bulkWrite(bulkOps, {
-              ordered: true,
-            });
-            bulkOps.length = 0;
-          }
         }
       }
       i++;
     }
 
     if (bulkOps.length > 0) {
-      await collection.bulkWrite(bulkOps, { ordered: true });
+      const collectionMissingTransfer = db.collection('transfers-missing');
+      await collectionMissingTransfer.bulkWrite(bulkOps, { ordered: true });
     }
 
     console.log('\nDocs inserted: ', insertedDocs);
