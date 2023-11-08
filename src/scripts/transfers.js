@@ -265,92 +265,141 @@ async function updateTransfersStatus() {
 }
 
 async function importMissingTransferFromCSV(fileName) {
-  const db = await Database.getInstance();
-  const collection = db.collection(TRANSFERS_COLLECTION);
+  const collectionName = '';
+  const db = await Database.getInstance(collectionName);
+  const collection = db.collection();
   const usersCollection = db.collection(USERS_COLLECTION);
+  const groups = new Map();
 
-  const batchSize = 10000;
-  const transfers = [];
-  const formattedMissingTransfers = [];
+  const startDate = new Date('2023-11-07T00:00:00Z');
+  const endDate = new Date('2023-11-07T23:59:59Z');
 
   if (!fs.existsSync(fileName)) {
     console.log(`File ${fileName} does not exist.`);
     process.exit(1);
   }
 
-  fs.createReadStream(fileName)
-    .pipe(csv())
-    .on('data', (row) => {
-      transfers.push(row);
-    })
-    .on('end', async () => {
-      const existingHashes = await collection.distinct('transactionHash');
+  const csvStream = fs.createReadStream(fileName).pipe(csv());
 
-      const missingTransfers = transfers.filter(
-        (transfer) => !existingHashes.includes(transfer.transaction_hash)
-      );
+  csvStream.on('data', async (row) => {
+    const blockTimestamp = new Date(row.block_timestamp);
 
-      console.log('Number of transfers in csv file: ', transfers.length);
-      console.log(
-        'Number of transfers in `transfers` collection: ',
-        existingHashes.length
-      );
-      console.log(
-        'Number of missing transfers in `transfers` collection: ',
-        missingTransfers.length
-      );
-
-      let count = 1;
-      for (const transfer of missingTransfers) {
-        console.log(
-          `Formating transfer index: ${count} - total: ${missingTransfers.length} `
-        );
-        const senderUser = await usersCollection.findOne({
-          patchwallet: web3.utils.toChecksumAddress(transfer.from_address),
-        });
-        const senderTgId = senderUser ? senderUser.userTelegramID : undefined;
-        const senderName = senderUser ? senderUser.userName : undefined;
-        const senderHandle = senderUser ? senderUser.userHandle : undefined;
-
-        const recipientUser = await usersCollection.findOne({
-          patchwallet: web3.utils.toChecksumAddress(transfer.to_address),
-        });
-        const recipientTgId = recipientUser
-          ? recipientUser.userTelegramID
-          : undefined;
-
-        formattedMissingTransfers.push({
-          TxId: transfer.transaction_hash.substring(1, 8),
-          chainId: 'eip155:137',
-          tokenSymbol: 'g1',
-          tokenAddress: '0xe36BD65609c08Cd17b53520293523CF4560533d0',
-          senderTgId: senderTgId,
-          senderWallet: web3.utils.toChecksumAddress(transfer.from_address),
-          senderName: senderName,
-          recipientTgId: recipientTgId,
-          recipientWallet: web3.utils.toChecksumAddress(transfer.to_address),
-          tokenAmount: String(Number(transfer.value) / 1e18),
-          transactionHash: transfer.transaction_hash,
-          dateAdded: new Date(transfer.block_timestamp),
-          status: 'success',
-          senderHandle: senderHandle,
-        });
-        count++;
+    if (
+      blockTimestamp >= startDate &&
+      blockTimestamp <= endDate &&
+      web3.utils.toChecksumAddress(row.from_address) !==
+        process.env.SOURCE_WALLET_ADDRESS
+    ) {
+      const key = `${row.from_address}-${row.to_address}-${row.value}-${row.transaction_hash}-${row.block_timestamp}`;
+      if (groups.has(key)) {
+        groups.set(key, groups.get(key) + 1);
+      } else {
+        groups.set(key, 1);
       }
+    }
+  });
 
-      if (formattedMissingTransfers.length > 0) {
-        const collectionTest = db.collection('transfers-test');
+  csvStream.on('end', async () => {
+    const bulkOps = [];
+    const batchSize = 20;
+    let i = 1;
+    const insertedDocs = [];
 
-        for (let i = 0; i < formattedMissingTransfers.length; i += batchSize) {
-          const batch = formattedMissingTransfers.slice(i, i + batchSize);
-          await collectionTest.insertMany(batch);
-          console.log(`Inserted batch ${i / batchSize + 1}`);
+    console.log('\nGroups quantity ', groups.size);
+
+    for (const [key, count] of groups) {
+      const [
+        senderWallet,
+        recipientWallet,
+        tokenAmount,
+        transactionHash,
+        blockTimestamp,
+      ] = key.split('-');
+      console.log(
+        '\nQuantity of groups in csv: ',
+        groups.size,
+        ' Group: ',
+        i,
+        ' Key: ',
+        {
+          senderWallet: web3.utils.toChecksumAddress(senderWallet),
+          recipientWallet: web3.utils.toChecksumAddress(recipientWallet),
+          tokenAmount: Number(tokenAmount) / 1e18,
+          transactionHash,
+        }
+      );
+      const countInDB = await collection.countDocuments({
+        senderWallet: web3.utils.toChecksumAddress(senderWallet),
+        recipientWallet: web3.utils.toChecksumAddress(recipientWallet),
+        tokenAmount: Number(tokenAmount) / 1e18,
+        transactionHash,
+      });
+      console.log('countInDB ', countInDB);
+
+      const missingCount = count - countInDB;
+
+      if (missingCount > 0) {
+        console.log('Insert key: ', key);
+        for (let i = 0; i < missingCount; i++) {
+          insertedDocs.push(key);
+
+          const senderUser = await usersCollection.findOne({
+            patchwallet: web3.utils.toChecksumAddress(senderWallet),
+          });
+          const senderTgId = senderUser ? senderUser.userTelegramID : undefined;
+          const senderName = senderUser ? senderUser.userName : undefined;
+          const senderHandle = senderUser ? senderUser.userHandle : undefined;
+          const recipientUser = await usersCollection.findOne({
+            patchwallet: web3.utils.toChecksumAddress(senderWallet),
+          });
+          const recipientTgId = recipientUser
+            ? recipientUser.userTelegramID
+            : undefined;
+
+          bulkOps.push({
+            insertOne: {
+              document: {
+                TxId: transactionHash.substring(1, 8),
+                chainId: 'eip155:137',
+                tokenSymbol: 'g1',
+                tokenAddress: '0xe36BD65609c08Cd17b53520293523CF4560533d0',
+                senderTgId: senderTgId,
+                senderWallet: web3.utils.toChecksumAddress(senderWallet),
+                senderName: senderName,
+                recipientTgId: recipientTgId,
+                recipientWallet: web3.utils.toChecksumAddress(recipientWallet),
+                tokenAmount: Number(tokenAmount) / 1e18,
+                transactionHash: transactionHash,
+                dateAdded: new Date(blockTimestamp),
+                status: 'success',
+                senderHandle: senderHandle,
+              },
+            },
+          });
+
+          if (bulkOps.length >= batchSize) {
+            const collectionMissingTransfer = db.collection(collectionName);
+            await collectionMissingTransfer.bulkWrite(bulkOps, {
+              ordered: true,
+            });
+            bulkOps.length = 0;
+          }
         }
       }
+      i++;
+    }
 
-      console.log('\n All data has been read \n');
-    })
-    .on('error', (error) => {
-      console.log('\n Errors during CSV parsing \n', error);
-    });
+    if (bulkOps.length > 0) {
+      await collection.bulkWrite(bulkOps, { ordered: true });
+    }
+
+    console.log('\nDocs inserted: ', insertedDocs);
+    console.log('\nQuantity of docs inserted: ', insertedDocs.length);
+    process.exit(0);
+  });
+
+  csvStream.on('error', (error) => {
+    console.log('\nErrors during CSV parsing\n', error);
+    process.exit(1);
+  });
 }

@@ -7,12 +7,8 @@ import {
 } from '../utils/webhooks/webhook.js';
 import { v4 as uuidv4 } from 'uuid';
 import { MetricServiceClient } from '@google-cloud/monitoring';
-<<<<<<< HEAD
-tettes
-=======
 import { handleIsolatedReward } from '../utils/webhooks/isolated-reward.js';
 
->>>>>>> 57d5aea11e834a7463a9c9f9bb461550e7c37204
 /**
  * This is a generic and extendable implementation of a webhook endpoint and pub/sub messages queue.
  * It can be used to catch any webhook event and push it to the queue for processing.
