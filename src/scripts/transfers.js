@@ -445,9 +445,69 @@ async function convertFieldsToString() {
           filter: { _id: document._id },
           update: {
             $set: {
-              senderTgId: String(document.senderTgId),
-              recipientTgId: String(document.recipientTgId),
-              tokenAmount: String(document.tokenAmount),
+              senderTgId: document.senderTgId
+                ? String(document.senderTgId)
+                : null,
+              recipientTgId: document.recipientTgId
+                ? String(document.recipientTgId)
+                : null,
+              tokenAmount: document.tokenAmount
+                ? String(document.tokenAmount)
+                : null,
+            },
+          },
+        },
+      };
+      return updateOperation;
+    });
+
+    // Perform the bulk write operations
+    const result = await transfersCollection.bulkWrite(bulkWriteOperations);
+
+    console.log(`Updated ${result.modifiedCount} documents.`);
+  } catch (error) {
+    console.error('An error occurred:', error);
+  } finally {
+    process.exit(0);
+  }
+}
+
+async function nullifyTgIds() {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+
+    // Get the transfers collection
+    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
+
+    // Find documents where senderTgId, recipientTgId, or tokenAmount are numbers
+    const numericDocuments = await transfersCollection
+      .find({
+        $or: [
+          { senderTgId: 'null' },
+          { recipientTgId: 'null' },
+          { tokenAmount: 'null' },
+        ],
+      })
+      .toArray();
+
+    console.log('numericDocuments', numericDocuments);
+
+    // Create bulk write operations to update documents
+    const bulkWriteOperations = numericDocuments.map((document) => {
+      const updateOperation = {
+        updateOne: {
+          filter: { _id: document._id },
+          update: {
+            $set: {
+              senderTgId:
+                document.senderTgId === 'null' ? null : document.senderTgId,
+              recipientTgId:
+                document.recipientTgId === 'null'
+                  ? null
+                  : document.recipientTgId,
+              tokenAmount:
+                document.tokenAmount === 'null' ? null : document.tokenAmount,
             },
           },
         },
