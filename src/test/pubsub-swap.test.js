@@ -18,6 +18,7 @@ import {
   mockUserOpHash,
   mockUserTelegramID,
   mockUserTelegramID1,
+  mockValue,
   mockWallet,
   patchwalletAuthUrl,
   patchwalletTxUrl,
@@ -195,6 +196,7 @@ describe('handleSwap function', async function () {
         eventId: swapId,
         userTelegramID: mockUserTelegramID,
         to: mockToSwap,
+        value: mockValue,
         data: mockDataSwap,
       });
 
@@ -207,7 +209,7 @@ describe('handleSwap function', async function () {
           userId: `grindery:${mockUserTelegramID}`,
           chain: 'matic',
           to: [mockToSwap],
-          value: ['0x00'],
+          value: [mockValue],
           data: [mockDataSwap],
           delegatecall: 1,
           auth: '',
@@ -277,7 +279,6 @@ describe('handleSwap function', async function () {
         .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
         .args[1];
 
-      console.log(FlowXOCallArgs);
       chai
         .expect(FlowXOCallArgs)
         .excluding(['dateAdded'])

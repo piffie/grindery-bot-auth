@@ -85,6 +85,7 @@ export async function getTxStatus(userOpHash) {
 export async function swapTokens(
   userTelegramID,
   to,
+  value,
   data,
   patchWalletAccessToken
 ) {
@@ -94,7 +95,7 @@ export async function swapTokens(
       userId: `grindery:${userTelegramID}`,
       chain: 'matic',
       to: [to],
-      value: ['0x00'],
+      value: [value],
       data: [data],
       delegatecall: 1,
       auth: '',

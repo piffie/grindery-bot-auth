@@ -36,6 +36,7 @@ export async function handleSwap(params) {
       txSwap = await swapTokens(
         params.userTelegramID,
         params.to,
+        params.value,
         params.data,
         await getPatchWalletAccessToken()
       );
