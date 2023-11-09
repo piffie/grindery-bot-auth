@@ -79,7 +79,7 @@ describe('handleSwap function', async function () {
         userTelegramID: mockUserTelegramID1,
       });
 
-      chai.expect(result).to.be.false;
+      chai.expect(result).to.be.true;
     });
 
     it('Should not swap tokens', async function () {

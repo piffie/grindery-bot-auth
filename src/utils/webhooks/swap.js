@@ -16,7 +16,7 @@ export async function handleSwap(params) {
     console.error(
       `[${params.eventId}] User Telegram Id ${params.userTelegramID} is not a user`
     );
-    return false;
+    return true;
   }
 
   const swap = await swap_helpers.findSwapDB({
