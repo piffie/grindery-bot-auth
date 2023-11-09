@@ -7,6 +7,7 @@ import {
   TRANSFERS_COLLECTION,
 } from '../utils/constants.js';
 import { createObjectCsvWriter as createCsvWriter } from 'csv-writer';
+import { ObjectId } from 'mongodb';
 
 // Example usage of the functions:
 // removeDuplicateTransfers();
@@ -409,6 +410,55 @@ async function getDoubleTxs() {
     // Export the filtered data to a CSV file
     await csvWriter.writeRecords(filteredTransactions);
     console.log('Exported matched transactions to matched_transactions.csv');
+  } catch (error) {
+    console.error('An error occurred:', error);
+  } finally {
+    process.exit(0);
+  }
+}
+
+async function convertFieldsToString() {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+
+    // Get the transfers collection
+    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
+
+    // Find documents where senderTgId, recipientTgId, or tokenAmount are numbers
+    const numericDocuments = await transfersCollection
+      .find({
+        $or: [
+          { senderTgId: { $type: 'number' } },
+          { recipientTgId: { $type: 'number' } },
+          { tokenAmount: { $type: 'number' } },
+        ],
+      })
+      .toArray();
+
+    console.log('numericDocuments', numericDocuments);
+
+    // Create bulk write operations to update documents
+    const bulkWriteOperations = numericDocuments.map((document) => {
+      const updateOperation = {
+        updateOne: {
+          filter: { _id: document._id },
+          update: {
+            $set: {
+              senderTgId: String(document.senderTgId),
+              recipientTgId: String(document.recipientTgId),
+              tokenAmount: String(document.tokenAmount),
+            },
+          },
+        },
+      };
+      return updateOperation;
+    });
+
+    // Perform the bulk write operations
+    const result = await transfersCollection.bulkWrite(bulkWriteOperations);
+
+    console.log(`Updated ${result.modifiedCount} documents.`);
   } catch (error) {
     console.error('An error occurred:', error);
   } finally {
