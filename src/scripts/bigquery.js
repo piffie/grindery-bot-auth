@@ -1,6 +1,7 @@
 import { Database } from '../db/conn.js';
 import { BigQuery } from '@google-cloud/bigquery';
-import { USERS_COLLECTION } from '../utils/constants.js';
+import { TRANSFERS_COLLECTION, USERS_COLLECTION } from '../utils/constants.js';
+import web3 from 'web3';
 
 const bigqueryClient = new BigQuery();
 const datasetId = 'telegram';
@@ -30,7 +31,9 @@ const importUsers = async () => {
     const batch = allUsers.slice(i, i + batchSize);
 
     const filteredBatch = batch.filter((user) => {
-      return !existingPatchwallets.includes(user.patchwallet);
+      return !existingPatchwallets.includes(
+        web3.utils.toChecksumAddress(user.patchwallet)
+      );
     });
 
     if (filteredBatch.length === 0) {
@@ -42,10 +45,10 @@ const importUsers = async () => {
       const bigQueryData = filteredBatch.map((user) => {
         return {
           context_ip: null,
+          id: user._id.toString(),
           context_library_name: null,
           context_library_version: null,
           email: null,
-          id: user._id.toString(),
           industry: null,
           loaded_at: null,
           name: user.userName,
@@ -80,7 +83,7 @@ async function getExistingPatchwallets(tableId) {
 const importTransfers = async () => {
   const tableId = 'transfer';
   const db = await Database.getInstance();
-  const collection = db.collection('transfers');
+  const collection = db.collection(TRANSFERS_COLLECTION);
 
   const allTransfers = await collection.find({}).toArray();
 

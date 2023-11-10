@@ -33,3 +33,5 @@ async function cloneCollection(sourceCollectionName, targetCollectionName) {
     process.exit(0);
   }
 }
+
+cloneCollection('transfers', 'transfers-backup');

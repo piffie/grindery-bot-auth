@@ -7,6 +7,7 @@ import {
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
 } from '../utils/constants.js';
+import 'dotenv/config';
 
 // Example usage of the functions:
 // removeDuplicateTransfers();
@@ -265,14 +266,13 @@ async function updateTransfersStatus() {
 }
 
 async function importMissingTransferFromCSV(fileName) {
-  const collectionName = '';
   const db = await Database.getInstance();
-  const collection = db.collection(collectionName);
+  const collection = db.collection(TRANSFERS_COLLECTION);
   const usersCollection = db.collection(USERS_COLLECTION);
   const groups = new Map();
 
-  const startDate = new Date('2023-11-08T00:00:00Z');
-  const endDate = new Date('2023-11-08T23:59:59Z');
+  const startDate = new Date('2023-11-07T00:00:00Z');
+  const endDate = new Date('2023-11-07T23:59:59Z');
 
   if (!fs.existsSync(fileName)) {
     console.log(`File ${fileName} does not exist.`);
@@ -291,11 +291,7 @@ async function importMissingTransferFromCSV(fileName) {
         process.env.SOURCE_WALLET_ADDRESS
     ) {
       const key = `${row.from_address}-${row.to_address}-${row.value}-${row.transaction_hash}-${row.block_timestamp}`;
-      if (groups.has(key)) {
-        groups.set(key, groups.get(key) + 1);
-      } else {
-        groups.set(key, 1);
-      }
+      groups.set(key, (groups.get(key) || 0) + 1);
     }
   });
 
@@ -305,6 +301,14 @@ async function importMissingTransferFromCSV(fileName) {
     const insertedDocs = [];
 
     console.log('\nGroups quantity ', groups.size);
+
+    const usersData = new Map();
+
+    // Preload user data
+    const usersCursor = await usersCollection.find({}).toArray();
+    await usersCursor.forEach((user) => {
+      usersData.set(web3.utils.toChecksumAddress(user.patchwallet), user);
+    });
 
     for (const [key, count] of groups) {
       const [
@@ -323,14 +327,14 @@ async function importMissingTransferFromCSV(fileName) {
         {
           senderWallet: web3.utils.toChecksumAddress(senderWallet),
           recipientWallet: web3.utils.toChecksumAddress(recipientWallet),
-          tokenAmount: Number(tokenAmount) / 1e18,
+          tokenAmount: web3.utils.fromWei(tokenAmount, 'ether'),
           transactionHash,
         }
       );
       const countInDB = await collection.countDocuments({
         senderWallet: web3.utils.toChecksumAddress(senderWallet),
         recipientWallet: web3.utils.toChecksumAddress(recipientWallet),
-        tokenAmount: String(Number(tokenAmount) / 1e18),
+        tokenAmount: web3.utils.fromWei(tokenAmount, 'ether'),
         transactionHash,
       });
       console.log('countInDB ', countInDB);
@@ -342,15 +346,16 @@ async function importMissingTransferFromCSV(fileName) {
         for (let i = 0; i < missingCount; i++) {
           insertedDocs.push(key);
 
-          const senderUser = await usersCollection.findOne({
-            patchwallet: web3.utils.toChecksumAddress(senderWallet),
-          });
+          const senderUser = usersData.get(
+            web3.utils.toChecksumAddress(senderWallet)
+          );
           const senderTgId = senderUser ? senderUser.userTelegramID : undefined;
           const senderName = senderUser ? senderUser.userName : undefined;
           const senderHandle = senderUser ? senderUser.userHandle : undefined;
-          const recipientUser = await usersCollection.findOne({
-            patchwallet: web3.utils.toChecksumAddress(senderWallet),
-          });
+
+          const recipientUser = usersData.get(
+            web3.utils.toChecksumAddress(recipientWallet)
+          );
           const recipientTgId = recipientUser
             ? recipientUser.userTelegramID
             : undefined;
@@ -361,13 +366,15 @@ async function importMissingTransferFromCSV(fileName) {
                 TxId: transactionHash.substring(1, 8),
                 chainId: 'eip155:137',
                 tokenSymbol: 'g1',
-                tokenAddress: '0xe36BD65609c08Cd17b53520293523CF4560533d0',
-                senderTgId: senderTgId,
+                tokenAddress: process.env.SOURCE_WALLET_ADDRESS,
+                senderTgId: senderTgId ? senderTgId.toString() : undefined,
                 senderWallet: web3.utils.toChecksumAddress(senderWallet),
                 senderName: senderName,
-                recipientTgId: recipientTgId,
+                recipientTgId: recipientTgId
+                  ? recipientTgId.toString()
+                  : undefined,
                 recipientWallet: web3.utils.toChecksumAddress(recipientWallet),
-                tokenAmount: Number(tokenAmount) / 1e18,
+                tokenAmount: web3.utils.fromWei(tokenAmount, 'ether'),
                 transactionHash: transactionHash,
                 dateAdded: new Date(blockTimestamp),
                 status: 'success',
