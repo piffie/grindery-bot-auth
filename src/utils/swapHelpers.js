@@ -15,8 +15,9 @@ async function insertSwapDB(db, params) {
     const set = {};
 
     if (params.txId) set.txId = params.txId;
+    if (params.eventId) set.eventId = params.eventId;
     if (params.chainId) set.chainId = params.chainId;
-    if (params.userTgId) set.userTgId = params.userTgId;
+    if (params.userTelegramID) set.userTelegramID = params.userTelegramID;
     if (params.userWallet) set.userWallet = params.userWallet;
     if (params.userName) set.userName = params.userName;
     if (params.userHandle) set.userHandle = params.userHandle;

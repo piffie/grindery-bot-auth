@@ -1,34 +1,36 @@
 import chai from 'chai';
-import { handleSwap } from '../utils/webhooks/swap.js';
 import {
-  collectionSwapsMock,
-  collectionUsersMock,
-  mockAccessToken,
-  mockAmountIn,
-  mockAmountOut,
-  mockDataSwap,
-  mockGas,
-  mockPriceImpact,
-  mockToSwap,
-  mockTokenIn,
-  mockTokenOut,
-  mockTransactionHash,
-  mockUserHandle,
+  mockResponsePath,
   mockUserName,
-  mockUserOpHash,
   mockUserTelegramID,
-  mockUserTelegramID1,
-  mockValue,
   mockWallet,
-  patchwalletAuthUrl,
+  mockAccessToken,
+  mockTransactionHash,
+  collectionUsersMock,
+  patchwalletResolverUrl,
   patchwalletTxUrl,
+  patchwalletAuthUrl,
+  segmentTrackUrl,
+  mockUserHandle,
+  patchwalletTxStatusUrl,
+  mockUserOpHash,
+  mockToSwap,
+  mockDataSwap,
+  mockTokenIn,
+  mockAmountIn,
+  mockTokenOut,
+  mockAmountOut,
+  mockPriceImpact,
+  mockGas,
+  collectionSwapsMock,
 } from './utils.js';
-import { v4 as uuidv4 } from 'uuid';
 import Sinon from 'sinon';
 import axios from 'axios';
+import 'dotenv/config';
 import chaiExclude from 'chai-exclude';
 import { TRANSACTION_STATUS } from '../utils/constants.js';
-import 'dotenv/config';
+import { v4 as uuidv4 } from 'uuid';
+import { handleSwap } from '../utils/webhooks/swap.js';
 
 chai.use(chaiExclude);
 
@@ -37,15 +39,15 @@ describe('handleSwap function', async function () {
   let axiosStub;
   let swapId;
 
-  beforeEach(function () {
+  beforeEach(async function () {
     sandbox = Sinon.createSandbox();
     axiosStub = sandbox
       .stub(axios, 'post')
       .callsFake(async (url, data, options) => {
-        if (url === patchwalletAuthUrl) {
+        if (url === patchwalletResolverUrl) {
           return Promise.resolve({
             data: {
-              access_token: mockAccessToken,
+              users: [{ accountAddress: mockWallet }],
             },
           });
         }
@@ -54,17 +56,40 @@ describe('handleSwap function', async function () {
           return Promise.resolve({
             data: {
               txHash: mockTransactionHash,
+            },
+          });
+        }
+
+        if (url === patchwalletTxStatusUrl) {
+          return Promise.resolve({
+            data: {
+              txHash: mockTransactionHash,
               userOpHash: mockUserOpHash,
             },
           });
         }
 
-        if (url === process.env.FLOWXO_NEW_SWAP_WEBHOOK) {
+        if (url === patchwalletAuthUrl) {
+          return Promise.resolve({
+            data: {
+              access_token: mockAccessToken,
+            },
+          });
+        }
+
+        if (url == process.env.FLOWXO_NEW_SWAP_WEBHOOK) {
+          return Promise.resolve({
+            result: 'success',
+          });
+        }
+
+        if (url == segmentTrackUrl) {
           return Promise.resolve({
             result: 'success',
           });
         }
       });
+
     swapId = uuidv4();
   });
 
@@ -72,159 +97,42 @@ describe('handleSwap function', async function () {
     sandbox.restore();
   });
 
-  describe('User does not exist', async function () {
-    it('Should return false if User does not exist', async function () {
-      const result = await handleSwap({
-        eventId: swapId,
-        userTelegramID: mockUserTelegramID1,
-      });
-
-      chai.expect(result).to.be.true;
-    });
-
-    it('Should not swap tokens', async function () {
-      await handleSwap({
-        eventId: swapId,
-        userTelegramID: mockUserTelegramID1,
-      });
-
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
-      ).to.be.undefined;
-    });
-
-    it('Should not save swap in swaps collection', async function () {
-      await handleSwap({
-        eventId: swapId,
-        userTelegramID: mockUserTelegramID1,
-      });
-
-      chai.expect(await collectionSwapsMock.find({}).toArray()).to.be.empty;
-    });
-
-    it('Should not notify FlowXO', async function () {
-      await handleSwap({
-        eventId: swapId,
-        userTelegramID: mockUserTelegramID1,
-      });
-
-      chai.expect(
-        axiosStub
-          .getCalls()
-          .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
-      ).to.be.undefined;
-    });
-  });
-
-  describe('Swap already exist', async function () {
-    beforeEach(async function () {
-      await collectionUsersMock.insertOne({
-        userTelegramID: mockUserTelegramID1,
-      });
-
-      await collectionSwapsMock.insertOne({
-        eventId: swapId,
-        userTelegramID: mockUserTelegramID1,
-        status: TRANSACTION_STATUS.SUCCESS,
-      });
-    });
-
-    it('Should return true if swap exist with status SUCCESS', async function () {
-      const result = await handleSwap({
-        eventId: swapId,
-        userTelegramID: mockUserTelegramID1,
-      });
-
-      chai.expect(result).to.be.true;
-    });
-
-    it('Should not swap tokens', async function () {
-      await handleSwap({
-        eventId: swapId,
-        userTelegramID: mockUserTelegramID1,
-      });
-
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
-      ).to.be.undefined;
-    });
-
-    it('Should not save swap in swaps collection', async function () {
-      await handleSwap({
-        eventId: swapId,
-        userTelegramID: mockUserTelegramID1,
-      });
-
-      chai
-        .expect(await collectionSwapsMock.find({}).toArray())
-        .excluding(['_id'])
-        .to.deep.equal([
-          {
-            eventId: swapId,
-            userTelegramID: mockUserTelegramID1,
-            status: TRANSACTION_STATUS.SUCCESS,
-          },
-        ]);
-    });
-
-    it('Should not notify FlowXO', async function () {
-      await handleSwap({
-        eventId: swapId,
-        userTelegramID: mockUserTelegramID1,
-      });
-
-      chai.expect(
-        axiosStub
-          .getCalls()
-          .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
-      ).to.be.undefined;
-    });
-  });
-
-  describe('Swap does not exist', async function () {
+  describe('Normal process to handle a swap', async function () {
     beforeEach(async function () {
       await collectionUsersMock.insertOne({
         userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
         userHandle: mockUserHandle,
         patchwallet: mockWallet,
-        userName: mockUserName,
+        responsePath: mockResponsePath,
       });
     });
 
-    it('Should swap tokens', async function () {
-      await handleSwap({
-        eventId: swapId,
-        userTelegramID: mockUserTelegramID,
-        to: mockToSwap,
-        value: mockValue,
-        data: mockDataSwap,
-      });
-
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
-            .args[1]
-        )
-        .to.deep.equal({
-          userId: `grindery:${mockUserTelegramID}`,
-          chain: 'matic',
-          to: [mockToSwap],
-          value: [mockValue],
-          data: [mockDataSwap],
-          delegatecall: 1,
-          auth: '',
-        });
+    it('Should return true', async function () {
+      chai.expect(
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          userTelegramID: mockUserTelegramID,
+          to: mockToSwap,
+          data: mockDataSwap,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        })
+      ).to.be.true;
     });
 
-    it('Should save swap in swaps collection', async function () {
+    it('Should populate swaps database', async function () {
       await handleSwap({
+        value: mockAmountIn,
         eventId: swapId,
         userTelegramID: mockUserTelegramID,
         to: mockToSwap,
         data: mockDataSwap,
-        userWallet: mockWallet,
-        userName: mockUserName,
-        userHandle: mockUserHandle,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
         tokenOut: mockTokenOut,
@@ -233,14 +141,17 @@ describe('handleSwap function', async function () {
         gas: mockGas,
       });
 
+      const swaps = await collectionSwapsMock.find({}).toArray();
+
       chai
-        .expect(await collectionSwapsMock.find({}).toArray())
-        .excluding(['_id', 'dateAdded'])
+        .expect(swaps)
+        .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
-            txId: mockTransactionHash.substring(1, 8),
+            eventId: swapId,
+            TxId: mockTransactionHash.substring(1, 8),
             chainId: 'eip155:137',
-            userTgId: mockUserTelegramID,
+            userTelegramID: mockUserTelegramID,
             userWallet: mockWallet,
             userName: mockUserName,
             userHandle: mockUserHandle,
@@ -252,20 +163,59 @@ describe('handleSwap function', async function () {
             gas: mockGas,
             status: TRANSACTION_STATUS.SUCCESS,
             transactionHash: mockTransactionHash,
-            userOpHash: mockUserOpHash,
           },
         ]);
+      chai.expect(swaps[0].dateAdded).to.be.a('date');
     });
 
-    it('Should notify FlowXO', async function () {
+    it('Should populate the segment swap properly', async function () {
       await handleSwap({
+        value: mockAmountIn,
         eventId: swapId,
         userTelegramID: mockUserTelegramID,
         to: mockToSwap,
         data: mockDataSwap,
-        userWallet: mockWallet,
-        userName: mockUserName,
-        userHandle: mockUserHandle,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      const segmentIdentityCall = axiosStub
+        .getCalls()
+        .filter((e) => e.firstArg === 'https://api.segment.io/v1/track');
+
+      chai
+        .expect(segmentIdentityCall[0].args[1])
+        .excluding(['timestamp'])
+        .to.deep.equal({
+          userId: mockUserTelegramID,
+          event: 'Swap',
+          properties: {
+            eventId: swapId,
+            chainId: 'eip155:137',
+            userTelegramID: mockUserTelegramID,
+            tokenIn: mockTokenIn,
+            amountIn: mockAmountIn,
+            tokenOut: mockTokenOut,
+            amountOut: mockAmountOut,
+            priceImpact: mockPriceImpact,
+            gas: mockGas,
+            status: TRANSACTION_STATUS.SUCCESS,
+            TxId: mockTransactionHash.substring(1, 8),
+            transactionHash: mockTransactionHash,
+          },
+        });
+    });
+
+    it('Should call FlowXO webhook properly for new swaps', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
         tokenOut: mockTokenOut,
@@ -283,12 +233,12 @@ describe('handleSwap function', async function () {
         .expect(FlowXOCallArgs)
         .excluding(['dateAdded'])
         .to.deep.equal({
-          txId: mockTransactionHash.substring(1, 8),
+          eventId: swapId,
           chainId: 'eip155:137',
-          userTgId: mockUserTelegramID,
-          userWallet: mockWallet,
+          userTelegramID: mockUserTelegramID,
           userName: mockUserName,
           userHandle: mockUserHandle,
+          userWallet: mockWallet,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
           tokenOut: mockTokenOut,
@@ -296,20 +246,401 @@ describe('handleSwap function', async function () {
           priceImpact: mockPriceImpact,
           gas: mockGas,
           status: TRANSACTION_STATUS.SUCCESS,
+          TxId: mockTransactionHash.substring(1, 8),
           transactionHash: mockTransactionHash,
-          userOpHash: mockUserOpHash,
         });
     });
+  });
 
-    it('Should return true', async function () {
-      const result = await handleSwap({
-        eventId: swapId,
+  describe('Swap is already a success', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertOne({
         userTelegramID: mockUserTelegramID,
-        to: mockToSwap,
-        data: mockDataSwap,
-        userWallet: mockWallet,
         userName: mockUserName,
         userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+      });
+
+      await collectionSwapsMock.insertOne({
+        eventId: swapId,
+        status: TRANSACTION_STATUS.SUCCESS,
+      });
+    });
+
+    it('Should return true if swap is already a success', async function () {
+      chai.expect(
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        })
+      ).to.be.true;
+    });
+
+    it('Should not swap token if swap is already a success', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+    });
+
+    it('Should not modify database if swap is already a success', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai
+        .expect(await collectionSwapsMock.find({}).toArray())
+        .excluding(['_id'])
+        .to.deep.equal([
+          {
+            eventId: swapId,
+            status: TRANSACTION_STATUS.SUCCESS,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if swap is already a success', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+      ).to.be.undefined;
+    });
+
+    it('Should not call Segment if swap is already a success', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === 'https://api.segment.io/v1/track')
+      ).to.be.undefined;
+    });
+  });
+
+  describe('Transaction if swap is already a failure', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+      });
+
+      await collectionSwapsMock.insertOne({
+        eventId: swapId,
+        status: TRANSACTION_STATUS.FAILURE,
+      });
+    });
+
+    it('Should return true if swap is already a failure', async function () {
+      chai.expect(
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        })
+      ).to.be.true;
+    });
+
+    it('Should not swap if swap if is already a failure', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+    });
+
+    it('Should not modify database if swap is already a failure', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai
+        .expect(await collectionSwapsMock.find({}).toArray())
+        .excluding(['_id'])
+        .to.deep.equal([
+          {
+            eventId: swapId,
+            status: TRANSACTION_STATUS.FAILURE,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if swap is already a failure', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+      ).to.be.undefined;
+    });
+
+    it('Should not call Segment if swap is already a failure', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === 'https://api.segment.io/v1/track')
+      ).to.be.undefined;
+    });
+  });
+
+  describe('Error in swap token request', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+      });
+
+      axiosStub.withArgs(patchwalletTxUrl).resolves({
+        data: {
+          error: 'service non available',
+        },
+      });
+    });
+
+    it('Should return false if there is an error in the swap tokens request', async function () {
+      const result = await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(result).to.be.false;
+    });
+
+    it('Should not modify transaction status in the database if there is an error in the swap tokens request', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai
+        .expect(await collectionSwapsMock.find({}).toArray())
+        .excluding(['_id', 'dateAdded'])
+        .to.deep.equal([
+          {
+            chainId: 'eip155:137',
+            userTelegramID: mockUserTelegramID,
+            tokenIn: mockTokenIn,
+            amountIn: mockAmountIn,
+            tokenOut: mockTokenOut,
+            amountOut: mockAmountOut,
+            priceImpact: mockPriceImpact,
+            gas: mockGas,
+            eventId: swapId,
+            status: TRANSACTION_STATUS.PENDING,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if there is an error in the swap tokens request', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+      ).to.be.undefined;
+    });
+
+    it('Should not call Segment if there is an error in the swap tokens request', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === 'https://api.segment.io/v1/track')
+      ).to.be.undefined;
+    });
+  });
+
+  it('Should not add new swap if one with the same eventId already exists', async function () {
+    await collectionSwapsMock.insertOne({
+      eventId: swapId,
+    });
+
+    const objectId = (
+      await collectionSwapsMock.findOne({
+        eventId: swapId,
+      })
+    )._id.toString();
+
+    await collectionUsersMock.insertOne({
+      userTelegramID: mockUserTelegramID,
+      userName: mockUserName,
+      userHandle: mockUserHandle,
+      patchwallet: mockWallet,
+    });
+
+    await handleSwap({
+      value: mockAmountIn,
+      eventId: swapId,
+      chainId: 'eip155:137',
+      userTelegramID: mockUserTelegramID,
+      tokenIn: mockTokenIn,
+      amountIn: mockAmountIn,
+      tokenOut: mockTokenOut,
+      amountOut: mockAmountOut,
+      priceImpact: mockPriceImpact,
+      gas: mockGas,
+    });
+
+    chai
+      .expect((await collectionSwapsMock.find({}).toArray())[0]._id.toString())
+      .to.equal(objectId);
+  });
+
+  describe('Sender is not a user', async function () {
+    it('Should return true if sender is not a user', async function () {
+      const result = await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
         tokenOut: mockTokenOut,
@@ -319,6 +650,1291 @@ describe('handleSwap function', async function () {
       });
 
       chai.expect(result).to.be.true;
+    });
+
+    it('Should not modify status in database if sender is not a user', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai
+        .expect(await collectionSwapsMock.find({}).toArray())
+        .excluding(['_id', 'dateAdded'])
+        .to.deep.equal([
+          {
+            chainId: 'eip155:137',
+            userTelegramID: mockUserTelegramID,
+            tokenIn: mockTokenIn,
+            amountIn: mockAmountIn,
+            tokenOut: mockTokenOut,
+            amountOut: mockAmountOut,
+            priceImpact: mockPriceImpact,
+            gas: mockGas,
+            eventId: swapId,
+            status: TRANSACTION_STATUS.PENDING,
+          },
+        ]);
+    });
+
+    it('Should not swap tokens if sender is not a user', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+      ).to.be.undefined;
+    });
+
+    it('Should not call FlowXO if sender is not a user', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+      ).to.be.undefined;
+    });
+
+    it('Should not call Segment if sender is not a user', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === 'https://api.segment.io/v1/track')
+      ).to.be.undefined;
+    });
+  });
+
+  describe('Error in PatchWallet transaction', async function () {
+    beforeEach(async function () {
+      axiosStub
+        .withArgs(patchwalletTxUrl)
+        .rejects(new Error('Service not available'));
+
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+        responsePath: mockResponsePath,
+      });
+    });
+
+    it('Should return false if error in PatchWallet transaction', async function () {
+      const result = await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(result).to.be.false;
+    });
+
+    it('Should not modify database if error in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai
+        .expect(await collectionSwapsMock.find({}).toArray())
+        .excluding(['_id', 'dateAdded'])
+        .to.deep.equal([
+          {
+            chainId: 'eip155:137',
+            userTelegramID: mockUserTelegramID,
+            tokenIn: mockTokenIn,
+            amountIn: mockAmountIn,
+            tokenOut: mockTokenOut,
+            amountOut: mockAmountOut,
+            priceImpact: mockPriceImpact,
+            gas: mockGas,
+            eventId: swapId,
+            status: TRANSACTION_STATUS.PENDING,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if error in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+      ).to.be.undefined;
+    });
+
+    it('Should not call Segment if error in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === 'https://api.segment.io/v1/track')
+      ).to.be.undefined;
+    });
+  });
+
+  describe('PatchWallet 470 error', async function () {
+    beforeEach(async function () {
+      axiosStub.withArgs(patchwalletTxUrl).rejects({
+        response: {
+          status: 470,
+        },
+      });
+
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+        responsePath: mockResponsePath,
+      });
+    });
+
+    it('Should return true if error 470 in PatchWallet transaction', async function () {
+      const result = await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(result).to.be.true;
+    });
+
+    it('Should complete db status to failure in database if error 470 in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai
+        .expect(await collectionSwapsMock.find({}).toArray())
+        .excluding(['dateAdded', '_id'])
+        .to.deep.equal([
+          {
+            chainId: 'eip155:137',
+            userTelegramID: mockUserTelegramID,
+            userName: mockUserName,
+            userHandle: mockUserHandle,
+            userWallet: mockWallet,
+            tokenIn: mockTokenIn,
+            amountIn: mockAmountIn,
+            tokenOut: mockTokenOut,
+            amountOut: mockAmountOut,
+            priceImpact: mockPriceImpact,
+            gas: mockGas,
+            eventId: swapId,
+            status: TRANSACTION_STATUS.FAILURE,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if error 470 in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+      ).to.be.undefined;
+    });
+
+    it('Should not call Segment if error 470 in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === 'https://api.segment.io/v1/track')
+      ).to.be.undefined;
+    });
+  });
+
+  describe('No hash in PatchWallet transaction', async function () {
+    beforeEach(async function () {
+      axiosStub.withArgs(patchwalletTxUrl).resolves({
+        data: {
+          error: 'service non available',
+        },
+      });
+
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+        responsePath: mockResponsePath,
+      });
+    });
+
+    it('Should return false if no hash in PatchWallet transaction', async function () {
+      const result = await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(result).to.be.false;
+    });
+
+    it('Should do no swap status modification in database if no hash in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai
+        .expect(await collectionSwapsMock.find({}).toArray())
+        .excluding(['_id', 'dateAdded'])
+        .to.deep.equal([
+          {
+            chainId: 'eip155:137',
+            userTelegramID: mockUserTelegramID,
+            tokenIn: mockTokenIn,
+            amountIn: mockAmountIn,
+            tokenOut: mockTokenOut,
+            amountOut: mockAmountOut,
+            priceImpact: mockPriceImpact,
+            gas: mockGas,
+            eventId: swapId,
+            status: TRANSACTION_STATUS.PENDING,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if no hash in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+      ).to.be.undefined;
+    });
+
+    it('Should not call Segment if no hash in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === 'https://api.segment.io/v1/track')
+      ).to.be.undefined;
+    });
+  });
+
+  describe('Get transaction hash via userOpHash if transaction hash is empty first', async function () {
+    describe('Transaction hash is empty in tx PatchWallet endpoint', async function () {
+      beforeEach(async function () {
+        await collectionUsersMock.insertOne({
+          userTelegramID: mockUserTelegramID,
+          userName: mockUserName,
+          userHandle: mockUserHandle,
+          patchwallet: mockWallet,
+          responsePath: mockResponsePath,
+        });
+
+        axiosStub.withArgs(patchwalletTxUrl).resolves({
+          data: {
+            txHash: '',
+            userOpHash: mockUserOpHash,
+          },
+        });
+      });
+
+      it('Should return false if transaction hash is empty in tx PatchWallet endpoint', async function () {
+        const result = await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(result).to.be.false;
+      });
+
+      it('Should update reward database with a pending_hash status and userOpHash if transaction hash is empty in tx PatchWallet endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai
+          .expect(await collectionSwapsMock.find({}).toArray())
+          .excluding(['_id', 'dateAdded'])
+          .to.deep.equal([
+            {
+              chainId: 'eip155:137',
+              userTelegramID: mockUserTelegramID,
+              userName: mockUserName,
+              userHandle: mockUserHandle,
+              userWallet: mockWallet,
+              tokenIn: mockTokenIn,
+              amountIn: mockAmountIn,
+              tokenOut: mockTokenOut,
+              amountOut: mockAmountOut,
+              priceImpact: mockPriceImpact,
+              gas: mockGas,
+              eventId: swapId,
+              status: TRANSACTION_STATUS.PENDING_HASH,
+              userOpHash: mockUserOpHash,
+            },
+          ]);
+      });
+
+      it('Should not call FlowXO webhook if transaction hash is empty in tx PatchWallet endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(
+          axiosStub
+            .getCalls()
+            .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+        ).to.be.undefined;
+      });
+    });
+
+    describe('Transaction hash is present in PatchWallet status endpoint', async function () {
+      beforeEach(async function () {
+        await collectionUsersMock.insertOne({
+          userTelegramID: mockUserTelegramID,
+          userName: mockUserName,
+          userHandle: mockUserHandle,
+          patchwallet: mockWallet,
+          responsePath: mockResponsePath,
+        });
+
+        await collectionSwapsMock.insertOne({
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+          eventId: swapId,
+          status: TRANSACTION_STATUS.PENDING_HASH,
+          userOpHash: mockUserOpHash,
+        });
+      });
+
+      it('Should return true if transaction hash is present in PatchWallet status endpoint', async function () {
+        const result = await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(result).to.be.true;
+      });
+
+      it('Should not send tokens if transaction hash is present in PatchWallet status endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+        ).to.be.undefined;
+      });
+
+      it('Should update the database with a success status if transaction hash is present in PatchWallet status endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai
+          .expect(await collectionSwapsMock.find({}).toArray())
+          .excluding(['_id', 'dateAdded'])
+          .to.deep.equal([
+            {
+              TxId: mockTransactionHash.substring(1, 8),
+              transactionHash: mockTransactionHash,
+              chainId: 'eip155:137',
+              userTelegramID: mockUserTelegramID,
+              userName: mockUserName,
+              userHandle: mockUserHandle,
+              userWallet: mockWallet,
+              tokenIn: mockTokenIn,
+              amountIn: mockAmountIn,
+              tokenOut: mockTokenOut,
+              amountOut: mockAmountOut,
+              priceImpact: mockPriceImpact,
+              gas: mockGas,
+              eventId: swapId,
+              userOpHash: mockUserOpHash,
+              status: TRANSACTION_STATUS.SUCCESS,
+            },
+          ]);
+      });
+
+      it('Should call FlowXO webhook properly if transaction hash is present in PatchWallet status endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+        const FlowXOCallArgs = axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+          .args[1];
+
+        chai
+          .expect(FlowXOCallArgs)
+          .excluding(['dateAdded'])
+          .to.deep.equal({
+            eventId: swapId,
+            chainId: 'eip155:137',
+            userTelegramID: mockUserTelegramID,
+            userName: mockUserName,
+            userHandle: mockUserHandle,
+            userWallet: mockWallet,
+            tokenIn: mockTokenIn,
+            amountIn: mockAmountIn,
+            tokenOut: mockTokenOut,
+            amountOut: mockAmountOut,
+            priceImpact: mockPriceImpact,
+            gas: mockGas,
+            TxId: mockTransactionHash.substring(1, 8),
+            transactionHash: mockTransactionHash,
+            status: TRANSACTION_STATUS.SUCCESS,
+          });
+
+        chai
+          .expect(FlowXOCallArgs.dateAdded)
+          .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
+        chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+      });
+    });
+
+    describe('Transaction hash is not present in PatchWallet status endpoint', async function () {
+      beforeEach(async function () {
+        await collectionUsersMock.insertOne({
+          userTelegramID: mockUserTelegramID,
+          userName: mockUserName,
+          userHandle: mockUserHandle,
+          patchwallet: mockWallet,
+          responsePath: mockResponsePath,
+        });
+
+        await collectionSwapsMock.insertOne({
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+          eventId: swapId,
+          status: TRANSACTION_STATUS.PENDING_HASH,
+          userOpHash: mockUserOpHash,
+        });
+
+        axiosStub.withArgs(patchwalletTxStatusUrl).resolves({
+          data: {
+            txHash: '',
+            userOpHash: mockUserOpHash,
+          },
+        });
+      });
+
+      it('Should return false if transaction hash is not present in PatchWallet status endpoint', async function () {
+        const result = await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(result).to.be.false;
+      });
+
+      it('Should not swap tokens if transaction hash is not present in PatchWallet status endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+        ).to.be.undefined;
+      });
+
+      it('Should not update database if transaction hash is not present in PatchWallet status endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai
+          .expect(await collectionSwapsMock.find({}).toArray())
+          .excluding(['_id', 'dateAdded'])
+          .to.deep.equal([
+            {
+              chainId: 'eip155:137',
+              userTelegramID: mockUserTelegramID,
+              userName: mockUserName,
+              userHandle: mockUserHandle,
+              userWallet: mockWallet,
+              tokenIn: mockTokenIn,
+              amountIn: mockAmountIn,
+              tokenOut: mockTokenOut,
+              amountOut: mockAmountOut,
+              priceImpact: mockPriceImpact,
+              gas: mockGas,
+              eventId: swapId,
+              status: TRANSACTION_STATUS.PENDING_HASH,
+              userOpHash: mockUserOpHash,
+            },
+          ]);
+      });
+
+      it('Should not call FlowXO webhook if transaction hash is not present in PatchWallet status endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(
+          axiosStub
+            .getCalls()
+            .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+        ).to.be.undefined;
+      });
+    });
+
+    describe('Error in PatchWallet get status endpoint', async function () {
+      beforeEach(async function () {
+        await collectionUsersMock.insertOne({
+          userTelegramID: mockUserTelegramID,
+          userName: mockUserName,
+          userHandle: mockUserHandle,
+          patchwallet: mockWallet,
+          responsePath: mockResponsePath,
+        });
+
+        await collectionSwapsMock.insertOne({
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+          eventId: swapId,
+          status: TRANSACTION_STATUS.PENDING_HASH,
+          userOpHash: mockUserOpHash,
+        });
+
+        axiosStub
+          .withArgs(patchwalletTxStatusUrl)
+          .rejects(new Error('Service not available'));
+      });
+
+      it('Should return false if Error in PatchWallet get status endpoint', async function () {
+        const result = await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(result).to.be.false;
+      });
+
+      it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+        ).to.be.undefined;
+      });
+
+      it('Should not update database if Error in PatchWallet get status endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai
+          .expect(await collectionSwapsMock.find({}).toArray())
+          .excluding(['_id', 'dateAdded'])
+          .to.deep.equal([
+            {
+              chainId: 'eip155:137',
+              userTelegramID: mockUserTelegramID,
+              tokenIn: mockTokenIn,
+              amountIn: mockAmountIn,
+              tokenOut: mockTokenOut,
+              amountOut: mockAmountOut,
+              priceImpact: mockPriceImpact,
+              gas: mockGas,
+              eventId: swapId,
+              status: TRANSACTION_STATUS.PENDING_HASH,
+              userOpHash: mockUserOpHash,
+            },
+          ]);
+      });
+
+      it('Should not call FlowXO webhook if Error in PatchWallet get status endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(
+          axiosStub
+            .getCalls()
+            .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+        ).to.be.undefined;
+      });
+    });
+
+    describe('Error 470 in PatchWallet get status endpoint', async function () {
+      beforeEach(async function () {
+        await collectionUsersMock.insertOne({
+          userTelegramID: mockUserTelegramID,
+          userName: mockUserName,
+          userHandle: mockUserHandle,
+          patchwallet: mockWallet,
+          responsePath: mockResponsePath,
+        });
+
+        await collectionSwapsMock.insertOne({
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+          eventId: swapId,
+          status: TRANSACTION_STATUS.PENDING_HASH,
+          userOpHash: mockUserOpHash,
+        });
+
+        axiosStub.withArgs(patchwalletTxStatusUrl).rejects({
+          response: {
+            status: 470,
+          },
+        });
+      });
+
+      it('Should return true if Error 470 in PatchWallet get status endpoint', async function () {
+        const result = await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(result).to.be.true;
+      });
+
+      it('Should not send tokens if Error 470 in PatchWallet get status endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+        ).to.be.undefined;
+      });
+
+      it('Should update database with failure status if Error 470 in PatchWallet get status endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai
+          .expect(await collectionSwapsMock.find({}).toArray())
+          .excluding(['_id', 'dateAdded'])
+          .to.deep.equal([
+            {
+              chainId: 'eip155:137',
+              userTelegramID: mockUserTelegramID,
+              userName: mockUserName,
+              userHandle: mockUserHandle,
+              userWallet: mockWallet,
+              tokenIn: mockTokenIn,
+              amountIn: mockAmountIn,
+              tokenOut: mockTokenOut,
+              amountOut: mockAmountOut,
+              priceImpact: mockPriceImpact,
+              gas: mockGas,
+              eventId: swapId,
+              status: TRANSACTION_STATUS.FAILURE,
+              userOpHash: mockUserOpHash,
+            },
+          ]);
+      });
+
+      it('Should not call FlowXO webhook if Error 470 in PatchWallet get status endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(
+          axiosStub
+            .getCalls()
+            .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+        ).to.be.undefined;
+      });
+    });
+
+    describe('Transaction is set to success without transaction hash if pending_hash without userOpHash', async function () {
+      beforeEach(async function () {
+        await collectionUsersMock.insertOne({
+          userTelegramID: mockUserTelegramID,
+          userName: mockUserName,
+          userHandle: mockUserHandle,
+          patchwallet: mockWallet,
+          responsePath: mockResponsePath,
+        });
+
+        await collectionSwapsMock.insertOne({
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+          eventId: swapId,
+          status: TRANSACTION_STATUS.PENDING_HASH,
+        });
+      });
+
+      it('Should return true if transaction hash is pending_hash without userOpHash', async function () {
+        const result = await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(result).to.be.true;
+      });
+
+      it('Should not send tokens if transaction hash is pending_hash without userOpHash', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+        ).to.be.undefined;
+      });
+
+      it('Should update reward database with a success status if transaction hash is pending_hash without userOpHash', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai
+          .expect(await collectionSwapsMock.find({}).toArray())
+          .excluding(['_id', 'dateAdded'])
+          .to.deep.equal([
+            {
+              chainId: 'eip155:137',
+              userTelegramID: mockUserTelegramID,
+              userName: mockUserName,
+              userHandle: mockUserHandle,
+              userWallet: mockWallet,
+              tokenIn: mockTokenIn,
+              amountIn: mockAmountIn,
+              tokenOut: mockTokenOut,
+              amountOut: mockAmountOut,
+              priceImpact: mockPriceImpact,
+              gas: mockGas,
+              eventId: swapId,
+              status: TRANSACTION_STATUS.SUCCESS,
+            },
+          ]);
+      });
+
+      it('Should not call FlowXO webhook if transaction hash is empty in tx PatchWallet endpoint', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(
+          axiosStub
+            .getCalls()
+            .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+        ).to.be.undefined;
+      });
+    });
+
+    describe('Transaction is considered as failure after 10 min of trying to get status', async function () {
+      beforeEach(async function () {
+        await collectionUsersMock.insertOne({
+          userTelegramID: mockUserTelegramID,
+          userName: mockUserName,
+          userHandle: mockUserHandle,
+          patchwallet: mockWallet,
+          responsePath: mockResponsePath,
+        });
+
+        await collectionSwapsMock.insertOne({
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+          eventId: swapId,
+          status: TRANSACTION_STATUS.PENDING_HASH,
+          dateAdded: new Date(Date.now() - 12 * 60 * 1000),
+        });
+
+        axiosStub.withArgs(patchwalletTxStatusUrl).resolves({
+          data: {
+            txHash: '',
+            userOpHash: mockUserOpHash,
+          },
+        });
+      });
+
+      it('Should return true after 10 min of trying to get status', async function () {
+        const result = await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(result).to.be.true;
+      });
+
+      it('Should not send tokens after 10 min of trying to get status', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+        ).to.be.undefined;
+      });
+
+      it('Should update reward database with a failure status after 10 min of trying to get status', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai
+          .expect(await collectionSwapsMock.find({}).toArray())
+          .excluding(['_id', 'dateAdded'])
+          .to.deep.equal([
+            {
+              chainId: 'eip155:137',
+              userTelegramID: mockUserTelegramID,
+              userName: mockUserName,
+              userHandle: mockUserHandle,
+              userWallet: mockWallet,
+              tokenIn: mockTokenIn,
+              amountIn: mockAmountIn,
+              tokenOut: mockTokenOut,
+              amountOut: mockAmountOut,
+              priceImpact: mockPriceImpact,
+              gas: mockGas,
+              eventId: swapId,
+              status: TRANSACTION_STATUS.FAILURE,
+            },
+          ]);
+      });
+
+      it('Should not call FlowXO webhook after 10 min of trying to get status', async function () {
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+        });
+
+        chai.expect(
+          axiosStub
+            .getCalls()
+            .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+        ).to.be.undefined;
+      });
     });
   });
 });
