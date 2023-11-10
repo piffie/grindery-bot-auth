@@ -236,3 +236,43 @@ async function getUsersWithoutOutgoingTransfersAndExportToCSV() {
     process.exit(0);
   }
 }
+
+async function exportUsersWithHandleEndingInDigitsToCSV() {
+  try {
+    const db = await Database.getInstance();
+    const usersCollection = db.collection(USERS_COLLECTION);
+
+    // Define a filter to find users with userHandle ending in 4 digits
+    const filter = { userHandle: { $regex: /\d{4}$/ } };
+
+    // Find users matching the filter
+    const usersWithHandleEndingInDigits = await usersCollection
+      .find(filter)
+      .toArray();
+
+    if (usersWithHandleEndingInDigits.length > 0) {
+      const csvWriterObject = csvWriter.createObjectCsvWriter({
+        path: 'users_with_handle_ending_in_digits.csv',
+        header: [
+          { id: 'userTelegramID', title: 'UserTelegramID' },
+          { id: 'responsePath', title: 'ResponsePath' },
+          { id: 'userHandle', title: 'UserHandle' },
+          { id: 'userName', title: 'UserName' },
+          { id: 'patchwallet', title: 'Patchwallet' },
+          { id: 'dateAdded', title: 'DateAdded' },
+        ],
+      });
+
+      await csvWriterObject.writeRecords(usersWithHandleEndingInDigits);
+      console.log(
+        `Users with handle ending in digits exported to users_with_handle_ending_in_digits.csv`
+      );
+    } else {
+      console.log('No users with handle ending in digits found.');
+    }
+  } catch (error) {
+    console.error(`An error occurred: ${error.message}`);
+  } finally {
+    process.exit(0);
+  }
+}
