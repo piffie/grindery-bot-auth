@@ -32,7 +32,7 @@ router.get('/unacked-messages', authenticateApiKey, async (req, res) => {
 
     const timeSeries = await client.listTimeSeries({
       name: client.projectPath(process.env.PROJECT_ID),
-      filter: `metric.type="pubsub.googleapis.com/subscription/num_unacked_messages_by_region"`,
+      filter: `metric.type="pubsub.googleapis.com/subscription/num_unacked_messages_by_region" AND resource.labels.subscription_id="${process.env.PUBSUB_SUBSCRIPTION_NAME}"`,
       interval: {
         // Limit results to the last 20 minutes
         startTime: {
