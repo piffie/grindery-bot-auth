@@ -34,7 +34,7 @@ router.get('/transactions-last-hour', authenticateApiKey, async (req, res) => {
     const db = await Database.getInstance(req);
 
     return res.status(200).json({
-      count: await db.collection(TRANSFERS_COLLECTION).countDocuments({
+      count: await db.collection(TRANSFERS_COLLECTION).count({
         dateAdded: { $gte: new Date(Date.now() - 60 * 60 * 1000) },
       }),
     });
