@@ -652,7 +652,7 @@ describe('handleSwap function', async function () {
       chai.expect(result).to.be.true;
     });
 
-    it('Should not modify status in database if sender is not a user', async function () {
+    it('Should not save swap in database if sender is not a user', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
@@ -669,20 +669,7 @@ describe('handleSwap function', async function () {
       chai
         .expect(await collectionSwapsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
-        .to.deep.equal([
-          {
-            chainId: 'eip155:137',
-            userTelegramID: mockUserTelegramID,
-            tokenIn: mockTokenIn,
-            amountIn: mockAmountIn,
-            tokenOut: mockTokenOut,
-            amountOut: mockAmountOut,
-            priceImpact: mockPriceImpact,
-            gas: mockGas,
-            eventId: swapId,
-            status: TRANSACTION_STATUS.PENDING,
-          },
-        ]);
+        .to.deep.equal([]);
     });
 
     it('Should not swap tokens if sender is not a user', async function () {

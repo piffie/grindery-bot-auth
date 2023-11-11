@@ -11,11 +11,21 @@ import {
 import { swap_helpers } from '../swapHelpers.js';
 import { Database } from '../../db/conn.js';
 import axios from 'axios';
-import { addTrackSegment, addTrackSwapSegment } from '../segment.js';
-import { sendTelegramMessage } from '../telegram.js';
+import { addTrackSwapSegment } from '../segment.js';
 
 export async function handleSwap(params) {
   const db = await Database.getInstance();
+
+  const userInformation = await db
+    .collection(USERS_COLLECTION)
+    .findOne({ userTelegramID: params.userTelegramID });
+
+  if (!userInformation) {
+    console.error(
+      `[SWAP EVENT] event id [${params.eventId}] User Telegram Id [${params.userTelegramID}] is not a user`
+    );
+    return true;
+  }
 
   const swap_db = await db
     .collection(SWAPS_COLLECTION)
@@ -53,17 +63,6 @@ export async function handleSwap(params) {
   if (swap_db?.status === TRANSACTION_STATUS.FAILURE) {
     console.log(
       `[SWAP EVENT] transaction hash [${swap_db?.transactionHash}] with event ID [${swap_db?.eventId}] is already a failure.`
-    );
-    return true;
-  }
-
-  const userInformation = await db
-    .collection(USERS_COLLECTION)
-    .findOne({ userTelegramID: params.userTelegramID });
-
-  if (!userInformation) {
-    console.error(
-      `[SWAP EVENT] event id [${params.eventId}] User Telegram Id [${params.userTelegramID}] is not a user`
     );
     return true;
   }
