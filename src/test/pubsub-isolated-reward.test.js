@@ -197,10 +197,6 @@ describe('handleIsolatedReward function', async function () {
       ).to.be.undefined;
     });
 
-    // ######################################
-    // ######################################
-    // ######################################
-
     it('Should call the sendTokens function properly if patchwallet is not in the arguments but it is in the database', async function () {
       await collectionUsersMock.insertOne({
         userTelegramID: mockUserTelegramID,
