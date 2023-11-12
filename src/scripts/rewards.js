@@ -10,6 +10,7 @@ import {
   USERS_COLLECTION,
 } from '../utils/constants.js';
 import { ObjectId } from 'mongodb';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Distributes a sign-up reward of 100 Grindery One Tokens to users without previous rewards.
@@ -19,7 +20,7 @@ async function distributeSignupRewards() {
   try {
     // Connect to the database
     const db = await Database.getInstance();
-    const rewardsCollection = db.collection('rewards');
+    const rewardsCollection = db.collection(REWARDS_COLLECTION);
 
     // Obtain the initial PatchWallet access token
     let patchWalletAccessToken = await getPatchWalletAccessToken();
@@ -27,12 +28,15 @@ async function distributeSignupRewards() {
     // Track the time of the last token renewal
     let lastTokenRenewalTime = Date.now();
 
-    const allUsers = await db.collection('users').find({}).toArray();
+    const allUsers = await db.collection(USERS_COLLECTION).find({}).toArray();
     let userCount = 0;
 
     // Load all rewards into memory for filtering
     const allRewards = await rewardsCollection
-      .find({ amount: '100' })
+      .find({
+        reason: 'user_sign_up',
+        status: 'success',
+      })
       .toArray();
 
     for (const user of allUsers) {
@@ -45,7 +49,7 @@ async function distributeSignupRewards() {
         )
       ) {
         console.log(
-          `[${userCount}/${allUsers.length}] User ${user.userTelegramID} has no reward with amount "100"`
+          `[${userCount}/${allUsers.length}] User ${user.userTelegramID} has no sign up reward`
         );
 
         // Check if it's time to renew the PatchWallet access token
@@ -77,7 +81,10 @@ async function distributeSignupRewards() {
               amount: '100',
               message: 'Sign up reward',
               transactionHash: txReward.data.txHash,
+              userOpHash: txReward.data.userOpHash,
               dateAdded: new Date(Date.now()),
+              status: 'success',
+              eventId: uuidv4(),
             });
 
             console.log(
