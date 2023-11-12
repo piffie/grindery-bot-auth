@@ -1,7 +1,12 @@
 import { Database } from '../../db/conn.js';
-import { REWARDS_COLLECTION, TRANSACTION_STATUS } from '../constants.js';
+import {
+  REWARDS_COLLECTION,
+  TRANSACTION_STATUS,
+  USERS_COLLECTION,
+} from '../constants.js';
 import {
   getPatchWalletAccessToken,
+  getPatchWalletAddressFromTgId,
   getTxStatus,
   sendTokens,
 } from '../patchwallet.js';
@@ -44,13 +49,23 @@ export async function handleIsolatedReward(params) {
       return true;
     }
 
+    // Retrieve sender information from the "users" collection
+    const userInformation = await db
+      .collection(USERS_COLLECTION)
+      .findOne({ userTelegramID: params.userTelegramID });
+
+    const patchwallet =
+      params.patchwallet ||
+      userInformation?.patchwallet ||
+      (await getPatchWalletAddressFromTgId(params.userTelegramID));
+
     if (!reward) {
       // Create a new reward record
       await reward_helpers.insertRewardDB(db, {
         eventId: params.eventId,
         userTelegramID: params.userTelegramID,
         responsePath: params.responsePath,
-        walletAddress: params.patchwallet,
+        walletAddress: patchwallet,
         reason: params.reason,
         userHandle: params.userHandle,
         userName: params.userName,
@@ -78,7 +93,7 @@ export async function handleIsolatedReward(params) {
           eventId: params.eventId,
           reason: params.reason,
           responsePath: params.responsePath,
-          walletAddress: params.patchwallet,
+          walletAddress: patchwallet,
           userHandle: params.userHandle,
           userName: params.userName,
           amount: params.amount,
@@ -104,7 +119,7 @@ export async function handleIsolatedReward(params) {
           eventId: params.eventId,
           reason: params.reason,
           responsePath: params.responsePath,
-          walletAddress: params.patchwallet,
+          walletAddress: patchwallet,
           userHandle: params.userHandle,
           userName: params.userName,
           amount: params.amount,
@@ -121,7 +136,7 @@ export async function handleIsolatedReward(params) {
         // Send tokens to the user
         txReward = await sendTokens(
           process.env.SOURCE_TG_ID,
-          params.patchwallet,
+          patchwallet,
           params.amount,
           await getPatchWalletAccessToken()
         );
@@ -142,7 +157,7 @@ export async function handleIsolatedReward(params) {
         eventId: params.eventId,
         reason: params.reason,
         responsePath: params.responsePath,
-        walletAddress: params.patchwallet,
+        walletAddress: patchwallet,
         userHandle: params.userHandle,
         userName: params.userName,
         amount: params.amount,
@@ -169,7 +184,7 @@ export async function handleIsolatedReward(params) {
       await axios.post(process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK, {
         userTelegramID: params.userTelegramID,
         responsePath: params.responsePath,
-        walletAddress: params.patchwallet,
+        walletAddress: patchwallet,
         reason: params.reason,
         userHandle: params.userHandle,
         userName: params.userName,
