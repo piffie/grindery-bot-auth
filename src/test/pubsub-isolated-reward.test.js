@@ -15,6 +15,7 @@ import {
   mockUserOpHash,
   patchwalletTxStatusUrl,
   mockUserTelegramID1,
+  patchwalletResolverUrl,
 } from './utils.js';
 import Sinon from 'sinon';
 import axios from 'axios';
@@ -49,6 +50,14 @@ describe('handleIsolatedReward function', async function () {
             data: {
               txHash: mockTransactionHash,
               userOpHash: mockUserOpHash,
+            },
+          });
+        }
+
+        if (url === patchwalletResolverUrl) {
+          return Promise.resolve({
+            data: {
+              users: [{ accountAddress: mockWallet }],
             },
           });
         }
@@ -186,6 +195,71 @@ describe('handleIsolatedReward function', async function () {
             (e) => e.firstArg === process.env.FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK
           )
       ).to.be.undefined;
+    });
+
+    it('Should call the sendTokens function properly if patchwallet is not in the arguments but it is in the database', async function () {
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        reason: 'isolated_reason_1',
+        patchwallet: mockWallet,
+        status: TRANSACTION_STATUS.SUCCESS,
+      });
+
+      const result = await handleIsolatedReward({
+        eventId: rewardId,
+        userTelegramID: mockUserTelegramID,
+        responsePath: mockResponsePath,
+        userHandle: mockUserHandle,
+        userName: mockUserName,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '100',
+      });
+
+      chai
+        .expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+            .args[1]
+        )
+        .to.deep.equal({
+          userId: `grindery:${process.env.SOURCE_TG_ID}`,
+          chain: 'matic',
+          to: [process.env.G1_POLYGON_ADDRESS],
+          value: ['0x00'],
+          data: [
+            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+          ],
+          auth: '',
+        });
+    });
+
+    it('Should call the sendTokens function properly if patchwallet is not in the arguments and the user doesnt exist in database yet', async function () {
+      const result = await handleIsolatedReward({
+        eventId: rewardId,
+        userTelegramID: mockUserTelegramID,
+        responsePath: mockResponsePath,
+        userHandle: mockUserHandle,
+        userName: mockUserName,
+        reason: 'isolated_reason_1',
+        message: 'isolated message 1',
+        amount: '100',
+      });
+
+      chai
+        .expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+            .args[1]
+        )
+        .to.deep.equal({
+          userId: `grindery:${process.env.SOURCE_TG_ID}`,
+          chain: 'matic',
+          to: [process.env.G1_POLYGON_ADDRESS],
+          value: ['0x00'],
+          data: [
+            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+          ],
+          auth: '',
+        });
     });
   });
 
