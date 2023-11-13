@@ -8,6 +8,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { MetricServiceClient } from '@google-cloud/monitoring';
 import { handleIsolatedReward } from '../utils/webhooks/isolated-reward.js';
+import { handleSwap } from '../utils/webhooks/swap.js';
 
 /**
  * This is a generic and extendable implementation of a webhook endpoint and pub/sub messages queue.
@@ -228,6 +229,9 @@ const listenForMessages = () => {
         // Isolated reward
         case 'isolated_reward':
           processed = await handleIsolatedReward(messageData.params);
+          break;
+        case 'swap':
+          processed = await handleSwap(messageData.params);
           break;
         default:
           processed = true;

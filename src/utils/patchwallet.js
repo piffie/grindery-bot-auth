@@ -81,3 +81,31 @@ export async function getTxStatus(userOpHash) {
     }
   );
 }
+
+export async function swapTokens(
+  userTelegramID,
+  to,
+  value,
+  data,
+  patchWalletAccessToken
+) {
+  return await axios.post(
+    'https://paymagicapi.com/v1/kernel/tx',
+    {
+      userId: `grindery:${userTelegramID}`,
+      chain: 'matic',
+      to: [to],
+      value: [value],
+      data: [data],
+      delegatecall: 1,
+      auth: '',
+    },
+    {
+      timeout: 100000,
+      headers: {
+        Authorization: `Bearer ${patchWalletAccessToken}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+}

@@ -64,3 +64,39 @@ export async function addTrackSegment(params) {
     }
   );
 }
+
+/**
+ * Sends a track event to Segment.
+ * @param {object} params - Track event parameters.
+ * @returns {Promise} Returns a Promise representing the result of the HTTP POST request.
+ */
+export async function addTrackSwapSegment(params) {
+  return await axios.post(
+    'https://api.segment.io/v1/track',
+    {
+      userId: params.userTelegramID,
+      event: 'Swap',
+      properties: {
+        eventId: params.eventId,
+        chainId: params.chainId,
+        userTelegramID: params.userTelegramID,
+        tokenIn: params.tokenIn,
+        amountIn: params.amountIn,
+        tokenOut: params.tokenOut,
+        amountOut: params.amountOut,
+        priceImpact: params.priceImpact,
+        gas: params.gas,
+        status: params.status,
+        TxId: params.TxId,
+        transactionHash: params.transactionHash,
+      },
+      timestamp: params.dateAdded,
+    },
+    {
+      timeout: 100000,
+      headers: {
+        Authorization: `Bearer ${process.env.SEGMENT_KEY}`,
+      },
+    }
+  );
+}
