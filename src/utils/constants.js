@@ -13,3 +13,5 @@ export const TRANSACTION_STATUS = {
   FAILURE: 'failure',
   PENDING_HASH: 'pending_hash',
 };
+export const SEGMENT_API_ENDPOINT = 'https://api.segment.io/v1/batch';
+export const SEGMENT_WRITE_KEY = process.env.SEGMENT_WRITE_KEY;

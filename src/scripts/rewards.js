@@ -4,7 +4,13 @@ import { createObjectCsvWriter as createCsvWriter } from 'csv-writer';
 import fs from 'fs';
 import csv from 'csv-parser';
 import web3 from 'web3';
-import { REWARDS_COLLECTION, USERS_COLLECTION } from '../utils/constants.js';
+import {
+  REWARDS_COLLECTION,
+  TRANSFERS_COLLECTION,
+  USERS_COLLECTION,
+} from '../utils/constants.js';
+import { ObjectId } from 'mongodb';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Distributes a sign-up reward of 100 Grindery One Tokens to users without previous rewards.
@@ -14,7 +20,7 @@ async function distributeSignupRewards() {
   try {
     // Connect to the database
     const db = await Database.getInstance();
-    const rewardsCollection = db.collection('rewards');
+    const rewardsCollection = db.collection(REWARDS_COLLECTION);
 
     // Obtain the initial PatchWallet access token
     let patchWalletAccessToken = await getPatchWalletAccessToken();
@@ -22,12 +28,15 @@ async function distributeSignupRewards() {
     // Track the time of the last token renewal
     let lastTokenRenewalTime = Date.now();
 
-    const allUsers = await db.collection('users').find({}).toArray();
+    const allUsers = await db.collection(USERS_COLLECTION).find({}).toArray();
     let userCount = 0;
 
     // Load all rewards into memory for filtering
     const allRewards = await rewardsCollection
-      .find({ amount: '100' })
+      .find({
+        reason: 'user_sign_up',
+        status: 'success',
+      })
       .toArray();
 
     for (const user of allUsers) {
@@ -40,7 +49,7 @@ async function distributeSignupRewards() {
         )
       ) {
         console.log(
-          `[${userCount}/${allUsers.length}] User ${user.userTelegramID} has no reward with amount "100"`
+          `[${userCount}/${allUsers.length}] User ${user.userTelegramID} has no sign up reward`
         );
 
         // Check if it's time to renew the PatchWallet access token
@@ -72,7 +81,10 @@ async function distributeSignupRewards() {
               amount: '100',
               message: 'Sign up reward',
               transactionHash: txReward.data.txHash,
+              userOpHash: txReward.data.userOpHash,
               dateAdded: new Date(Date.now()),
+              status: 'success',
+              eventId: uuidv4(),
             });
 
             console.log(
@@ -602,4 +614,355 @@ async function importMissingRewardsFromCSV(fileName) {
       console.error('Errors during CSV parsing:', error);
       process.exit(1);
     });
+}
+
+/**
+ * Usage: checkMissingRewards(filePath)
+ * Description: This function processes rewards data from a CSV file and identifies the rewards in the database that aren't present in the CSV.
+ * - filePath: The path to the CSV file containing rewards data.
+ * Example: checkMissingRewards("rewardsData.csv");
+ */
+async function checkMissingRewards(fileName) {
+  const db = await Database.getInstance();
+  const collection = db.collection('rewards');
+  const hashesInCsv = new Set();
+
+  fs.createReadStream(fileName)
+    .pipe(csv())
+    .on('data', (row) => {
+      hashesInCsv.add(row.evt_tx_hash);
+    })
+    .on('end', async () => {
+      const rewardsHashesInDb = await collection.distinct('transactionHash');
+
+      const hashesNotInDb = [...hashesInCsv].filter(
+        (hash) => !rewardsHashesInDb.includes(hash)
+      );
+
+      if (hashesNotInDb.length === 0) {
+        console.log(
+          'All rewards in CSV are present in the MongoDB collection.'
+        );
+      } else {
+        console.log(
+          "The following transaction hashes from the CSV aren't present in MongoDB rewards collection:"
+        );
+        console.log(hashesNotInDb.join('\n'));
+        console.log(`Total Missing: ${hashesNotInDb.length}`);
+      }
+      process.exit(0);
+    })
+    .on('error', (error) => {
+      console.error('Error during CSV parsing:', error);
+      process.exit(1);
+    });
+}
+
+async function filterAndRemoveInvalidRewards() {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+    const rewardsCollection = db.collection('rewards');
+
+    // Find rewards documents where transactionHash doesn't start with "0x"
+    const invalidRewards = await rewardsCollection
+      .find({
+        transactionHash: { $not: /^0x/ },
+      })
+      .toArray();
+
+    if (invalidRewards.length > 0) {
+      console.log(`${invalidRewards.length} invalid rewards found.`);
+
+      // Collect the IDs of invalid rewards to delete in a batch
+      const invalidRewardIds = invalidRewards.map((reward) => reward._id);
+
+      // Use bulkWrite to delete invalid rewards in a batch
+      const deleteOperations = invalidRewardIds.map((id) => ({
+        deleteOne: {
+          filter: { _id: new ObjectId(id) },
+        },
+      }));
+
+      const result = await rewardsCollection.bulkWrite(deleteOperations);
+
+      console.log(`${result.deletedCount} invalid rewards have been removed.`);
+    } else {
+      console.log('No invalid rewards found.');
+    }
+  } catch (error) {
+    console.error('An error occurred:', error);
+  } finally {
+    // Exit the script
+    process.exit(0);
+  }
+}
+
+/**
+ * Usage: updateParentTransactionHash()
+ * Description: This function retrieves all rewards from the 'rewards' collection and updates
+ * the 'parentTransactionHash' field of each reward based on the 'transactionHash' from the 'transfers' collection.
+ * Example: Simply call the function without arguments: updateParentTransactionHash();
+ */
+async function updateParentTransactionHash() {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+
+    const transfersCollection = db.collection('transfers');
+    const rewardsCollection = db.collection('rewards');
+
+    // Fetch all rewards
+    const allRewards = await rewardsCollection.find({}).toArray();
+
+    // Fetch all transfers and store them in an array
+    const allTransfers = await transfersCollection.find({}).toArray();
+
+    // Create an array to store update operations
+    const updateOperations = [];
+
+    for (const reward of allRewards) {
+      // Find the corresponding transfer
+      const correspondingTransfer = allTransfers.find(
+        (e) => e.TxId === reward.parentTransactionHash
+      );
+
+      // If a corresponding transfer is found
+      if (correspondingTransfer) {
+        // Create an update operation and add it to the array
+        const updateOperation = {
+          updateOne: {
+            filter: { _id: reward._id },
+            update: {
+              $set: {
+                parentTransactionHash: correspondingTransfer.transactionHash,
+              },
+            },
+          },
+        };
+        updateOperations.push(updateOperation);
+        console.log(`Reward to update: ${reward._id}`);
+      }
+    }
+
+    // Bulk update all the rewards with the update operations
+    if (updateOperations.length > 0) {
+      await rewardsCollection.bulkWrite(updateOperations);
+    }
+  } catch (error) {
+    console.error(`An error occurred: ${error.message}`);
+  } finally {
+    // Exit the script
+    process.exit(0);
+  }
+}
+
+/**
+ * Calculate the average reward amount for unique users
+ */
+async function calculateAverageRewardAmount() {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+    const rewardsCollection = db.collection(REWARDS_COLLECTION); // Make sure to use the correct collection
+
+    // Get all rewards from the collection
+    const allRewards = await rewardsCollection.find({}).toArray();
+
+    // Create an object to store the total reward amount per user
+    const totalRewardAmounts = {};
+
+    // Iterate through all rewards to calculate the total per user
+    for (const reward of allRewards) {
+      const userTelegramID = reward.userTelegramID;
+      const amount = parseFloat(reward.amount); // Convert the string to a number
+
+      // Check if the user is already in the totalRewardAmounts object
+      if (totalRewardAmounts[userTelegramID]) {
+        totalRewardAmounts[userTelegramID] += amount;
+      } else {
+        totalRewardAmounts[userTelegramID] = amount;
+      }
+    }
+
+    // Count the number of unique users
+    const uniqueUserCount = Object.keys(totalRewardAmounts).length;
+
+    console.log('uniqueUserCount', uniqueUserCount);
+
+    // Calculate the average amount
+    let totalAmount = 0;
+    for (const userTelegramID in totalRewardAmounts) {
+      totalAmount += totalRewardAmounts[userTelegramID];
+    }
+    const averageAmount = totalAmount / uniqueUserCount;
+
+    // Display the average amount
+    console.log(`Average reward amount per user: ${averageAmount}`);
+  } catch (error) {
+    // Handle errors and log them
+    console.error(
+      'An error occurred while calculating the average reward amount:',
+      error
+    );
+  } finally {
+    // Exit the script
+    process.exit(0);
+  }
+}
+
+/**
+ * Retrieve transaction and recipient statistics for a user and export to CSV.
+ *
+ * @param {string} userId - The user's Telegram ID.
+ * @returns {void}
+ */
+async function getTransactionsAndRecipientsFromId(userId) {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+    const rewardsCollection = db.collection('rewards');
+    const transfersCollection = db.collection('transfers');
+
+    const rewards = await rewardsCollection
+      .find({ userTelegramID: userId, reason: 'referral_link' })
+      .toArray();
+
+    // Obtenir les sponsoredUserTelegramID uniques
+    const uniqueSponsoredUserIDs = [
+      ...new Set(rewards.map((item) => item.sponsoredUserTelegramID)),
+    ];
+
+    // Importer tous les documents de la collection transfers
+    const allTransfers = await transfersCollection.find().toArray();
+
+    // Configurer le writer CSV
+    const csvWriter = createCsvWriter({
+      path: 'transaction_stats.csv',
+      header: [
+        { id: 'userID', title: 'User ID' },
+        { id: 'transactionsDone', title: 'Transactions Done' },
+        { id: 'distinctRecipients', title: 'Distinct Recipients' },
+      ],
+    });
+
+    const csvData = [];
+
+    for (let i = 0; i < uniqueSponsoredUserIDs.length; i++) {
+      const userID = uniqueSponsoredUserIDs[i];
+      const transactionsDone = allTransfers.filter(
+        (transfer) => transfer.senderTgId === userID
+      ).length;
+
+      const distinctRecipients = new Set(
+        allTransfers
+          .filter((transfer) => transfer.senderTgId === userID)
+          .map((transfer) => transfer.recipientTgId)
+      );
+
+      csvData.push({
+        userID: userID,
+        transactionsDone: transactionsDone,
+        distinctRecipients: distinctRecipients.size,
+      });
+
+      // Afficher la progression
+      console.log(`Progress: ${i + 1} / ${uniqueSponsoredUserIDs.length}`);
+    }
+
+    // Écrire les données CSV dans le fichier
+    await csvWriter.writeRecords(csvData);
+
+    console.log('Exported transaction stats to transaction_stats.csv');
+  } catch (error) {
+    // Handle errors and log them
+    console.error('An error occurred:', error);
+  } finally {
+    // Exit the script
+    process.exit(0);
+  }
+}
+
+async function cleanupRewardsDB() {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+
+    const rewardsCollection = db.collection(REWARDS_COLLECTION);
+    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
+    const usersCollection = db.collection(USERS_COLLECTION);
+
+    // UPDATE EMPTY USERID IN REWARD DB
+    const rewardsToUpdate = await rewardsCollection
+      .find({
+        parentTransactionHash: { $ne: '' },
+        userTelegramID: '',
+      })
+      .toArray();
+
+    if (rewardsToUpdate.length > 0) {
+      console.log(`${rewardsToUpdate.length} rewards to update.`);
+
+      const bulkOps = await Promise.all(
+        rewardsToUpdate.map(async (reward, index) => {
+          console.log(`Updating reward ${index + 1}`);
+          // Find the corresponding transfer document
+          const transfer = await transfersCollection.findOne({
+            transactionHash: reward.parentTransactionHash,
+          });
+
+          if (transfer) {
+            // Find user information based on senderTgId
+            const user = await usersCollection.findOne({
+              userTelegramID: transfer.senderTgId,
+            });
+
+            if (user) {
+              // Update the reward document with user information
+              return {
+                updateOne: {
+                  filter: { _id: reward._id },
+                  update: {
+                    $set: {
+                      userTelegramID: user.userTelegramID,
+                      responsePath: user.responsePath,
+                      walletAddress: user.patchwallet,
+                      userHandle: user.userHandle,
+                      userName: user.userName,
+                    },
+                  },
+                },
+              };
+            }
+          }
+
+          return null; // Reward couldn't be updated
+        })
+      );
+
+      const bulkWriteOps = bulkOps.filter((op) => op !== null);
+
+      if (bulkWriteOps.length > 0) {
+        const result = await rewardsCollection.bulkWrite(bulkWriteOps);
+        console.log(`${result.modifiedCount} rewards have been updated.`);
+      } else {
+        console.log('No rewards updated.');
+      }
+    } else {
+      console.log('No rewards to update.');
+    }
+
+    // CLEAN UP REWARD DB BY REMOVING REWARDS TO SOURCE WALLET
+    const result = await rewardsCollection.deleteMany({
+      walletAddress: process.env.SOURCE_WALLET_ADDRESS,
+    });
+    console.log(
+      `${result.deletedCount} reward documents to our source wallet have been deleted.`
+    );
+  } catch (error) {
+    console.error('An error occurred:', error);
+  } finally {
+    // Exit the script
+    process.exit(0);
+  }
 }

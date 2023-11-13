@@ -5,9 +5,9 @@ import web3 from 'web3';
 import {
   REWARDS_COLLECTION,
   TRANSFERS_COLLECTION,
-  USERS_COLLECTION,
 } from '../utils/constants.js';
-import 'dotenv/config';
+import { createObjectCsvWriter as createCsvWriter } from 'csv-writer';
+import { ObjectId } from 'mongodb';
 
 // Example usage of the functions:
 // removeDuplicateTransfers();
@@ -221,6 +221,306 @@ async function removeRewardFromTransfers() {
     console.log(`Total deleted transfers: ${deletedTransfers.length}`);
   } catch (error) {
     console.error(`An error occurred: ${error.message}`);
+  } finally {
+    process.exit(0);
+  }
+}
+
+/**
+ * Usage: checkMissingTransfers(filePath)
+ * Description: This function processes transfer data from a CSV file and identifies the transfers in the database that aren't present in the CSV, excluding a specified address.
+ * - filePath: The path to the CSV file containing transfer data.
+ * Example: checkMissingTransfers("transfersData.csv");
+ */
+async function checkMissingTransfers(fileName) {
+  const db = await Database.getInstance();
+  const collection = db.collection('transfers');
+  const hashesInCsv = new Set();
+  const excludeAddress = process.env.SOURCE_WALLET_ADDRESS;
+
+  fs.createReadStream(fileName)
+    .pipe(csv())
+    .on('data', (row) => {
+      if (web3.utils.toChecksumAddress(row.from) !== excludeAddress) {
+        hashesInCsv.add(row.hash);
+      }
+    })
+    .on('end', async () => {
+      const transfersHashesInDb = await collection.distinct('transactionHash');
+
+      const hashesNotInDb = [...hashesInCsv].filter(
+        (hash) => !transfersHashesInDb.includes(hash)
+      );
+
+      if (hashesNotInDb.length === 0) {
+        console.log(
+          'All transfers in CSV are present in the MongoDB collection.'
+        );
+      } else {
+        console.log(
+          "The following transaction hashes from the CSV aren't present in MongoDB transfers collection:"
+        );
+        console.log(hashesNotInDb.join('\n'));
+        console.log(`Total Missing: ${hashesNotInDb.length}`);
+      }
+      process.exit(0);
+    })
+    .on('error', (error) => {
+      console.error('Error during CSV parsing:', error);
+      process.exit(1);
+    });
+}
+
+async function getUsersFollowUps() {
+  try {
+    const db = await Database.getInstance();
+    const transfersCollection = db.collection('transfers');
+    const usersCollection = db.collection('users');
+
+    const allTransfers = await transfersCollection.find({}).toArray();
+    const allUsers = await usersCollection.find({}).toArray();
+
+    const senderTgIdToFollowup = {};
+
+    const recipientTgIds = new Set(allUsers.map((user) => user.userTelegramID));
+
+    for (const transfer of allTransfers) {
+      const senderTgId = transfer.senderTgId;
+
+      if (!senderTgId) {
+        // Skip transfers without senderTgId
+        continue;
+      }
+
+      // Check if the recipientTgId is not in the set of recipientTgIds
+      if (!recipientTgIds.has(transfer.recipientTgId)) {
+        // If the recipientTgId is not found in the users collection, increment the followup count for the senderTgId
+        if (!senderTgIdToFollowup[senderTgId]) {
+          senderTgIdToFollowup[senderTgId] = {
+            count: 1,
+            userInfo: allUsers.find(
+              (user) => user.userTelegramID === senderTgId
+            ),
+          };
+        } else {
+          senderTgIdToFollowup[senderTgId].count++;
+        }
+      }
+    }
+
+    // Create an array with senderTgId, followup count, and user info
+    const senderTgIdInfoArray = [];
+    for (const senderTgId in senderTgIdToFollowup) {
+      senderTgIdInfoArray.push({
+        userTelegramID: senderTgId,
+        followupCount: senderTgIdToFollowup[senderTgId].count,
+        userHandle: senderTgIdToFollowup[senderTgId].userInfo?.userHandle,
+        userName: senderTgIdToFollowup[senderTgId].userInfo?.userName,
+        responsePath: senderTgIdToFollowup[senderTgId].userInfo?.responsePath,
+        patchwallet: senderTgIdToFollowup[senderTgId].userInfo?.patchwallet,
+      });
+    }
+
+    // Create a CSV writer
+    const csvWriter = createObjectCsvWriter({
+      path: 'sender_followup.csv',
+      header: [
+        { id: 'userTelegramID', title: 'User Telegram ID' },
+        { id: 'followupCount', title: 'Followup Count' },
+        { id: 'userHandle', title: 'User Handle' },
+        { id: 'userName', title: 'User Name' },
+        { id: 'responsePath', title: 'Response Path' },
+        { id: 'patchwallet', title: 'Patchwallet' },
+      ],
+    });
+    // Write the senderTgId information to a CSV file
+    await csvWriter.writeRecords(senderTgIdInfoArray);
+
+    console.log('CSV file created: sender_followup.csv');
+  } catch (error) {
+    console.error('An error occurred:', error);
+  } finally {
+    process.exit(0);
+  }
+}
+
+/**
+ * Asynchronous function to retrieve and export transactions statistics.
+ */
+async function getDoubleTxs() {
+  try {
+    const db = await Database.getInstance();
+    const collection = db.collection('transfers');
+
+    const csvWriter = createCsvWriter({
+      path: 'matched_transactions.csv',
+      header: [
+        { id: 'senderWallet', title: 'Sender Wallet' },
+        { id: 'recipientWallet', title: 'Recipient Wallet' },
+        { id: 'amount', title: 'Amount' },
+        { id: 'numberOfTransactions', title: 'Number of Transactions' },
+        { id: 'amountToRepay', title: 'Amount to Repay' },
+      ],
+    });
+
+    // Define the date range
+    const startDate = new Date('2023-10-13T09:00:00.000Z'); // Converted to UTC
+    const endDate = new Date('2023-10-15T04:00:00.000Z'); // Converted to UTC
+
+    // Filter transactions within the date range
+    const transactions = await collection
+      .find({
+        dateAdded: {
+          $gte: startDate,
+          $lte: endDate,
+        },
+      })
+      .toArray();
+
+    // Create an object to store matching transactions
+    const matchedTransactions = {};
+
+    // Analyze the transactions
+    transactions.forEach((transaction) => {
+      if (transaction.transactionHash) {
+        const key = `${transaction.senderWallet} - ${transaction.recipientWallet} - ${transaction.tokenAmount}`;
+        if (!matchedTransactions[key]) {
+          matchedTransactions[key] = {
+            senderWallet: transaction.senderWallet,
+            recipientWallet: transaction.recipientWallet,
+            amount: parseInt(transaction.tokenAmount),
+            numberOfTransactions: 1,
+            amountToRepay: 0,
+          };
+        } else {
+          matchedTransactions[key].numberOfTransactions += 1;
+          matchedTransactions[key].amountToRepay += parseInt(
+            transaction.tokenAmount
+          );
+        }
+        console.log(`Transaction ${transaction.transactionHash} done.`);
+      }
+    });
+
+    // Filter elements where numberOfTransactions > 1
+    const filteredTransactions = Object.values(matchedTransactions).filter(
+      (transaction) => transaction.numberOfTransactions > 1
+    );
+
+    // Export the filtered data to a CSV file
+    await csvWriter.writeRecords(filteredTransactions);
+    console.log('Exported matched transactions to matched_transactions.csv');
+  } catch (error) {
+    console.error('An error occurred:', error);
+  } finally {
+    process.exit(0);
+  }
+}
+
+async function convertFieldsToString() {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+
+    // Get the transfers collection
+    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
+
+    // Find documents where senderTgId, recipientTgId, or tokenAmount are numbers
+    const numericDocuments = await transfersCollection
+      .find({
+        $or: [
+          { senderTgId: { $type: 'number' } },
+          { recipientTgId: { $type: 'number' } },
+          { tokenAmount: { $type: 'number' } },
+        ],
+      })
+      .toArray();
+
+    console.log('numericDocuments', numericDocuments);
+
+    // Create bulk write operations to update documents
+    const bulkWriteOperations = numericDocuments.map((document) => {
+      const updateOperation = {
+        updateOne: {
+          filter: { _id: document._id },
+          update: {
+            $set: {
+              senderTgId: document.senderTgId
+                ? String(document.senderTgId)
+                : null,
+              recipientTgId: document.recipientTgId
+                ? String(document.recipientTgId)
+                : null,
+              tokenAmount: document.tokenAmount
+                ? String(document.tokenAmount)
+                : null,
+            },
+          },
+        },
+      };
+      return updateOperation;
+    });
+
+    // Perform the bulk write operations
+    const result = await transfersCollection.bulkWrite(bulkWriteOperations);
+
+    console.log(`Updated ${result.modifiedCount} documents.`);
+  } catch (error) {
+    console.error('An error occurred:', error);
+  } finally {
+    process.exit(0);
+  }
+}
+
+async function nullifyTgIds() {
+  try {
+    // Connect to the database
+    const db = await Database.getInstance();
+
+    // Get the transfers collection
+    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
+
+    // Find documents where senderTgId, recipientTgId, or tokenAmount are numbers
+    const numericDocuments = await transfersCollection
+      .find({
+        $or: [
+          { senderTgId: 'null' },
+          { recipientTgId: 'null' },
+          { tokenAmount: 'null' },
+        ],
+      })
+      .toArray();
+
+    console.log('numericDocuments', numericDocuments);
+
+    // Create bulk write operations to update documents
+    const bulkWriteOperations = numericDocuments.map((document) => {
+      const updateOperation = {
+        updateOne: {
+          filter: { _id: document._id },
+          update: {
+            $set: {
+              senderTgId:
+                document.senderTgId === 'null' ? null : document.senderTgId,
+              recipientTgId:
+                document.recipientTgId === 'null'
+                  ? null
+                  : document.recipientTgId,
+              tokenAmount:
+                document.tokenAmount === 'null' ? null : document.tokenAmount,
+            },
+          },
+        },
+      };
+      return updateOperation;
+    });
+
+    // Perform the bulk write operations
+    const result = await transfersCollection.bulkWrite(bulkWriteOperations);
+
+    console.log(`Updated ${result.modifiedCount} documents.`);
+  } catch (error) {
+    console.error('An error occurred:', error);
   } finally {
     process.exit(0);
   }

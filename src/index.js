@@ -31,10 +31,6 @@ const options = {
       url: 'https://bot-auth-api.grindery.org',
       description: 'Production server',
     },
-    {
-      url: 'https://bot-auth-api-staging.grindery.org',
-      description: 'Staging server',
-    },
   ],
   // Base directory which we use to locate your JSDOC files
   baseDir: __dirname,
