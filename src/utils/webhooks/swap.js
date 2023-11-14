@@ -34,9 +34,13 @@ export async function handleSwap(params) {
   if (!swap_db) {
     const toSave = {
       chainId: 'eip155:137',
+      to: params.to,
+      from: params.from,
       userTelegramID: params.userTelegramID,
+      tokenInSymbol: params.tokenInSymbol,
       tokenIn: params.tokenIn,
       amountIn: params.amountIn,
+      tokenOutSymbol: params.tokenOutSymbol,
       tokenOut: params.tokenOut,
       amountOut: params.amountOut,
       priceImpact: params.priceImpact,
@@ -150,7 +154,7 @@ export async function handleSwap(params) {
         console.warn(`Potentially invalid amount: ${params.amount}, dropping`);
         drop = true;
       }
-      if (error?.response?.status === 470) {
+      if (error?.response?.status === 470 || error?.response?.status === 400) {
         drop = true;
       }
       if (drop) {
@@ -212,6 +216,10 @@ export async function handleSwap(params) {
         TxId: tx.data.txHash.substring(1, 8),
         transactionHash: tx.data.txHash,
         dateAdded: dateAdded,
+        to: params.to,
+        from: params.from,
+        tokenInSymbol: params.tokenInSymbol,
+        tokenOutSymbol: params.tokenOutSymbol,
       });
 
       console.log(
@@ -235,6 +243,10 @@ export async function handleSwap(params) {
         TxId: tx.data.txHash.substring(1, 8),
         transactionHash: tx.data.txHash,
         dateAdded: dateAdded,
+        to: params.to,
+        from: params.from,
+        tokenInSymbol: params.tokenInSymbol,
+        tokenOutSymbol: params.tokenOutSymbol,
       });
 
       console.log(
