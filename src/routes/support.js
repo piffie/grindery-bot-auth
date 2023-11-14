@@ -1,6 +1,7 @@
 import express from 'express';
 import { Database } from '../db/conn.js';
 import { authenticateApiKey } from '../utils/auth.js';
+import { USERS_COLLECTION } from '../utils/constants.js';
 
 const router = express.Router();
 
@@ -49,7 +50,7 @@ const router = express.Router();
  */
 router.post('/import', authenticateApiKey, async (req, res) => {
   const db = await Database.getInstance(req);
-  const collection = db.collection('users');
+  const collection = db.collection(USERS_COLLECTION);
   const inputData = req.body;
   const toInsert = [];
 

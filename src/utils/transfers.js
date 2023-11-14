@@ -1,4 +1,3 @@
-import { Database } from '../db/conn.js';
 import {
   REWARDS_COLLECTION,
   TRANSFERS_COLLECTION,
@@ -55,7 +54,7 @@ export async function getOutgoingTxsToNewUsers(db, userId, start, limit) {
   return await Promise.all(
     (
       await db
-        .collection('transfers')
+        .collection(TRANSFERS_COLLECTION)
         .aggregate([
           {
             $match: {

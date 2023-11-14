@@ -1,6 +1,11 @@
 import { Database } from '../db/conn.js';
 import axios from 'axios';
-import { SEGMENT_API_ENDPOINT, SEGMENT_WRITE_KEY } from '../utils/constants.js';
+import {
+  SEGMENT_API_ENDPOINT,
+  SEGMENT_WRITE_KEY,
+  TRANSFERS_COLLECTION,
+  USERS_COLLECTION,
+} from '../utils/constants.js';
 
 // Usage: sendUsersBatchRequest()
 // Description: Sends a batch request to the Segment API with user details.
@@ -10,7 +15,7 @@ import { SEGMENT_API_ENDPOINT, SEGMENT_WRITE_KEY } from '../utils/constants.js';
 // Example: sendUsersBatchRequest();
 async function sendUsersBatchRequest() {
   const db = await Database.getInstance();
-  const usersCollection = db.collection('users');
+  const usersCollection = db.collection(USERS_COLLECTION);
 
   try {
     const users = await usersCollection.find().toArray();
@@ -59,7 +64,7 @@ async function sendUsersBatchRequest() {
 // Example: sendTransfersBatchRequest();
 async function sendTransfersBatchRequest() {
   const db = await Database.getInstance();
-  const transfersCollection = db.collection('transfers');
+  const transfersCollection = db.collection(TRANSFERS_COLLECTION);
 
   try {
     const transfers = await transfersCollection.find().toArray();

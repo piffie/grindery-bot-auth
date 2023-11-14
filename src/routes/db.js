@@ -8,7 +8,6 @@ import {
 } from '../utils/transfers.js';
 import {
   REWARDS_COLLECTION,
-  REWARDS_TESTS_COLLECTION,
   TRANSACTION_STATUS,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
@@ -71,12 +70,14 @@ router.get('/backlog-signup-rewards', authenticateApiKey, async (req, res) => {
 
     return res.status(200).send(
       await db
-        .collection('users')
+        .collection(USERS_COLLECTION)
         .find({
           userTelegramID: {
-            $nin: await db.collection('rewards').distinct('userTelegramID', {
-              amount: '100',
-            }),
+            $nin: await db
+              .collection(REWARDS_COLLECTION)
+              .distinct('userTelegramID', {
+                amount: '100',
+              }),
           },
         })
         .toArray()
@@ -206,7 +207,7 @@ router.get('/transactions-count', authenticateApiKey, async (req, res) => {
   try {
     const db = await Database.getInstance(req);
     const txs = await db
-      .collection('transfers')
+      .collection(TRANSFERS_COLLECTION)
       .find({ senderTgId: req.query.userId })
       .toArray();
     res
@@ -222,7 +223,7 @@ router.get('/transactions-new-users', authenticateApiKey, async (req, res) => {
     const db = await Database.getInstance(req);
 
     const txs = await db
-      .collection('transfers')
+      .collection(TRANSFERS_COLLECTION)
       .aggregate([
         {
           $match: {
@@ -266,7 +267,7 @@ router.get(
       const db = await Database.getInstance(req);
 
       const txs = await db
-        .collection('transfers')
+        .collection(TRANSFERS_COLLECTION)
         .aggregate([
           {
             $match: {
@@ -307,7 +308,7 @@ router.get('/referral-link-count', authenticateApiKey, async (req, res) => {
   try {
     const db = await Database.getInstance(req);
     const rewards = await db
-      .collection('rewards')
+      .collection(REWARDS_COLLECTION)
       .find({ userTelegramID: req.query.userId, reason: 'referral_link' })
       .toArray();
     res
