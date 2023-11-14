@@ -63,6 +63,30 @@ router.post('/', async (req, res) => {
 
 router.post('/balance', async (req, res) => {
   try {
+    // Check for the presence of all required fields in the request body
+    const requiredFields = ['chainId', 'contractAddress', 'userAddress'];
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        return res.status(400).json({
+          message: `Missing required field: ${field}`,
+        });
+      }
+    }
+
+    // Check if the chainId is valid
+    if (!CHAIN_MAPPING[req.body.chainId]) {
+      return res.status(400).json({
+        message: 'Invalid chainId provided.',
+      });
+    }
+
+    // Check if the wallet address is valid
+    if (!Web3.utils.isAddress(req.body.userAddress)) {
+      return res.status(400).json({
+        message: 'Provided wallet address is not a valid address.',
+      });
+    }
+
     const web3 = new Web3(CHAIN_MAPPING[req.body.chainId][1]);
     const contract = new web3.eth.Contract(ERC20, req.body.contractAddress);
 
