@@ -6,6 +6,11 @@ import BigNumber from 'bignumber.js';
 import { CHAIN_MAPPING } from '../utils/chains.js';
 import axios from 'axios';
 import { authenticateApiKey } from '../utils/auth.js';
+import {
+  getPatchWalletAccessToken,
+  getPatchWalletAddressFromTgId,
+  sendTokens,
+} from '../utils/patchwallet.js';
 
 const router = express.Router();
 const g1PolygonAddress = '0xe36BD65609c08Cd17b53520293523CF4560533d0';
@@ -104,14 +109,36 @@ router.post('/balance', async (req, res) => {
 
 router.post('/patchwallet', async (req, res) => {
   try {
+    // Check for the presence of all required fields in the request body
+    const requiredFields = ['chainId', 'contractAddress', 'tgId'];
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        return res.status(400).json({
+          message: `Missing required field: ${field}`,
+        });
+      }
+    }
+
+    // Check if the chainId is valid
+    if (!CHAIN_MAPPING[req.body.chainId]) {
+      return res.status(400).json({
+        message: 'Invalid chainId provided.',
+      });
+    }
+
+    // Check if the contract address is a valid address
+    if (!Web3.utils.isAddress(req.body.contractAddress)) {
+      return res.status(400).json({
+        message: 'Invalid contract address provided.',
+      });
+    }
+
     const web3 = new Web3(CHAIN_MAPPING[req.body.chainId][1]);
     const contract = new web3.eth.Contract(ERC20, req.body.contractAddress);
 
-    const patchWalletAddress = (
-      await axios.post('https://paymagicapi.com/v1/resolver', {
-        userIds: `grindery:${req.body.tgId}`,
-      })
-    ).data.users[0].accountAddress;
+    const patchWalletAddress = await getPatchWalletAddressFromTgId(
+      req.body.tgId
+    );
 
     const balance = await contract.methods.balanceOf(patchWalletAddress).call();
 
@@ -132,59 +159,18 @@ router.post('/patchwallet', async (req, res) => {
 
 router.post('/sendTokens', authenticateApiKey, async (req, res) => {
   try {
-    const accessToken = (
-      await axios.post(
-        'https://paymagicapi.com/v1/auth',
-        {
-          client_id: process.env.CLIENT_ID,
-          client_secret: process.env.CLIENT_SECRET,
-        },
-        {
-          timeout: 100000,
-        }
-      )
-    ).data.access_token;
-
-    const web3 = new Web3();
-    const contract = new web3.eth.Contract(ERC20, g1PolygonAddress);
-
-    const to = (
-      await axios.post(
-        'https://paymagicapi.com/v1/resolver',
-        {
-          userIds: `grindery:${req.body.toTgId}`,
-        },
-        {
-          timeout: 100000,
-        }
-      )
-    ).data.users[0].accountAddress;
-
-    const tokenTransferResponse = await axios.post(
-      'https://paymagicapi.com/v1/kernel/tx',
-      {
-        userId: `grindery:${req.body.tgId}`,
-        chain: 'matic',
-        to: [g1PolygonAddress],
-        value: ['0x00'],
-        data: [
-          contract.methods['transfer'](
-            to,
-            Web3.utils.toWei(req.body.amount)
-          ).encodeABI(),
-        ],
-        auth: '',
-      },
-      {
-        timeout: 100000,
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    res.status(200).json(tokenTransferResponse.data);
+    res
+      .status(200)
+      .json(
+        (
+          await sendTokens(
+            req.body.tgId,
+            await getPatchWalletAddressFromTgId(req.body.toTgId),
+            req.body.amount,
+            await getPatchWalletAccessToken()
+          )
+        ).data
+      );
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: error.message });
