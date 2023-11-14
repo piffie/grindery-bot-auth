@@ -527,7 +527,7 @@ describe('handleNewTransaction function', async function () {
       chai.expect(result).to.be.true;
     });
 
-    it('Should not modify status in database if sender is not a user', async function () {
+    it('Should not add anything in database if sender is not a user', async function () {
       const result = await handleNewTransaction({
         senderTgId: mockUserTelegramID,
         amount: '100',
@@ -535,21 +535,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionTransfersMock.find({}).toArray())
-        .excluding(['_id', 'dateAdded'])
-        .to.deep.equal([
-          {
-            eventId: txId,
-            chainId: 'eip155:137',
-            tokenSymbol: 'g1',
-            tokenAddress: process.env.G1_POLYGON_ADDRESS,
-            senderTgId: mockUserTelegramID,
-            recipientTgId: mockUserTelegramID1,
-            tokenAmount: '100',
-            status: TRANSACTION_STATUS.PENDING,
-          },
-        ]);
+      chai.expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
     });
 
     it('Should not send tokens if sender is not a user', async function () {
