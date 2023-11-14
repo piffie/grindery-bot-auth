@@ -113,7 +113,7 @@ export async function distributeReferralRewards() {
   try {
     // Connect to the database
     const db = await Database.getInstance();
-    const rewardsCollection = db.collection('rewards');
+    const rewardsCollection = db.collection(REWARDS_COLLECTION);
 
     // Obtain the initial PatchWallet access token
     let patchWalletAccessToken = await getPatchWalletAccessToken();
@@ -125,11 +125,14 @@ export async function distributeReferralRewards() {
     const rewardedUsers = [];
 
     // Export the users and rewards collections as arrays
-    const allUsers = await db.collection('users').find({}).toArray();
+    const allUsers = await db.collection(USERS_COLLECTION).find({}).toArray();
     const allRewardsReferral = await rewardsCollection
       .find({ reason: '2x_reward' })
       .toArray();
-    const allTransfers = await db.collection('transfers').find({}).toArray();
+    const allTransfers = await db
+      .collection(TRANSFERS_COLLECTION)
+      .find({})
+      .toArray();
 
     let transferCount = 0;
 
@@ -624,7 +627,7 @@ async function importMissingRewardsFromCSV(fileName) {
  */
 async function checkMissingRewards(fileName) {
   const db = await Database.getInstance();
-  const collection = db.collection('rewards');
+  const collection = db.collection(REWARDS_COLLECTION);
   const hashesInCsv = new Set();
 
   fs.createReadStream(fileName)
@@ -662,7 +665,7 @@ async function filterAndRemoveInvalidRewards() {
   try {
     // Connect to the database
     const db = await Database.getInstance();
-    const rewardsCollection = db.collection('rewards');
+    const rewardsCollection = db.collection(REWARDS_COLLECTION);
 
     // Find rewards documents where transactionHash doesn't start with "0x"
     const invalidRewards = await rewardsCollection
@@ -709,8 +712,8 @@ async function updateParentTransactionHash() {
     // Connect to the database
     const db = await Database.getInstance();
 
-    const transfersCollection = db.collection('transfers');
-    const rewardsCollection = db.collection('rewards');
+    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
+    const rewardsCollection = db.collection(REWARDS_COLLECTION);
 
     // Fetch all rewards
     const allRewards = await rewardsCollection.find({}).toArray();
@@ -821,8 +824,8 @@ async function getTransactionsAndRecipientsFromId(userId) {
   try {
     // Connect to the database
     const db = await Database.getInstance();
-    const rewardsCollection = db.collection('rewards');
-    const transfersCollection = db.collection('transfers');
+    const rewardsCollection = db.collection(REWARDS_COLLECTION);
+    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
 
     const rewards = await rewardsCollection
       .find({ userTelegramID: userId, reason: 'referral_link' })

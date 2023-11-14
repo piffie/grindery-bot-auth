@@ -4,7 +4,6 @@ import 'dotenv/config';
 import ERC20 from './abi/ERC20.json' assert { type: 'json' };
 import BigNumber from 'bignumber.js';
 import { CHAIN_MAPPING } from '../utils/chains.js';
-import axios from 'axios';
 import { authenticateApiKey } from '../utils/auth.js';
 import {
   getPatchWalletAccessToken,

@@ -5,16 +5,16 @@ import web3 from 'web3';
 import {
   REWARDS_COLLECTION,
   TRANSFERS_COLLECTION,
+  USERS_COLLECTION,
 } from '../utils/constants.js';
 import { createObjectCsvWriter as createCsvWriter } from 'csv-writer';
-import { ObjectId } from 'mongodb';
 
 // Example usage of the functions:
 // removeDuplicateTransfers();
 async function removeDuplicateTransfers() {
   try {
     const db = await Database.getInstance();
-    const collectionTransfers = db.collection('transfers');
+    const collectionTransfers = db.collection(TRANSFERS_COLLECTION);
 
     // Aggregation pipeline to identify duplicates and keep the first instance
     const aggregationPipeline = [
@@ -53,7 +53,7 @@ async function removeDuplicateTransfers() {
 // Example: transfersCleanup("dune.csv");
 async function transfersCleanup(fileName) {
   const db = await Database.getInstance();
-  const collection = db.collection('transfers');
+  const collection = db.collection(TRANSFERS_COLLECTION);
   const hashesInCsv = [];
   let latestTimestamp = null;
 
@@ -108,10 +108,10 @@ async function updateTransfersInformations() {
     const db = await Database.getInstance();
 
     // Get the transfers collection
-    const transfersCollection = db.collection('transfers');
+    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
 
     // Get the users collection
-    const usersCollection = db.collection('users');
+    const usersCollection = db.collection(USERS_COLLECTION);
 
     // Find all transfers in the collection
     const allTransfers = await transfersCollection.find({}).toArray();
@@ -234,7 +234,7 @@ async function removeRewardFromTransfers() {
  */
 async function checkMissingTransfers(fileName) {
   const db = await Database.getInstance();
-  const collection = db.collection('transfers');
+  const collection = db.collection(TRANSFERS_COLLECTION);
   const hashesInCsv = new Set();
   const excludeAddress = process.env.SOURCE_WALLET_ADDRESS;
 
@@ -274,8 +274,8 @@ async function checkMissingTransfers(fileName) {
 async function getUsersFollowUps() {
   try {
     const db = await Database.getInstance();
-    const transfersCollection = db.collection('transfers');
-    const usersCollection = db.collection('users');
+    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
+    const usersCollection = db.collection(USERS_COLLECTION);
 
     const allTransfers = await transfersCollection.find({}).toArray();
     const allUsers = await usersCollection.find({}).toArray();
@@ -350,7 +350,7 @@ async function getUsersFollowUps() {
 async function getDoubleTxs() {
   try {
     const db = await Database.getInstance();
-    const collection = db.collection('transfers');
+    const collection = db.collection(TRANSFERS_COLLECTION);
 
     const csvWriter = createCsvWriter({
       path: 'matched_transactions.csv',

@@ -2,7 +2,7 @@ import { Database } from '../db/conn.js';
 import fs from 'fs';
 import csv from 'csv-parser';
 import csvWriter from 'csv-writer';
-import { USERS_COLLECTION } from '../utils/constants.js';
+import { TRANSFERS_COLLECTION, USERS_COLLECTION } from '../utils/constants.js';
 
 // Usage: importUsersFromCSV(filePath)
 // Description: This function imports user data from a CSV file into the database.
@@ -10,7 +10,7 @@ import { USERS_COLLECTION } from '../utils/constants.js';
 // Example: importUsersFromCSV("/path/to/your/file.csv");
 async function importUsersFromCSV(filePath) {
   const db = await Database.getInstance();
-  const collection = db.collection('users');
+  const collection = db.collection(USERS_COLLECTION);
   const toInsert = [];
 
   try {
@@ -130,7 +130,7 @@ async function importUsersFromJSON(filePath) {
 async function removeUsersScientificNotationInTelegramID() {
   try {
     const db = await Database.getInstance();
-    const collectionUsers = db.collection('users');
+    const collectionUsers = db.collection(USERS_COLLECTION);
 
     // Define a filter to find users with "+" in userTelegramID
     const filter = { userTelegramID: { $regex: /\+/ } };
@@ -184,8 +184,8 @@ function logUserTelegramIDsFromArrayOfUsers(users) {
 async function getUsersWithoutOutgoingTransfersAndExportToCSV() {
   try {
     const db = await Database.getInstance();
-    const usersCollection = db.collection('users');
-    const transfersCollection = db.collection('transfers');
+    const usersCollection = db.collection(USERS_COLLECTION);
+    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
 
     // Get all users
     const allUsers = await usersCollection.find({}).toArray();

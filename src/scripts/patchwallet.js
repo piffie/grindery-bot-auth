@@ -1,4 +1,5 @@
 import { Database } from '../db/conn.js';
+import { USERS_COLLECTION } from '../utils/constants.js';
 import { getPatchWalletAddressFromTgId } from '../utils/patchwallet.js';
 
 // Usage: updatePatchWalletAddresses()
@@ -9,7 +10,7 @@ async function updatePatchWalletAddresses() {
   let db;
   try {
     db = await Database.getInstance();
-    const collectionUsers = db.collection('users');
+    const collectionUsers = db.collection(USERS_COLLECTION);
 
     for (const user of await collectionUsers
       .find({

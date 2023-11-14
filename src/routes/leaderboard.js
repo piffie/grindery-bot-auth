@@ -1,6 +1,10 @@
 import express from 'express';
 import { Database } from '../db/conn.js';
 import { authenticateApiKey } from '../utils/auth.js';
+import {
+  REWARDS_COLLECTION,
+  TRANSFERS_COLLECTION,
+} from '../utils/constants.js';
 
 const router = express.Router();
 
@@ -63,7 +67,7 @@ router.get('/tx-sent', async (req, res) => {
     }
 
     const results = await db
-      .collection('transfers')
+      .collection(TRANSFERS_COLLECTION)
       .aggregate(pipeline)
       .toArray();
 
@@ -133,7 +137,7 @@ router.get('/tokensent', authenticateApiKey, async (req, res) => {
     ];
 
     const results = await db
-      .collection('transfers')
+      .collection(TRANSFERS_COLLECTION)
       .aggregate(pipeline)
       .toArray();
 
@@ -205,7 +209,7 @@ router.get('/rewards', authenticateApiKey, async (req, res) => {
     ];
 
     const leaderboard = await db
-      .collection('rewards')
+      .collection(REWARDS_COLLECTION)
       .aggregate(pipeline)
       .toArray();
     return res.status(200).send(leaderboard);
