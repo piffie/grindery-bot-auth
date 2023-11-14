@@ -154,7 +154,7 @@ export async function handleSwap(params) {
         console.warn(`Potentially invalid amount: ${params.amount}, dropping`);
         drop = true;
       }
-      if (error?.response?.status === 470) {
+      if (error?.response?.status === 470 || error?.response?.status === 400) {
         drop = true;
       }
       if (drop) {

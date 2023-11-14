@@ -1085,6 +1085,136 @@ describe('handleSwap function', async function () {
     });
   });
 
+  describe('PatchWallet 400 error', async function () {
+    beforeEach(async function () {
+      axiosStub.withArgs(patchwalletTxUrl).rejects({
+        response: {
+          status: 400,
+        },
+      });
+
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+        responsePath: mockResponsePath,
+      });
+    });
+
+    it('Should return true if error 400 in PatchWallet transaction', async function () {
+      const result = await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
+      });
+
+      chai.expect(result).to.be.true;
+    });
+
+    it('Should complete db status to failure in database if error 400 in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+        to: mockToSwap,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
+      });
+
+      chai
+        .expect(await collectionSwapsMock.find({}).toArray())
+        .excluding(['dateAdded', '_id'])
+        .to.deep.equal([
+          {
+            chainId: 'eip155:137',
+            userTelegramID: mockUserTelegramID,
+            userName: mockUserName,
+            userHandle: mockUserHandle,
+            userWallet: mockWallet,
+            tokenIn: mockTokenIn,
+            amountIn: mockAmountIn,
+            tokenOut: mockTokenOut,
+            amountOut: mockAmountOut,
+            priceImpact: mockPriceImpact,
+            gas: mockGas,
+            to: mockToSwap,
+            from: mockFromSwap,
+            tokenInSymbol: mockTokenInSymbol,
+            tokenOutSymbol: mockTokenOutSymbol,
+            eventId: swapId,
+            status: TRANSACTION_STATUS.FAILURE,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if error 400 in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === process.env.FLOWXO_NEW_SWAP_WEBHOOK)
+      ).to.be.undefined;
+    });
+
+    it('Should not call Segment if error 400 in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === 'https://api.segment.io/v1/track')
+      ).to.be.undefined;
+    });
+  });
+
   describe('No hash in PatchWallet transaction', async function () {
     beforeEach(async function () {
       axiosStub.withArgs(patchwalletTxUrl).resolves({
