@@ -762,6 +762,18 @@ export async function handleNewReward(params) {
 export async function handleNewTransaction(params) {
   const db = await Database.getInstance();
 
+  // Retrieve sender information from the "users" collection
+  const senderInformation = await db
+    .collection(USERS_COLLECTION)
+    .findOne({ userTelegramID: params.senderTgId });
+
+  if (!senderInformation) {
+    console.error(
+      `[${params.eventId}] Sender ${params.senderTgId} is not a user`
+    );
+    return true;
+  }
+
   const tx_db = await db
     .collection(TRANSFERS_COLLECTION)
     .findOne({ eventId: params.eventId });
@@ -795,18 +807,6 @@ export async function handleNewTransaction(params) {
   if (tx_db?.status === TRANSACTION_STATUS.FAILURE) {
     console.log(
       `[${tx_db?.transactionHash}] with event ID ${tx_db?.eventId} is already a failure.`
-    );
-    return true;
-  }
-
-  // Retrieve sender information from the "users" collection
-  const senderInformation = await db
-    .collection(USERS_COLLECTION)
-    .findOne({ userTelegramID: params.senderTgId });
-
-  if (!senderInformation) {
-    console.error(
-      `[${params.eventId}] Sender ${params.senderTgId} is not a user`
     );
     return true;
   }
