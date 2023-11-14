@@ -23,6 +23,9 @@ import {
   mockPriceImpact,
   mockGas,
   collectionSwapsMock,
+  mockFromSwap,
+  mockTokenInSymbol,
+  mockTokenOutSymbol,
 } from './utils.js';
 import Sinon from 'sinon';
 import axios from 'axios';
@@ -122,6 +125,12 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         })
       ).to.be.true;
     });
@@ -139,6 +148,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       const swaps = await collectionSwapsMock.find({}).toArray();
@@ -161,8 +173,12 @@ describe('handleSwap function', async function () {
             amountOut: mockAmountOut,
             priceImpact: mockPriceImpact,
             gas: mockGas,
+            from: mockFromSwap,
+            tokenInSymbol: mockTokenInSymbol,
+            tokenOutSymbol: mockTokenOutSymbol,
             status: TRANSACTION_STATUS.SUCCESS,
             transactionHash: mockTransactionHash,
+            to: mockToSwap,
           },
         ]);
       chai.expect(swaps[0].dateAdded).to.be.a('date');
@@ -181,6 +197,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       const segmentIdentityCall = axiosStub
@@ -203,6 +222,10 @@ describe('handleSwap function', async function () {
             amountOut: mockAmountOut,
             priceImpact: mockPriceImpact,
             gas: mockGas,
+            to: mockToSwap,
+            from: mockFromSwap,
+            tokenInSymbol: mockTokenInSymbol,
+            tokenOutSymbol: mockTokenOutSymbol,
             status: TRANSACTION_STATUS.SUCCESS,
             TxId: mockTransactionHash.substring(1, 8),
             transactionHash: mockTransactionHash,
@@ -222,6 +245,10 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        to: mockToSwap,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       const FlowXOCallArgs = axiosStub
@@ -245,6 +272,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
           status: TRANSACTION_STATUS.SUCCESS,
           TxId: mockTransactionHash.substring(1, 8),
           transactionHash: mockTransactionHash,
@@ -280,6 +311,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         })
       ).to.be.true;
     });
@@ -296,6 +330,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -315,6 +352,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai
@@ -340,6 +380,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -361,6 +404,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -399,6 +445,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         })
       ).to.be.true;
     });
@@ -415,6 +464,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -434,6 +486,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai
@@ -459,6 +514,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -480,6 +538,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -518,6 +579,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(result).to.be.false;
@@ -535,6 +599,10 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        to: mockToSwap,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai
@@ -550,6 +618,10 @@ describe('handleSwap function', async function () {
             amountOut: mockAmountOut,
             priceImpact: mockPriceImpact,
             gas: mockGas,
+            to: mockToSwap,
+            from: mockFromSwap,
+            tokenInSymbol: mockTokenInSymbol,
+            tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
             status: TRANSACTION_STATUS.PENDING,
           },
@@ -568,6 +640,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -589,6 +664,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
       chai.expect(
         axiosStub
@@ -627,6 +705,9 @@ describe('handleSwap function', async function () {
       amountOut: mockAmountOut,
       priceImpact: mockPriceImpact,
       gas: mockGas,
+      from: mockFromSwap,
+      tokenInSymbol: mockTokenInSymbol,
+      tokenOutSymbol: mockTokenOutSymbol,
     });
 
     chai
@@ -647,6 +728,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(result).to.be.true;
@@ -664,6 +748,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai
@@ -684,6 +771,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -703,6 +793,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -724,6 +817,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -761,6 +857,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(result).to.be.false;
@@ -778,6 +877,10 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        to: mockToSwap,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai
@@ -793,6 +896,10 @@ describe('handleSwap function', async function () {
             amountOut: mockAmountOut,
             priceImpact: mockPriceImpact,
             gas: mockGas,
+            to: mockToSwap,
+            from: mockFromSwap,
+            tokenInSymbol: mockTokenInSymbol,
+            tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
             status: TRANSACTION_STATUS.PENDING,
           },
@@ -811,6 +918,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -832,6 +942,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -871,6 +984,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(result).to.be.true;
@@ -888,6 +1004,10 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        to: mockToSwap,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai
@@ -906,6 +1026,10 @@ describe('handleSwap function', async function () {
             amountOut: mockAmountOut,
             priceImpact: mockPriceImpact,
             gas: mockGas,
+            to: mockToSwap,
+            from: mockFromSwap,
+            tokenInSymbol: mockTokenInSymbol,
+            tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
             status: TRANSACTION_STATUS.FAILURE,
           },
@@ -924,6 +1048,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -945,6 +1072,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -984,6 +1114,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(result).to.be.false;
@@ -1001,6 +1134,10 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        to: mockToSwap,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai
@@ -1016,6 +1153,10 @@ describe('handleSwap function', async function () {
             amountOut: mockAmountOut,
             priceImpact: mockPriceImpact,
             gas: mockGas,
+            to: mockToSwap,
+            from: mockFromSwap,
+            tokenInSymbol: mockTokenInSymbol,
+            tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
             status: TRANSACTION_STATUS.PENDING,
           },
@@ -1034,6 +1175,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -1055,6 +1199,9 @@ describe('handleSwap function', async function () {
         amountOut: mockAmountOut,
         priceImpact: mockPriceImpact,
         gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
       });
 
       chai.expect(
@@ -1096,6 +1243,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(result).to.be.false;
@@ -1113,6 +1263,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai
@@ -1131,6 +1285,10 @@ describe('handleSwap function', async function () {
               amountOut: mockAmountOut,
               priceImpact: mockPriceImpact,
               gas: mockGas,
+              to: mockToSwap,
+              from: mockFromSwap,
+              tokenInSymbol: mockTokenInSymbol,
+              tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
               status: TRANSACTION_STATUS.PENDING_HASH,
               userOpHash: mockUserOpHash,
@@ -1150,6 +1308,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(
@@ -1179,6 +1340,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
           status: TRANSACTION_STATUS.PENDING_HASH,
           userOpHash: mockUserOpHash,
@@ -1197,6 +1362,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(result).to.be.true;
@@ -1214,6 +1382,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(
@@ -1233,6 +1404,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai
@@ -1253,6 +1428,10 @@ describe('handleSwap function', async function () {
               amountOut: mockAmountOut,
               priceImpact: mockPriceImpact,
               gas: mockGas,
+              to: mockToSwap,
+              from: mockFromSwap,
+              tokenInSymbol: mockTokenInSymbol,
+              tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
               userOpHash: mockUserOpHash,
               status: TRANSACTION_STATUS.SUCCESS,
@@ -1272,6 +1451,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
         const FlowXOCallArgs = axiosStub
           .getCalls()
@@ -1294,6 +1477,10 @@ describe('handleSwap function', async function () {
             amountOut: mockAmountOut,
             priceImpact: mockPriceImpact,
             gas: mockGas,
+            to: mockToSwap,
+            from: mockFromSwap,
+            tokenInSymbol: mockTokenInSymbol,
+            tokenOutSymbol: mockTokenOutSymbol,
             TxId: mockTransactionHash.substring(1, 8),
             transactionHash: mockTransactionHash,
             status: TRANSACTION_STATUS.SUCCESS,
@@ -1325,6 +1512,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
           status: TRANSACTION_STATUS.PENDING_HASH,
           userOpHash: mockUserOpHash,
@@ -1350,6 +1541,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(result).to.be.false;
@@ -1367,6 +1561,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(
@@ -1386,6 +1583,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai
@@ -1404,6 +1605,10 @@ describe('handleSwap function', async function () {
               amountOut: mockAmountOut,
               priceImpact: mockPriceImpact,
               gas: mockGas,
+              to: mockToSwap,
+              from: mockFromSwap,
+              tokenInSymbol: mockTokenInSymbol,
+              tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
               status: TRANSACTION_STATUS.PENDING_HASH,
               userOpHash: mockUserOpHash,
@@ -1423,6 +1628,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(
@@ -1452,6 +1660,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
           status: TRANSACTION_STATUS.PENDING_HASH,
           userOpHash: mockUserOpHash,
@@ -1474,6 +1686,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(result).to.be.false;
@@ -1491,6 +1706,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(
@@ -1510,6 +1728,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai
@@ -1525,6 +1747,10 @@ describe('handleSwap function', async function () {
               amountOut: mockAmountOut,
               priceImpact: mockPriceImpact,
               gas: mockGas,
+              to: mockToSwap,
+              from: mockFromSwap,
+              tokenInSymbol: mockTokenInSymbol,
+              tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
               status: TRANSACTION_STATUS.PENDING_HASH,
               userOpHash: mockUserOpHash,
@@ -1544,6 +1770,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(
@@ -1573,6 +1802,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
           status: TRANSACTION_STATUS.PENDING_HASH,
           userOpHash: mockUserOpHash,
@@ -1597,6 +1830,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(result).to.be.true;
@@ -1614,6 +1850,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(
@@ -1633,6 +1872,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai
@@ -1651,6 +1894,10 @@ describe('handleSwap function', async function () {
               amountOut: mockAmountOut,
               priceImpact: mockPriceImpact,
               gas: mockGas,
+              to: mockToSwap,
+              from: mockFromSwap,
+              tokenInSymbol: mockTokenInSymbol,
+              tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
               status: TRANSACTION_STATUS.FAILURE,
               userOpHash: mockUserOpHash,
@@ -1670,6 +1917,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(
@@ -1699,6 +1949,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
           status: TRANSACTION_STATUS.PENDING_HASH,
         });
@@ -1716,6 +1970,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(result).to.be.true;
@@ -1733,6 +1990,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(
@@ -1752,6 +2012,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai
@@ -1770,6 +2034,10 @@ describe('handleSwap function', async function () {
               amountOut: mockAmountOut,
               priceImpact: mockPriceImpact,
               gas: mockGas,
+              to: mockToSwap,
+              from: mockFromSwap,
+              tokenInSymbol: mockTokenInSymbol,
+              tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
               status: TRANSACTION_STATUS.SUCCESS,
             },
@@ -1788,6 +2056,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(
@@ -1817,6 +2088,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
           status: TRANSACTION_STATUS.PENDING_HASH,
           dateAdded: new Date(Date.now() - 12 * 60 * 1000),
@@ -1842,6 +2117,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(result).to.be.true;
@@ -1859,6 +2137,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(
@@ -1878,6 +2159,10 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai
@@ -1896,6 +2181,10 @@ describe('handleSwap function', async function () {
               amountOut: mockAmountOut,
               priceImpact: mockPriceImpact,
               gas: mockGas,
+              to: mockToSwap,
+              from: mockFromSwap,
+              tokenInSymbol: mockTokenInSymbol,
+              tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
               status: TRANSACTION_STATUS.FAILURE,
             },
@@ -1914,6 +2203,9 @@ describe('handleSwap function', async function () {
           amountOut: mockAmountOut,
           priceImpact: mockPriceImpact,
           gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
         });
 
         chai.expect(
