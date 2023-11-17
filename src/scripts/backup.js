@@ -34,4 +34,4 @@ async function cloneCollection(sourceCollectionName, targetCollectionName) {
   }
 }
 
-cloneCollection('transfers', 'transfers-backup');
+cloneCollection('users', 'users-backup');

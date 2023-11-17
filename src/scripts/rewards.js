@@ -28,7 +28,13 @@ async function distributeSignupRewards() {
     // Track the time of the last token renewal
     let lastTokenRenewalTime = Date.now();
 
-    const allUsers = await db.collection(USERS_COLLECTION).find({}).toArray();
+    const allUsers = await db
+      .collection(USERS_COLLECTION)
+      .find({
+        dateAdded: { $gt: new Date('2023-11-15T12:00:00Z').toISOString() },
+      })
+      .toArray();
+
     let userCount = 0;
 
     // Load all rewards into memory for filtering
@@ -36,6 +42,7 @@ async function distributeSignupRewards() {
       .find({
         reason: 'user_sign_up',
         status: 'success',
+        dateAdded: { $gt: new Date('2023-11-10T12:00:00Z').toISOString() },
       })
       .toArray();
 
@@ -108,6 +115,8 @@ async function distributeSignupRewards() {
     process.exit(0);
   }
 }
+
+distributeSignupRewards();
 
 export async function distributeReferralRewards() {
   try {
