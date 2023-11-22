@@ -137,9 +137,8 @@ const importTransfers = async () => {
           token_amount: transfer.tokenAmount,
           token_symbol: transfer.tokenSymbol,
           transaction_hash: transfer.transactionHash,
-          tx_id: transfer.TxId,
           sender_handle: transfer.senderHandle,
-          event_id: null,
+          event_id: transfer.eventId,
         };
       });
 
@@ -275,7 +274,7 @@ export const importTransfersLast24Hours = async () => {
           amount: transfer.tokenAmount,
           context_library_name: null,
           context_library_version: null,
-          event: null,
+          event_id: transfer.eventId,
           event_text: null,
           id: transfer._id.toString(),
           loaded_at: null,
@@ -295,7 +294,6 @@ export const importTransfersLast24Hours = async () => {
           token_amount: transfer.tokenAmount,
           token_symbol: transfer.tokenSymbol,
           transaction_hash: transfer.transactionHash,
-          tx_id: transfer.TxId,
           sender_handle: transfer.senderHandle,
           event_id: null,
         };
@@ -317,7 +315,7 @@ async function getExistingPatchwallets(tableId) {
   const query = `SELECT patchwallet FROM ${datasetId}.${tableId}`;
   const [rows] = await bigqueryClient.query(query);
 
-  return rows.map((row) => row.patchwallet);
+  return rows.map((row) => web3.utils.toChecksumAddress(row.patchwallet));
 }
 
 async function getExistingTransactionHashes(tableId) {
