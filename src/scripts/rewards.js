@@ -16,6 +16,7 @@ import {
 } from '../utils/constants.js';
 import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
+import { SOURCE_TG_ID, SOURCE_WALLET_ADDRESS } from '../../secrets.js';
 
 /**
  * Distributes sign-up rewards of 100 Grindery One Tokens to eligible users.
@@ -89,7 +90,7 @@ async function distributeSignupRewards() {
           try {
             // Send reward to eligible users
             const txReward = await sendTokens(
-              process.env.SOURCE_TG_ID,
+              SOURCE_TG_ID,
               user.patchwallet,
               '100',
               patchWalletAccessToken
@@ -240,7 +241,7 @@ async function distributeReferralRewards() {
 
           // Send tokens and add rewards to collection
           const txReward = await sendTokens(
-            process.env.SOURCE_TG_ID,
+            SOURCE_TG_ID,
             rewardWallet,
             rewardAmount,
             patchWalletAccessToken
@@ -983,7 +984,7 @@ async function cleanupRewardsDB() {
 
     // CLEAN UP REWARD DB BY REMOVING REWARDS TO SOURCE WALLET
     const result = await rewardsCollection.deleteMany({
-      walletAddress: process.env.SOURCE_WALLET_ADDRESS,
+      walletAddress: SOURCE_WALLET_ADDRESS,
     });
     console.log(
       `${result.deletedCount} reward documents to our source wallet have been deleted.`
