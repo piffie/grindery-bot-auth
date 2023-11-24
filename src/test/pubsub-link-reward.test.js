@@ -16,6 +16,8 @@ import {
   patchwalletAuthUrl,
   patchwalletTxStatusUrl,
   mockUserOpHash,
+  mockTokenAddress,
+  mockChainName,
 } from './utils.js';
 import { handleLinkReward } from '../utils/webhooks/webhook.js';
 import Sinon from 'sinon';
@@ -420,7 +422,9 @@ describe('handleLinkReward function', async function () {
         dbMock,
         rewardId,
         mockUserTelegramID,
-        mockUserTelegramID1
+        mockUserTelegramID1,
+        mockTokenAddress,
+        mockChainName
       );
 
       chai
@@ -430,8 +434,8 @@ describe('handleLinkReward function', async function () {
         )
         .to.deep.equal({
           userId: `grindery:${SOURCE_TG_ID}`,
-          chain: 'matic',
-          to: [G1_POLYGON_ADDRESS],
+          chain: mockChainName,
+          to: [mockTokenAddress],
           value: ['0x00'],
           data: [
             '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000008ac7230489e80000',

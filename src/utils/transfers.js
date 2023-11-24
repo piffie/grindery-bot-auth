@@ -175,13 +175,19 @@ export async function createTransferTelegram(
   eventId,
   senderInformation,
   recipientTgId,
-  amount
+  amount,
+  chainId,
+  tokenAddress,
+  chainName
 ) {
   const transfer = new TransferTelegram(
     eventId,
     senderInformation,
     recipientTgId,
-    amount
+    amount,
+    chainId,
+    tokenAddress,
+    chainName
   );
   return (await transfer.initializeTransferDatabase()) && transfer;
 }
@@ -190,7 +196,15 @@ export async function createTransferTelegram(
  * Represents a Telegram transfer.
  */
 export class TransferTelegram {
-  constructor(eventId, senderInformation, recipientTgId, amount) {
+  constructor(
+    eventId,
+    senderInformation,
+    recipientTgId,
+    amount,
+    chainId,
+    tokenAddress,
+    chainName
+  ) {
     this.eventId = eventId;
     this.senderInformation = senderInformation;
     this.recipientTgId = recipientTgId;
@@ -201,6 +215,9 @@ export class TransferTelegram {
     this.recipientWallet = undefined;
     this.txHash = undefined;
     this.userOpHash = undefined;
+    this.chainId = chainId ? chainId : 'eip155:137';
+    this.tokenAddress = tokenAddress ? tokenAddress : G1_POLYGON_ADDRESS;
+    this.chainName = chainName ? chainName : 'matic';
   }
 
   /**
@@ -251,9 +268,9 @@ export class TransferTelegram {
       {
         $set: {
           eventId: this.eventId,
-          chainId: 'eip155:137',
+          chainId: this.chainId,
           tokenSymbol: 'g1',
-          tokenAddress: G1_POLYGON_ADDRESS,
+          tokenAddress: this.tokenAddress,
           senderTgId: this.senderInformation.userTelegramID,
           senderWallet: this.senderInformation.patchwallet,
           senderName: this.senderInformation.userName,
@@ -337,9 +354,9 @@ export class TransferTelegram {
     // Send transaction information to FlowXO
     await axios.post(FLOWXO_NEW_TRANSACTION_WEBHOOK, {
       senderResponsePath: this.senderInformation.responsePath,
-      chainId: 'eip155:137',
+      chainId: this.chainId,
       tokenSymbol: 'g1',
-      tokenAddress: G1_POLYGON_ADDRESS,
+      tokenAddress: this.tokenAddress,
       senderTgId: this.senderInformation.userTelegramID,
       senderWallet: this.senderInformation.patchwallet,
       senderName: this.senderInformation.userName,
@@ -410,7 +427,9 @@ export class TransferTelegram {
         this.senderInformation.userTelegramID,
         this.recipientWallet,
         this.amount,
-        await getPatchWalletAccessToken()
+        await getPatchWalletAccessToken(),
+        this.tokenAddress,
+        this.chainName
       );
     } catch (error) {
       // Log error if sending tokens fails

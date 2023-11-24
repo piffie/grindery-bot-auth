@@ -22,7 +22,9 @@ export async function handleSignUpReward(params) {
       params.responsePath,
       params.userHandle,
       params.userName,
-      params.patchwallet
+      params.patchwallet,
+      params.tokenAddress,
+      params.chainName
     );
 
     // If reward already exists, return true

@@ -9,7 +9,7 @@ cron.schedule('0 * * * *', async () => {
   console.log('CRON - importUsersLast24Hours task');
   try {
     await importUsersLast24Hours();
-  } catch(error) {
+  } catch (error) {
     console.log('CRON - importUsersLast24Hours error ', error);
   }
 });
@@ -18,7 +18,7 @@ cron.schedule('0 * * * *', async () => {
 cron.schedule('0 * * * *', async () => {
   try {
     await importTransfersLast24Hours();
-  } catch(error) {
+  } catch (error) {
     console.log('CRON - importTransfersLast24Hours error ', error);
   }
 });

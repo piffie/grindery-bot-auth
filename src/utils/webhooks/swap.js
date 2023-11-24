@@ -34,7 +34,7 @@ export async function handleSwap(params) {
 
   if (!swap_db) {
     const toSave = {
-      chainId: 'eip155:137',
+      chainId: params.chainId ? params.chainId : 'eip155:137',
       to: params.to,
       from: params.from,
       userTelegramID: params.userTelegramID,
@@ -144,6 +144,7 @@ export async function handleSwap(params) {
         params.to,
         params.value,
         params.data,
+        params.chainName,
         await getPatchWalletAccessToken()
       );
     } catch (error) {
@@ -202,7 +203,7 @@ export async function handleSwap(params) {
     try {
       await addTrackSwapSegment({
         eventId: params.eventId,
-        chainId: 'eip155:137',
+        chainId: params.chainId ? params.chainId : 'eip155:137',
         userTelegramID: params.userTelegramID,
         userWallet: userInformation.patchwallet,
         userName: userInformation.userName,
@@ -229,7 +230,7 @@ export async function handleSwap(params) {
 
       await axios.post(FLOWXO_NEW_SWAP_WEBHOOK, {
         eventId: params.eventId,
-        chainId: 'eip155:137',
+        chainId: params.chainId ? params.chainId : 'eip155:137',
         userTelegramID: params.userTelegramID,
         userWallet: userInformation.patchwallet,
         userName: userInformation.userName,
@@ -270,7 +271,7 @@ export async function handleSwap(params) {
       { eventId: params.eventId },
       {
         $set: {
-          chainId: 'eip155:137',
+          chainId: params.chainId ? params.chainId : 'eip155:137',
           userWallet: userInformation.patchwallet,
           userName: userInformation.userName,
           userHandle: userInformation.userHandle,
