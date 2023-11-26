@@ -130,7 +130,10 @@ export async function distributeSignupRewards() {
       }
 
       // Execute reward distribution in batches
-      if (batchPromises.length === batchSize || userCount === allUsers.length) {
+      if (
+        batchPromises.length === batchSize ||
+        userCount > allUsers.length - batchSize
+      ) {
         await Promise.all(batchPromises);
         batchPromises.length = 0; // Reset batch promises array
       }
@@ -275,7 +278,10 @@ export async function distributeReferralRewards() {
       batchPromises.push(rewardPromise);
 
       // Execute batch when reaching batchSize or end of user list
-      if (batchPromises.length === batchSize || userCount === allUsers.length) {
+      if (
+        batchPromises.length === batchSize ||
+        userCount > allUsers.length - batchSize
+      ) {
         await Promise.all(batchPromises);
         batchPromises.length = 0; // Reset batch promises array
       }
