@@ -287,7 +287,7 @@ export const TELEGRAM_API_ID = process.env.TELEGRAM_API_ID || '';
 export const TELEGRAM_API_HASH = process.env.TELEGRAM_API_HASH || '';
 
 /**
- * The testing environement.
+ * The production environement.
  * Fallback: an empty string if not defined in the environment.
  */
-export const TEST_ENV = process.env.TEST_ENV || '';
+export const PRODUCTION_ENV = process.env.PRODUCTION_ENV || '';

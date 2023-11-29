@@ -1,13 +1,13 @@
 import { Db, MongoClient } from 'mongodb';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { TEST_ENV, getAtlasUri } from '../../secrets';
+import { PRODUCTION_ENV, getAtlasUri } from '../../secrets';
 
 export class Database {
   static instance: Db;
 
   static async getInstance() {
     if (!Database.instance) {
-      if (!TEST_ENV) {
+      if (PRODUCTION_ENV) {
         const client = new MongoClient(await getAtlasUri());
         let conn: MongoClient;
         try {

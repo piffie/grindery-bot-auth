@@ -11,7 +11,7 @@
     "build:watch": "tsc -w -p tsconfig.json",
     "build:release": "npm run clean && tsc -p tsconfig.release.json",
     "lint": "eslint . --ext .ts --ext .mts",
-    "test": "mocha src/test/*.test.ts --config mocha.mocharc.cjs ",
+    "test": "mocha src/test/*.test.ts --config mocha.mocharc.cjs",
     "prettier:write": "prettier --config .prettierrc --write .",
     "prettier:check": "prettier --config .prettierrc --check ."
   },
@@ -56,7 +56,7 @@
     "eslint-config-prettier": "~9.0",
     "mocha": "^10.2.0",
     "nodemon": "^2.0.21",
-    "prettier": "~3.0",
+    "prettier": "~2.8.4",
     "rimraf": "~5.0",
     "ts-api-utils": "~1.0",
     "ts-jest": "~29.1",
