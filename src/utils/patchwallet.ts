@@ -1,11 +1,11 @@
 import axios from 'axios';
-import Web3 from 'web3';
-import ERC20 from '../routes/abi/ERC20.json';
 import {
   G1_POLYGON_ADDRESS,
   getClientId,
   getClientSecret,
 } from '../../secrets';
+import { getContract, scaleDecimals } from './web3';
+import { nativeTokenAddresses } from './constants';
 
 export async function getPatchWalletAccessToken() {
   return (
@@ -43,21 +43,42 @@ export async function sendTokens(
   patchWalletAccessToken: any,
   tokenAddress = G1_POLYGON_ADDRESS,
   chainName = 'matic',
+  chainId = 'eip155:137',
 ) {
-  const g1Contract = new new Web3().eth.Contract(ERC20 as any, tokenAddress);
+  let data: any[];
+  let value: string[];
+  let address: string;
+
+  const isNativeToken = nativeTokenAddresses.includes(tokenAddress);
+
+  if (isNativeToken) {
+    // Native token logic
+    data = ['0x00'];
+    value = [scaleDecimals(amountEther, 18)];
+    address = recipientwallet;
+  } else {
+    // ERC20 token logic
+    const contract = getContract(chainId, tokenAddress);
+    const decimals = await contract.methods.decimals().call();
+    const amountFormatted = scaleDecimals(amountEther, decimals);
+    data = [
+      contract.methods['transfer'](
+        recipientwallet,
+        amountFormatted,
+      ).encodeABI(),
+    ];
+    value = ['0x00'];
+    address = tokenAddress;
+  }
+
   return await axios.post(
     'https://paymagicapi.com/v1/kernel/tx',
     {
       userId: `grindery:${senderTgId}`,
       chain: chainName,
-      to: [tokenAddress],
-      value: ['0x00'],
-      data: [
-        g1Contract.methods['transfer'](
-          recipientwallet,
-          Web3.utils.toWei(amountEther),
-        ).encodeABI(),
-      ],
+      to: [address],
+      value: value,
+      data: data,
       auth: '',
     },
     {

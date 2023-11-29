@@ -22,15 +22,15 @@ import {
 } from './utils';
 import Sinon from 'sinon';
 import axios from 'axios';
-
 import chaiExclude from 'chai-exclude';
-import { TRANSACTION_STATUS } from '../utils/constants';
+import { TRANSACTION_STATUS, nativeTokenAddresses } from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 import { handleNewTransaction } from '../utils/webhooks/transaction';
 import {
   FLOWXO_NEW_TRANSACTION_WEBHOOK,
   G1_POLYGON_ADDRESS,
 } from '../../secrets';
+import * as web3 from '../utils/web3';
 
 chai.use(chaiExclude);
 
@@ -40,6 +40,8 @@ describe('handleNewTransaction function', async function () {
   let txId;
   let collectionUsersMock;
   let collectionTransfersMock;
+  let contractStub;
+  let getContract;
 
   beforeEach(async function () {
     collectionUsersMock = await getCollectionUsersMock();
@@ -93,6 +95,27 @@ describe('handleNewTransaction function', async function () {
       }
       throw new Error('Unexpected URL encountered');
     });
+
+    contractStub = {
+      methods: {
+        decimals: sandbox.stub().resolves('18'),
+        transfer: sandbox.stub().returns({
+          encodeABI: sandbox
+            .stub()
+            .returns(
+              '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
+            ),
+        }),
+      },
+    };
+    contractStub.methods.decimals = sandbox.stub().returns({
+      call: sandbox.stub().resolves('18'),
+    });
+    getContract = () => {
+      return contractStub;
+    };
+
+    sandbox.stub(web3, 'getContract').callsFake(getContract);
 
     txId = uuidv4();
   });
@@ -158,6 +181,55 @@ describe('handleNewTransaction function', async function () {
           },
         ]);
       chai.expect(transfers[0].dateAdded).to.be.a('date');
+    });
+
+    it('Should call the sendTokens function properly for ERC20 token transfer', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai
+        .expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+            .args[1],
+        )
+        .to.deep.equal({
+          userId: `grindery:${mockUserTelegramID}`,
+          chain: 'matic',
+          to: [G1_POLYGON_ADDRESS],
+          value: ['0x00'],
+          data: [
+            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
+          ],
+          auth: '',
+        });
+    });
+
+    it('Should call the sendTokens function properly for Native token transfer', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+        tokenAddress: nativeTokenAddresses[0],
+      });
+
+      chai
+        .expect(
+          axiosStub.getCalls().find((e) => e.firstArg === patchwalletTxUrl)
+            .args[1],
+        )
+        .to.deep.equal({
+          userId: `grindery:${mockUserTelegramID}`,
+          chain: 'matic',
+          to: [mockWallet],
+          value: [web3.scaleDecimals('100', 18)],
+          data: ['0x00'],
+          auth: '',
+        });
     });
 
     it('Should populate the segment transfer properly', async function () {
