@@ -167,7 +167,7 @@ export const importUsersLast24Hours = async (): Promise<void> => {
 
   const endDate = new Date();
   const startDate = new Date();
-  startDate.setHours(startDate.getHours() - 48);
+  startDate.setHours(startDate.getHours() - 24);
 
   const recentUsers = collection.find({
     dateAdded: { $gte: startDate, $lte: endDate },
@@ -251,7 +251,7 @@ export const importTransfersLast24Hours = async (): Promise<void> => {
   // Calculate the date 24 hours ago
   const endDate = new Date();
   const startDate = new Date();
-  startDate.setHours(startDate.getHours() - 48);
+  startDate.setHours(startDate.getHours() - 24);
 
   // Find transfers in the last 24 hours using Cursor
   const allTransfers = collection.find({
