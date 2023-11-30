@@ -23,9 +23,9 @@ import { Database } from '../db/conn';
  * Distributes sign-up rewards of 100 Grindery One Tokens to eligible users.
  * Manages the renewal of the Patch Wallet access token.
  *
- * @returns {void} No return value.
+ * @returns {Promise<void>} No return value.
  */
-export async function distributeSignupRewards() {
+export async function distributeSignupRewards(): Promise<void> {
   // Set startDate to 24 hours before the current date and time
   const startDate = new Date();
   startDate.setHours(startDate.getHours() - 24);
@@ -155,9 +155,9 @@ export async function distributeSignupRewards() {
  * Distributes referral rewards to eligible users who made successful referrals.
  * Manages the renewal of the Patch Wallet access token.
  *
- * @returns {void} No return value.
+ * @returns {Promise<void>} No return value.
  */
-export async function distributeReferralRewards() {
+export async function distributeReferralRewards(): Promise<void> {
   // Set startDate to 24 hours before the current date and time
   const startDate = new Date();
   startDate.setHours(startDate.getHours() - 24);
