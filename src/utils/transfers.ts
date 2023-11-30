@@ -32,7 +32,7 @@ export async function getIncomingTxsUser(
   userId: string,
   start: number,
   limit: number,
-) {
+): Promise<any> {
   return await Promise.all(
     (
       await db
@@ -68,7 +68,7 @@ export async function getOutgoingTxsUser(
   userId: string,
   start: number,
   limit: number,
-) {
+): Promise<any> {
   return await Promise.all(
     (
       await db
@@ -104,7 +104,7 @@ export async function getOutgoingTxsToNewUsers(
   userId: string,
   start: number,
   limit: number,
-) {
+): Promise<any> {
   return await Promise.all(
     (
       await db
@@ -171,7 +171,7 @@ export async function getRewardTxsUser(
   userId: string,
   start: number,
   limit: number,
-) {
+): Promise<any> {
   return (
     await db
       .collection(REWARDS_COLLECTION)
