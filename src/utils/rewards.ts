@@ -22,7 +22,6 @@ import {
 } from '../../secrets';
 import { isSuccessfulTransaction } from './webhooks/utils';
 import { Db, Document, FindCursor, WithId } from 'mongodb';
-import { getXMinBeforeDate } from './time';
 
 /**
  * Asynchronously creates a sign-up reward for Telegram users.
@@ -209,22 +208,6 @@ export class SignUpRewardTelegram {
     );
     console.log(
       `[${this.eventId}] sign up reward for ${this.userTelegramID} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
-    );
-  }
-
-  /**
-   * Checks if the treatment duration has exceeded the limit.
-   * @returns {Promise<boolean>} - True if the treatment duration has exceeded, false otherwise.
-   */
-  async isTreatmentDurationExceeded(): Promise<boolean> {
-    return (
-      (this.tx.dateAdded < getXMinBeforeDate(new Date(), 10) &&
-        (console.log(
-          `[${this.eventId}] was stopped due to too long treatment duration (> 10 min).`,
-        ),
-        await this.updateInDatabase(TRANSACTION_STATUS.FAILURE, new Date()),
-        true)) ||
-      false
     );
   }
 
@@ -555,22 +538,6 @@ export class ReferralRewardTelegram {
   }
 
   /**
-   * Checks if the treatment duration has exceeded the limit for the referral reward.
-   * @returns {boolean} - True if the treatment duration has exceeded, false otherwise.
-   */
-  async isTreatmentDurationExceeded(): Promise<boolean> {
-    return (
-      (this.tx.dateAdded < getXMinBeforeDate(new Date(), 10) &&
-        (console.log(
-          `[${this.eventId}] was stopped due to too long treatment duration (> 10 min).`,
-        ),
-        await this.updateInDatabase(TRANSACTION_STATUS.FAILURE, new Date()),
-        true)) ||
-      false
-    );
-  }
-
-  /**
    * Updates the PatchWallet address of the referent user for the referral reward.
    */
   async updateReferentWallet() {
@@ -859,22 +826,6 @@ export class LinkRewardTelegram {
   }
 
   /**
-   * Checks if the treatment duration has exceeded the limit.
-   * @returns {Promise<boolean>} - True if the treatment duration has exceeded, false otherwise.
-   */
-  async isTreatmentDurationExceeded(): Promise<boolean> {
-    return (
-      (this.tx.dateAdded < getXMinBeforeDate(new Date(), 10) &&
-        (console.log(
-          `[${this.eventId}] was stopped due to too long treatment duration (> 10 min).`,
-        ),
-        await this.updateInDatabase(TRANSACTION_STATUS.FAILURE, new Date()),
-        true)) ||
-      false
-    );
-  }
-
-  /**
    * Updates the transaction hash.
    * @param {string} txHash - The transaction hash to be updated.
    * @returns {string} - The updated transaction hash.
@@ -1153,22 +1104,6 @@ export class IsolatedRewardTelegram {
     );
     console.log(
       `[${this.eventId}] sign up reward for ${this.userTelegramID} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
-    );
-  }
-
-  /**
-   * Checks if the treatment duration has exceeded the limit.
-   * @returns {Promise<boolean>} - True if the treatment duration has exceeded, false otherwise.
-   */
-  async isTreatmentDurationExceeded(): Promise<boolean> {
-    return (
-      (this.tx.dateAdded < getXMinBeforeDate(new Date(), 10) &&
-        (console.log(
-          `[${this.eventId}] was stopped due to too long treatment duration (> 10 min).`,
-        ),
-        await this.updateInDatabase(TRANSACTION_STATUS.FAILURE, new Date()),
-        true)) ||
-      false
     );
   }
 

@@ -18,7 +18,6 @@ import {
   G1_POLYGON_ADDRESS,
 } from '../../secrets';
 import { Db, Document, WithId } from 'mongodb';
-import { getXMinBeforeDate } from './time';
 
 /**
  * Retrieves incoming transactions for a user from the database.
@@ -380,22 +379,6 @@ export class TransferTelegram {
     );
     console.log(
       `[${this.eventId}] transaction from ${this.senderInformation.userTelegramID} to ${this.recipientTgId} for ${this.amount} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
-    );
-  }
-
-  /**
-   * Checks if the treatment duration has exceeded the limit.
-   * @returns {Promise<boolean>} - True if the treatment duration has exceeded, false otherwise.
-   */
-  async isTreatmentDurationExceeded(): Promise<boolean> {
-    return (
-      (this.tx.dateAdded < getXMinBeforeDate(new Date(), 10) &&
-        (console.log(
-          `[${this.eventId}] was stopped due to too long treatment duration (> 10 min).`,
-        ),
-        await this.updateInDatabase(TRANSACTION_STATUS.FAILURE, new Date()),
-        true)) ||
-      false
     );
   }
 
