@@ -71,7 +71,7 @@ export async function sendTokens(
 ): Promise<axios.AxiosResponse<any, any>> {
   // Determine data, value, and address based on the token type
   const [data, value, address] = nativeTokenAddresses.includes(tokenAddress)
-    ? [['0x00'], [scaleDecimals(amountEther, 18)], recipientwallet]
+    ? [['0x'], [scaleDecimals(amountEther, 18)], recipientwallet]
     : [
         [
           getContract(chainId, tokenAddress)
@@ -97,8 +97,9 @@ export async function sendTokens(
       userId: `grindery:${senderTgId}`,
       chain: chainName,
       to: [address],
-      value,
-      data,
+      value: value,
+      data: data,
+      delegatecall: 0,
       auth: '',
     },
     {
