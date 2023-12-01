@@ -720,6 +720,7 @@ describe('handleReferralReward function', function () {
         data: [
           '0xa9059cbb000000000000000000000000594cfcaa67bc8789d17d39eb5f1dfc7dd95242cd000000000000000000000000000000000000000000000002b5e3af16b1880000',
         ],
+        delegatecall: 0,
         auth: '',
       });
     });
@@ -923,6 +924,7 @@ describe('handleReferralReward function', function () {
         data: [
           '0xa9059cbb000000000000000000000000594cfcaa67bc8789d17d39eb5f1dfc7dd95242cd000000000000000000000000000000000000000000000002b5e3af16b1880000',
         ],
+        delegatecall: 0,
         auth: '',
       });
     });
@@ -1108,6 +1110,7 @@ describe('handleReferralReward function', function () {
         data: [
           '0xa9059cbb000000000000000000000000594cfcaa67bc8789d17d39eb5f1dfc7dd95242cd000000000000000000000000000000000000000000000002b5e3af16b1880000',
         ],
+        delegatecall: 0,
         auth: '',
       });
     });
@@ -1358,6 +1361,7 @@ describe('handleReferralReward function', function () {
         data: [
           '0xa9059cbb000000000000000000000000594cfcaa67bc8789d17d39eb5f1dfc7dd95242cd000000000000000000000000000000000000000000000002b5e3af16b1880000',
         ],
+        delegatecall: 0,
         auth: '',
       });
     });
@@ -1522,6 +1526,7 @@ describe('handleReferralReward function', function () {
         data: [
           '0xa9059cbb000000000000000000000000594cfcaa67bc8789d17d39eb5f1dfc7dd95242cd000000000000000000000000000000000000000000000002b5e3af16b1880000',
         ],
+        delegatecall: 0,
         auth: '',
       });
     });

@@ -396,6 +396,7 @@ describe('handleLinkReward function', async function () {
           chain: mockChainName,
           to: [mockTokenAddress],
           value: ['0x00'],
+          delegatecall: 0,
           data: [
             '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000008ac7230489e80000',
           ],

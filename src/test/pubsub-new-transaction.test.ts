@@ -204,6 +204,7 @@ describe('handleNewTransaction function', async function () {
           data: [
             '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
           ],
+          delegatecall: 0,
           auth: '',
         });
     });
@@ -227,7 +228,8 @@ describe('handleNewTransaction function', async function () {
           chain: 'matic',
           to: [mockWallet],
           value: [web3.scaleDecimals('100', 18)],
-          data: ['0x00'],
+          data: ['0x'],
+          delegatecall: 0,
           auth: '',
         });
     });
@@ -368,6 +370,7 @@ describe('handleNewTransaction function', async function () {
           data: [
             '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
           ],
+          delegatecall: 0,
           auth: '',
         });
     });
@@ -391,7 +394,8 @@ describe('handleNewTransaction function', async function () {
           chain: 'matic',
           to: [mockWallet],
           value: ['10300000000000000000'],
-          data: ['0x00'],
+          data: ['0x'],
+          delegatecall: 0,
           auth: '',
         });
     });
