@@ -18,6 +18,7 @@ import {
   G1_POLYGON_ADDRESS,
 } from '../../secrets';
 import { Db, Document, WithId } from 'mongodb';
+import { formatDate } from './time';
 
 /**
  * Retrieves incoming transactions for a user from the database.
@@ -220,18 +221,6 @@ export async function getRewardLinkTxsUser(
         )?.userHandle || null,
     })),
   );
-}
-
-/**
- * Formats a Date object to a specific string format.
- * @param date The Date object to format.
- * @returns A string representing the formatted date.
- */
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString('en-US', {
-    day: '2-digit',
-    month: 'short',
-  });
 }
 
 /**

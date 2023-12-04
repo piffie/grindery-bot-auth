@@ -61,3 +61,15 @@ export function getXHourBeforeDate(date: Date, hours: number): Date {
 export function getXDayBeforeDate(date: Date, days: number): Date {
   return new Date(date.getTime() - days * 24 * 60 * 60 * 1000);
 }
+
+/**
+ * Formats a Date object to a specific string format.
+ * @param date The Date object to format.
+ * @returns A string representing the formatted date.
+ */
+export function formatDate(date: Date): string {
+  return new Date(date).toLocaleDateString('en-US', {
+    day: '2-digit',
+    month: 'short',
+  });
+}
