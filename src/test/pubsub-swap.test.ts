@@ -168,7 +168,6 @@ describe('handleSwap function', async function () {
         .to.deep.equal([
           {
             eventId: swapId,
-            TxId: mockTransactionHash.substring(1, 8),
             chainId: mockChainId,
             userTelegramID: mockUserTelegramID,
             userWallet: mockWallet,
@@ -186,6 +185,7 @@ describe('handleSwap function', async function () {
             status: TRANSACTION_STATUS.SUCCESS,
             transactionHash: mockTransactionHash,
             to: mockToSwap,
+            userOpHash: null,
           },
         ]);
       chai.expect(swaps[0].dateAdded).to.be.a('date');
@@ -234,7 +234,6 @@ describe('handleSwap function', async function () {
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
             status: TRANSACTION_STATUS.SUCCESS,
-            TxId: mockTransactionHash.substring(1, 8),
             transactionHash: mockTransactionHash,
           },
         });
@@ -262,30 +261,26 @@ describe('handleSwap function', async function () {
         .getCalls()
         .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK).args[1];
 
-      chai
-        .expect(FlowXOCallArgs)
-        .excluding(['dateAdded'])
-        .to.deep.equal({
-          eventId: swapId,
-          chainId: 'eip155:137',
-          userTelegramID: mockUserTelegramID,
-          userName: mockUserName,
-          userHandle: mockUserHandle,
-          userWallet: mockWallet,
-          tokenIn: mockTokenIn,
-          amountIn: mockAmountIn,
-          tokenOut: mockTokenOut,
-          amountOut: mockAmountOut,
-          priceImpact: mockPriceImpact,
-          gas: mockGas,
-          to: mockToSwap,
-          from: mockFromSwap,
-          tokenInSymbol: mockTokenInSymbol,
-          tokenOutSymbol: mockTokenOutSymbol,
-          status: TRANSACTION_STATUS.SUCCESS,
-          TxId: mockTransactionHash.substring(1, 8),
-          transactionHash: mockTransactionHash,
-        });
+      chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+        eventId: swapId,
+        chainId: 'eip155:137',
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        userWallet: mockWallet,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+        to: mockToSwap,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
+        status: TRANSACTION_STATUS.SUCCESS,
+        transactionHash: mockTransactionHash,
+      });
     });
   });
 
@@ -630,6 +625,11 @@ describe('handleSwap function', async function () {
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
             status: TRANSACTION_STATUS.PENDING,
+            transactionHash: null,
+            userHandle: mockUserHandle,
+            userName: mockUserName,
+            userOpHash: null,
+            userWallet: mockWallet,
           },
         ]);
     });
@@ -908,6 +908,11 @@ describe('handleSwap function', async function () {
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
             status: TRANSACTION_STATUS.PENDING,
+            transactionHash: null,
+            userOpHash: null,
+            userHandle: mockUserHandle,
+            userName: mockUserName,
+            userWallet: mockWallet,
           },
         ]);
     });
@@ -1038,6 +1043,8 @@ describe('handleSwap function', async function () {
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
             status: TRANSACTION_STATUS.FAILURE,
+            transactionHash: null,
+            userOpHash: null,
           },
         ]);
     });
@@ -1168,6 +1175,8 @@ describe('handleSwap function', async function () {
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
             status: TRANSACTION_STATUS.FAILURE,
+            transactionHash: null,
+            userOpHash: null,
           },
         ]);
     });
@@ -1295,6 +1304,11 @@ describe('handleSwap function', async function () {
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
             status: TRANSACTION_STATUS.PENDING,
+            transactionHash: null,
+            userOpHash: null,
+            userHandle: mockUserHandle,
+            userName: mockUserName,
+            userWallet: mockWallet,
           },
         ]);
     });
@@ -1428,6 +1442,7 @@ describe('handleSwap function', async function () {
               eventId: swapId,
               status: TRANSACTION_STATUS.PENDING_HASH,
               userOpHash: mockUserOpHash,
+              transactionHash: null,
             },
           ]);
       });
@@ -1551,7 +1566,6 @@ describe('handleSwap function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              TxId: mockTransactionHash.substring(1, 8),
               transactionHash: mockTransactionHash,
               chainId: 'eip155:137',
               userTelegramID: mockUserTelegramID,
@@ -1596,30 +1610,26 @@ describe('handleSwap function', async function () {
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK).args[1];
 
-        chai
-          .expect(FlowXOCallArgs)
-          .excluding(['dateAdded'])
-          .to.deep.equal({
-            eventId: swapId,
-            chainId: 'eip155:137',
-            userTelegramID: mockUserTelegramID,
-            userName: mockUserName,
-            userHandle: mockUserHandle,
-            userWallet: mockWallet,
-            tokenIn: mockTokenIn,
-            amountIn: mockAmountIn,
-            tokenOut: mockTokenOut,
-            amountOut: mockAmountOut,
-            priceImpact: mockPriceImpact,
-            gas: mockGas,
-            to: mockToSwap,
-            from: mockFromSwap,
-            tokenInSymbol: mockTokenInSymbol,
-            tokenOutSymbol: mockTokenOutSymbol,
-            TxId: mockTransactionHash.substring(1, 8),
-            transactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
-          });
+        chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+          eventId: swapId,
+          chainId: 'eip155:137',
+          userTelegramID: mockUserTelegramID,
+          userName: mockUserName,
+          userHandle: mockUserHandle,
+          userWallet: mockWallet,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
+          transactionHash: mockTransactionHash,
+          status: TRANSACTION_STATUS.SUCCESS,
+        });
 
         chai
           .expect(FlowXOCallArgs.dateAdded)
@@ -1747,6 +1757,7 @@ describe('handleSwap function', async function () {
               eventId: swapId,
               status: TRANSACTION_STATUS.PENDING_HASH,
               userOpHash: mockUserOpHash,
+              transactionHash: null,
             },
           ]);
       });
@@ -2036,6 +2047,7 @@ describe('handleSwap function', async function () {
               eventId: swapId,
               status: TRANSACTION_STATUS.FAILURE,
               userOpHash: mockUserOpHash,
+              transactionHash: null,
             },
           ]);
       });
@@ -2175,6 +2187,8 @@ describe('handleSwap function', async function () {
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
               status: TRANSACTION_STATUS.SUCCESS,
+              transactionHash: null,
+              userOpHash: null,
             },
           ]);
       });
@@ -2322,6 +2336,8 @@ describe('handleSwap function', async function () {
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
               status: TRANSACTION_STATUS.FAILURE,
+              transactionHash: null,
+              userOpHash: null,
             },
           ]);
       });
