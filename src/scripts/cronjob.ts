@@ -1,5 +1,9 @@
 import cron from 'node-cron';
-import { importUsersLast24Hours, importTransfersLast24Hours } from './bigquery';
+import {
+  importUsersLast24Hours,
+  importTransfersLast24Hours,
+  importOrUpdateWalletUsersLast2Hours,
+} from './bigquery';
 import { distributeReferralRewards, distributeSignupRewards } from './rewards';
 
 // Schedule a task to run every hour
@@ -14,6 +18,7 @@ cron.schedule('0 * * * *', async () => {
 
 // Schedule a task to run every hour
 cron.schedule('0 * * * *', async () => {
+  console.log('CRON - importTransfersLast24Hours task');
   try {
     await importTransfersLast24Hours();
   } catch (error) {
@@ -38,5 +43,15 @@ cron.schedule('0 0 */1 * *', async () => {
     distributeReferralRewards();
   } catch (error) {
     console.log('CRON - distributeReferralRewards error ', error);
+  }
+});
+
+// Schedule a task to run every hour
+cron.schedule('0 * * * *', async () => {
+  console.log('CRON - importOrUpdateWalletUsersLast2Hours task');
+  try {
+    importOrUpdateWalletUsersLast2Hours();
+  } catch (error) {
+    console.log('CRON - importOrUpdateWalletUsersLast2Hours error ', error);
   }
 });
