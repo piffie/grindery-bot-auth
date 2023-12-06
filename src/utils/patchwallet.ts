@@ -6,6 +6,7 @@ import {
 } from '../../secrets';
 import { getContract, scaleDecimals } from './web3';
 import { nativeTokenAddresses } from './constants';
+import { CHAIN_NAME_MAPPING } from './chains';
 
 /**
  * Retrieves the Patch Wallet access token by making a POST request to the authentication endpoint.
@@ -156,7 +157,9 @@ export async function swapTokens(
     'https://paymagicapi.com/v1/kernel/tx',
     {
       userId: `grindery:${userTelegramID}`,
-      chain: chainId ? chainId : 'eip155:137',
+      chain: chainId
+        ? CHAIN_NAME_MAPPING[chainId]
+        : CHAIN_NAME_MAPPING['eip155:137'],
       to: [to],
       value: [value],
       data: [data],

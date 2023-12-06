@@ -288,7 +288,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: 'eip155:137',
+        chainId: 'eip155:59144',
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -310,7 +310,7 @@ describe('handleSwap function', async function () {
         )
         .to.deep.equal({
           userId: `grindery:${mockUserTelegramID}`,
-          chain: mockChainId,
+          chain: 'linea',
           to: [mockToSwap],
           value: [mockValue],
           data: [
