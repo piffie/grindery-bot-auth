@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import {
   G1_POLYGON_ADDRESS,
   getClientId,
@@ -6,6 +6,7 @@ import {
 } from '../../secrets';
 import { getContract, scaleDecimals } from './web3';
 import { nativeTokenAddresses } from './constants';
+import { PatchRawResult } from '../types/webhook.types';
 import { CHAIN_NAME_MAPPING } from './chains';
 
 /**
@@ -59,7 +60,7 @@ export async function getPatchWalletAddressFromTgId(
  * @param {string} tokenAddress - Token address (default: G1_POLYGON_ADDRESS).
  * @param {string} chainName - Name of the blockchain (default: 'matic').
  * @param {string} chainId - ID of the blockchain (default: 'eip155:137').
- * @returns {Promise<axios.AxiosResponse<any, any>>} - Promise resolving to the response from the PayMagic API.
+ * @returns {Promise<axios.AxiosResponse<PatchRawResult, AxiosError>>} - Promise resolving to the response from the PayMagic API.
  */
 export async function sendTokens(
   senderTgId: string,
@@ -69,7 +70,7 @@ export async function sendTokens(
   tokenAddress: string = G1_POLYGON_ADDRESS,
   chainName: string = 'matic',
   chainId: string = 'eip155:137',
-): Promise<axios.AxiosResponse<any, any>> {
+): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   // Determine data, value, and address based on the token type
   const [data, value, address] = nativeTokenAddresses.includes(tokenAddress)
     ? [['0x'], [scaleDecimals(amountEther, 18)], recipientwallet]
@@ -116,11 +117,11 @@ export async function sendTokens(
 /**
  * Retrieves transaction status using the PayMagic API.
  * @param {string} userOpHash - User operation hash.
- * @returns {Promise<axios.AxiosResponse<any, any>>} - Promise resolving to the response from the PayMagic API.
+ * @returns {Promise<axios.AxiosResponse<PatchRawResult, AxiosError>>} - Promise resolving to the response from the PayMagic API.
  */
 export async function getTxStatus(
   userOpHash: string,
-): Promise<axios.AxiosResponse<any, any>> {
+): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   return await axios.post(
     'https://paymagicapi.com/v1/kernel/txStatus',
     {
@@ -143,7 +144,7 @@ export async function getTxStatus(
  * @param {string} data - Data for the swap transaction.
  * @param {string} chainName - Name of the chain (default: 'matic').
  * @param {string} patchWalletAccessToken - Access token for the patch wallet authentication.
- * @returns {Promise<axios.AxiosResponse<any, any>>} - Promise resolving to the response from the PayMagic API.
+ * @returns {Promise<axios.AxiosResponse<PatchRawResult, AxiosError>>} - Promise resolving to the response from the PayMagic API.
  */
 export async function swapTokens(
   userTelegramID: string,
@@ -152,7 +153,7 @@ export async function swapTokens(
   data: string,
   chainId: string,
   patchWalletAccessToken: string,
-): Promise<axios.AxiosResponse<any, any>> {
+): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   return await axios.post(
     'https://paymagicapi.com/v1/kernel/tx',
     {
