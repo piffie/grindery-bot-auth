@@ -11,7 +11,7 @@ import { TRANSFERS_COLLECTION, USERS_COLLECTION } from '../utils/constants';
 // Example: importUsersFromCSV("/path/to/your/file.csv");
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
-async function importUsersFromCSV(filePath) {
+async function importUsersFromCSV(filePath: fs.PathLike) {
   const db = await Database.getInstance();
   const collection = db.collection(USERS_COLLECTION);
   const toInsert = [];
@@ -32,19 +32,9 @@ async function importUsersFromCSV(filePath) {
         });
       })
       .on('end', async () => {
-        // Retrieve existing userTelegramIDs from the database
-        const existingTelegramIDs = (
-          await collection.distinct('userTelegramID')
-        ).map(String);
-
-        // Filter out new users not present in the database
-        const newUsers = toInsert.filter(
-          (entry) => !existingTelegramIDs.includes(entry.userTelegramID),
-        );
-
-        if (newUsers.length > 0) {
+        if (toInsert.length > 0) {
           // Insert new users into the database
-          await collection.insertMany(newUsers);
+          await collection.insertMany(toInsert, { ordered: false });
           console.log('Missing users inserted');
         } else {
           console.log('No new users to insert.');
