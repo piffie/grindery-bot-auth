@@ -446,7 +446,11 @@ async function getExistingPatchwallets(tableId) {
   return rows.map((row) => web3.utils.toChecksumAddress(row.patchwallet));
 }
 
-async function getExistingPatchwalletsLast24Hours(tableId, startDate, endDate) {
+async function getExistingPatchwalletsLast24Hours(
+  tableId: string,
+  startDate: Date,
+  endDate: Date,
+) {
   const formattedStartDate = startDate.toISOString();
   const formattedEndDate = endDate.toISOString();
 
@@ -462,7 +466,7 @@ async function getExistingPatchwalletsLast24Hours(tableId, startDate, endDate) {
   return rows.map((row) => web3.utils.toChecksumAddress(row.patchwallet));
 }
 
-async function getExistingTransactionHashes(tableId) {
+async function getExistingTransactionHashes(tableId: string) {
   const query = `SELECT transaction_hash FROM ${datasetId}.${tableId}`;
   const [rows] = await bigqueryClient.query(query);
 
@@ -470,9 +474,9 @@ async function getExistingTransactionHashes(tableId) {
 }
 
 async function getExistingTransactionHashesLast24Hours(
-  tableId,
-  startDate,
-  endDate,
+  tableId: string,
+  startDate: Date,
+  endDate: Date,
 ) {
   const formattedStartDate = startDate.toISOString();
   const formattedEndDate = endDate.toISOString();
