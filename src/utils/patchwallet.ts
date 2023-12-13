@@ -5,7 +5,15 @@ import {
   getClientSecret,
 } from '../../secrets';
 import { getContract, scaleDecimals } from './web3';
-import { nativeTokenAddresses } from './constants';
+import {
+  DEFAULT_CHAIN_ID,
+  DEFAULT_CHAIN_NAME,
+  PATCHWALLET_AUTH_URL,
+  PATCHWALLET_RESOLVER_URL,
+  PATCHWALLET_TX_STATUS_URL,
+  PATCHWALLET_TX_URL,
+  nativeTokenAddresses,
+} from './constants';
 import { PatchRawResult } from '../types/webhook.types';
 import { CHAIN_NAME_MAPPING } from './chains';
 
@@ -17,7 +25,7 @@ import { CHAIN_NAME_MAPPING } from './chains';
 export async function getPatchWalletAccessToken(): Promise<string> {
   return (
     await axios.post(
-      'https://paymagicapi.com/v1/auth',
+      PATCHWALLET_AUTH_URL,
       {
         client_id: await getClientId(),
         client_secret: await getClientSecret(),
@@ -40,7 +48,7 @@ export async function getPatchWalletAddressFromTgId(
 ): Promise<string> {
   return (
     await axios.post(
-      'https://paymagicapi.com/v1/resolver',
+      PATCHWALLET_RESOLVER_URL,
       {
         userIds: `grindery:${tgId}`,
       },
@@ -68,8 +76,8 @@ export async function sendTokens(
   amountEther: string,
   patchWalletAccessToken: string,
   tokenAddress: string = G1_POLYGON_ADDRESS,
-  chainName: string = 'matic',
-  chainId: string = 'eip155:137',
+  chainName: string = DEFAULT_CHAIN_NAME,
+  chainId: string = DEFAULT_CHAIN_ID,
 ): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   // Determine data, value, and address based on the token type
   const [data, value, address] = nativeTokenAddresses.includes(tokenAddress)
@@ -94,7 +102,7 @@ export async function sendTokens(
 
   // Send the tokens using PayMagic API
   return await axios.post(
-    'https://paymagicapi.com/v1/kernel/tx',
+    PATCHWALLET_TX_URL,
     {
       userId: `grindery:${senderTgId}`,
       chain: chainName,
@@ -123,7 +131,7 @@ export async function getTxStatus(
   userOpHash: string,
 ): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   return await axios.post(
-    'https://paymagicapi.com/v1/kernel/txStatus',
+    PATCHWALLET_TX_STATUS_URL,
     {
       userOpHash: userOpHash,
     },
@@ -142,7 +150,7 @@ export async function getTxStatus(
  * @param {string} to - Destination address for the token swap.
  * @param {string} value - Value to swap.
  * @param {string} data - Data for the swap transaction.
- * @param {string} chainName - Name of the chain (default: 'matic').
+ * @param {string} chainId - Chain ID (default: 'eip155:137').
  * @param {string} patchWalletAccessToken - Access token for the patch wallet authentication.
  * @returns {Promise<axios.AxiosResponse<PatchRawResult, AxiosError>>} - Promise resolving to the response from the PayMagic API.
  */
@@ -155,12 +163,12 @@ export async function swapTokens(
   patchWalletAccessToken: string,
 ): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   return await axios.post(
-    'https://paymagicapi.com/v1/kernel/tx',
+    PATCHWALLET_TX_URL,
     {
       userId: `grindery:${userTelegramID}`,
       chain: chainId
         ? CHAIN_NAME_MAPPING[chainId]
-        : CHAIN_NAME_MAPPING['eip155:137'],
+        : CHAIN_NAME_MAPPING[DEFAULT_CHAIN_ID],
       to: [to],
       value: [value],
       data: [data],

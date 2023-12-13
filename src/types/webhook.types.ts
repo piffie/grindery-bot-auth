@@ -7,6 +7,12 @@ import {
 } from '../utils/rewards';
 import { TransferTelegram } from '../utils/transfers';
 import { SwapTelegram } from '../utils/swap';
+import {
+  DEFAULT_CHAIN_ID,
+  DEFAULT_CHAIN_NAME,
+  G1_TOKEN_SYMBOL,
+} from '../utils/constants';
+import { G1_POLYGON_ADDRESS } from '../../secrets';
 
 /**
  * Defines the structure for SwapParams.
@@ -53,6 +59,25 @@ export type SwapParams = {
 };
 
 /**
+ * Creates swap parameters by merging the provided parameters with default values.
+ * @param params The parameters for the swap.
+ * @returns Swap parameters with default values for missing parameters.
+ */
+export function createSwapParams(
+  params: SwapParams,
+  userInformation: WithId<Document>,
+): SwapParams {
+  return {
+    ...{
+      chainId: DEFAULT_CHAIN_ID,
+      chainName: DEFAULT_CHAIN_NAME,
+    },
+    ...params,
+    userInformation,
+  };
+}
+
+/**
  * Defines the structure for RewardParams.
  */
 export type RewardParams = {
@@ -89,6 +114,28 @@ export type RewardParams = {
 };
 
 /**
+ * Creates reward parameters by merging the provided parameters with default values.
+ * @param params The parameters for the reward.
+ * @returns Reward parameters with default values for missing parameters.
+ */
+export function createRewardParams(
+  params: RewardParams,
+  patchwallet: string,
+): RewardParams {
+  return {
+    ...{
+      tokenAddress: G1_POLYGON_ADDRESS,
+      chainName: DEFAULT_CHAIN_NAME,
+      isSignupReward: false,
+      isReferralReward: false,
+      isLinkReward: false,
+    },
+    ...params,
+    patchwallet,
+  };
+}
+
+/**
  * Defines the structure for TransactionParams.
  */
 export type TransactionParams = {
@@ -113,6 +160,28 @@ export type TransactionParams = {
   /** Additional sender information with MongoDB document ID. */
   senderInformation?: WithId<Document>;
 };
+
+/**
+ * Creates a transaction by merging the provided parameters with default values.
+ * @param params The parameters for the transaction.
+ * @param senderInformation Additional sender information.
+ * @returns A transaction with default values for missing parameters.
+ */
+export function createTransaction(
+  params: TransactionParams,
+  senderInformation: WithId<Document>,
+): TransactionParams {
+  return {
+    ...{
+      tokenSymbol: G1_TOKEN_SYMBOL,
+      tokenAddress: G1_POLYGON_ADDRESS,
+      chainId: DEFAULT_CHAIN_ID,
+      chainName: DEFAULT_CHAIN_NAME,
+    },
+    ...params,
+    senderInformation,
+  };
+}
 
 /**
  * Type union for different reward types.

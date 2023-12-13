@@ -72,12 +72,6 @@ export class SwapTelegram {
   constructor(params: SwapParams) {
     this.eventId = params.eventId;
     this.params = params;
-    this.params.chainId = this.params.chainId
-      ? this.params.chainId
-      : 'eip155:137';
-    this.params.chainName = this.params.chainName
-      ? this.params.chainName
-      : 'matic';
 
     this.isInDatabase = false;
     this.tx = undefined;
