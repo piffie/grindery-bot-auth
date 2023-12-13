@@ -97,9 +97,27 @@ router.get('/swaps', authenticateApiKeyLinea, async (req, res) => {
       totalSwapsValueInUSD += tokenInValueInUSD;
     }
 
-    return res.status(200).json({ isValidAmount: totalSwapsValueInUSD >= 5 });
+    const isValidAmount = totalSwapsValueInUSD >= 5;
+
+    return res.status(200).json({
+      error: {
+        code: 0,
+        message: '',
+      },
+      data: {
+        result: isValidAmount,
+      },
+    });
   } catch (error) {
-    return res.status(500).json({ msg: 'An error occurred', error });
+    return res.status(500).json({
+      error: {
+        code: 500,
+        message: 'An error occurred',
+      },
+      data: {
+        result: false,
+      },
+    });
   }
 });
 
