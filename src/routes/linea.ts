@@ -101,7 +101,7 @@ router.get('/swaps', authenticateApiKeyLinea, async (req, res) => {
 
     return res.status(200).json({
       error: {
-        code: 0,
+        code: 200,
         message: '',
       },
       data: {
