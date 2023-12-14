@@ -185,6 +185,7 @@ export class SwapTelegram {
   async saveToFlowXO(): Promise<void> {
     // Send transaction information to FlowXO
     await axios.post(FLOWXO_NEW_SWAP_WEBHOOK, {
+      userResponsePath: this.params.userInformation.responsePath,
       eventId: this.params.eventId,
       chainId: this.params.chainId,
       userTelegramID: this.params.userTelegramID,

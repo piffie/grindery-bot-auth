@@ -267,6 +267,7 @@ describe('handleSwap function', async function () {
         .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK).args[1];
 
       chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+        userResponsePath: mockResponsePath,
         eventId: swapId,
         chainId: DEFAULT_CHAIN_ID,
         userTelegramID: mockUserTelegramID,
@@ -1637,6 +1638,7 @@ describe('handleSwap function', async function () {
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK).args[1];
 
         chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+          userResponsePath: mockResponsePath,
           eventId: swapId,
           chainId: DEFAULT_CHAIN_ID,
           userTelegramID: mockUserTelegramID,
