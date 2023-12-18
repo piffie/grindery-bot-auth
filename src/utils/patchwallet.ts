@@ -78,6 +78,7 @@ export async function sendTokens(
   recipientwallet: string,
   amountEther: string,
   patchWalletAccessToken: string,
+  delegatecall: 0 | 1,
   tokenAddress: string = G1_POLYGON_ADDRESS,
   chainName: string = DEFAULT_CHAIN_NAME,
   chainId: string = DEFAULT_CHAIN_ID,
@@ -112,7 +113,7 @@ export async function sendTokens(
       to: [address],
       value: value,
       data: data,
-      delegatecall: 0,
+      delegatecall,
       auth: '',
     },
     {
@@ -164,6 +165,7 @@ export async function swapTokens(
   data: string,
   chainId: string,
   patchWalletAccessToken: string,
+  delegatecall: 0 | 1,
 ): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   return await axios.post(
     PATCHWALLET_TX_URL,
@@ -175,7 +177,7 @@ export async function swapTokens(
       to: [to],
       value: [value],
       data: [data],
-      delegatecall: 1,
+      delegatecall,
       auth: '',
     },
     {

@@ -183,6 +183,7 @@ router.post('/sendTokens', authenticateApiKey, async (req, res) => {
             await getPatchWalletAddressFromTgId(req.body.toTgId),
             req.body.amount,
             await getPatchWalletAccessToken(),
+            0,
           )
         ).data,
       );
