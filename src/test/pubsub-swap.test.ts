@@ -163,6 +163,8 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
         chainId: mockChainId,
         chainName: mockChainName,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
       });
 
       const swaps = await collectionSwapsMock.find({}).toArray();
@@ -191,6 +193,8 @@ describe('handleSwap function', async function () {
             transactionHash: mockTransactionHash,
             to: mockToSwap,
             userOpHash: null,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
           },
         ]);
       chai.expect(swaps[0].dateAdded).to.be.a('date');
@@ -682,6 +686,8 @@ describe('handleSwap function', async function () {
         from: mockFromSwap,
         tokenInSymbol: mockTokenInSymbol,
         tokenOutSymbol: mockTokenOutSymbol,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
       });
 
       chai
@@ -708,6 +714,8 @@ describe('handleSwap function', async function () {
             userName: mockUserName,
             userOpHash: null,
             userWallet: mockWallet,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
           },
         ]);
     });
@@ -961,6 +969,8 @@ describe('handleSwap function', async function () {
         from: mockFromSwap,
         tokenInSymbol: mockTokenInSymbol,
         tokenOutSymbol: mockTokenOutSymbol,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
       });
 
       chai
@@ -987,6 +997,8 @@ describe('handleSwap function', async function () {
             userHandle: mockUserHandle,
             userName: mockUserName,
             userWallet: mockWallet,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
           },
         ]);
     });
@@ -1091,6 +1103,8 @@ describe('handleSwap function', async function () {
         from: mockFromSwap,
         tokenInSymbol: mockTokenInSymbol,
         tokenOutSymbol: mockTokenOutSymbol,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
       });
 
       chai
@@ -1117,6 +1131,8 @@ describe('handleSwap function', async function () {
             status: TRANSACTION_STATUS.FAILURE,
             transactionHash: null,
             userOpHash: null,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
           },
         ]);
     });
@@ -1221,6 +1237,8 @@ describe('handleSwap function', async function () {
         from: mockFromSwap,
         tokenInSymbol: mockTokenInSymbol,
         tokenOutSymbol: mockTokenOutSymbol,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
       });
 
       chai
@@ -1247,6 +1265,8 @@ describe('handleSwap function', async function () {
             status: TRANSACTION_STATUS.FAILURE,
             transactionHash: null,
             userOpHash: null,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
           },
         ]);
     });
@@ -1351,6 +1371,8 @@ describe('handleSwap function', async function () {
         from: mockFromSwap,
         tokenInSymbol: mockTokenInSymbol,
         tokenOutSymbol: mockTokenOutSymbol,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
       });
 
       chai
@@ -1377,6 +1399,8 @@ describe('handleSwap function', async function () {
             userHandle: mockUserHandle,
             userName: mockUserName,
             userWallet: mockWallet,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
           },
         ]);
     });
@@ -1483,6 +1507,8 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
+          chainIn: mockChainId,
+          chainOut: mockChainId,
         });
 
         chai
@@ -1509,6 +1535,8 @@ describe('handleSwap function', async function () {
               status: TRANSACTION_STATUS.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
+              chainIn: mockChainId,
+              chainOut: mockChainId,
             },
           ]);
       });
@@ -1625,6 +1653,8 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
+          chainIn: mockChainId,
+          chainOut: mockChainId,
         });
 
         chai
@@ -1651,6 +1681,8 @@ describe('handleSwap function', async function () {
               eventId: swapId,
               userOpHash: mockUserOpHash,
               status: TRANSACTION_STATUS.SUCCESS,
+              chainIn: mockChainId,
+              chainOut: mockChainId,
             },
           ]);
       });
@@ -1800,6 +1832,8 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
+          chainIn: mockChainId,
+          chainOut: mockChainId,
         });
 
         chai
@@ -1826,6 +1860,8 @@ describe('handleSwap function', async function () {
               status: TRANSACTION_STATUS.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
+              chainIn: mockChainId,
+              chainOut: mockChainId,
             },
           ]);
       });
@@ -2090,6 +2126,8 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
+          chainIn: mockChainId,
+          chainOut: mockChainId,
         });
 
         chai
@@ -2116,6 +2154,8 @@ describe('handleSwap function', async function () {
               status: TRANSACTION_STATUS.FAILURE,
               userOpHash: mockUserOpHash,
               transactionHash: null,
+              chainIn: mockChainId,
+              chainOut: mockChainId,
             },
           ]);
       });
@@ -2257,6 +2297,8 @@ describe('handleSwap function', async function () {
               status: TRANSACTION_STATUS.SUCCESS,
               transactionHash: null,
               userOpHash: null,
+              chainIn: null,
+              chainOut: null,
             },
           ]);
       });
@@ -2380,6 +2422,8 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
+          chainIn: mockChainId,
+          chainOut: mockChainId,
         });
 
         chai
@@ -2406,6 +2450,8 @@ describe('handleSwap function', async function () {
               status: TRANSACTION_STATUS.FAILURE,
               transactionHash: null,
               userOpHash: null,
+              chainIn: mockChainId,
+              chainOut: mockChainId,
             },
           ]);
       });

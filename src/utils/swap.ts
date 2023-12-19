@@ -140,6 +140,8 @@ export class SwapTelegram {
           tokenInSymbol: this.params.tokenInSymbol,
           tokenOutSymbol: this.params.tokenOutSymbol,
           userOpHash: this.userOpHash,
+          chainIn: this.params.chainIn,
+          chainOut: this.params.chainOut,
         },
       },
       { upsert: true },
