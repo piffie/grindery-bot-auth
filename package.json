@@ -12,7 +12,7 @@
     "build:watch": "tsc -w -p tsconfig.json",
     "build:release": "npm run clean && tsc -p tsconfig.release.json",
     "lint": "eslint . --ext .ts --ext .mts",
-    "test": "mocha src/test/*.test.ts --config mocha.mocharc.cjs",
+    "test": "mocha 'src/test/**/*{.,-}test.ts' --config mocha.mocharc.cjs",
     "prettier:write": "prettier --config .prettierrc --write .",
     "prettier:check": "prettier --config .prettierrc --check ."
   },
