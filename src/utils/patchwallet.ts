@@ -7,7 +7,6 @@ import {
 import { getContract, scaleDecimals } from './web3';
 import {
   DEFAULT_CHAIN_ID,
-  DEFAULT_CHAIN_NAME,
   HEDGEY_BATCHPLANNER_ADDRESS,
   PATCHWALLET_AUTH_URL,
   PATCHWALLET_RESOLVER_URL,
@@ -80,49 +79,35 @@ export async function sendTokens(
   patchWalletAccessToken: string,
   delegatecall: 0 | 1,
   tokenAddress: string = G1_POLYGON_ADDRESS,
-  chainName: string = DEFAULT_CHAIN_NAME,
   chainId: string = DEFAULT_CHAIN_ID,
 ): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   // Determine data, value, and address based on the token type
   const [data, value, address] = nativeTokenAddresses.includes(tokenAddress)
-    ? [['0x'], [scaleDecimals(amountEther, 18)], recipientwallet]
+    ? ['0x', scaleDecimals(amountEther, 18), recipientwallet]
     : [
-        [
-          getContract(chainId, tokenAddress)
-            .methods['transfer'](
-              recipientwallet,
-              scaleDecimals(
-                amountEther,
-                await getContract(chainId, tokenAddress)
-                  .methods.decimals()
-                  .call(),
-              ),
-            )
-            .encodeABI(),
-        ],
-        ['0x00'],
+        getContract(chainId, tokenAddress)
+          .methods['transfer'](
+            recipientwallet,
+            scaleDecimals(
+              amountEther,
+              await getContract(chainId, tokenAddress)
+                .methods.decimals()
+                .call(),
+            ),
+          )
+          .encodeABI(),
+        '0x00',
         tokenAddress,
       ];
-
   // Send the tokens using PayMagic API
-  return await axios.post(
-    PATCHWALLET_TX_URL,
-    {
-      userId: `grindery:${senderTgId}`,
-      chain: chainName,
-      to: [address],
-      value: value,
-      data: data,
-      delegatecall,
-      auth: '',
-    },
-    {
-      timeout: 100000,
-      headers: {
-        Authorization: `Bearer ${patchWalletAccessToken}`,
-        'Content-Type': 'application/json',
-      },
-    },
+  return await callPatchWalletTx(
+    senderTgId,
+    chainId,
+    address,
+    value,
+    data,
+    delegatecall,
+    patchWalletAccessToken,
   );
 }
 
@@ -167,26 +152,14 @@ export async function swapTokens(
   patchWalletAccessToken: string,
   delegatecall: 0 | 1,
 ): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
-  return await axios.post(
-    PATCHWALLET_TX_URL,
-    {
-      userId: `grindery:${userTelegramID}`,
-      chain: chainId
-        ? CHAIN_NAME_MAPPING[chainId]
-        : CHAIN_NAME_MAPPING[DEFAULT_CHAIN_ID],
-      to: [to],
-      value: [value],
-      data: [data],
-      delegatecall,
-      auth: '',
-    },
-    {
-      timeout: 100000,
-      headers: {
-        Authorization: `Bearer ${patchWalletAccessToken}`,
-        'Content-Type': 'application/json',
-      },
-    },
+  return await callPatchWalletTx(
+    userTelegramID,
+    chainId,
+    to,
+    value,
+    data,
+    delegatecall,
+    patchWalletAccessToken,
   );
 }
 
@@ -206,7 +179,6 @@ export async function hedgeyLockTokens(
   patchWalletAccessToken: string,
   useVesting: boolean = false,
   tokenAddress: string = G1_POLYGON_ADDRESS,
-  chainName: string = DEFAULT_CHAIN_NAME,
   chainId: string = DEFAULT_CHAIN_ID,
 ): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   const plans = await getPlans(recipients);
@@ -225,21 +197,43 @@ export async function hedgeyLockTokens(
   );
 
   // Lock the tokens using PayMagic API
+  return await callPatchWalletTx(
+    senderTgId,
+    chainId,
+    HEDGEY_BATCHPLANNER_ADDRESS,
+    '0x00',
+    await getData(
+      useVesting,
+      chainId,
+      tokenAddress,
+      plans.totalAmount,
+      plans.plans,
+    ),
+    0,
+    patchWalletAccessToken,
+  );
+}
+
+async function callPatchWalletTx(
+  userTelegramID: string,
+  chainId: string,
+  to: string,
+  value: string,
+  data: string,
+  delegatecall: number,
+  patchWalletAccessToken: string,
+): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   return await axios.post(
     PATCHWALLET_TX_URL,
     {
-      userId: `grindery:${senderTgId}`,
-      chain: chainName,
-      to: [HEDGEY_BATCHPLANNER_ADDRESS],
-      value: ['0x00'],
-      data: await getData(
-        useVesting,
-        chainId,
-        tokenAddress,
-        plans.totalAmount,
-        plans.plans,
-      ),
-      delegatecall: 0,
+      userId: `grindery:${userTelegramID}`,
+      chain: chainId
+        ? CHAIN_NAME_MAPPING[chainId]
+        : CHAIN_NAME_MAPPING[DEFAULT_CHAIN_ID],
+      to: [to],
+      value: [value],
+      data: [data],
+      delegatecall: delegatecall,
       auth: '',
     },
     {
