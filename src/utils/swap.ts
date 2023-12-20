@@ -9,7 +9,7 @@ import {
 import { FLOWXO_NEW_SWAP_WEBHOOK, FLOWXO_WEBHOOK_API_KEY } from '../../secrets';
 import axios from 'axios';
 import { addTrackSwapSegment } from './segment';
-import { SwapParams } from '../types/webhook.types';
+import { PatchResult, SwapParams } from '../types/webhook.types';
 
 /**
  * Asynchronously creates a swap for Telegram.
@@ -121,7 +121,6 @@ export class SwapTelegram {
       {
         $set: {
           eventId: this.params.eventId,
-          chainId: this.params.chainId,
           userTelegramID: this.params.userInformation.userTelegramID,
           userWallet: this.params.userInformation.patchwallet,
           userName: this.params.userInformation.userName,
@@ -140,6 +139,8 @@ export class SwapTelegram {
           tokenInSymbol: this.params.tokenInSymbol,
           tokenOutSymbol: this.params.tokenOutSymbol,
           userOpHash: this.userOpHash,
+          chainIn: this.params.chainIn,
+          chainOut: this.params.chainOut,
         },
       },
       { upsert: true },
@@ -157,7 +158,6 @@ export class SwapTelegram {
     // Add transaction information to the Segment
     await addTrackSwapSegment({
       eventId: this.params.eventId,
-      chainId: this.params.chainId,
       userTelegramID: this.params.userInformation.userTelegramID,
       userWallet: this.params.userInformation.patchwallet,
       userName: this.params.userInformation.userName,
@@ -175,6 +175,8 @@ export class SwapTelegram {
       from: this.params.from,
       tokenInSymbol: this.params.tokenInSymbol,
       tokenOutSymbol: this.params.tokenOutSymbol,
+      chainIn: this.params.chainIn,
+      chainOut: this.params.chainOut,
     });
   }
 
@@ -187,7 +189,6 @@ export class SwapTelegram {
     await axios.post(FLOWXO_NEW_SWAP_WEBHOOK, {
       userResponsePath: this.params.userInformation.responsePath,
       eventId: this.params.eventId,
-      chainId: this.params.chainId,
       userTelegramID: this.params.userTelegramID,
       userWallet: this.params.userInformation.patchwallet,
       userName: this.params.userInformation.userName,
@@ -205,18 +206,26 @@ export class SwapTelegram {
       from: this.params.from,
       tokenInSymbol: this.params.tokenInSymbol,
       tokenOutSymbol: this.params.tokenOutSymbol,
-      apiKey: FLOWXO_WEBHOOK_API_KEY
+      apiKey: FLOWXO_WEBHOOK_API_KEY,
+      chainIn: this.params.chainIn,
+      chainOut: this.params.chainOut,
     });
   }
 
   /**
    * Retrieves the status of the PatchWallet transaction.
-   * @returns {Promise<any>} - True if the transaction status is retrieved successfully, false otherwise.
+   * @returns {Promise<PatchResult>} - True if the transaction status is retrieved successfully, false otherwise.
    */
-  async getStatus(): Promise<any> {
+  async getStatus(): Promise<PatchResult> {
     try {
       // Retrieve the status of the PatchWallet transaction
-      return await getTxStatus(this.userOpHash);
+      const res = await getTxStatus(this.userOpHash);
+
+      return {
+        isError: false,
+        userOpHash: res.data.userOpHash,
+        txHash: res.data.txHash,
+      };
     } catch (error) {
       // Log error if retrieving transaction status fails
       console.error(
@@ -226,28 +235,33 @@ export class SwapTelegram {
       return (
         (error?.response?.status === 470 &&
           (await this.updateInDatabase(TRANSACTION_STATUS.FAILURE, new Date()),
-          true)) ||
-        false
+          { isError: true })) || { isError: false }
       );
     }
   }
 
   /**
    * Sends tokens using PatchWallet.
-   * @returns {Promise<any>} - True if the tokens are sent successfully, false otherwise.
+   * @returns {Promise<PatchResult>} - True if the tokens are sent successfully, false otherwise.
    */
-  async swapTokens(): Promise<any> {
+  async swapTokens(): Promise<PatchResult> {
     try {
       // Send tokens using PatchWallet
-      return await swapTokens(
+      const res = await swapTokens(
         this.params.userInformation.userTelegramID,
         this.params.to,
         this.params.value,
         this.params.data,
-        this.params.chainId,
+        this.params.chainIn,
         await getPatchWalletAccessToken(),
         this.params.delegatecall,
       );
+
+      return {
+        isError: false,
+        userOpHash: res.data.userOpHash,
+        txHash: res.data.txHash,
+      };
     } catch (error) {
       // Log error if sending tokens fails
       console.error(
@@ -261,8 +275,8 @@ export class SwapTelegram {
             `Potentially invalid amount: ${this.params.amount}, dropping`,
           ),
           await this.updateInDatabase(TRANSACTION_STATUS.FAILURE, new Date()),
-          true)
-        : false;
+          { isError: true })
+        : { isError: false };
     }
   }
 }

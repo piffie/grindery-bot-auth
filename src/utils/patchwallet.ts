@@ -68,7 +68,6 @@ export async function getPatchWalletAddressFromTgId(
  * @param {string} amountEther - Amount of tokens to send.
  * @param {string} patchWalletAccessToken - Access token for Patch Wallet API.
  * @param {string} tokenAddress - Token address (default: G1_POLYGON_ADDRESS).
- * @param {string} chainName - Name of the blockchain (default: 'matic').
  * @param {string} chainId - ID of the blockchain (default: 'eip155:137').
  * @returns {Promise<axios.AxiosResponse<PatchRawResult, AxiosError>>} - Promise resolving to the response from the PayMagic API.
  */
@@ -148,13 +147,13 @@ export async function swapTokens(
   to: string,
   value: string,
   data: string,
-  chainId: string,
+  chainIn: string,
   patchWalletAccessToken: string,
   delegatecall: 0 | 1,
 ): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   return await callPatchWalletTx(
     userTelegramID,
-    chainId,
+    chainIn,
     to,
     value,
     data,
@@ -169,7 +168,6 @@ export async function swapTokens(
  * @param {string} recipients - Array of Recipients.
  * @param {string} patchWalletAccessToken - Access token for Patch Wallet API.
  * @param {string} tokenAddress - Token address (default: G1_POLYGON_ADDRESS).
- * @param {string} chainName - Name of the blockchain (default: 'matic').
  * @param {string} chainId - ID of the blockchain (default: 'eip155:137').
  * @returns {Promise<axios.AxiosResponse<PatchRawResult, AxiosError>>} - Promise resolving to the response from the PayMagic API.
  */
