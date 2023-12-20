@@ -97,3 +97,13 @@ export const CHAIN_NAME_MAPPING = {
   'eip155:137': 'matic',
   'eip155:59144': 'linea',
 };
+
+export const CHAIN_EXPLORER_MAPPING = {
+  'eip155:137': 'https://polygonscan.com/tx/',
+  'eip155:59144': 'https://lineascan.build/tx/',
+};
+
+export const CHAIN_PROTOCOL_NAME_MAPPING = {
+  'eip155:137': 'Polygon',
+  'eip155:59144': 'Linea',
+};
