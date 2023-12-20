@@ -26,7 +26,7 @@ import {
 } from './utils';
 import Sinon from 'sinon';
 import axios from 'axios';
-
+import * as web3 from '../utils/web3';
 import chaiExclude from 'chai-exclude';
 import {
   PATCHWALLET_AUTH_URL,
@@ -40,6 +40,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { handleSwap } from '../webhooks/swap';
 import { FLOWXO_NEW_SWAP_WEBHOOK, FLOWXO_WEBHOOK_API_KEY } from '../../secrets';
 import { Collection, Document } from 'mongodb';
+import { CHAIN_EXPLORER_MAPPING } from '../utils/chains';
 
 chai.use(chaiExclude);
 
@@ -112,7 +113,23 @@ describe('handleSwap function', async function () {
   });
 
   describe('Normal process to handle a swap', async function () {
+    let contractStub: { methods: any };
+    let getContract;
+
     beforeEach(async function () {
+      contractStub = {
+        methods: {
+          decimals: sandbox.stub().resolves('18'),
+        },
+      };
+      contractStub.methods.decimals = sandbox.stub().returns({
+        call: sandbox.stub().resolves('18'),
+      });
+      getContract = () => {
+        return contractStub;
+      };
+      sandbox.stub(web3, 'getContract').callsFake(getContract);
+
       await collectionUsersMock.insertOne({
         userTelegramID: mockUserTelegramID,
         userName: mockUserName,
@@ -252,9 +269,9 @@ describe('handleSwap function', async function () {
         eventId: swapId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
-        amountIn: mockAmountIn,
+        amountIn: '1000000000000000000',
         tokenOut: mockTokenOut,
-        amountOut: mockAmountOut,
+        amountOut: '1000000000000000000',
         priceImpact: mockPriceImpact,
         gas: mockGas,
         to: mockToSwap,
@@ -269,29 +286,36 @@ describe('handleSwap function', async function () {
         .getCalls()
         .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK).args[1];
 
-      chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
-        userResponsePath: mockResponsePath,
-        eventId: swapId,
-        userTelegramID: mockUserTelegramID,
-        userName: mockUserName,
-        userHandle: mockUserHandle,
-        userWallet: mockWallet,
-        tokenIn: mockTokenIn,
-        amountIn: mockAmountIn,
-        tokenOut: mockTokenOut,
-        amountOut: mockAmountOut,
-        priceImpact: mockPriceImpact,
-        gas: mockGas,
-        to: mockToSwap,
-        from: mockFromSwap,
-        tokenInSymbol: mockTokenInSymbol,
-        tokenOutSymbol: mockTokenOutSymbol,
-        status: TRANSACTION_STATUS.SUCCESS,
-        transactionHash: mockTransactionHash,
-        apiKey: FLOWXO_WEBHOOK_API_KEY,
-        chainIn: mockChainId,
-        chainOut: mockChainId,
-      });
+      chai
+        .expect(FlowXOCallArgs)
+        .excluding(['dateAdded'])
+        .to.deep.equal({
+          userResponsePath: mockResponsePath,
+          eventId: swapId,
+          userTelegramID: mockUserTelegramID,
+          userName: mockUserName,
+          userHandle: mockUserHandle,
+          userWallet: mockWallet,
+          tokenIn: mockTokenIn,
+          amountIn: '1',
+          tokenOut: mockTokenOut,
+          amountOut: '1',
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
+          status: TRANSACTION_STATUS.SUCCESS,
+          transactionHash: mockTransactionHash,
+          apiKey: FLOWXO_WEBHOOK_API_KEY,
+          chainIn: mockChainId,
+          chainOut: mockChainId,
+          chainInName: 'Polygon',
+          chainOutName: 'Polygon',
+          transactionLink:
+            CHAIN_EXPLORER_MAPPING[mockChainId] + mockTransactionHash,
+        });
     });
 
     it('Should call the swapTokens function properly', async function () {
@@ -898,7 +922,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1089,7 +1112,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1138,7 +1160,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1162,7 +1183,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1202,7 +1222,6 @@ describe('handleSwap function', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1222,7 +1241,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1271,7 +1289,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1295,7 +1312,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1335,7 +1351,6 @@ describe('handleSwap function', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1355,7 +1370,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1404,7 +1418,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1428,7 +1441,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1560,7 +1572,23 @@ describe('handleSwap function', async function () {
     });
 
     describe('Transaction hash is present in PatchWallet status endpoint', async function () {
+      let contractStub: { methods: any };
+      let getContract;
+
       beforeEach(async function () {
+        contractStub = {
+          methods: {
+            decimals: sandbox.stub().resolves('18'),
+          },
+        };
+        contractStub.methods.decimals = sandbox.stub().returns({
+          call: sandbox.stub().resolves('18'),
+        });
+        getContract = () => {
+          return contractStub;
+        };
+        sandbox.stub(web3, 'getContract').callsFake(getContract);
+
         await collectionUsersMock.insertOne({
           userTelegramID: mockUserTelegramID,
           userName: mockUserName,
@@ -1682,9 +1710,9 @@ describe('handleSwap function', async function () {
           eventId: swapId,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
-          amountIn: mockAmountIn,
+          amountIn: '1000000000000000000',
           tokenOut: mockTokenOut,
-          amountOut: mockAmountOut,
+          amountOut: '1000000000000000000',
           priceImpact: mockPriceImpact,
           gas: mockGas,
           to: mockToSwap,
@@ -1698,29 +1726,36 @@ describe('handleSwap function', async function () {
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK).args[1];
 
-        chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
-          userResponsePath: mockResponsePath,
-          eventId: swapId,
-          userTelegramID: mockUserTelegramID,
-          userName: mockUserName,
-          userHandle: mockUserHandle,
-          userWallet: mockWallet,
-          tokenIn: mockTokenIn,
-          amountIn: mockAmountIn,
-          tokenOut: mockTokenOut,
-          amountOut: mockAmountOut,
-          priceImpact: mockPriceImpact,
-          gas: mockGas,
-          to: mockToSwap,
-          from: mockFromSwap,
-          tokenInSymbol: mockTokenInSymbol,
-          tokenOutSymbol: mockTokenOutSymbol,
-          transactionHash: mockTransactionHash,
-          status: TRANSACTION_STATUS.SUCCESS,
-          apiKey: FLOWXO_WEBHOOK_API_KEY,
-          chainIn: mockChainId,
-          chainOut: mockChainId,
-        });
+        chai
+          .expect(FlowXOCallArgs)
+          .excluding(['dateAdded'])
+          .to.deep.equal({
+            userResponsePath: mockResponsePath,
+            eventId: swapId,
+            userTelegramID: mockUserTelegramID,
+            userName: mockUserName,
+            userHandle: mockUserHandle,
+            userWallet: mockWallet,
+            tokenIn: mockTokenIn,
+            amountIn: '1',
+            tokenOut: mockTokenOut,
+            amountOut: '1',
+            priceImpact: mockPriceImpact,
+            gas: mockGas,
+            to: mockToSwap,
+            from: mockFromSwap,
+            tokenInSymbol: mockTokenInSymbol,
+            tokenOutSymbol: mockTokenOutSymbol,
+            transactionHash: mockTransactionHash,
+            status: TRANSACTION_STATUS.SUCCESS,
+            apiKey: FLOWXO_WEBHOOK_API_KEY,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
+            chainInName: 'Polygon',
+            chainOutName: 'Polygon',
+            transactionLink:
+              CHAIN_EXPLORER_MAPPING[mockChainId] + mockTransactionHash,
+          });
 
         chai
           .expect(FlowXOCallArgs.dateAdded)

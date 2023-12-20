@@ -10,6 +10,9 @@ import { FLOWXO_NEW_SWAP_WEBHOOK, FLOWXO_WEBHOOK_API_KEY } from '../../secrets';
 import axios from 'axios';
 import { addTrackSwapSegment } from './segment';
 import { PatchResult, SwapParams } from '../types/webhook.types';
+import { getContract } from './web3';
+import { CHAIN_EXPLORER_MAPPING, CHAIN_PROTOCOL_NAME_MAPPING } from './chains';
+import BigNumber from 'bignumber.js';
 
 /**
  * Asynchronously creates a swap for Telegram.
@@ -185,6 +188,27 @@ export class SwapTelegram {
    * @returns {Promise<void>} - The result of sending the transaction to FlowXO.
    */
   async saveToFlowXO(): Promise<void> {
+    const amountIn = new BigNumber(parseInt(this.params.amountIn))
+      .div(
+        10 **
+          (await getContract(this.params.chainIn, this.params.tokenIn)
+            .methods.decimals()
+            .call()),
+      )
+      .toString();
+    const amountOut = new BigNumber(parseInt(this.params.amountIn))
+      .div(
+        10 **
+          (await getContract(this.params.chainOut, this.params.tokenOut)
+            .methods.decimals()
+            .call()),
+      )
+      .toString();
+    const chainInName = CHAIN_PROTOCOL_NAME_MAPPING[this.params.chainIn];
+    const chainOutName = CHAIN_PROTOCOL_NAME_MAPPING[this.params.chainOut];
+    const transactionLink =
+      CHAIN_EXPLORER_MAPPING[this.params.chainOut] + this.txHash;
+
     // Send transaction information to FlowXO
     await axios.post(FLOWXO_NEW_SWAP_WEBHOOK, {
       userResponsePath: this.params.userInformation.responsePath,
@@ -194,9 +218,9 @@ export class SwapTelegram {
       userName: this.params.userInformation.userName,
       userHandle: this.params.userInformation.userHandle,
       tokenIn: this.params.tokenIn,
-      amountIn: this.params.amountIn,
+      amountIn: amountIn,
       tokenOut: this.params.tokenOut,
-      amountOut: this.params.amountOut,
+      amountOut: amountOut,
       priceImpact: this.params.priceImpact,
       gas: this.params.gas,
       status: TRANSACTION_STATUS.SUCCESS,
@@ -209,6 +233,9 @@ export class SwapTelegram {
       apiKey: FLOWXO_WEBHOOK_API_KEY,
       chainIn: this.params.chainIn,
       chainOut: this.params.chainOut,
+      chainInName: chainInName,
+      chainOutName: chainOutName,
+      transactionLink: transactionLink,
     });
   }
 
