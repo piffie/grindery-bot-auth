@@ -104,7 +104,7 @@ router.get('/unacked-messages', authenticateApiKey, async (_req, res) => {
  *   "error": "error message"
  * }
  */
-router.post('/', webhookValidator, authenticateApiKey, async (req, res) => {
+router.post('/', authenticateApiKey, webhookValidator, async (req, res) => {
   const validator = validateResult(req);
 
   if (validator.length) {
