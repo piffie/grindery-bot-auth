@@ -13,8 +13,8 @@ import {
  * @returns An array containing WebSocket and HTTP endpoints.
  */
 const ANKR = (name: string) => [
-  `wss://rpc.ankr.com/${name}/ws/${ANKR_KEY}`,
-  `https://rpc.ankr.com/${name}/${ANKR_KEY}`,
+  `wss://rpc.ankr.com/${name}/ws/${ANKR_KEY || ''}`,
+  `https://rpc.ankr.com/${name}/${ANKR_KEY || ''}`,
 ];
 
 /**
