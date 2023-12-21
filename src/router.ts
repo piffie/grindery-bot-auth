@@ -8,6 +8,7 @@ import leaderboard from './routes/leaderboard';
 import analytics from './routes/analytics';
 import users from './routes/users';
 import linea from './routes/linea';
+import tge from './routes/tge';
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use('/leaderboard', leaderboard);
 router.use('/analytics', analytics);
 router.use('/users', users);
 router.use('/linea', linea);
+router.use('/tge', tge);
 
 export default router;
