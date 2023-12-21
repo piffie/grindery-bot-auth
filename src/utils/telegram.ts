@@ -39,18 +39,13 @@ export const sendTelegramMessage = async (
     }
 
     // get recipient handle
-    const recipient = await client.invoke(
+    const recipient: Api.users.UserFull = await client.invoke(
       new Api.users.GetFullUser({
         id: recipientId,
       }),
     );
 
-    const recipientHandle =
-      (recipient &&
-        recipient.users &&
-        recipient.users[0] &&
-        (recipient.users[0] as any).username) ||
-      '';
+    const recipientHandle = (recipient.users?.[0] as Api.User)?.username || '';
 
     const data = {
       peer: recipientHandle,
