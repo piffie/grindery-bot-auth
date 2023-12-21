@@ -91,7 +91,7 @@ router.post('/balance', async (req, res) => {
       });
     }
 
-    const web3 = new Web3(CHAIN_MAPPING[req.body.chainId][1]);
+    const web3 = new Web3(CHAIN_MAPPING[req.body.chainId].endpoint[1]);
     const contract = new web3.eth.Contract(
       ERC20 as AbiItem[],
       req.body.contractAddress,
@@ -143,7 +143,7 @@ router.post('/patchwallet', async (req, res) => {
       });
     }
 
-    const web3 = new Web3(CHAIN_MAPPING[req.body.chainId][1]);
+    const web3 = new Web3(CHAIN_MAPPING[req.body.chainId].endpoint[1]);
     const contract = new web3.eth.Contract(
       ERC20 as AbiItem[],
       req.body.contractAddress,

@@ -23,7 +23,7 @@ export function getContract(
     throw new Error('Invalid chain: ' + chainId);
   }
 
-  return new new Web3(CHAIN_MAPPING[chainId][1]).eth.Contract(
+  return new new Web3(CHAIN_MAPPING[chainId].endpoint[1]).eth.Contract(
     ERC20 as AbiItem[],
     tokenAddress,
   );
