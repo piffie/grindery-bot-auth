@@ -195,7 +195,7 @@ describe('handleReferralReward function', function () {
       chai.expect(result).to.be.true;
     });
 
-    it('Should not send any tokens if No transactions are eligible for a reward', async function () {
+    it('Should not send tokens if No transactions are eligible for a reward', async function () {
       await handleReferralReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
@@ -304,7 +304,7 @@ describe('handleReferralReward function', function () {
       chai.expect(result).to.be.true;
     });
 
-    it('Should not send any tokens if The transaction is already rewarded with the same eventId', async function () {
+    it('Should not send tokens if The transaction is already rewarded with the same eventId', async function () {
       await handleReferralReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
@@ -431,7 +431,7 @@ describe('handleReferralReward function', function () {
       chai.expect(result).to.be.true;
     });
 
-    it('Should not send any tokens if The transaction is already rewarded with another eventId', async function () {
+    it('Should not send tokens if The transaction is already rewarded with another eventId', async function () {
       await handleReferralReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
@@ -556,7 +556,7 @@ describe('handleReferralReward function', function () {
       chai.expect(result).to.be.true;
     });
 
-    it('Should not send any tokens if The transaction is already rewarded with no eventId', async function () {
+    it('Should not send tokens if The transaction is already rewarded with no eventId', async function () {
       await handleReferralReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,

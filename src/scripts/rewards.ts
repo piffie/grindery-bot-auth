@@ -327,7 +327,37 @@ const startImport = (fileName: fs.PathLike): Promise<void> => {
     });
 };
 
-async function saveRewards(rewards: any[]): Promise<void> {
+/**
+ * Represents a reward object containing specific properties.
+ */
+interface Reward {
+  /**
+   * Value associated with the reward.
+   */
+  value: string;
+
+  /**
+   * Transaction hash related to the reward.
+   */
+  evt_tx_hash: string;
+
+  /**
+   * Block time of the reward.
+   */
+  evt_block_time: string;
+
+  /**
+   * Receiver of the reward.
+   */
+  to: string;
+}
+
+/**
+ * Saves formatted missing rewards into a database collection after processing and filtering.
+ * @param rewards An array of Reward objects to be processed and saved.
+ * @returns Promise<void>
+ */
+async function saveRewards(rewards: Reward[]): Promise<void> {
   const db = await Database.getInstance();
   const collection = db.collection('rewards-test');
 
@@ -395,7 +425,16 @@ async function saveRewards(rewards: any[]): Promise<void> {
   }
 }
 
-const generateRewardMessage = (amount, blockTime) => {
+/**
+ * Generates a reward message based on the provided amount and block time.
+ * @param amount The value associated with the reward.
+ * @param blockTime The block time of the reward (string | number | Date).
+ * @returns An object containing the reason and description of the reward message.
+ */
+const generateRewardMessage = (
+  amount: string,
+  blockTime: string | number | Date,
+) => {
   const transitionDate = new Date('2023-09-05T12:00:00Z');
   const dateObj = new Date(blockTime);
   const isBeforeTuesdayNoon = dateObj < transitionDate;
