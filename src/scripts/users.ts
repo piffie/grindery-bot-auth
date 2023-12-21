@@ -147,6 +147,9 @@ async function removeUsersScientificNotationInTelegramID(): Promise<void> {
   }
 }
 
+type User = {
+  userTelegramID: string;
+};
 // Example usage of the functions:
 // const users = [
 //   { userTelegramID: "12345" },
@@ -158,7 +161,7 @@ async function removeUsersScientificNotationInTelegramID(): Promise<void> {
 // logUserTelegramIDsFromArrayOfUsers(users);
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
-function logUserTelegramIDsFromArrayOfUsers(users: any[]): Promise<void> {
+function logUserTelegramIDsFromArrayOfUsers(users: User[]): Promise<void> {
   const userTelegramIDCounts = {}; // To store the count of each unique userTelegramID
 
   // Iterate through the users array
