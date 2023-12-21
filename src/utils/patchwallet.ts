@@ -17,7 +17,7 @@ import {
 import { PatchRawResult } from '../types/webhook.types';
 import { HedgeyRecipientParams } from '../types/hedgey.types';
 import { getData, getPlans } from './vesting';
-import { CHAIN_MAPPING } from './chains';
+// import { CHAIN_MAPPING } from './chains';
 
 /**
  * Retrieves the Patch Wallet access token by making a POST request to the authentication endpoint.
@@ -214,7 +214,7 @@ export async function hedgeyLockTokens(
 
 async function callPatchWalletTx(
   userTelegramID: string,
-  chainId: string,
+  _chainId: string,
   to: string,
   value: string,
   data: string,
@@ -225,9 +225,7 @@ async function callPatchWalletTx(
     PATCHWALLET_TX_URL,
     {
       userId: `grindery:${userTelegramID}`,
-      chain: chainId
-        ? CHAIN_MAPPING[chainId].name_patch
-        : CHAIN_MAPPING[DEFAULT_CHAIN_ID].name_patch,
+      chain: 'matic',
       to: [to],
       value: [value],
       data: [data],
