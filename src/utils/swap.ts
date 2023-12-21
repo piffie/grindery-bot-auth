@@ -1,5 +1,9 @@
 import { Database } from '../db/conn';
-import { SWAPS_COLLECTION, TRANSACTION_STATUS } from './constants';
+import {
+  SWAPS_COLLECTION,
+  TRANSACTION_STATUS,
+  nativeTokenAddresses,
+} from './constants';
 import { Db, Document, WithId } from 'mongodb';
 import {
   getPatchWalletAccessToken,
@@ -172,21 +176,21 @@ export class SwapTelegram {
    * @returns {Promise<void>} - The result of sending the transaction to FlowXO.
    */
   async saveToFlowXO(): Promise<void> {
+    const decimalsTokenIn = nativeTokenAddresses.includes(this.params.tokenIn)
+      ? 18
+      : await getContract(this.params.chainIn, this.params.tokenIn)
+          .methods.decimals()
+          .call();
+    const decimalsTokenOut = nativeTokenAddresses.includes(this.params.tokenOut)
+      ? 18
+      : await getContract(this.params.chainOut, this.params.tokenOut)
+          .methods.decimals()
+          .call();
     const amountIn = new BigNumber(parseInt(this.params.amountIn))
-      .div(
-        10 **
-          (await getContract(this.params.chainIn, this.params.tokenIn)
-            .methods.decimals()
-            .call()),
-      )
+      .div(10 ** decimalsTokenIn)
       .toString();
-    const amountOut = new BigNumber(parseInt(this.params.amountIn))
-      .div(
-        10 **
-          (await getContract(this.params.chainOut, this.params.tokenOut)
-            .methods.decimals()
-            .call()),
-      )
+    const amountOut = new BigNumber(parseInt(this.params.amountOut))
+      .div(10 ** decimalsTokenOut)
       .toString();
     const chainInName = CHAIN_PROTOCOL_NAME_MAPPING[this.params.chainIn];
     const chainOutName = CHAIN_PROTOCOL_NAME_MAPPING[this.params.chainOut];

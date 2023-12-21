@@ -3,7 +3,6 @@ import pkg from 'body-parser';
 import expressJSDocSwagger from 'express-jsdoc-swagger';
 import './loadEnvironment';
 import router from './router';
-import './scripts/cronjob';
 import { PORT } from '../secrets';
 
 const { json, urlencoded } = pkg;
