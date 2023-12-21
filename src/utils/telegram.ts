@@ -5,19 +5,6 @@ import { decrypt } from './crypt';
 import { WithId, Document } from 'mongodb';
 
 /**
- * Extracts user information from the request headers.
- * @param req The request object containing headers, particularly the 'authorization' header with user data.
- * @returns The user information parsed from the request headers.
- */
-export const getUser = (req: { headers: { [x: string]: any } }): any => {
-  const authorization = req.headers['authorization'];
-  const token = authorization.split(' ')[1];
-  const data = Object.fromEntries(new URLSearchParams(token));
-  const user = JSON.parse((data.user || {}) as string);
-  return user;
-};
-
-/**
  * Sends a message via Telegram to a recipient.
  * @param message The content of the message to be sent.
  * @param recipientId The Telegram ID of the message recipient.
