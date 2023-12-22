@@ -5,7 +5,7 @@ import { computeG1ToGxConversion } from '../utils/g1gx';
 const router = express.Router();
 
 /**
- * POST /conversion-information
+ * POST /v1/tge/conversion-information
  *
  * @summary Calculate G1 to Gx conversion
  * @description Calculates the conversion from G1 to Gx based on provided quantities of USD and G1.
