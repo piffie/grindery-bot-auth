@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosError } from 'axios';
 import { SEGMENT_KEY } from '../../secrets';
 import { SEGMENT_IDENTITY_URL, SEGMENT_TRACK_URL } from './constants';
@@ -16,7 +15,7 @@ import {
  */
 export async function addIdentitySegment(
   user: IdentitySegmentParams,
-): Promise<axios.AxiosResponse<any, AxiosError>> {
+): Promise<axios.AxiosResponse<unknown, AxiosError>> {
   return await axios.post(
     SEGMENT_IDENTITY_URL,
     {
@@ -45,7 +44,7 @@ export async function addIdentitySegment(
  */
 export async function addTrackSegment(
   params: TrackSegmentParams,
-): Promise<axios.AxiosResponse<any, AxiosError>> {
+): Promise<axios.AxiosResponse<unknown, AxiosError>> {
   return await axios.post(
     SEGMENT_TRACK_URL,
     {
@@ -83,7 +82,7 @@ export async function addTrackSegment(
  */
 export async function addVestingSegment(
   params: VestingSegmentParams,
-): Promise<axios.AxiosResponse<any, AxiosError>> {
+): Promise<axios.AxiosResponse<unknown, AxiosError>> {
   return await axios.post(
     SEGMENT_TRACK_URL,
     {
@@ -119,7 +118,7 @@ export async function addVestingSegment(
  */
 export async function addTrackSwapSegment(
   params: TrackSwapSegmentParams,
-): Promise<axios.AxiosResponse<any, AxiosError>> {
+): Promise<axios.AxiosResponse<unknown, AxiosError>> {
   return await axios.post(
     SEGMENT_TRACK_URL,
     {
