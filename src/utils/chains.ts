@@ -6,6 +6,7 @@ import {
   CHAINSTACK_API_KEY,
   CHAINSTACK_API_KEY_2,
 } from '../../secrets';
+import { ChainInfo } from '../types/chains.types';
 
 /**
  * Retrieves ANKR WebSocket and HTTP endpoints based on the provided network name.
@@ -48,31 +49,6 @@ const CHAINSTACK = (nodeId: string, key: string) => [
   `wss://ws-${nodeId}.p2pify.com/${key || CHAINSTACK_API_KEY}`,
   `https://${nodeId}.p2pify.com/${key || CHAINSTACK_API_KEY}`,
 ];
-
-/**
- * Interface representing information about a blockchain.
- */
-interface ChainInfo {
-  /**
-   * Array containing endpoint strings for the blockchain.
-   */
-  endpoint: string[];
-
-  /**
-   * (Optional) Name patch for the blockchain (if available).
-   */
-  name_patch?: string;
-
-  /**
-   * URL of the explorer for the blockchain.
-   */
-  explorer: string;
-
-  /**
-   * Display name of the blockchain.
-   */
-  name_display: string;
-}
 
 export const CHAIN_MAPPING: Record<string, ChainInfo> = {
   'eip155:1': {
