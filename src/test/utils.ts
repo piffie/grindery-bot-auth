@@ -6,8 +6,11 @@ import {
   USERS_COLLECTION,
   SWAPS_COLLECTION,
   VESTING_COLLECTION,
+  GX_QUOTE_COLLECTION,
+  GX_ORDER_COLLECTION,
 } from '../utils/constants';
 import { GRINDERY_NEXUS_REFRESH_TOKEN } from '../../secrets';
+import { v4 as uuidv4, version, validate } from 'uuid';
 
 /**
  * Retrieves the database mock instance.
@@ -16,6 +19,16 @@ import { GRINDERY_NEXUS_REFRESH_TOKEN } from '../../secrets';
 export async function getDbMock() {
   const dbMock = await Database.getInstance();
   return dbMock;
+}
+
+export async function getCollectionGXQuoteMock() {
+  const dbMock = await getDbMock();
+  return dbMock.collection(GX_QUOTE_COLLECTION);
+}
+
+export async function getCollectionGXOrderMock() {
+  const dbMock = await getDbMock();
+  return dbMock.collection(GX_ORDER_COLLECTION);
 }
 
 /**
@@ -149,3 +162,15 @@ async function getAccessToken(): Promise<string> {
  * Mocked token retrieved as an access token.
  */
 export const mockedToken = getAccessToken();
+
+/**
+ * Checks if the provided string is a valid UUID v4.
+ * @param {string} input - The string to check for UUID v4 validity.
+ * @returns {boolean} - Returns true if the input is a valid UUID v4, otherwise false.
+ */
+export function isUUIDv4(input: string): boolean {
+  return validate(input) && version(input) === 4;
+}
+
+export const mockOrderID = uuidv4();
+export const mockOrderID1 = uuidv4();
