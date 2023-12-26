@@ -21,16 +21,23 @@ export async function getDbMock() {
   return dbMock;
 }
 
+/**
+ * Retrieves the mock collection instance for GX quotes.
+ * @returns A promise resolving to the mock collection instance for GX quotes.
+ */
 export async function getCollectionGXQuoteMock() {
   const dbMock = await getDbMock();
   return dbMock.collection(GX_QUOTE_COLLECTION);
 }
 
+/**
+ * Retrieves the mock collection instance for GX orders.
+ * @returns  A promise resolving to the mock collection instance for GX orders.
+ */
 export async function getCollectionGXOrderMock() {
   const dbMock = await getDbMock();
   return dbMock.collection(GX_ORDER_COLLECTION);
 }
-
 /**
  * Retrieves the collection for mock users.
  * @returns A promise resolving to the collection of mock users.
@@ -172,5 +179,14 @@ export function isUUIDv4(input: string): boolean {
   return validate(input) && version(input) === 4;
 }
 
+/**
+ * Mock order ID generated using uuidv4().
+ * @type {string}
+ */
 export const mockOrderID = uuidv4();
+
+/**
+ * Another mock order ID generated using uuidv4().
+ * @type {string}
+ */
 export const mockOrderID1 = uuidv4();

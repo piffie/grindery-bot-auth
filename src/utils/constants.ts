@@ -85,6 +85,9 @@ export const TRANSACTION_STATUS = {
   FAILURE_503: 'failure_503',
 } as const;
 
+/**
+ * Various statuses for GX orders.
+ */
 export const GX_ORDER_STATUS = {
   PENDING: 'pending',
   COMPLETE: 'complete',
