@@ -24,14 +24,14 @@ import {
 export async function handleLinkReward(params: RewardParams): Promise<boolean> {
   try {
     let reward = await createLinkRewardTelegram(
-      createRewardParams(params, params.patchwallet),
+      createRewardParams(params, params.patchwallet || ''),
     );
 
     if (reward == false) return true;
 
     reward = reward as LinkRewardTelegram;
 
-    let txReward: PatchResult;
+    let txReward: PatchResult | undefined;
 
     // Handle pending hash status
     if (isPendingTransactionHash(reward.status)) {

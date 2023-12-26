@@ -4,7 +4,7 @@ import { PRODUCTION_ENV, getAtlasUri } from '../../secrets';
 
 export class Database {
   /** Represents the instance of the database. */
-  static instance: Db;
+  static instance: Db | null;
 
   /**
    * Retrieves or creates an instance of the database.
@@ -12,14 +12,14 @@ export class Database {
    * else utilizes a temporary in-memory MongoDB server.
    * @returns {Promise<Db>} An instance of the database.
    */
-  static async getInstance(): Promise<Db> {
+  static async getInstance(): Promise<Db | null> {
     // Check if an instance already exists
     if (!Database.instance) {
       // In production environment
       if (PRODUCTION_ENV) {
         // Create a MongoDB client using the Atlas URI
         const client = new MongoClient(await getAtlasUri());
-        let conn: MongoClient;
+        let conn: MongoClient | null = null;
 
         try {
           // Connect to the MongoDB Atlas instance
@@ -29,7 +29,7 @@ export class Database {
         }
 
         // Set the database instance
-        Database.instance = conn.db('grindery-bot');
+        if (conn) Database.instance = conn.db('grindery-bot');
       } else {
         // For local environment (testing)
         // This will create a new instance of "MongoMemoryServer" and automatically start it

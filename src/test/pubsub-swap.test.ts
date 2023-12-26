@@ -39,7 +39,6 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { handleSwap } from '../webhooks/swap';
 import { FLOWXO_NEW_SWAP_WEBHOOK, FLOWXO_WEBHOOK_API_KEY } from '../../secrets';
-import { Collection, Document } from 'mongodb';
 import { CHAIN_MAPPING } from '../utils/chains';
 import { ContractStub } from '../types/tests.types';
 
@@ -49,8 +48,8 @@ describe('handleSwap function', async function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
   let swapId: string;
-  let collectionUsersMock: Collection<Document>;
-  let collectionSwapsMock: Collection<Document>;
+  let collectionUsersMock;
+  let collectionSwapsMock;
 
   beforeEach(async function () {
     collectionUsersMock = await getCollectionUsersMock();

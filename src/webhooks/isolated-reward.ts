@@ -38,7 +38,7 @@ export async function handleIsolatedReward(
     }
 
     let reward = await createIsolatedRewardTelegram(
-      createRewardParams(params, params.patchwallet),
+      createRewardParams(params, params.patchwallet || ''),
     );
 
     if (!reward) return true;
@@ -46,7 +46,7 @@ export async function handleIsolatedReward(
     reward = reward as IsolatedRewardTelegram;
 
     // Check if this event already exists
-    let txReward: PatchResult;
+    let txReward: PatchResult | undefined;
 
     // Handle pending hash status
     if (isPendingTransactionHash(reward.status)) {

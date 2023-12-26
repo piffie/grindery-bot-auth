@@ -34,7 +34,6 @@ import {
   SOURCE_TG_ID,
 } from '../../secrets';
 import * as web3 from '../utils/web3';
-import { Collection, Document } from 'mongodb';
 import { ContractStub } from '../types/tests.types';
 
 chai.use(chaiExclude);
@@ -43,8 +42,8 @@ describe('handleSignUpReward function', async function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
   let rewardId: string;
-  let collectionUsersMock: Collection<Document>;
-  let collectionRewardsMock: Collection<Document>;
+  let collectionUsersMock;
+  let collectionRewardsMock;
   let contractStub: ContractStub;
   let getContract;
 

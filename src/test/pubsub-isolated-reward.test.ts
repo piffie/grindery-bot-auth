@@ -36,7 +36,6 @@ import {
   SOURCE_TG_ID,
 } from '../../secrets';
 import * as web3 from '../utils/web3';
-import { Collection, Document } from 'mongodb';
 import { ContractStub } from '../types/tests.types';
 
 chai.use(chaiExclude);
@@ -45,7 +44,7 @@ describe('handleIsolatedReward function', async function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
   let rewardId: string;
-  let collectionRewardsMock: Collection<Document>;
+  let collectionRewardsMock;
   let contractStub: ContractStub;
   let getContract;
 
@@ -230,7 +229,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should call the sendTokens function properly if patchwallet is not in the arguments but it is in the database', async function () {
       const collectionUsersMock = await getCollectionUsersMock();
-      await collectionUsersMock.insertOne({
+      await collectionUsersMock?.insertOne({
         userTelegramID: mockUserTelegramID,
         reason: 'isolated_reason_1',
         patchwallet: mockWallet,
