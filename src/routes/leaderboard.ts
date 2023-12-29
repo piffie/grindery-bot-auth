@@ -65,7 +65,7 @@ router.get('/tx-sent', async (req, res) => {
     }
 
     const results = await db
-      .collection(TRANSFERS_COLLECTION)
+      ?.collection(TRANSFERS_COLLECTION)
       .aggregate(pipeline)
       .toArray();
 
@@ -135,7 +135,7 @@ router.get('/tokensent', authenticateApiKey, async (req, res) => {
     ];
 
     const results = await db
-      .collection(TRANSFERS_COLLECTION)
+      ?.collection(TRANSFERS_COLLECTION)
       .aggregate(pipeline)
       .toArray();
 
@@ -207,7 +207,7 @@ router.get('/rewards', authenticateApiKey, async (req, res) => {
     ];
 
     const leaderboard = await db
-      .collection(REWARDS_COLLECTION)
+      ?.collection(REWARDS_COLLECTION)
       .aggregate(pipeline)
       .toArray();
     return res.status(200).send(leaderboard);

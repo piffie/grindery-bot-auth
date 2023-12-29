@@ -39,7 +39,7 @@ router.post('/attributes', authenticateApiKey, async (req, res) => {
     }));
 
     const result = await db
-      .collection(USERS_COLLECTION)
+      ?.collection(USERS_COLLECTION)
       .bulkWrite(bulkOperations);
 
     return res.status(200).send({
@@ -64,7 +64,7 @@ router.get('/attributes', authenticateApiKey, async (req, res) => {
 
     const db = await Database.getInstance();
     const user = await db
-      .collection(USERS_COLLECTION)
+      ?.collection(USERS_COLLECTION)
       .findOne({ userTelegramID });
 
     return res.status(200).send({
@@ -83,7 +83,7 @@ router.get('/balance', authenticateApiKey, async (req, res) => {
     const db = await Database.getInstance();
 
     const user = await db
-      .collection(USERS_COLLECTION)
+      ?.collection(USERS_COLLECTION)
       .findOne({ userTelegramID: req.query.userTelegramID });
 
     if (!user) {

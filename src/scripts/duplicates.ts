@@ -8,7 +8,7 @@ async function removeDuplicateUsers(
 ): Promise<void> {
   try {
     const db = await Database.getInstance();
-    const collection = db.collection(targetCollection);
+    const collection = db?.collection(targetCollection);
 
     // Aggregation pipeline to identify duplicates and keep the first instance
     const aggregationPipeline = [
@@ -22,18 +22,18 @@ async function removeDuplicateUsers(
 
     // Find the first instance of each duplicate
     const firstInstances = await collection
-      .aggregate(aggregationPipeline)
+      ?.aggregate(aggregationPipeline)
       .toArray();
 
     // Create an array of _id values to keep (first instances)
-    const idsToKeep = firstInstances.map((instance) => instance.firstInstance);
+    const idsToKeep = firstInstances?.map((instance) => instance.firstInstance);
 
     // Delete all documents that are not in the idsToKeep array
-    const deleteResult = await collection.deleteMany({
+    const deleteResult = await collection?.deleteMany({
       _id: { $nin: idsToKeep },
     });
 
-    console.log(`Deleted ${deleteResult.deletedCount} duplicate users.`);
+    console.log(`Deleted ${deleteResult?.deletedCount} duplicate users.`);
   } catch (error) {
     console.error(`An error occurred: ${error.message}`);
   } finally {

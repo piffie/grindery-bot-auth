@@ -18,12 +18,12 @@ import { SEGMENT_WRITE_KEY } from '../../secrets';
 // @ts-expect-error
 async function sendUsersBatchRequest(): Promise<void> {
   const db = await Database.getInstance();
-  const usersCollection = db.collection(USERS_COLLECTION);
+  const usersCollection = db?.collection(USERS_COLLECTION);
 
   try {
-    const users = await usersCollection.find().toArray();
+    const users = await usersCollection?.find().toArray();
 
-    const batch = users.map((user) => ({
+    const batch = users?.map((user) => ({
       type: 'identify',
       userId: user.userTelegramID,
       traits: {
@@ -69,12 +69,12 @@ async function sendUsersBatchRequest(): Promise<void> {
 // @ts-expect-error
 async function sendTransfersBatchRequest(): Promise<void> {
   const db = await Database.getInstance();
-  const transfersCollection = db.collection(TRANSFERS_COLLECTION);
+  const transfersCollection = db?.collection(TRANSFERS_COLLECTION);
 
   try {
-    const transfers = await transfersCollection.find().toArray();
+    const transfers = await transfersCollection?.find().toArray();
 
-    const batch = transfers.map((transfer) => ({
+    const batch = transfers?.map((transfer) => ({
       type: 'track',
       userId: transfer.senderTgId,
       event: 'Transfer',
