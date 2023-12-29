@@ -1,5 +1,9 @@
 import { SOURCE_WALLET_ADDRESS } from '../../secrets';
 
+export const GX_QUOTE_COLLECTION = 'gx-quote';
+
+export const GX_ORDER_COLLECTION = 'gx-order';
+
 /**
  * Collection name for storing transfers.
  */
@@ -80,6 +84,16 @@ export const TRANSACTION_STATUS = {
   PENDING_HASH: 'pending_hash',
   FAILURE_503: 'failure_503',
   UNDEFINED: '',
+} as const;
+
+/**
+ * Various statuses for GX orders.
+ */
+export const GX_ORDER_STATUS = {
+  PENDING: 'pending',
+  COMPLETE: 'complete',
+  FAILURE: 'failure',
+  PENDING_USD: 'waiting_usd',
 } as const;
 
 /**

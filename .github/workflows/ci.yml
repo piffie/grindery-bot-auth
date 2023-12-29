@@ -34,3 +34,4 @@ jobs:
           TEST_ENV: ${{ secrets.TEST_ENV }}
           GRINDERY_NEXUS_REFRESH_TOKEN: ${{ secrets.GRINDERY_NEXUS_REFRESH_TOKEN }}
           FLOWXO_NEW_VESTING_WEBHOOK: ${{ secrets.FLOWXO_NEW_VESTING_WEBHOOK }}
+          API_KEY: ${{ secrets.API_KEY }}
