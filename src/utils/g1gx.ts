@@ -267,6 +267,7 @@ export function computeG1ToGxConversion(
 
   // Return an object with conversion details and equivalencies
   return {
+    g1_amount: g1Quantity.toFixed(2),
     usd_from_usd_investment: usd_from_usd_investment.toFixed(2),
     usd_from_g1_holding: usd_from_g1_holding.toFixed(2),
     usd_from_mvu: usd_from_mvu.toFixed(2),

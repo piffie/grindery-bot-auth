@@ -92,8 +92,10 @@ export const TRANSACTION_STATUS = {
 export const GX_ORDER_STATUS = {
   PENDING: 'pending',
   COMPLETE: 'complete',
-  FAILURE: 'failure',
-  PENDING_USD: 'waiting_usd',
+  FAILURE_G1: 'failure_G1',
+  FAILURE_USD: 'failure_USD',
+  WAITING_USD: 'waiting_usd',
+  PENDING_USD: 'pending_usd',
 } as const;
 
 /**
