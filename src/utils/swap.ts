@@ -242,7 +242,7 @@ export class SwapTelegram {
   async getStatus(): Promise<PatchResult> {
     try {
       // Retrieve the status of the PatchWallet transaction
-      const res = await getTxStatus(this.userOpHash || '');
+      const res = await getTxStatus(this.userOpHash);
 
       return {
         isError: false,

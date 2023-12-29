@@ -92,7 +92,7 @@ export async function isTreatmentDurationExceeded(
 export async function getStatusRewards(reward: Reward): Promise<PatchResult> {
   try {
     // Retrieve the status of the PatchWallet transaction
-    const status = await getTxStatus(reward.userOpHash || '');
+    const status = await getTxStatus(reward.userOpHash);
     return {
       isError: false,
       userOpHash: status.data.userOpHash,
