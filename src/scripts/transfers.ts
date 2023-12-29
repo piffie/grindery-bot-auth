@@ -12,6 +12,8 @@ import {
 } from '../utils/constants';
 import { createObjectCsvWriter as createCsvWriter } from 'csv-writer';
 import { SOURCE_TG_ID, SOURCE_WALLET_ADDRESS } from '../../secrets';
+import { AnyBulkWriteOperation, Document, WithId } from 'mongodb';
+import { ObjectMap } from 'csv-writer/src/lib/lang/object';
 
 // Example usage of the functions:
 // removeDuplicateTransfers();
@@ -20,7 +22,7 @@ import { SOURCE_TG_ID, SOURCE_WALLET_ADDRESS } from '../../secrets';
 async function removeDuplicateTransfers(): Promise<void> {
   try {
     const db = await Database.getInstance();
-    const collectionTransfers = db.collection(TRANSFERS_COLLECTION);
+    const collectionTransfers = db?.collection(TRANSFERS_COLLECTION);
 
     // Aggregation pipeline to identify duplicates and keep the first instance
     const aggregationPipeline = [
@@ -34,18 +36,18 @@ async function removeDuplicateTransfers(): Promise<void> {
 
     // Find the first instance of each duplicate transactionHash
     const firstInstances = await collectionTransfers
-      .aggregate(aggregationPipeline)
+      ?.aggregate(aggregationPipeline)
       .toArray();
 
     // Create an array of _id values to keep (first instances)
-    const idsToKeep = firstInstances.map((instance) => instance.firstInstance);
+    const idsToKeep = firstInstances?.map((instance) => instance.firstInstance);
 
     // Delete all documents that are not in the idsToKeep array
-    const deleteResult = await collectionTransfers.deleteMany({
+    const deleteResult = await collectionTransfers?.deleteMany({
       _id: { $nin: idsToKeep },
     });
 
-    console.log(`Deleted ${deleteResult.deletedCount} duplicate transfers.`);
+    console.log(`Deleted ${deleteResult?.deletedCount} duplicate transfers.`);
   } catch (error) {
     console.error(`An error occurred: ${error.message}`);
   } finally {
@@ -61,9 +63,9 @@ async function removeDuplicateTransfers(): Promise<void> {
 // @ts-expect-error
 async function transfersCleanup(fileName: fs.PathLike): Promise<void> {
   const db = await Database.getInstance();
-  const collection = db.collection(TRANSFERS_COLLECTION);
-  const hashesInCsv = [];
-  let latestTimestamp = null;
+  const collection = db?.collection(TRANSFERS_COLLECTION);
+  const hashesInCsv: string[] = [];
+  let latestTimestamp: Date | null = null;
 
   fs.createReadStream(fileName)
     .pipe(csv())
@@ -81,23 +83,23 @@ async function transfersCleanup(fileName: fs.PathLike): Promise<void> {
       }
 
       const transfersInDb = await collection
-        .find({
+        ?.find({
           dateAdded: { $lte: latestTimestamp },
         })
         .toArray();
 
       const hashesToDelete = transfersInDb
-        .filter((transfer) => !hashesInCsv.includes(transfer.transactionHash))
+        ?.filter((transfer) => !hashesInCsv.includes(transfer.transactionHash))
         .map((transfer) => transfer.transactionHash);
 
-      if (hashesToDelete.length === 0) {
+      if (hashesToDelete?.length === 0) {
         console.log('All transfers in database match the transfers in CSV.');
       } else {
-        const deleteResult = await collection.deleteMany({
+        const deleteResult = await collection?.deleteMany({
           transactionHash: { $in: hashesToDelete },
         });
         console.log(
-          `${deleteResult.deletedCount} incomplete transfers deleted.`,
+          `${deleteResult?.deletedCount} incomplete transfers deleted.`,
         );
       }
 
@@ -118,71 +120,73 @@ async function updateTransfersInformations(): Promise<void> {
     const db = await Database.getInstance();
 
     // Get the transfers collection
-    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
+    const transfersCollection = db?.collection(TRANSFERS_COLLECTION);
 
     // Get the users collection
-    const usersCollection = db.collection(USERS_COLLECTION);
+    const usersCollection = db?.collection(USERS_COLLECTION);
 
     // Find all transfers in the collection
-    const allTransfers = await transfersCollection.find({}).toArray();
-    const totalTransfers = allTransfers.length;
+    const allTransfers = await transfersCollection?.find({}).toArray();
+    const totalTransfers = allTransfers?.length;
 
-    const allUsers = await usersCollection.find({}).toArray();
+    const allUsers = await usersCollection?.find({}).toArray();
 
     // Create an array to store bulk write operations
-    const bulkWriteOperations = [];
+    const bulkWriteOperations: AnyBulkWriteOperation<Document>[] = [];
 
     let index = 0;
 
-    for (const transfer of allTransfers) {
-      index++;
+    if (allTransfers) {
+      for (const transfer of allTransfers) {
+        index++;
 
-      // Update senderWallet and recipientWallet to checksum addresses
-      transfer.senderWallet = web3.utils.toChecksumAddress(
-        transfer.senderWallet,
-      );
-      transfer.recipientWallet = web3.utils.toChecksumAddress(
-        transfer.recipientWallet,
-      );
+        // Update senderWallet and recipientWallet to checksum addresses
+        transfer.senderWallet = web3.utils.toChecksumAddress(
+          transfer.senderWallet,
+        );
+        transfer.recipientWallet = web3.utils.toChecksumAddress(
+          transfer.recipientWallet,
+        );
 
-      // Find sender user based on senderWallet
-      const senderUser = allUsers.find(
-        (user) => user.patchwallet === transfer.senderWallet,
-      );
+        // Find sender user based on senderWallet
+        const senderUser = allUsers?.find(
+          (user) => user.patchwallet === transfer.senderWallet,
+        );
 
-      // Find recipient user based on recipientWallet
-      const recipientUser = allUsers.find(
-        (user) => user.patchwallet === transfer.recipientWallet,
-      );
+        // Find recipient user based on recipientWallet
+        const recipientUser = allUsers?.find(
+          (user) => user.patchwallet === transfer.recipientWallet,
+        );
 
-      if (senderUser) {
-        // Fill senderTgId and senderName
-        transfer.senderTgId = senderUser.userTelegramID;
-        transfer.senderName = senderUser.userName;
+        if (senderUser) {
+          // Fill senderTgId and senderName
+          transfer.senderTgId = senderUser.userTelegramID;
+          transfer.senderName = senderUser.userName;
+        }
+
+        if (recipientUser) {
+          // Fill recipientTgId
+          transfer.recipientTgId = recipientUser.userTelegramID;
+        }
+
+        // Create an update operation and add it to the bulk write array
+        const updateOperation = {
+          updateOne: {
+            filter: { _id: transfer._id },
+            update: { $set: transfer },
+          },
+        };
+
+        bulkWriteOperations.push(updateOperation);
+
+        console.log(
+          `Updated transfer ${index}/${totalTransfers}: ${transfer._id}`,
+        );
       }
-
-      if (recipientUser) {
-        // Fill recipientTgId
-        transfer.recipientTgId = recipientUser.userTelegramID;
-      }
-
-      // Create an update operation and add it to the bulk write array
-      const updateOperation = {
-        updateOne: {
-          filter: { _id: transfer._id },
-          update: { $set: transfer },
-        },
-      };
-
-      bulkWriteOperations.push(updateOperation);
-
-      console.log(
-        `Updated transfer ${index}/${totalTransfers}: ${transfer._id}`,
-      );
     }
 
     // Perform bulk write operations
-    await transfersCollection.bulkWrite(bulkWriteOperations);
+    await transfersCollection?.bulkWrite(bulkWriteOperations);
 
     console.log('All transfers have been updated.');
   } catch (error) {
@@ -197,36 +201,38 @@ async function updateTransfersInformations(): Promise<void> {
 async function removeRewardFromTransfers(): Promise<void> {
   try {
     const db = await Database.getInstance();
-    const collectionTransfers = db.collection(TRANSFERS_COLLECTION);
-    const collectionRewards = db.collection(REWARDS_COLLECTION);
+    const collectionTransfers = db?.collection(TRANSFERS_COLLECTION);
+    const collectionRewards = db?.collection(REWARDS_COLLECTION);
 
     // Get all transaction hashes from the rewards collection
-    const rewardHashes = await collectionRewards.distinct('transactionHash');
+    const rewardHashes = await collectionRewards?.distinct('transactionHash');
 
-    const allTransfers = await collectionTransfers.find({}).toArray();
-    const totalTransfers = allTransfers.length;
-    const deletedTransfers = [];
+    const allTransfers = await collectionTransfers?.find({}).toArray();
+    const totalTransfers = allTransfers?.length;
+    const deletedTransfers: WithId<Document>[] = [];
 
     let index = 0;
 
-    for (const transfer of allTransfers) {
-      index++;
+    if (allTransfers) {
+      for (const transfer of allTransfers) {
+        index++;
 
-      // Check if the transactionHash exists in the rewardHashes array
-      // and sender is SOURCE_TG_ID
-      if (
-        rewardHashes.includes(transfer.transactionHash) &&
-        transfer.senderTgId == SOURCE_TG_ID
-      ) {
-        // Delete the transfer
-        await collectionTransfers.deleteOne({
-          _id: transfer._id,
-        });
-        deletedTransfers.push(transfer);
+        // Check if the transactionHash exists in the rewardHashes array
+        // and sender is SOURCE_TG_ID
+        if (
+          rewardHashes?.includes(transfer.transactionHash) &&
+          transfer.senderTgId == SOURCE_TG_ID
+        ) {
+          // Delete the transfer
+          await collectionTransfers?.deleteOne({
+            _id: transfer._id,
+          });
+          deletedTransfers.push(transfer);
 
-        console.log(
-          `Deleted transfer ${index}/${totalTransfers}: ${transfer._id}`,
-        );
+          console.log(
+            `Deleted transfer ${index}/${totalTransfers}: ${transfer._id}`,
+          );
+        }
       }
     }
 
@@ -248,7 +254,7 @@ async function removeRewardFromTransfers(): Promise<void> {
 // @ts-expect-error
 async function checkMissingTransfers(fileName: fs.PathLike): Promise<void> {
   const db = await Database.getInstance();
-  const collection = db.collection(TRANSFERS_COLLECTION);
+  const collection = db?.collection(TRANSFERS_COLLECTION);
   const hashesInCsv = new Set();
   const excludeAddress = SOURCE_WALLET_ADDRESS;
 
@@ -260,10 +266,10 @@ async function checkMissingTransfers(fileName: fs.PathLike): Promise<void> {
       }
     })
     .on('end', async () => {
-      const transfersHashesInDb = await collection.distinct('transactionHash');
+      const transfersHashesInDb = await collection?.distinct('transactionHash');
 
       const hashesNotInDb = [...hashesInCsv].filter(
-        (hash) => !transfersHashesInDb.includes(hash),
+        (hash) => !transfersHashesInDb?.includes(hash),
       );
 
       if (hashesNotInDb.length === 0) {
@@ -290,42 +296,47 @@ async function checkMissingTransfers(fileName: fs.PathLike): Promise<void> {
 async function getUsersFollowUps() {
   try {
     const db = await Database.getInstance();
-    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
-    const usersCollection = db.collection(USERS_COLLECTION);
+    const transfersCollection = db?.collection(TRANSFERS_COLLECTION);
+    const usersCollection = db?.collection(USERS_COLLECTION);
 
-    const allTransfers = await transfersCollection.find({}).toArray();
-    const allUsers = await usersCollection.find({}).toArray();
+    const allTransfers = await transfersCollection?.find({}).toArray();
+    const allUsers = await usersCollection?.find({}).toArray();
 
     const senderTgIdToFollowup = {};
 
-    const recipientTgIds = new Set(allUsers.map((user) => user.userTelegramID));
+    const recipientTgIds = new Set(
+      allUsers?.map((user) => user.userTelegramID),
+    );
 
-    for (const transfer of allTransfers) {
-      const senderTgId = transfer.senderTgId;
+    if (allTransfers) {
+      for (const transfer of allTransfers) {
+        const senderTgId = transfer.senderTgId;
 
-      if (!senderTgId) {
-        // Skip transfers without senderTgId
-        continue;
-      }
+        if (!senderTgId) {
+          // Skip transfers without senderTgId
+          continue;
+        }
 
-      // Check if the recipientTgId is not in the set of recipientTgIds
-      if (!recipientTgIds.has(transfer.recipientTgId)) {
-        // If the recipientTgId is not found in the users collection, increment the followup count for the senderTgId
-        if (!senderTgIdToFollowup[senderTgId]) {
-          senderTgIdToFollowup[senderTgId] = {
-            count: 1,
-            userInfo: allUsers.find(
-              (user) => user.userTelegramID === senderTgId,
-            ),
-          };
-        } else {
-          senderTgIdToFollowup[senderTgId].count++;
+        // Check if the recipientTgId is not in the set of recipientTgIds
+        if (!recipientTgIds.has(transfer.recipientTgId)) {
+          // If the recipientTgId is not found in the users collection, increment the followup count for the senderTgId
+          if (!senderTgIdToFollowup[senderTgId]) {
+            senderTgIdToFollowup[senderTgId] = {
+              count: 1,
+              userInfo: allUsers?.find(
+                (user) => user.userTelegramID === senderTgId,
+              ),
+            };
+          } else {
+            senderTgIdToFollowup[senderTgId].count++;
+          }
         }
       }
     }
 
     // Create an array with senderTgId, followup count, and user info
-    const senderTgIdInfoArray = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const senderTgIdInfoArray: ObjectMap<any>[] = [];
     for (const senderTgId in senderTgIdToFollowup) {
       senderTgIdInfoArray.push({
         userTelegramID: senderTgId,
@@ -368,7 +379,7 @@ async function getUsersFollowUps() {
 async function getDoubleTxs(): Promise<void> {
   try {
     const db = await Database.getInstance();
-    const collection = db.collection(TRANSFERS_COLLECTION);
+    const collection = db?.collection(TRANSFERS_COLLECTION);
 
     const csvWriter = createCsvWriter({
       path: 'matched_transactions.csv',
@@ -387,7 +398,7 @@ async function getDoubleTxs(): Promise<void> {
 
     // Filter transactions within the date range
     const transactions = await collection
-      .find({
+      ?.find({
         dateAdded: {
           $gte: startDate,
           $lte: endDate,
@@ -399,7 +410,7 @@ async function getDoubleTxs(): Promise<void> {
     const matchedTransactions = {};
 
     // Analyze the transactions
-    transactions.forEach((transaction) => {
+    transactions?.forEach((transaction) => {
       if (transaction.transactionHash) {
         const key = `${transaction.senderWallet} - ${transaction.recipientWallet} - ${transaction.tokenAmount}`;
         if (!matchedTransactions[key]) {
@@ -425,7 +436,8 @@ async function getDoubleTxs(): Promise<void> {
       (transaction) =>
         (transaction as { numberOfTransactions: number }).numberOfTransactions >
         1,
-    );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ) as any;
 
     // Export the filtered data to a CSV file
     await csvWriter.writeRecords(filteredTransactions);
@@ -445,11 +457,11 @@ async function convertFieldsToString(): Promise<void> {
     const db = await Database.getInstance();
 
     // Get the transfers collection
-    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
+    const transfersCollection = db?.collection(TRANSFERS_COLLECTION);
 
     // Find documents where senderTgId, recipientTgId, or tokenAmount are numbers
     const numericDocuments = await transfersCollection
-      .find({
+      ?.find({
         $or: [
           { senderTgId: { $type: 'number' } },
           { recipientTgId: { $type: 'number' } },
@@ -461,7 +473,7 @@ async function convertFieldsToString(): Promise<void> {
     console.log('numericDocuments', numericDocuments);
 
     // Create bulk write operations to update documents
-    const bulkWriteOperations = numericDocuments.map((document) => {
+    const bulkWriteOperations = numericDocuments?.map((document) => {
       const updateOperation = {
         updateOne: {
           filter: { _id: document._id },
@@ -481,12 +493,13 @@ async function convertFieldsToString(): Promise<void> {
         },
       };
       return updateOperation;
-    });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as any;
 
     // Perform the bulk write operations
-    const result = await transfersCollection.bulkWrite(bulkWriteOperations);
+    const result = await transfersCollection?.bulkWrite(bulkWriteOperations);
 
-    console.log(`Updated ${result.modifiedCount} documents.`);
+    console.log(`Updated ${result?.modifiedCount} documents.`);
   } catch (error) {
     console.error('An error occurred:', error);
   } finally {
@@ -502,11 +515,11 @@ async function nullifyTgIds(): Promise<void> {
     const db = await Database.getInstance();
 
     // Get the transfers collection
-    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
+    const transfersCollection = db?.collection(TRANSFERS_COLLECTION);
 
     // Find documents where senderTgId, recipientTgId, or tokenAmount are numbers
     const numericDocuments = await transfersCollection
-      .find({
+      ?.find({
         $or: [
           { senderTgId: 'null' },
           { recipientTgId: 'null' },
@@ -518,7 +531,7 @@ async function nullifyTgIds(): Promise<void> {
     console.log('numericDocuments', numericDocuments);
 
     // Create bulk write operations to update documents
-    const bulkWriteOperations = numericDocuments.map((document) => {
+    const bulkWriteOperations = numericDocuments?.map((document) => {
       const updateOperation = {
         updateOne: {
           filter: { _id: document._id },
@@ -537,12 +550,13 @@ async function nullifyTgIds(): Promise<void> {
         },
       };
       return updateOperation;
-    });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as any;
 
     // Perform the bulk write operations
-    const result = await transfersCollection.bulkWrite(bulkWriteOperations);
+    const result = await transfersCollection?.bulkWrite(bulkWriteOperations);
 
-    console.log(`Updated ${result.modifiedCount} documents.`);
+    console.log(`Updated ${result?.modifiedCount} documents.`);
   } catch (error) {
     console.error('An error occurred:', error);
   } finally {
@@ -555,31 +569,33 @@ async function nullifyTgIds(): Promise<void> {
 async function updateTransfersStatus(): Promise<void> {
   try {
     const db = await Database.getInstance();
-    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
+    const transfersCollection = db?.collection(TRANSFERS_COLLECTION);
     const transfersToUpdate = await transfersCollection
-      .find({ status: { $exists: false } })
+      ?.find({ status: { $exists: false } })
       .toArray();
-    const bulkWriteOperations = [];
+    const bulkWriteOperations: AnyBulkWriteOperation<Document>[] = [];
 
-    for (const transfer of transfersToUpdate) {
-      console.log('processing...');
-      const updateOperation = {
-        updateOne: {
-          filter: { _id: transfer._id },
-          update: { $set: { status: 'success' } },
-        },
-      };
+    if (transfersToUpdate) {
+      for (const transfer of transfersToUpdate) {
+        console.log('processing...');
+        const updateOperation = {
+          updateOne: {
+            filter: { _id: transfer._id },
+            update: { $set: { status: 'success' } },
+          },
+        };
 
-      bulkWriteOperations.push(updateOperation);
+        bulkWriteOperations.push(updateOperation);
+      }
     }
 
     console.log('finish processing');
 
     if (bulkWriteOperations.length > 0) {
-      const result = await transfersCollection.bulkWrite(bulkWriteOperations);
+      const result = await transfersCollection?.bulkWrite(bulkWriteOperations);
 
       console.log(
-        `Updated ${result.modifiedCount} transfers with status: success`,
+        `Updated ${result?.modifiedCount} transfers with status: success`,
       );
     } else {
       console.log('No transfers to update.');
@@ -597,8 +613,8 @@ async function importMissingTransferFromCSV(
   fileName: fs.PathLike,
 ): Promise<void> {
   const db = await Database.getInstance();
-  const collection = db.collection(TRANSFERS_COLLECTION);
-  const usersCollection = db.collection(USERS_COLLECTION);
+  const collection = db?.collection(TRANSFERS_COLLECTION);
+  const usersCollection = db?.collection(USERS_COLLECTION);
   const groups = new Map();
 
   const startDate = new Date('2023-11-07T00:00:00Z');
@@ -625,17 +641,18 @@ async function importMissingTransferFromCSV(
   });
 
   csvStream.on('end', async () => {
-    const bulkOps = [];
+    const bulkOps: AnyBulkWriteOperation<Document>[] = [];
     let i = 1;
-    const insertedDocs = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const insertedDocs: any[] = [];
 
     console.log('\nGroups quantity ', groups.size);
 
     const usersData = new Map();
 
     // Preload user data
-    const usersCursor = await usersCollection.find({}).toArray();
-    usersCursor.forEach((user) => {
+    const usersCursor = await usersCollection?.find({}).toArray();
+    usersCursor?.forEach((user) => {
       usersData.set(web3.utils.toChecksumAddress(user.patchwallet), user);
     });
 
@@ -660,7 +677,7 @@ async function importMissingTransferFromCSV(
           transactionHash,
         },
       );
-      const countInDB = await collection.countDocuments({
+      const countInDB = await collection?.countDocuments({
         senderWallet: web3.utils.toChecksumAddress(senderWallet),
         recipientWallet: web3.utils.toChecksumAddress(recipientWallet),
         tokenAmount: web3.utils.fromWei(tokenAmount, 'ether'),
@@ -668,7 +685,7 @@ async function importMissingTransferFromCSV(
       });
       console.log('countInDB ', countInDB);
 
-      const missingCount = count - countInDB;
+      const missingCount = count - (countInDB || 0);
 
       if (missingCount > 0) {
         console.log('Insert key: ', key);
@@ -717,8 +734,8 @@ async function importMissingTransferFromCSV(
     }
 
     if (bulkOps.length > 0) {
-      const collectionMissingTransfer = db.collection('transfers-missing');
-      await collectionMissingTransfer.bulkWrite(bulkOps, { ordered: true });
+      const collectionMissingTransfer = db?.collection('transfers-missing');
+      await collectionMissingTransfer?.bulkWrite(bulkOps, { ordered: true });
     }
 
     console.log('\nDocs inserted: ', insertedDocs);

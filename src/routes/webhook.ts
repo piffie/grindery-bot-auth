@@ -61,7 +61,7 @@ router.get('/unacked-messages', authenticateApiKey, async (_req, res) => {
     timeSeries?.forEach((series) => {
       (series as google.monitoring.v3.ITimeSeries[])?.forEach((serie) => {
         serie?.points?.forEach((point) => {
-          sum += parseFloat(point.value.int64Value as string);
+          sum += parseFloat(point.value?.int64Value as string);
           count++;
         });
       });
