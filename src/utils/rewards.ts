@@ -109,7 +109,7 @@ export class SignUpRewardTelegram {
       this.status = this.tx.status;
       this.userOpHash = this.tx.userOpHash;
 
-      if (isSuccessfulTransaction(this.status || '')) return false;
+      if (isSuccessfulTransaction(this.status)) return false;
     } else {
       await this.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
     }
@@ -583,7 +583,7 @@ export class LinkRewardTelegram {
       this.status = this.tx.status;
       this.userOpHash = this.tx.userOpHash;
 
-      if (isSuccessfulTransaction(this.status || '')) return false;
+      if (isSuccessfulTransaction(this.status)) return false;
     } else {
       await this.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
     }
