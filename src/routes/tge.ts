@@ -150,7 +150,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
     .findOne({ orderId: req.body.quoteId });
 
   // If an order is already being processed, return an error response
-  if (order && order.status !== GX_ORDER_STATUS.FAILURE)
+  if (order && order.status !== GX_ORDER_STATUS.FAILURE_G1)
     return res
       .status(400)
       .json({ msg: 'This order is already being processed' });
@@ -183,7 +183,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
     // Determine the status of the pre-order based on additional conditions
     const status =
       Number(quote.usd_from_usd_investment) > 0
-        ? GX_ORDER_STATUS.PENDING_USD
+        ? GX_ORDER_STATUS.WAITING_USD
         : GX_ORDER_STATUS.COMPLETE;
 
     const date = new Date();
@@ -230,7 +230,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
         $set: {
           orderId: req.body.quoteId,
           date: new Date(),
-          status: GX_ORDER_STATUS.FAILURE,
+          status: GX_ORDER_STATUS.FAILURE_G1,
           userTelegramID: req.body.userTelegramID,
           g1_amount: quote.g1_amount,
         },

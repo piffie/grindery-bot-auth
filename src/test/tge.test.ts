@@ -542,7 +542,7 @@ describe('G1 to GX util functions', async function () {
         success: true,
         order: {
           orderId: mockOrderID,
-          status: GX_ORDER_STATUS.PENDING_USD,
+          status: GX_ORDER_STATUS.WAITING_USD,
           userTelegramID: mockUserTelegramID,
           g1_amount: '1000.00',
           transactionHash: mockTransactionHash,
@@ -571,7 +571,7 @@ describe('G1 to GX util functions', async function () {
             transactionHash: mockTransactionHash,
             userOpHash: mockUserOpHash,
             userTelegramID: mockUserTelegramID,
-            status: GX_ORDER_STATUS.PENDING_USD,
+            status: GX_ORDER_STATUS.WAITING_USD,
             g1_amount: '1000.00',
             orderId: mockOrderID,
           },
@@ -629,7 +629,7 @@ describe('G1 to GX util functions', async function () {
         .to.deep.equal([
           {
             userTelegramID: mockUserTelegramID,
-            status: GX_ORDER_STATUS.FAILURE,
+            status: GX_ORDER_STATUS.FAILURE_G1,
             g1_amount: '1000.00',
             orderId: mockOrderID1,
           },
