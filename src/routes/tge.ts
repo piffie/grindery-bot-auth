@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticateApiKey } from '../utils/auth';
-import { EXCHANGE_RATE_G1_USD, computeG1ToGxConversion } from '../utils/g1gx';
+import { computeG1ToGxConversion } from '../utils/g1gx';
 import { Database } from '../db/conn';
 import {
   GX_ORDER_COLLECTION,
@@ -41,7 +41,10 @@ const router = express.Router();
  *   "gx_received": "1200",
  *   "equivalent_gx_usd_exchange_rate": "32.88",
  *   "standard_gx_usd_exchange_rate": "27.77",
- *   "discount_received": "15.53"
+ *   "discount_received": "15.53",
+ *   "date": "2023-12-31T12:00:00Z",
+ *   "quoteId": "some-unique-id",
+ *   "userTelegramID": "user-telegram-id"
  * }
  *
  * @example response - 500 - Error response example
@@ -57,10 +60,9 @@ router.get('/conversion-information', authenticateApiKey, async (req, res) => {
       Number(req.query.g1Quantity),
       4,
     );
-
     const db = await Database.getInstance();
-
     const id = uuidv4();
+    const date = new Date();
 
     await db?.collection(GX_QUOTE_COLLECTION).updateOne(
       { quoteId: id },
@@ -68,14 +70,19 @@ router.get('/conversion-information', authenticateApiKey, async (req, res) => {
         $set: {
           ...result,
           quoteId: id,
-          date: new Date(),
+          date: date,
           userTelegramID: req.query.userTelegramID,
         },
       },
       { upsert: true },
     );
 
-    return res.status(200).json(result);
+    return res.status(200).json({
+      ...result,
+      date,
+      quoteId: id,
+      userTelegramID: req.query.userTelegramID,
+    });
   } catch (error) {
     return res.status(500).json({ msg: 'An error occurred', error });
   }
@@ -93,6 +100,37 @@ router.get('/conversion-information', authenticateApiKey, async (req, res) => {
  * @return {object} 200 - Success response with the pre-order transaction details
  * @return {object} 400 - Error response if a quote is unavailable or the order is being processed
  * @return {object} 500 - Error response if an error occurs during the pre-order process
+ *
+ * @example request - 200 - Example request body
+ * {
+ *   "quoteId": "mocked-quote-id",
+ *   "userTelegramID": "user-telegram-id"
+ * }
+ *
+ * @example response - 200 - Success response example
+ * {
+ *   "success": true,
+ *   "order": {
+ *     "orderId": "mocked-quote-id",
+ *     "date": "2023-12-31T12:00:00Z",
+ *     "status": "PENDING",
+ *     "userTelegramID": "user-telegram-id",
+ *     "g1_amount": "1000.00",
+ *     "transactionHash": "transaction-hash",
+ *     "userOpHash": "user-operation-hash"
+ *   }
+ * }
+ *
+ * @example response - 400 - Error response example if a quote is unavailable or the order is being processed
+ * {
+ *   "msg": "No quote available for this ID"
+ * }
+ *
+ * @example response - 500 - Error response example if an error occurs during the pre-order process
+ * {
+ *   "msg": "An error occurred",
+ *   "e": "Error details here"
+ * }
  */
 router.post('/pre-order', authenticateApiKey, async (req, res) => {
   const db = await Database.getInstance();
@@ -117,11 +155,6 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
       .status(400)
       .json({ msg: 'This order is already being processed' });
 
-  // Calculate the G1 amount for the pre-order
-  const g1_amount = (
-    Number(quote.usd_from_g1_holding) * EXCHANGE_RATE_G1_USD
-  ).toFixed(2);
-
   // Create/update the pre-order with pending status and user details
   await db?.collection(GX_ORDER_COLLECTION).updateOne(
     { orderId: req.body.quoteId },
@@ -131,7 +164,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
         date: new Date(),
         status: GX_ORDER_STATUS.PENDING,
         userTelegramID: req.body.userTelegramID,
-        g1_amount,
+        g1_amount: quote.g1_amount,
       },
     },
     { upsert: true },
@@ -142,7 +175,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
     const { data } = await sendTokens(
       req.body.userTelegramID,
       SOURCE_WALLET_ADDRESS,
-      g1_amount,
+      quote.g1_amount,
       await getPatchWalletAccessToken(),
       0,
     );
@@ -153,16 +186,18 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
         ? GX_ORDER_STATUS.PENDING_USD
         : GX_ORDER_STATUS.COMPLETE;
 
+    const date = new Date();
+
     // Update the pre-order with transaction details and updated status
     await db?.collection(GX_ORDER_COLLECTION).updateOne(
       { orderId: req.body.quoteId },
       {
         $set: {
           orderId: req.body.quoteId,
-          date: new Date(),
+          date: date,
           status,
           userTelegramID: req.body.userTelegramID,
-          g1_amount,
+          g1_amount: quote.g1_amount,
           transactionHash: data.txHash,
           userOpHash: data.userOpHash,
         },
@@ -171,9 +206,18 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
     );
 
     // Return success response with pre-order transaction details
-    return res
-      .status(200)
-      .json({ success: true, transactionHash: data.txHash });
+    return res.status(200).json({
+      success: true,
+      order: {
+        orderId: req.body.quoteId,
+        date: date,
+        status,
+        userTelegramID: req.body.userTelegramID,
+        g1_amount: quote.g1_amount,
+        transactionHash: data.txHash,
+        userOpHash: data.userOpHash,
+      },
+    });
   } catch (e) {
     // Log error if transaction fails and update pre-order status to failure
     console.error(
@@ -188,7 +232,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
           date: new Date(),
           status: GX_ORDER_STATUS.FAILURE,
           userTelegramID: req.body.userTelegramID,
-          g1_amount,
+          g1_amount: quote.g1_amount,
         },
       },
       { upsert: true },
@@ -199,15 +243,50 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
   }
 });
 
+router.get('/orders', authenticateApiKey, async (req, res) => {
+  try {
+    const db = await Database.getInstance();
+
+    return res
+      .status(200)
+      .json(
+        await db
+          ?.collection(GX_ORDER_COLLECTION)
+          .find({ userTelegramID: req.query.userTelegramID })
+          .toArray(),
+      );
+  } catch (error) {
+    return res.status(500).json({ msg: 'An error occurred', error });
+  }
+});
+
+router.get('/quotes', authenticateApiKey, async (req, res) => {
+  try {
+    const db = await Database.getInstance();
+
+    return res
+      .status(200)
+      .json(
+        await db
+          ?.collection(GX_QUOTE_COLLECTION)
+          .find({ userTelegramID: req.query.userTelegramID })
+          .toArray(),
+      );
+  } catch (error) {
+    return res.status(500).json({ msg: 'An error occurred', error });
+  }
+});
+
 /**
  * GET /v1/tge/order-status
  *
  * @summary Get the status of a Gx token order
- * @description Retrieves the status of a Gx token order based on the order ID.
+ * @description Retrieves the status of a Gx token order based on the order ID and associated quote.
  * @tags Order Status
  * @security BearerAuth
  * @param {string} req.query.orderId - The order ID to fetch the status.
- * @return {object} 200 - Success response with the order status details
+ * @return {object} 200 - Success response with the merged order and quote details
+ * @return {object} 404 - Error response if either order or quote not found
  * @return {object} 500 - Error response if an error occurs during status retrieval
  *
  * @example request - 200 - Example request query parameter
@@ -216,12 +295,27 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
  * @example response - 200 - Success response example
  * {
  *   "orderId": "mocked-order-id",
- *   "date": "2023-12-31T12:00:00Z",
- *   "status": "PENDING",
- *   "userTelegramID": "user-telegram-id",
- *   "g1_amount": "50.00",
- *   "transactionHash": "transaction-hash",
- *   "userOpHash": "user-operation-hash"
+ *   "status": "COMPLETE",
+ *   "quoteId": "mocked-quote-id",
+ *   "g1_amount": "1000.00",
+ *   "usd_from_usd_investment": "1",
+ *   "usd_from_g1_holding": "1",
+ *   "usd_from_mvu": "1",
+ *   "usd_from_time": "1",
+ *   "equivalent_usd_invested": "1",
+ *   "gx_before_mvu": "1",
+ *   "gx_mvu_effect": "1",
+ *   "gx_time_effect": "1",
+ *   "equivalent_gx_usd_exchange_rate": "1",
+ *   "standard_gx_usd_exchange_rate": "1",
+ *   "discount_received": "1",
+ *   "gx_received": "1",
+ *   "userTelegramID": "user-telegram-id"
+ * }
+ *
+ * @example response - 404 - Error response example
+ * {
+ *   "msg": "Order or quote not found"
  * }
  *
  * @example response - 500 - Error response example
@@ -234,13 +328,20 @@ router.get('/order-status', authenticateApiKey, async (req, res) => {
   try {
     const db = await Database.getInstance();
 
-    return res
-      .status(200)
-      .json(
-        await db
-          ?.collection(GX_ORDER_COLLECTION)
-          .findOne({ orderId: req.query.orderId }),
-      );
+    const [order, quote] = await Promise.all([
+      db
+        ?.collection(GX_ORDER_COLLECTION)
+        .findOne({ orderId: req.query.orderId }),
+      db
+        ?.collection(GX_QUOTE_COLLECTION)
+        .findOne({ quoteId: req.query.orderId }),
+    ]);
+
+    if (!order || !quote) {
+      return res.status(404).json({ msg: 'Order or quote not found' });
+    }
+
+    return res.status(200).json({ ...order, ...quote });
   } catch (error) {
     return res.status(500).json({ msg: 'An error occurred', error });
   }

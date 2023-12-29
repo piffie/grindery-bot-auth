@@ -43,6 +43,7 @@ describe('G1 to GX util functions', async function () {
 
     sandbox = Sinon.createSandbox();
     sandbox.stub(g1gx, 'computeG1ToGxConversion').returns({
+      g1_amount: '1000.00',
       usd_from_usd_investment: '1',
       usd_from_g1_holding: '1',
       usd_from_mvu: '1',
@@ -112,7 +113,14 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         });
 
+      chai.expect(isUUIDv4(res.body.quoteId)).to.be.true;
+
+      delete res.body.date;
+      delete res.body.quoteId;
+
       chai.expect(res.body).to.deep.equal({
+        userTelegramID: mockUserTelegramID,
+        g1_amount: '1000.00',
         usd_from_usd_investment: '1',
         usd_from_g1_holding: '1',
         usd_from_mvu: '1',
@@ -146,6 +154,7 @@ describe('G1 to GX util functions', async function () {
         .excluding(['_id', 'date', 'quoteId'])
         .to.deep.equal([
           {
+            g1_amount: '1000.00',
             usd_from_usd_investment: '1',
             usd_from_g1_holding: '1',
             usd_from_mvu: '1',
@@ -168,6 +177,24 @@ describe('G1 to GX util functions', async function () {
 
   describe('Endpoint to catch the order status', async function () {
     beforeEach(async function () {
+      await collectionQuotesMock.insertOne({
+        quoteId: mockOrderID,
+        g1_amount: '1000.00',
+        usd_from_usd_investment: '1',
+        usd_from_g1_holding: '1',
+        usd_from_mvu: '1',
+        usd_from_time: '1',
+        equivalent_usd_invested: '1',
+        gx_before_mvu: '1',
+        gx_mvu_effect: '1',
+        gx_time_effect: '1',
+        equivalent_gx_usd_exchange_rate: '1',
+        standard_gx_usd_exchange_rate: '1',
+        discount_received: '1',
+        gx_received: '1',
+        userTelegramID: mockUserTelegramID,
+      });
+
       await collectionOrdersMock.insertOne({
         orderId: mockOrderID,
         status: GX_ORDER_STATUS.COMPLETE,
@@ -186,6 +213,21 @@ describe('G1 to GX util functions', async function () {
       chai.expect(res.body).excluding(['_id']).to.deep.equal({
         orderId: mockOrderID,
         status: GX_ORDER_STATUS.COMPLETE,
+        quoteId: mockOrderID,
+        g1_amount: '1000.00',
+        usd_from_usd_investment: '1',
+        usd_from_g1_holding: '1',
+        usd_from_mvu: '1',
+        usd_from_time: '1',
+        equivalent_usd_invested: '1',
+        gx_before_mvu: '1',
+        gx_mvu_effect: '1',
+        gx_time_effect: '1',
+        equivalent_gx_usd_exchange_rate: '1',
+        standard_gx_usd_exchange_rate: '1',
+        discount_received: '1',
+        gx_received: '1',
+        userTelegramID: mockUserTelegramID,
       });
     });
 
@@ -198,7 +240,7 @@ describe('G1 to GX util functions', async function () {
           orderId: 'another_order_ID',
         });
 
-      chai.expect(res.body).to.be.equal(null);
+      chai.expect(res.body).to.deep.equal({ msg: 'Order or quote not found' });
     });
   });
 
@@ -207,6 +249,7 @@ describe('G1 to GX util functions', async function () {
       await collectionQuotesMock.insertMany([
         {
           quoteId: mockOrderID,
+          g1_amount: '1000.00',
           usd_from_usd_investment: '1',
           usd_from_g1_holding: '1',
           usd_from_mvu: '1',
@@ -223,6 +266,7 @@ describe('G1 to GX util functions', async function () {
         },
         {
           quoteId: mockOrderID1,
+          g1_amount: '1000.00',
           usd_from_usd_investment: '0',
           usd_from_g1_holding: '1',
           usd_from_mvu: '1',
@@ -333,9 +377,19 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         });
 
-      chai
-        .expect(res.body)
-        .to.deep.equal({ success: true, transactionHash: mockTransactionHash });
+      delete res.body.order.date;
+
+      chai.expect(res.body).to.deep.equal({
+        success: true,
+        order: {
+          orderId: mockOrderID,
+          status: GX_ORDER_STATUS.PENDING_USD,
+          userTelegramID: mockUserTelegramID,
+          g1_amount: '1000.00',
+          transactionHash: mockTransactionHash,
+          userOpHash: mockUserOpHash,
+        },
+      });
     });
 
     it('Should update the database with a pending USD status if order is not present in database and USD amount is positive', async function () {
