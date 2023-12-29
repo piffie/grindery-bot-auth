@@ -30,7 +30,7 @@ export async function handleSignUpReward(
   try {
     // Create a sign-up reward object
     let reward = await createSignUpRewardTelegram(
-      createRewardParams(params, params.patchwallet),
+      createRewardParams(params, params.patchwallet || ''),
     );
 
     // If reward already exists, return true
@@ -38,7 +38,7 @@ export async function handleSignUpReward(
 
     reward = reward as SignUpRewardTelegram;
 
-    let txReward: PatchResult;
+    let txReward: PatchResult | undefined;
 
     // Handle pending hash status
     if (isPendingTransactionHash(reward.status)) {

@@ -61,14 +61,17 @@ export function isPositiveFloat(inputString: string): boolean {
  * @throws {Error} Throws an error if there is an issue updating the instance in the database.
  */
 export async function isTreatmentDurationExceeded(
-  inst: TelegramOperations,
+  telegram_operation: TelegramOperations,
 ): Promise<boolean> {
   return (
-    (inst.tx.dateAdded < getXMinBeforeDate(new Date(), 10) &&
+    (telegram_operation.tx?.dateAdded < getXMinBeforeDate(new Date(), 10) &&
       (console.log(
-        `[${inst.eventId}] was stopped due to too long treatment duration (> 10 min).`,
+        `[${telegram_operation.eventId}] was stopped due to too long treatment duration (> 10 min).`,
       ),
-      await inst.updateInDatabase(TRANSACTION_STATUS.FAILURE, new Date()),
+      await telegram_operation.updateInDatabase(
+        TRANSACTION_STATUS.FAILURE,
+        new Date(),
+      ),
       true)) ||
     false
   );
@@ -86,10 +89,10 @@ export async function isTreatmentDurationExceeded(
  *   If successful, returns the status obtained from the transaction; otherwise, returns `false`.
  * @throws Error if there's an issue during the status retrieval process.
  */
-export async function getStatusRewards(inst: Reward): Promise<PatchResult> {
+export async function getStatusRewards(reward: Reward): Promise<PatchResult> {
   try {
     // Retrieve the status of the PatchWallet transaction
-    const status = await getTxStatus(inst.userOpHash);
+    const status = await getTxStatus(reward.userOpHash || '');
     return {
       isError: false,
       userOpHash: status.data.userOpHash,
@@ -98,7 +101,7 @@ export async function getStatusRewards(inst: Reward): Promise<PatchResult> {
   } catch (error) {
     // Log error if retrieving transaction status fails
     console.error(
-      `[${inst.eventId}] Error processing PatchWallet transaction status: ${error}`,
+      `[${reward.eventId}] Error processing PatchWallet transaction status: ${error}`,
     );
     return { isError: true };
   }

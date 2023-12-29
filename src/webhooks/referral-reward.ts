@@ -27,7 +27,7 @@ export async function handleReferralReward(
 ): Promise<boolean> {
   try {
     const reward = await createReferralRewardTelegram(
-      createRewardParams(params, params.patchwallet),
+      createRewardParams(params, params.patchwallet || ''),
     );
 
     if (!(await reward.setParentTx())) return true;
@@ -40,7 +40,7 @@ export async function handleReferralReward(
       (await reward.getRewardFromDatabaseWithOtherEventId())
     ) {
       console.log(
-        `[${params.eventId}] referral reward already distributed or in process of distribution elsewhere for ${reward.referent.userTelegramID} concerning new user ${params.userTelegramID}`,
+        `[${params.eventId}] referral reward already distributed or in process of distribution elsewhere for ${reward.referent?.userTelegramID} concerning new user ${params.userTelegramID}`,
       );
       return true;
     }
@@ -50,7 +50,7 @@ export async function handleReferralReward(
     if (!reward.tx)
       await reward.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
 
-    let txReward: PatchResult;
+    let txReward: PatchResult | undefined;
 
     // Handle pending hash status
     if (isPendingTransactionHash(reward.status)) {

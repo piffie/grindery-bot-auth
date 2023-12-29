@@ -36,7 +36,6 @@ import {
   G1_POLYGON_ADDRESS,
 } from '../../secrets';
 import * as web3 from '../utils/web3';
-import { Collection, Document } from 'mongodb';
 import { ContractStub } from '../types/tests.types';
 
 chai.use(chaiExclude);
@@ -45,8 +44,8 @@ describe('handleNewTransaction function', async function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
   let txId: string;
-  let collectionUsersMock: Collection<Document>;
-  let collectionTransfersMock: Collection<Document>;
+  let collectionUsersMock;
+  let collectionTransfersMock;
   let contractStub: ContractStub;
   let getContract;
 

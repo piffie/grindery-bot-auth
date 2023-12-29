@@ -24,7 +24,7 @@ export async function getDbMock() {
  */
 export async function getCollectionUsersMock() {
   const dbMock = await getDbMock();
-  return dbMock.collection(USERS_COLLECTION);
+  return dbMock?.collection(USERS_COLLECTION);
 }
 
 /**
@@ -33,7 +33,7 @@ export async function getCollectionUsersMock() {
  */
 export async function getCollectionRewardsMock() {
   const dbMock = await getDbMock();
-  return dbMock.collection(REWARDS_COLLECTION);
+  return dbMock?.collection(REWARDS_COLLECTION);
 }
 
 /**
@@ -42,7 +42,7 @@ export async function getCollectionRewardsMock() {
  */
 export async function getCollectionTransfersMock() {
   const dbMock = await getDbMock();
-  return dbMock.collection(TRANSFERS_COLLECTION);
+  return dbMock?.collection(TRANSFERS_COLLECTION);
 }
 
 /**
@@ -51,7 +51,7 @@ export async function getCollectionTransfersMock() {
  */
 export async function getCollectionVestingsMock() {
   const dbMock = await getDbMock();
-  return dbMock.collection(VESTING_COLLECTION);
+  return dbMock?.collection(VESTING_COLLECTION);
 }
 
 /**
@@ -60,7 +60,7 @@ export async function getCollectionVestingsMock() {
  */
 export async function getCollectionSwapsMock() {
   const dbMock = await getDbMock();
-  return dbMock.collection(SWAPS_COLLECTION);
+  return dbMock?.collection(SWAPS_COLLECTION);
 }
 
 export const mockUserTelegramID = '2114356934';
@@ -124,7 +124,7 @@ export const mockUserOpHash2 =
  * Retrieves the access token.
  * @returns A promise resolving to the access token.
  */
-async function getAccessToken(): Promise<string> {
+async function getAccessToken(): Promise<string | null> {
   try {
     const res = await axios.post(
       'https://orchestrator.grindery.org/oauth/token',

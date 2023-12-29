@@ -54,7 +54,6 @@ import {
 } from '../../secrets';
 import { handleReferralReward } from '../webhooks/referral-reward';
 import * as web3 from '../utils/web3';
-import { Collection, Document } from 'mongodb';
 import { ContractStub } from '../types/tests.types';
 
 chai.use(chaiExclude);
@@ -63,9 +62,9 @@ describe('handleReferralReward function', function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
   let rewardId: string;
-  let collectionTransfersMock: Collection<Document>;
-  let collectionUsersMock: Collection<Document>;
-  let collectionRewardsMock: Collection<Document>;
+  let collectionTransfersMock;
+  let collectionUsersMock;
+  let collectionRewardsMock;
   let contractStub: ContractStub;
   let getContract;
 

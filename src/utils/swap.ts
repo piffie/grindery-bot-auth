@@ -55,11 +55,11 @@ export class SwapTelegram {
   /**
    * Transaction details associated with the swap.
    */
-  tx?: WithId<Document>;
+  tx: WithId<Document> | null;
   /**
    * The status of the swap.
    */
-  status?: TransactionStatus;
+  status: TransactionStatus;
   /**
    * The recipient's wallet address.
    */
@@ -75,7 +75,7 @@ export class SwapTelegram {
   /**
    * The MongoDB database instance.
    */
-  db?: Db;
+  db: Db | null;
 
   /**
    * Initializes a SwapTelegram instance with parameters.
@@ -86,8 +86,8 @@ export class SwapTelegram {
     this.params = params;
 
     this.isInDatabase = false;
-    this.tx = undefined;
-    this.status = undefined;
+    this.tx = null;
+    this.status = TRANSACTION_STATUS.UNDEFINED;
     this.recipientWallet = undefined;
     this.txHash = undefined;
     this.userOpHash = undefined;
@@ -116,10 +116,12 @@ export class SwapTelegram {
    * Retrieves swap information from the database.
    * @returns {Promise<WithId<Document>>} - Promise resolving to swap information or null if not found.
    */
-  async getSwapFromDatabase(): Promise<WithId<Document>> {
-    return await this.db
-      .collection(SWAPS_COLLECTION)
-      .findOne({ eventId: this.params.eventId });
+  async getSwapFromDatabase(): Promise<WithId<Document> | null> {
+    if (this.db)
+      return await this.db
+        .collection(SWAPS_COLLECTION)
+        .findOne({ eventId: this.params.eventId });
+    return null;
   }
 
   /**
@@ -131,15 +133,15 @@ export class SwapTelegram {
     status: TransactionStatus,
     date: Date | null,
   ): Promise<void> {
-    await this.db.collection(SWAPS_COLLECTION).updateOne(
+    await this.db?.collection(SWAPS_COLLECTION).updateOne(
       { eventId: this.params.eventId },
       {
         $set: {
           eventId: this.params.eventId,
-          userTelegramID: this.params.userInformation.userTelegramID,
-          userWallet: this.params.userInformation.patchwallet,
-          userName: this.params.userInformation.userName,
-          userHandle: this.params.userInformation.userHandle,
+          userTelegramID: this.params.userInformation?.userTelegramID,
+          userWallet: this.params.userInformation?.patchwallet,
+          userName: this.params.userInformation?.userName,
+          userHandle: this.params.userInformation?.userHandle,
           tokenIn: this.params.tokenIn,
           amountIn: this.params.amountIn,
           tokenOut: this.params.tokenOut,
@@ -173,7 +175,7 @@ export class SwapTelegram {
     // Add transaction information to the Segment
     await addTrackSwapSegment({
       ...this.params,
-      transactionHash: this.txHash,
+      transactionHash: this.txHash || '',
       dateAdded: new Date(),
       status: TRANSACTION_STATUS.SUCCESS,
     });
@@ -186,12 +188,12 @@ export class SwapTelegram {
   async saveToFlowXO(): Promise<void> {
     // Send transaction information to FlowXO
     await axios.post(FLOWXO_NEW_SWAP_WEBHOOK, {
-      userResponsePath: this.params.userInformation.responsePath,
+      userResponsePath: this.params.userInformation?.responsePath,
       eventId: this.params.eventId,
       userTelegramID: this.params.userTelegramID,
-      userWallet: this.params.userInformation.patchwallet,
-      userName: this.params.userInformation.userName,
-      userHandle: this.params.userInformation.userHandle,
+      userWallet: this.params.userInformation?.patchwallet,
+      userName: this.params.userInformation?.userName,
+      userHandle: this.params.userInformation?.userHandle,
       tokenIn: this.params.tokenIn,
       amountIn: new BigNumber(parseInt(this.params.amountIn))
         .div(
@@ -226,10 +228,10 @@ export class SwapTelegram {
       apiKey: FLOWXO_WEBHOOK_API_KEY,
       chainIn: this.params.chainIn,
       chainOut: this.params.chainOut,
-      chainInName: CHAIN_MAPPING[this.params.chainIn].name_display,
-      chainOutName: CHAIN_MAPPING[this.params.chainOut].name_display,
+      chainInName: CHAIN_MAPPING[this.params.chainIn || ''].name_display,
+      chainOutName: CHAIN_MAPPING[this.params.chainOut || ''].name_display,
       transactionLink:
-        CHAIN_MAPPING[this.params.chainOut].explorer + this.txHash,
+        CHAIN_MAPPING[this.params.chainOut || ''].explorer + this.txHash,
     });
   }
 
@@ -240,7 +242,7 @@ export class SwapTelegram {
   async getStatus(): Promise<PatchResult> {
     try {
       // Retrieve the status of the PatchWallet transaction
-      const res = await getTxStatus(this.userOpHash);
+      const res = await getTxStatus(this.userOpHash || '');
 
       return {
         isError: false,
@@ -269,13 +271,13 @@ export class SwapTelegram {
     axios.AxiosResponse<PatchRawResult, AxiosError>
   > {
     return await swapTokens(
-      this.params.userInformation.userTelegramID,
-      this.params.to,
+      this.params.userInformation?.userTelegramID,
+      this.params.to || '',
       this.params.value,
-      this.params.data,
-      this.params.chainIn,
+      this.params.data || '',
+      this.params.chainIn || '',
       await getPatchWalletAccessToken(),
-      this.params.delegatecall,
+      this.params.delegatecall || 0,
     );
   }
 }

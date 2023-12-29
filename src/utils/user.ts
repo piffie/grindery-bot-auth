@@ -35,7 +35,7 @@ export class UserTelegram {
   /**
    * The database instance associated with the user.
    */
-  db?: Db;
+  db: Db | null;
 
   /**
    * Constructs a new UserTelegram instance.
@@ -70,10 +70,12 @@ export class UserTelegram {
    * Retrieves user data from the database.
    * @returns {Promise<WithId<Document>>} - The user data from the database.
    */
-  async getUserFromDatabase(): Promise<WithId<Document>> {
-    return await this.db
-      .collection(USERS_COLLECTION)
-      .findOne({ userTelegramID: this.params.userTelegramID });
+  async getUserFromDatabase(): Promise<WithId<Document> | null> {
+    if (this.db)
+      return await this.db
+        .collection(USERS_COLLECTION)
+        .findOne({ userTelegramID: this.params.userTelegramID });
+    return null;
   }
 
   /**
@@ -93,7 +95,7 @@ export class UserTelegram {
   async saveToDatabase(eventId: string): Promise<void> {
     if (this.isInDatabase) return;
 
-    await this.db.collection(USERS_COLLECTION).updateOne(
+    await this.db?.collection(USERS_COLLECTION).updateOne(
       { userTelegramID: this.params.userTelegramID },
       {
         $set: {
@@ -141,14 +143,16 @@ export class UserTelegram {
    * Retrieves the sign-up rewards for the user.
    * @returns {Promise<Array>} - An array of sign-up rewards.
    */
-  async getSignUpReward(): Promise<WithId<Document>[]> {
-    return await this.db
-      .collection(REWARDS_COLLECTION)
-      .find({
-        userTelegramID: this.params.userTelegramID,
-        reason: 'user_sign_up',
-      })
-      .toArray();
+  async getSignUpReward(): Promise<WithId<Document>[] | []> {
+    if (this.db)
+      return await this.db
+        .collection(REWARDS_COLLECTION)
+        .find({
+          userTelegramID: this.params.userTelegramID,
+          reason: 'user_sign_up',
+        })
+        .toArray();
+    return [];
   }
 
   /**
@@ -163,11 +167,16 @@ export class UserTelegram {
    * Retrieves referral rewards for the user.
    * @returns {Promise<Array>} - An array of referral rewards.
    */
-  async getReferralRewards(): Promise<WithId<Document>[]> {
-    return await this.db
-      .collection(REWARDS_COLLECTION)
-      .find({ userTelegramID: this.params.userTelegramID, reason: '2x_reward' })
-      .toArray();
+  async getReferralRewards(): Promise<WithId<Document>[] | []> {
+    if (this.db)
+      return await this.db
+        .collection(REWARDS_COLLECTION)
+        .find({
+          userTelegramID: this.params.userTelegramID,
+          reason: '2x_reward',
+        })
+        .toArray();
+    return [];
   }
 
   /**
@@ -182,14 +191,16 @@ export class UserTelegram {
    * Retrieves link rewards for the user.
    * @returns {Promise<Array>} - An array of link rewards.
    */
-  async getLinkRewards(): Promise<WithId<Document>[]> {
-    return await this.db
-      .collection(REWARDS_COLLECTION)
-      .find({
-        userTelegramID: this.params.userTelegramID,
-        reason: 'referral_link',
-      })
-      .toArray();
+  async getLinkRewards(): Promise<WithId<Document>[] | []> {
+    if (this.db)
+      return await this.db
+        .collection(REWARDS_COLLECTION)
+        .find({
+          userTelegramID: this.params.userTelegramID,
+          reason: 'referral_link',
+        })
+        .toArray();
+    return [];
   }
 
   /**

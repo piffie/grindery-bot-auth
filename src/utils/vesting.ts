@@ -159,10 +159,10 @@ export class VestingTelegram {
   isInDatabase: boolean = false;
 
   /** Transaction details of the vesting. */
-  tx?: WithId<Document>;
+  tx: WithId<Document> | null;
 
   /** Current status of the vesting. */
-  status?: TransactionStatus;
+  status: TransactionStatus;
 
   /** Transaction hash associated with the vesting. */
   txHash?: string;
@@ -171,7 +171,7 @@ export class VestingTelegram {
   userOpHash?: string;
 
   /** Database reference. */
-  db?: Db;
+  db: Db | null;
 
   /**
    * Constructor for VestingTelegram class.
@@ -184,8 +184,8 @@ export class VestingTelegram {
 
     // Default values if not provided
     this.isInDatabase = false;
-    this.tx = undefined;
-    this.status = undefined;
+    this.tx = null;
+    this.status = TRANSACTION_STATUS.UNDEFINED;
     this.txHash = undefined;
     this.userOpHash = undefined;
   }
@@ -213,10 +213,12 @@ export class VestingTelegram {
    * Retrieves the vesting information from the database.
    * @returns {Promise<WithId<Document>>} - The vesting information or null if not found.
    */
-  async getTransferFromDatabase(): Promise<WithId<Document>> {
-    return await this.db
-      .collection(VESTING_COLLECTION)
-      .findOne({ eventId: this.eventId });
+  async getTransferFromDatabase(): Promise<WithId<Document> | null> {
+    if (this.db)
+      return await this.db
+        .collection(VESTING_COLLECTION)
+        .findOne({ eventId: this.eventId });
+    return null;
   }
 
   /**
@@ -228,7 +230,7 @@ export class VestingTelegram {
     status: TransactionStatus,
     date: Date | null,
   ): Promise<void> {
-    await this.db.collection(VESTING_COLLECTION).updateOne(
+    await this.db?.collection(VESTING_COLLECTION).updateOne(
       { eventId: this.eventId },
       {
         $set: {
@@ -236,10 +238,10 @@ export class VestingTelegram {
           chainId: this.params.chainId,
           tokenSymbol: this.params.tokenSymbol,
           tokenAddress: this.params.tokenAddress,
-          senderTgId: this.params.senderInformation.userTelegramID,
-          senderWallet: this.params.senderInformation.patchwallet,
-          senderName: this.params.senderInformation.userName,
-          senderHandle: this.params.senderInformation.userHandle,
+          senderTgId: this.params.senderInformation?.userTelegramID,
+          senderWallet: this.params.senderInformation?.patchwallet,
+          senderName: this.params.senderInformation?.userName,
+          senderHandle: this.params.senderInformation?.userHandle,
           recipients: this.params.recipients,
           status: status,
           ...(date !== null ? { dateAdded: date } : {}),
@@ -250,7 +252,7 @@ export class VestingTelegram {
       { upsert: true },
     );
     console.log(
-      `[${this.eventId}] vesting from ${this.params.senderInformation.userTelegramID} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
+      `[${this.eventId}] vesting from ${this.params.senderInformation?.userTelegramID} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
     );
   }
 
@@ -262,7 +264,7 @@ export class VestingTelegram {
     // Add transaction information to the Segment
     await addVestingSegment({
       ...this.params,
-      transactionHash: this.txHash,
+      transactionHash: this.txHash || '',
       dateAdded: new Date(),
     });
   }
@@ -274,14 +276,14 @@ export class VestingTelegram {
   async saveToFlowXO(): Promise<void> {
     // Send transaction information to FlowXO
     await axios.post(FLOWXO_NEW_VESTING_WEBHOOK, {
-      senderResponsePath: this.params.senderInformation.responsePath,
+      senderResponsePath: this.params.senderInformation?.responsePath,
       chainId: this.params.chainId,
       tokenSymbol: this.params.tokenSymbol,
       tokenAddress: this.params.tokenAddress,
-      senderTgId: this.params.senderInformation.userTelegramID,
-      senderWallet: this.params.senderInformation.patchwallet,
-      senderName: this.params.senderInformation.userName,
-      senderHandle: this.params.senderInformation.userHandle,
+      senderTgId: this.params.senderInformation?.userTelegramID,
+      senderWallet: this.params.senderInformation?.patchwallet,
+      senderName: this.params.senderInformation?.userName,
+      senderHandle: this.params.senderInformation?.userHandle,
       recipients: this.params.recipients,
       transactionHash: this.txHash,
       dateAdded: new Date(),
@@ -296,7 +298,7 @@ export class VestingTelegram {
   async getStatus(): Promise<PatchResult> {
     try {
       // Retrieve the status of the PatchWallet transaction
-      const res = await getTxStatus(this.userOpHash);
+      const res = await getTxStatus(this.userOpHash || '');
 
       return {
         isError: false,
@@ -325,7 +327,7 @@ export class VestingTelegram {
     axios.AxiosResponse<PatchRawResult, AxiosError>
   > {
     return await hedgeyLockTokens(
-      this.params.senderInformation.userTelegramID,
+      this.params.senderInformation?.userTelegramID,
       this.params.recipients,
       await getPatchWalletAccessToken(),
     );

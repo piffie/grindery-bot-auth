@@ -298,10 +298,10 @@ export class TransferTelegram {
   isInDatabase: boolean = false;
 
   /** Transaction details of the transfer. */
-  tx?: WithId<Document>;
+  tx: WithId<Document> | null;
 
   /** Current status of the transfer. */
-  status?: TransactionStatus;
+  status: TransactionStatus;
 
   /** Wallet address of the recipient. */
   recipientWallet?: string;
@@ -313,7 +313,7 @@ export class TransferTelegram {
   userOpHash?: string;
 
   /** Database reference. */
-  db?: Db;
+  db: Db | null;
 
   /**
    * Constructor for TransferTelegram class.
@@ -326,8 +326,8 @@ export class TransferTelegram {
 
     // Default values if not provided
     this.isInDatabase = false;
-    this.tx = undefined;
-    this.status = undefined;
+    this.tx = null;
+    this.status = TRANSACTION_STATUS.UNDEFINED;
     this.recipientWallet = undefined;
     this.txHash = undefined;
     this.userOpHash = undefined;
@@ -364,10 +364,12 @@ export class TransferTelegram {
    * Retrieves the transfer information from the database.
    * @returns {Promise<WithId<Document>>} - The transfer information or null if not found.
    */
-  async getTransferFromDatabase(): Promise<WithId<Document>> {
-    return await this.db
-      .collection(TRANSFERS_COLLECTION)
-      .findOne({ eventId: this.eventId });
+  async getTransferFromDatabase(): Promise<WithId<Document> | null> {
+    if (this.db)
+      return await this.db
+        .collection(TRANSFERS_COLLECTION)
+        .findOne({ eventId: this.eventId });
+    return null;
   }
 
   /**
@@ -379,7 +381,7 @@ export class TransferTelegram {
     status: TransactionStatus,
     date: Date | null,
   ): Promise<void> {
-    await this.db.collection(TRANSFERS_COLLECTION).updateOne(
+    await this.db?.collection(TRANSFERS_COLLECTION).updateOne(
       { eventId: this.eventId },
       {
         $set: {
@@ -387,10 +389,10 @@ export class TransferTelegram {
           chainId: this.params.chainId,
           tokenSymbol: this.params.tokenSymbol,
           tokenAddress: this.params.tokenAddress,
-          senderTgId: this.params.senderInformation.userTelegramID,
-          senderWallet: this.params.senderInformation.patchwallet,
-          senderName: this.params.senderInformation.userName,
-          senderHandle: this.params.senderInformation.userHandle,
+          senderTgId: this.params.senderInformation?.userTelegramID,
+          senderWallet: this.params.senderInformation?.patchwallet,
+          senderName: this.params.senderInformation?.userName,
+          senderHandle: this.params.senderInformation?.userHandle,
           recipientTgId: this.params.recipientTgId,
           recipientWallet: this.recipientWallet,
           tokenAmount: this.params.amount,
@@ -403,7 +405,7 @@ export class TransferTelegram {
       { upsert: true },
     );
     console.log(
-      `[${this.eventId}] transaction from ${this.params.senderInformation.userTelegramID} to ${this.params.recipientTgId} for ${this.params.amount} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
+      `[${this.eventId}] transaction from ${this.params.senderInformation?.userTelegramID} to ${this.params.recipientTgId} for ${this.params.amount} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
     );
   }
 
@@ -416,8 +418,8 @@ export class TransferTelegram {
     await addTrackSegment({
       ...this.params,
       dateAdded: new Date(),
-      transactionHash: this.txHash,
-      recipientWallet: this.recipientWallet,
+      transactionHash: this.txHash || '',
+      recipientWallet: this.recipientWallet || '',
     });
   }
 
@@ -428,14 +430,14 @@ export class TransferTelegram {
   async saveToFlowXO(): Promise<void> {
     // Send transaction information to FlowXO
     await axios.post(FLOWXO_NEW_TRANSACTION_WEBHOOK, {
-      senderResponsePath: this.params.senderInformation.responsePath,
+      senderResponsePath: this.params.senderInformation?.responsePath,
       chainId: this.params.chainId,
       tokenSymbol: this.params.tokenSymbol,
       tokenAddress: this.params.tokenAddress,
-      senderTgId: this.params.senderInformation.userTelegramID,
-      senderWallet: this.params.senderInformation.patchwallet,
-      senderName: this.params.senderInformation.userName,
-      senderHandle: this.params.senderInformation.userHandle,
+      senderTgId: this.params.senderInformation?.userTelegramID,
+      senderWallet: this.params.senderInformation?.patchwallet,
+      senderName: this.params.senderInformation?.userName,
+      senderHandle: this.params.senderInformation?.userHandle,
       recipientTgId: this.params.recipientTgId,
       recipientWallet: this.recipientWallet,
       tokenAmount: this.params.amount,
@@ -452,7 +454,7 @@ export class TransferTelegram {
   async getStatus(): Promise<PatchResult> {
     try {
       // Retrieve the status of the PatchWallet transaction
-      const res = await getTxStatus(this.userOpHash);
+      const res = await getTxStatus(this.userOpHash || '');
 
       return {
         isError: false,
@@ -481,11 +483,11 @@ export class TransferTelegram {
     axios.AxiosResponse<PatchRawResult, AxiosError>
   > {
     return await sendTokens(
-      this.params.senderInformation.userTelegramID,
-      this.recipientWallet,
+      this.params.senderInformation?.userTelegramID,
+      this.recipientWallet || '',
       this.params.amount,
       await getPatchWalletAccessToken(),
-      this.params.delegatecall,
+      this.params.delegatecall || 0,
       this.params.tokenAddress,
       this.params.chainId,
     );

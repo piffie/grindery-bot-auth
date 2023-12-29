@@ -33,7 +33,7 @@ export async function handleNewVesting(
 
   // Retrieve sender information from the "users" collection
   const senderInformation = await db
-    .collection(USERS_COLLECTION)
+    ?.collection(USERS_COLLECTION)
     .findOne({ userTelegramID: params.senderTgId });
   if (!senderInformation)
     return (
@@ -57,7 +57,7 @@ export async function handleNewVesting(
   )
     return true;
 
-  let tx: PatchResult;
+  let tx: PatchResult | undefined;
 
   // Handle pending hash status
   if (isPendingTransactionHash(vesting.status)) {
@@ -97,7 +97,7 @@ export async function handleNewVesting(
     );
 
     console.log(
-      `[${vesting.txHash}] vesting from ${vesting.params.senderInformation.senderTgId} with event ID ${vesting.eventId} finished.`,
+      `[${vesting.txHash}] vesting from ${vesting.params.senderInformation?.senderTgId} with event ID ${vesting.eventId} finished.`,
     );
     return true;
   }

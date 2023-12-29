@@ -19,7 +19,6 @@ import { referral_utils } from '../webhooks/referral-reward';
 import { link_reward_utils } from '../webhooks/link-reward';
 import * as web3 from '../utils/web3';
 import { RewardParams } from '../types/webhook.types';
-import { Collection, Document } from 'mongodb';
 import {
   PATCHWALLET_RESOLVER_URL,
   SEGMENT_IDENTITY_URL,
@@ -41,7 +40,7 @@ describe('handleReferralReward function', function () {
   >;
   let linkRewardStub: Sinon.SinonStub<[params: RewardParams], Promise<boolean>>;
   let eventId: string;
-  let collectionUsersMock: Collection<Document>;
+  let collectionUsersMock;
   let contractStub: ContractStub;
   let getContract;
 

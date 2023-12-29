@@ -58,10 +58,10 @@ export class SignUpRewardTelegram {
   isInDatabase: boolean = false;
 
   /** Transaction details of the reward. */
-  tx?: WithId<Document>;
+  tx: WithId<Document> | null;
 
   /** Current status of the reward. */
-  status?: TransactionStatus;
+  status: TransactionStatus;
 
   /** Transaction hash associated with the reward. */
   txHash?: string;
@@ -70,7 +70,7 @@ export class SignUpRewardTelegram {
   userOpHash?: string;
 
   /** Database reference. */
-  db?: Db;
+  db: Db | null;
 
   /**
    * Creates an instance of SignUpRewardTelegram.
@@ -88,8 +88,8 @@ export class SignUpRewardTelegram {
 
     // Properties to be initialized
     this.isInDatabase = false;
-    this.tx = undefined;
-    this.status = undefined;
+    this.tx = null;
+    this.status = TRANSACTION_STATUS.UNDEFINED;
     this.txHash = undefined;
     this.userOpHash = undefined;
   }
@@ -109,7 +109,7 @@ export class SignUpRewardTelegram {
       this.status = this.tx.status;
       this.userOpHash = this.tx.userOpHash;
 
-      if (isSuccessfulTransaction(this.status)) return false;
+      if (isSuccessfulTransaction(this.status || '')) return false;
     } else {
       await this.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
     }
@@ -121,12 +121,14 @@ export class SignUpRewardTelegram {
    * Retrieves the status of the PatchWallet transaction.
    * @returns {Promise<boolean>} - True if the transaction status is retrieved successfully, false otherwise.
    */
-  async getRewardFromDatabase(): Promise<WithId<Document>> {
-    return await this.db.collection(REWARDS_COLLECTION).findOne({
-      userTelegramID: this.params.userTelegramID,
-      eventId: this.eventId,
-      reason: this.params.reason,
-    });
+  async getRewardFromDatabase(): Promise<WithId<Document> | null> {
+    if (this.db)
+      return await this.db.collection(REWARDS_COLLECTION).findOne({
+        userTelegramID: this.params.userTelegramID,
+        eventId: this.eventId,
+        reason: this.params.reason,
+      });
+    return null;
   }
 
   /**
@@ -134,11 +136,13 @@ export class SignUpRewardTelegram {
    * @returns {Promise<object|null>} - The reward information or null if not found.
    */
   async getOtherRewardFromDatabase(): Promise<object | null> {
-    return await this.db.collection(REWARDS_COLLECTION).findOne({
-      userTelegramID: this.params.userTelegramID,
-      eventId: { $ne: this.eventId },
-      reason: this.params.reason,
-    });
+    if (this.db)
+      return await this.db.collection(REWARDS_COLLECTION).findOne({
+        userTelegramID: this.params.userTelegramID,
+        eventId: { $ne: this.eventId },
+        reason: this.params.reason,
+      });
+    return null;
   }
 
   /**
@@ -147,7 +151,7 @@ export class SignUpRewardTelegram {
    * @param {Date|null} date - The date of the transaction.
    */
   async updateInDatabase(status: TransactionStatus, date: Date | null) {
-    await this.db.collection(REWARDS_COLLECTION).updateOne(
+    await this.db?.collection(REWARDS_COLLECTION).updateOne(
       {
         eventId: this.eventId,
         reason: this.params.reason,
@@ -207,10 +211,10 @@ export class SignUpRewardTelegram {
   > {
     return await sendTokens(
       SOURCE_TG_ID,
-      this.params.patchwallet,
-      this.params.amount,
+      this.params.patchwallet || '',
+      this.params.amount || '',
       await getPatchWalletAccessToken(),
-      this.params.delegatecall,
+      this.params.delegatecall || 0,
       this.params.tokenAddress,
       this.params.chainId,
     );
@@ -248,13 +252,13 @@ export class ReferralRewardTelegram {
   parentTx?: WithId<Document>;
 
   /** Transaction details of the referent. */
-  referent?: WithId<Document>;
+  referent: WithId<Document> | null;
 
   /** Transaction details of the reward. */
-  tx?: WithId<Document>;
+  tx: WithId<Document> | null;
 
   /** Current status of the reward. */
-  status?: TransactionStatus;
+  status: TransactionStatus;
 
   /** Transaction hash associated with the reward. */
   txHash?: string;
@@ -263,10 +267,10 @@ export class ReferralRewardTelegram {
   userOpHash?: string;
 
   /** Database reference. */
-  db?: Db;
+  db: Db | null;
 
   /** Cursor for transfers related to the reward. */
-  transfers?: FindCursor<WithId<Document>>;
+  transfers: FindCursor<WithId<Document>> | null;
 
   /**
    * Creates an instance of ReferralRewardTelegram.
@@ -284,9 +288,9 @@ export class ReferralRewardTelegram {
 
     // Properties to be initialized
     this.parentTx = undefined;
-    this.referent = undefined;
-    this.tx = undefined;
-    this.status = undefined;
+    this.referent = null;
+    this.tx = null;
+    this.status = TRANSACTION_STATUS.UNDEFINED;
     this.txHash = undefined;
     this.userOpHash = undefined;
   }
@@ -303,11 +307,15 @@ export class ReferralRewardTelegram {
    * Retrieves transfers from the database based on certain conditions.
    * @returns {Promise<FindCursor<WithId<Document>>>} - The retrieved transfers.
    */
-  async getTransfersFromDatabase(): Promise<FindCursor<WithId<Document>>> {
-    return this.db.collection(TRANSFERS_COLLECTION).find({
-      senderTgId: { $ne: this.params.userTelegramID },
-      recipientTgId: this.params.userTelegramID,
-    });
+  async getTransfersFromDatabase(): Promise<FindCursor<
+    WithId<Document>
+  > | null> {
+    if (this.db)
+      return this.db.collection(TRANSFERS_COLLECTION).find({
+        senderTgId: { $ne: this.params.userTelegramID },
+        recipientTgId: this.params.userTelegramID,
+      });
+    return null;
   }
 
   /**
@@ -315,9 +323,11 @@ export class ReferralRewardTelegram {
    * @returns {Promise<boolean>} - True if the parent transaction is set successfully, false otherwise.
    */
   async setParentTx(): Promise<boolean> {
-    for await (const transfer of this.transfers) {
-      if (!this.parentTx || transfer.dateAdded < this.parentTx.dateAdded) {
-        this.parentTx = transfer;
+    if (this.transfers) {
+      for await (const transfer of this.transfers) {
+        if (!this.parentTx || transfer.dateAdded < this.parentTx.dateAdded) {
+          this.parentTx = transfer;
+        }
       }
     }
 
@@ -337,12 +347,13 @@ export class ReferralRewardTelegram {
    */
   async getReferent(): Promise<boolean> {
     try {
-      this.referent = await this.db.collection(USERS_COLLECTION).findOne({
-        userTelegramID: this.parentTx.senderTgId,
-      });
+      if (this.db)
+        this.referent = await this.db.collection(USERS_COLLECTION).findOne({
+          userTelegramID: this.parentTx?.senderTgId,
+        });
       if (!this.referent) {
         console.log(
-          `[${this.eventId}] sender ${this.parentTx.senderTgId} who is supposed to receive a referral reward is not a user.`,
+          `[${this.eventId}] sender ${this.parentTx?.senderTgId} who is supposed to receive a referral reward is not a user.`,
         );
       }
       return Boolean(this.referent);
@@ -359,10 +370,11 @@ export class ReferralRewardTelegram {
    * @returns {Promise<boolean>} - True if the referral reward is retrieved successfully, false otherwise.
    */
   async getRewardSameFromDatabase(): Promise<boolean> {
-    this.tx = await this.db.collection(REWARDS_COLLECTION).findOne({
-      eventId: this.eventId,
-      reason: this.params.reason,
-    });
+    if (this.db)
+      this.tx = await this.db.collection(REWARDS_COLLECTION).findOne({
+        eventId: this.eventId,
+        reason: this.params.reason,
+      });
 
     if (this.tx) {
       this.userOpHash = this.tx.userOpHash;
@@ -378,10 +390,10 @@ export class ReferralRewardTelegram {
    */
   async getRewardFromDatabaseWithOtherEventId(): Promise<boolean> {
     return Boolean(
-      await this.db.collection(REWARDS_COLLECTION).findOne({
+      await this.db?.collection(REWARDS_COLLECTION).findOne({
         eventId: { $ne: this.eventId },
         reason: this.params.reason,
-        userTelegramID: this.referent.userTelegramID,
+        userTelegramID: this.referent?.userTelegramID,
         newUserAddress: this.params.patchwallet,
       }),
     );
@@ -391,9 +403,10 @@ export class ReferralRewardTelegram {
    * Updates the PatchWallet address of the referent user for the referral reward.
    */
   async updateReferentWallet() {
-    this.referent.patchwallet =
-      this.referent?.patchwallet ??
-      (await getPatchWalletAddressFromTgId(this.referent.userTelegramID));
+    if (this.referent)
+      this.referent.patchwallet =
+        this.referent?.patchwallet ??
+        (await getPatchWalletAddressFromTgId(this.referent?.userTelegramID));
   }
 
   /**
@@ -402,7 +415,7 @@ export class ReferralRewardTelegram {
    * @param {Date|null} date - The date of the transaction.
    */
   async updateInDatabase(status: TransactionStatus, date: Date | null) {
-    await this.db.collection(REWARDS_COLLECTION).updateOne(
+    await this.db?.collection(REWARDS_COLLECTION).updateOne(
       {
         eventId: this.eventId,
         reason: this.params.reason,
@@ -410,12 +423,12 @@ export class ReferralRewardTelegram {
       {
         $set: {
           eventId: this.eventId,
-          userTelegramID: this.referent.userTelegramID,
-          responsePath: this.referent.responsePath,
-          userHandle: this.referent.userHandle,
-          userName: this.referent.userName,
+          userTelegramID: this.referent?.userTelegramID,
+          responsePath: this.referent?.responsePath,
+          userHandle: this.referent?.userHandle,
+          userName: this.referent?.userName,
           reason: this.params.reason,
-          walletAddress: this.referent.patchwallet,
+          walletAddress: this.referent?.patchwallet,
           amount: this.params.amount,
           message: this.params.message,
           ...(date !== null ? { dateAdded: date } : {}),
@@ -423,13 +436,13 @@ export class ReferralRewardTelegram {
           userOpHash: this.userOpHash,
           status: status,
           newUserAddress: this.params.patchwallet,
-          parentTransactionHash: this.parentTx.transactionHash,
+          parentTransactionHash: this.parentTx?.transactionHash,
         },
       },
       { upsert: true },
     );
     console.log(
-      `[${this.eventId}] referral reward for ${this.referent.patchwallet} sending tokens to ${this.params.patchwallet} in ${this.parentTx.transactionHash} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
+      `[${this.eventId}] referral reward for ${this.referent?.patchwallet} sending tokens to ${this.params.patchwallet} in ${this.parentTx?.transactionHash} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
     );
   }
 
@@ -443,17 +456,17 @@ export class ReferralRewardTelegram {
       newUserUserHandle: this.params.userHandle,
       newUserUserName: this.params.userName,
       newUserPatchwallet: this.params.patchwallet,
-      userTelegramID: this.referent.userTelegramID,
-      responsePath: this.referent.responsePath,
-      walletAddress: this.referent.patchwallet,
+      userTelegramID: this.referent?.userTelegramID,
+      responsePath: this.referent?.responsePath,
+      walletAddress: this.referent?.patchwallet,
       reason: this.params.reason,
-      userHandle: this.referent.userHandle,
-      userName: this.referent.userName,
+      userHandle: this.referent?.userHandle,
+      userName: this.referent?.userName,
       amount: this.params.amount,
       message: this.params.message,
       transactionHash: this.txHash,
       dateAdded: new Date(),
-      parentTransactionHash: this.parentTx.transactionHash,
+      parentTransactionHash: this.parentTx?.transactionHash,
       apiKey: FLOWXO_WEBHOOK_API_KEY,
     });
   }
@@ -467,10 +480,10 @@ export class ReferralRewardTelegram {
   > {
     return await sendTokens(
       SOURCE_TG_ID,
-      this.referent.patchwallet,
-      this.params.amount,
+      this.referent?.patchwallet,
+      this.params.amount || '',
       await getPatchWalletAccessToken(),
-      this.params.delegatecall,
+      this.params.delegatecall || 0,
       this.params.tokenAddress,
       this.params.chainId,
     );
@@ -508,10 +521,10 @@ export class LinkRewardTelegram {
   isInDatabase: boolean = false;
 
   /** Transaction details of the reward. */
-  tx?: WithId<Document>;
+  tx: WithId<Document> | null;
 
   /** Current status of the reward. */
-  status?: TransactionStatus;
+  status: TransactionStatus;
 
   /** Transaction hash associated with the reward. */
   txHash?: string;
@@ -520,10 +533,10 @@ export class LinkRewardTelegram {
   userOpHash?: string;
 
   /** Transaction details of the referent. */
-  referent?: WithId<Document>;
+  referent: WithId<Document> | null;
 
   /** Database reference. */
-  db?: Db;
+  db: Db | null;
 
   /**
    * Constructor for LinkRewardTelegram class.
@@ -540,11 +553,11 @@ export class LinkRewardTelegram {
     this.params.message = 'Referral link'; // Default message for the link reward
 
     // Properties to be initialized
-    this.tx = undefined;
-    this.status = undefined;
+    this.tx = null;
+    this.status = TRANSACTION_STATUS.UNDEFINED;
     this.txHash = undefined;
     this.userOpHash = undefined;
-    this.referent = undefined;
+    this.referent = null;
   }
 
   /**
@@ -570,7 +583,7 @@ export class LinkRewardTelegram {
       this.status = this.tx.status;
       this.userOpHash = this.tx.userOpHash;
 
-      if (isSuccessfulTransaction(this.status)) return false;
+      if (isSuccessfulTransaction(this.status || '')) return false;
     } else {
       await this.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
     }
@@ -583,13 +596,18 @@ export class LinkRewardTelegram {
    * @returns {Promise<object|null>} - The referent user information or null if not found.
    */
   async getReferent(): Promise<object | null> {
-    this.referent = await this.db
-      .collection(USERS_COLLECTION)
-      .findOne({ userTelegramID: this.params.referentUserTelegramID });
+    if (this.db)
+      this.referent = await this.db
+        ?.collection(USERS_COLLECTION)
+        .findOne({ userTelegramID: this.params.referentUserTelegramID });
 
-    this.referent.patchwallet =
-      this.referent?.patchwallet ??
-      (await getPatchWalletAddressFromTgId(this.params.referentUserTelegramID));
+    if (this.referent) {
+      this.referent.patchwallet =
+        this.referent?.patchwallet ??
+        (await getPatchWalletAddressFromTgId(
+          this.params.referentUserTelegramID || '',
+        ));
+    }
     return this.referent;
   }
 
@@ -597,13 +615,15 @@ export class LinkRewardTelegram {
    * Retrieves the reward information from the database.
    * @returns {Promise<WithId<Document>>} - The reward information or null if not found.
    */
-  async getRewardFromDatabase(): Promise<WithId<Document>> {
-    return await this.db.collection(REWARDS_COLLECTION).findOne({
-      eventId: this.eventId,
-      userTelegramID: this.params.referentUserTelegramID,
-      sponsoredUserTelegramID: this.params.userTelegramID,
-      reason: this.params.reason,
-    });
+  async getRewardFromDatabase(): Promise<WithId<Document> | null> {
+    if (this.db)
+      return await this.db.collection(REWARDS_COLLECTION).findOne({
+        eventId: this.eventId,
+        userTelegramID: this.params.referentUserTelegramID,
+        sponsoredUserTelegramID: this.params.userTelegramID,
+        reason: this.params.reason,
+      });
+    return null;
   }
 
   /**
@@ -611,11 +631,13 @@ export class LinkRewardTelegram {
    * @returns {Promise<object|null>} - The reward information or null if not found.
    */
   async getOtherRewardFromDatabase(): Promise<object | null> {
-    return await this.db.collection(REWARDS_COLLECTION).findOne({
-      sponsoredUserTelegramID: this.params.userTelegramID,
-      reason: this.params.reason,
-      eventId: { $ne: this.eventId },
-    });
+    if (this.db)
+      return await this.db.collection(REWARDS_COLLECTION).findOne({
+        sponsoredUserTelegramID: this.params.userTelegramID,
+        reason: this.params.reason,
+        eventId: { $ne: this.eventId },
+      });
+    return null;
   }
 
   /**
@@ -624,7 +646,7 @@ export class LinkRewardTelegram {
    * @param {Date|null} date - The date of the transaction.
    */
   async updateInDatabase(status: TransactionStatus, date: Date | null) {
-    await this.db.collection(REWARDS_COLLECTION).updateOne(
+    await this.db?.collection(REWARDS_COLLECTION).updateOne(
       {
         eventId: this.eventId,
         reason: this.params.reason,
@@ -634,11 +656,11 @@ export class LinkRewardTelegram {
         $set: {
           eventId: this.eventId,
           userTelegramID: this.params.referentUserTelegramID,
-          responsePath: this.referent.responsePath,
-          userHandle: this.referent.userHandle,
-          userName: this.referent.userName,
+          responsePath: this.referent?.responsePath,
+          userHandle: this.referent?.userHandle,
+          userName: this.referent?.userName,
           reason: this.params.reason,
-          walletAddress: this.referent.patchwallet,
+          walletAddress: this.referent?.patchwallet,
           amount: this.params.amount,
           message: this.params.message,
           ...(date !== null ? { dateAdded: date } : {}),
@@ -662,11 +684,11 @@ export class LinkRewardTelegram {
     // Send transaction information to FlowXO
     await axios.post(FLOWXO_NEW_LINK_REWARD_WEBHOOK, {
       userTelegramID: this.params.referentUserTelegramID,
-      responsePath: this.referent.responsePath,
-      walletAddress: this.referent.patchwallet,
+      responsePath: this.referent?.responsePath,
+      walletAddress: this.referent?.patchwallet,
       reason: this.params.reason,
-      userHandle: this.referent.userHandle,
-      userName: this.referent.userName,
+      userHandle: this.referent?.userHandle,
+      userName: this.referent?.userName,
       amount: this.params.amount,
       message: this.params.message,
       transactionHash: this.txHash,
@@ -685,10 +707,10 @@ export class LinkRewardTelegram {
   > {
     return await sendTokens(
       SOURCE_TG_ID,
-      this.referent.patchwallet,
-      this.params.amount,
+      this.referent?.patchwallet,
+      this.params.amount || '',
       await getPatchWalletAccessToken(),
-      this.params.delegatecall,
+      this.params.delegatecall || 0,
       this.params.tokenAddress,
       this.params.chainId,
     );
@@ -726,16 +748,16 @@ export class IsolatedRewardTelegram {
   isInDatabase: boolean = false;
 
   /** Transaction details. */
-  tx?: WithId<Document>;
+  tx: WithId<Document> | null;
 
   /** Current status of the reward. */
-  status?: TransactionStatus;
+  status: TransactionStatus;
 
   /** Transaction hash associated with the reward. */
   txHash?: string;
 
   /** Database reference. */
-  db?: Db;
+  db: Db | null;
 
   /** User operation hash. */
   userOpHash?: string;
@@ -755,8 +777,8 @@ export class IsolatedRewardTelegram {
     this.eventId = params.eventId;
 
     this.isInDatabase = false;
-    this.tx = undefined;
-    this.status = undefined;
+    this.tx = null;
+    this.status = TRANSACTION_STATUS.UNDEFINED;
     this.txHash = undefined;
     this.userOpHash = undefined;
   }
@@ -791,12 +813,14 @@ export class IsolatedRewardTelegram {
    * Retrieves the status of the PatchWallet transaction.
    * @returns {Promise<WithId<Document>>} - True if the transaction status is retrieved successfully, false otherwise.
    */
-  async getRewardFromDatabase(): Promise<WithId<Document>> {
-    return await this.db.collection(REWARDS_COLLECTION).findOne({
-      userTelegramID: this.params.userTelegramID,
-      eventId: this.params.eventId,
-      reason: this.params.reason,
-    });
+  async getRewardFromDatabase(): Promise<WithId<Document> | null> {
+    if (this.db)
+      return await this.db.collection(REWARDS_COLLECTION).findOne({
+        userTelegramID: this.params.userTelegramID,
+        eventId: this.params.eventId,
+        reason: this.params.reason,
+      });
+    return null;
   }
 
   /**
@@ -804,11 +828,13 @@ export class IsolatedRewardTelegram {
    * @returns {Promise<object|null>} - The reward information or null if not found.
    */
   async getOtherRewardFromDatabase(): Promise<object | null> {
-    return await this.db.collection(REWARDS_COLLECTION).findOne({
-      userTelegramID: this.params.userTelegramID,
-      eventId: { $ne: this.params.eventId },
-      reason: this.params.reason,
-    });
+    if (this.db)
+      return await this.db.collection(REWARDS_COLLECTION).findOne({
+        userTelegramID: this.params.userTelegramID,
+        eventId: { $ne: this.params.eventId },
+        reason: this.params.reason,
+      });
+    return null;
   }
 
   /**
@@ -817,7 +843,7 @@ export class IsolatedRewardTelegram {
    * @param {Date|null} date - The date of the transaction.
    */
   async updateInDatabase(status: TransactionStatus, date: Date | null) {
-    await this.db.collection(REWARDS_COLLECTION).updateOne(
+    await this.db?.collection(REWARDS_COLLECTION).updateOne(
       {
         eventId: this.params.eventId,
         reason: this.params.reason,
@@ -877,10 +903,10 @@ export class IsolatedRewardTelegram {
   > {
     return await sendTokens(
       SOURCE_TG_ID,
-      this.params.patchwallet,
-      this.params.amount,
+      this.params.patchwallet || '',
+      this.params.amount || '',
       await getPatchWalletAccessToken(),
-      this.params.delegatecall,
+      this.params.delegatecall || 0,
       this.tokenAddress,
       this.chainId,
     );

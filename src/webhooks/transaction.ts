@@ -37,7 +37,7 @@ export async function handleNewTransaction(
 
   // Retrieve sender information from the "users" collection
   const senderInformation = await db
-    .collection(USERS_COLLECTION)
+    ?.collection(USERS_COLLECTION)
     .findOne({ userTelegramID: params.senderTgId });
   if (!senderInformation)
     return (
@@ -61,7 +61,7 @@ export async function handleNewTransaction(
   )
     return true;
 
-  let tx: PatchResult;
+  let tx: PatchResult | undefined;
 
   // Handle pending hash status
   if (isPendingTransactionHash(transfer.status)) {
@@ -112,7 +112,7 @@ export async function handleNewTransaction(
     );
 
     console.log(
-      `[${transfer.txHash}] transaction from ${transfer.params.senderInformation.senderTgId} to ${transfer.params.recipientTgId} for ${transfer.params.amount} with event ID ${transfer.eventId} finished.`,
+      `[${transfer.txHash}] transaction from ${transfer.params.senderInformation?.senderTgId} to ${transfer.params.recipientTgId} for ${transfer.params.amount} with event ID ${transfer.eventId} finished.`,
     );
     return true;
   }

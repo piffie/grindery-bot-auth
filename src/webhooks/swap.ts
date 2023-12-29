@@ -27,7 +27,7 @@ export async function handleSwap(params: SwapParams): Promise<boolean> {
 
   // Fetch user information from the database based on the provided Telegram ID
   const userInformation = await db
-    .collection(USERS_COLLECTION)
+    ?.collection(USERS_COLLECTION)
     .findOne({ userTelegramID: params.userTelegramID });
 
   // If user information is not found, log an error and return true indicating handled status
@@ -47,7 +47,7 @@ export async function handleSwap(params: SwapParams): Promise<boolean> {
   if (isSuccessfulTransaction(swap.status) || isFailedTransaction(swap.status))
     return true;
 
-  let tx: PatchResult;
+  let tx: PatchResult | undefined;
 
   // Handle pending hash status
   if (isPendingTransactionHash(swap.status)) {
