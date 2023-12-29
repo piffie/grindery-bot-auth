@@ -150,7 +150,7 @@ export class SwapTelegram {
           gas: this.params.gas,
           status: status,
           transactionHash: this.txHash,
-          ...(date !== null ? { dateAdded: date } : {}),
+          ...(date ? { dateAdded: date } : {}),
           to: this.params.to,
           from: this.params.from,
           tokenInSymbol: this.params.tokenInSymbol,
@@ -242,7 +242,7 @@ export class SwapTelegram {
   async getStatus(): Promise<PatchResult> {
     try {
       // Retrieve the status of the PatchWallet transaction
-      const res = await getTxStatus(this.userOpHash || '');
+      const res = await getTxStatus(this.userOpHash);
 
       return {
         isError: false,

@@ -109,7 +109,7 @@ export class SignUpRewardTelegram {
       this.status = this.tx.status;
       this.userOpHash = this.tx.userOpHash;
 
-      if (isSuccessfulTransaction(this.status || '')) return false;
+      if (isSuccessfulTransaction(this.status)) return false;
     } else {
       await this.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
     }
@@ -168,7 +168,7 @@ export class SignUpRewardTelegram {
           walletAddress: this.params.patchwallet,
           amount: this.params.amount,
           message: this.params.message,
-          ...(date !== null ? { dateAdded: date } : {}),
+          ...(date ? { dateAdded: date } : {}),
           transactionHash: this.txHash,
           userOpHash: this.userOpHash,
           status: status,
@@ -431,7 +431,7 @@ export class ReferralRewardTelegram {
           walletAddress: this.referent?.patchwallet,
           amount: this.params.amount,
           message: this.params.message,
-          ...(date !== null ? { dateAdded: date } : {}),
+          ...(date ? { dateAdded: date } : {}),
           transactionHash: this.txHash,
           userOpHash: this.userOpHash,
           status: status,
@@ -583,7 +583,7 @@ export class LinkRewardTelegram {
       this.status = this.tx.status;
       this.userOpHash = this.tx.userOpHash;
 
-      if (isSuccessfulTransaction(this.status || '')) return false;
+      if (isSuccessfulTransaction(this.status)) return false;
     } else {
       await this.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
     }
@@ -663,7 +663,7 @@ export class LinkRewardTelegram {
           walletAddress: this.referent?.patchwallet,
           amount: this.params.amount,
           message: this.params.message,
-          ...(date !== null ? { dateAdded: date } : {}),
+          ...(date ? { dateAdded: date } : {}),
           transactionHash: this.txHash,
           userOpHash: this.userOpHash,
           status: status,
@@ -860,7 +860,7 @@ export class IsolatedRewardTelegram {
           walletAddress: this.params.patchwallet,
           amount: this.params.amount,
           message: this.params.message,
-          ...(date !== null ? { dateAdded: date } : {}),
+          ...(date ? { dateAdded: date } : {}),
           transactionHash: this.txHash,
           userOpHash: this.userOpHash,
           status: status,

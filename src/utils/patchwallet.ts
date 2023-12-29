@@ -116,12 +116,12 @@ export async function sendTokens(
  * @returns {Promise<axios.AxiosResponse<PatchRawResult, AxiosError>>} - Promise resolving to the response from the PayMagic API.
  */
 export async function getTxStatus(
-  userOpHash: string,
+  userOpHash: string | undefined,
 ): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   return await axios.post(
     PATCHWALLET_TX_STATUS_URL,
     {
-      userOpHash: userOpHash,
+      userOpHash: userOpHash || '',
     },
     {
       timeout: 100000,

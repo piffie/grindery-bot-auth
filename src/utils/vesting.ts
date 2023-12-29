@@ -244,7 +244,7 @@ export class VestingTelegram {
           senderHandle: this.params.senderInformation?.userHandle,
           recipients: this.params.recipients,
           status: status,
-          ...(date !== null ? { dateAdded: date } : {}),
+          ...(date ? { dateAdded: date } : {}),
           transactionHash: this.txHash,
           userOpHash: this.userOpHash,
         },
@@ -298,7 +298,7 @@ export class VestingTelegram {
   async getStatus(): Promise<PatchResult> {
     try {
       // Retrieve the status of the PatchWallet transaction
-      const res = await getTxStatus(this.userOpHash || '');
+      const res = await getTxStatus(this.userOpHash);
 
       return {
         isError: false,

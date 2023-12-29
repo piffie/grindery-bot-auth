@@ -56,7 +56,7 @@ export function isPositiveFloat(inputString: string): boolean {
 
 /**
  * Checks if the treatment duration of a given instance exceeds a specified duration.
- * @param {TelegramOperations} inst - The instance to be checked.
+ * @param {TelegramOperations} telegram_operation - The instance to be checked.
  * @returns {Promise<boolean>} A Promise resolving to a boolean indicating if the treatment duration has exceeded.
  * @throws {Error} Throws an error if there is an issue updating the instance in the database.
  */
@@ -80,7 +80,7 @@ export async function isTreatmentDurationExceeded(
 /**
  * Retrieves the status of rewards based on the provided reward instance.
  *
- * @param inst An instance representing various reward types:
+ * @param reward An instance representing various reward types:
  *  - `IsolatedRewardTelegram`
  *  - `LinkRewardTelegram`
  *  - `ReferralRewardTelegram`
@@ -92,7 +92,7 @@ export async function isTreatmentDurationExceeded(
 export async function getStatusRewards(reward: Reward): Promise<PatchResult> {
   try {
     // Retrieve the status of the PatchWallet transaction
-    const status = await getTxStatus(reward.userOpHash || '');
+    const status = await getTxStatus(reward.userOpHash);
     return {
       isError: false,
       userOpHash: status.data.userOpHash,
@@ -109,52 +109,55 @@ export async function getStatusRewards(reward: Reward): Promise<PatchResult> {
 
 /**
  * Updates the userOpHash property of a reward telegram instance.
- * @param inst The reward telegram instance.
+ * @param telegram_operation The reward telegram instance.
  * @param userOpHash The user operation hash to update.
  * @returns The updated user operation hash.
  */
 export function updateUserOpHash(
-  inst: TelegramOperations,
+  telegram_operation: TelegramOperations,
   userOpHash: string,
 ): string {
-  return (inst.userOpHash = userOpHash);
+  return (telegram_operation.userOpHash = userOpHash);
 }
 
 /**
  * Updates the txHash property of a reward telegram instance.
- * @param inst The reward telegram instance.
+ * @param telegram_operation The reward telegram instance.
  * @param txHash The transaction hash to update.
  * @returns The updated transaction hash.
  */
-export function updateTxHash(inst: TelegramOperations, txHash: string): string {
-  return (inst.txHash = txHash);
+export function updateTxHash(
+  telegram_operation: TelegramOperations,
+  txHash: string,
+): string {
+  return (telegram_operation.txHash = txHash);
 }
 
 /**
  * Sends a transaction based on the TelegramOperations instance provided.
- * @param inst - Instance of TelegramOperations representing the transaction to be sent.
+ * @param telegram_operation - Instance of TelegramOperations representing the transaction to be sent.
  * @returns Promise<PatchResult> - Promise resolving to a PatchResult object indicating transaction status.
  */
 export async function sendTransaction(
-  inst: TelegramOperations,
+  telegram_operation: TelegramOperations,
 ): Promise<PatchResult> {
   try {
     // Attempt to perform the transaction using the provided TelegramOperations instance.
-    const { data } = await inst.sendTransactionAction();
+    const { data } = await telegram_operation.sendTransactionAction();
 
     // If successful, return the transaction result with userOpHash and txHash.
     return { isError: false, userOpHash: data.userOpHash, txHash: data.txHash };
   } catch (error) {
     // Log error if transaction fails.
     console.error(
-      `[${inst.params.eventId}] Error processing PatchWallet transaction: ${error}`,
+      `[${telegram_operation.params.eventId}] Error processing PatchWallet transaction: ${error}`,
     );
 
     // Check if the instance belongs to specific types (SwapTelegram, TransferTelegram, or VestingTelegram).
     if (
-      inst instanceof SwapTelegram ||
-      inst instanceof TransferTelegram ||
-      inst instanceof VestingTelegram
+      telegram_operation instanceof SwapTelegram ||
+      telegram_operation instanceof TransferTelegram ||
+      telegram_operation instanceof VestingTelegram
     ) {
       // Retrieve the response status from the error object, if available.
       const status = error?.response?.status;
@@ -162,7 +165,7 @@ export async function sendTransaction(
       // Check if the status falls within handled error codes.
       if ([470, 400, 503].includes(status)) {
         // If the status is a handled error code, update the database accordingly.
-        await inst.updateInDatabase(
+        await telegram_operation.updateInDatabase(
           status === 503
             ? TRANSACTION_STATUS.FAILURE_503
             : TRANSACTION_STATUS.FAILURE,
