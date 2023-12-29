@@ -27,7 +27,7 @@ export async function getDbMock() {
  */
 export async function getCollectionGXQuoteMock() {
   const dbMock = await getDbMock();
-  return dbMock.collection(GX_QUOTE_COLLECTION);
+  return dbMock?.collection(GX_QUOTE_COLLECTION);
 }
 
 /**
@@ -36,7 +36,7 @@ export async function getCollectionGXQuoteMock() {
  */
 export async function getCollectionGXOrderMock() {
   const dbMock = await getDbMock();
-  return dbMock.collection(GX_ORDER_COLLECTION);
+  return dbMock?.collection(GX_ORDER_COLLECTION);
 }
 /**
  * Retrieves the collection for mock users.

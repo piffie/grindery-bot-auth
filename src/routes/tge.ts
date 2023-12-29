@@ -62,7 +62,7 @@ router.get('/conversion-information', authenticateApiKey, async (req, res) => {
 
     const id = uuidv4();
 
-    await db.collection(GX_QUOTE_COLLECTION).updateOne(
+    await db?.collection(GX_QUOTE_COLLECTION).updateOne(
       { quoteId: id },
       {
         $set: {
@@ -99,7 +99,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
 
   // Retrieve quote details based on the provided quoteId
   const quote = await db
-    .collection(GX_QUOTE_COLLECTION)
+    ?.collection(GX_QUOTE_COLLECTION)
     .findOne({ quoteId: req.body.quoteId });
 
   // If quote is not found, return an error response
@@ -108,7 +108,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
 
   // Check if an order with the same quoteId is already being processed
   const order = await db
-    .collection(GX_ORDER_COLLECTION)
+    ?.collection(GX_ORDER_COLLECTION)
     .findOne({ orderId: req.body.quoteId });
 
   // If an order is already being processed, return an error response
@@ -123,7 +123,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
   ).toFixed(2);
 
   // Create/update the pre-order with pending status and user details
-  await db.collection(GX_ORDER_COLLECTION).updateOne(
+  await db?.collection(GX_ORDER_COLLECTION).updateOne(
     { orderId: req.body.quoteId },
     {
       $set: {
@@ -154,7 +154,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
         : GX_ORDER_STATUS.COMPLETE;
 
     // Update the pre-order with transaction details and updated status
-    await db.collection(GX_ORDER_COLLECTION).updateOne(
+    await db?.collection(GX_ORDER_COLLECTION).updateOne(
       { orderId: req.body.quoteId },
       {
         $set: {
@@ -180,7 +180,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
       `[${req.body.quoteId}] Error processing PatchWallet pre-order G1 transaction: ${e}`,
     );
 
-    await db.collection(GX_ORDER_COLLECTION).updateOne(
+    await db?.collection(GX_ORDER_COLLECTION).updateOne(
       { orderId: req.body.quoteId },
       {
         $set: {
@@ -238,7 +238,7 @@ router.get('/order-status', authenticateApiKey, async (req, res) => {
       .status(200)
       .json(
         await db
-          .collection(GX_ORDER_COLLECTION)
+          ?.collection(GX_ORDER_COLLECTION)
           .findOne({ orderId: req.query.orderId }),
       );
   } catch (error) {
