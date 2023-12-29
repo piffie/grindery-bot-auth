@@ -16,6 +16,7 @@ import {
   mockTransactionHash,
   mockUserOpHash,
   mockUserTelegramID,
+  mockUserTelegramID1,
   mockWallet,
 } from './utils';
 import chaiExclude from 'chai-exclude';
@@ -172,6 +173,164 @@ describe('G1 to GX util functions', async function () {
         ]);
 
       chai.expect(isUUIDv4(quotes[0].quoteId)).to.be.true;
+    });
+  });
+
+  describe('Endpoint to get quotes for a user', async function () {
+    beforeEach(async function () {
+      await collectionQuotesMock.insertMany([
+        {
+          quoteId: mockOrderID,
+          g1_amount: '500.00',
+          usd_from_usd_investment: '1',
+          usd_from_g1_holding: '1',
+          usd_from_mvu: '1',
+          usd_from_time: '1',
+          equivalent_usd_invested: '1',
+          gx_before_mvu: '1',
+          gx_mvu_effect: '1',
+          gx_time_effect: '1',
+          equivalent_gx_usd_exchange_rate: '1',
+          standard_gx_usd_exchange_rate: '1',
+          discount_received: '1',
+          gx_received: '1',
+          userTelegramID: mockUserTelegramID,
+        },
+        {
+          quoteId: mockOrderID1,
+          g1_amount: '1000.00',
+          usd_from_usd_investment: '1',
+          usd_from_g1_holding: '1',
+          usd_from_mvu: '1',
+          usd_from_time: '1',
+          equivalent_usd_invested: '1',
+          gx_before_mvu: '1',
+          gx_mvu_effect: '1',
+          gx_time_effect: '1',
+          equivalent_gx_usd_exchange_rate: '1',
+          standard_gx_usd_exchange_rate: '1',
+          discount_received: '1',
+          gx_received: '1',
+          userTelegramID: mockUserTelegramID,
+        },
+      ]);
+    });
+
+    it('Should return the list of quotes for a given user', async function () {
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/quotes')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          userTelegramID: mockUserTelegramID,
+        });
+
+      chai
+        .expect(res.body)
+        .excluding(['_id'])
+        .to.deep.equal([
+          {
+            quoteId: mockOrderID,
+            g1_amount: '500.00',
+            usd_from_usd_investment: '1',
+            usd_from_g1_holding: '1',
+            usd_from_mvu: '1',
+            usd_from_time: '1',
+            equivalent_usd_invested: '1',
+            gx_before_mvu: '1',
+            gx_mvu_effect: '1',
+            gx_time_effect: '1',
+            equivalent_gx_usd_exchange_rate: '1',
+            standard_gx_usd_exchange_rate: '1',
+            discount_received: '1',
+            gx_received: '1',
+            userTelegramID: mockUserTelegramID,
+          },
+          {
+            quoteId: mockOrderID1,
+            g1_amount: '1000.00',
+            usd_from_usd_investment: '1',
+            usd_from_g1_holding: '1',
+            usd_from_mvu: '1',
+            usd_from_time: '1',
+            equivalent_usd_invested: '1',
+            gx_before_mvu: '1',
+            gx_mvu_effect: '1',
+            gx_time_effect: '1',
+            equivalent_gx_usd_exchange_rate: '1',
+            standard_gx_usd_exchange_rate: '1',
+            discount_received: '1',
+            gx_received: '1',
+            userTelegramID: mockUserTelegramID,
+          },
+        ]);
+    });
+
+    it('Should return an empty array if no quote for the user', async function () {
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/quotes')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          userTelegramID: mockUserTelegramID1,
+        });
+
+      chai.expect(res.body).to.be.empty;
+    });
+  });
+
+  describe('Endpoint to get orders for a user', async function () {
+    beforeEach(async function () {
+      await collectionOrdersMock.insertMany([
+        {
+          orderId: mockOrderID,
+          status: GX_ORDER_STATUS.COMPLETE,
+          userTelegramID: mockUserTelegramID,
+        },
+        {
+          orderId: mockOrderID1,
+          status: GX_ORDER_STATUS.COMPLETE,
+          userTelegramID: mockUserTelegramID,
+        },
+      ]);
+    });
+
+    it('Should return the list of quotes for a given user', async function () {
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/orders')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          userTelegramID: mockUserTelegramID,
+        });
+
+      chai
+        .expect(res.body)
+        .excluding(['_id'])
+        .to.deep.equal([
+          {
+            orderId: mockOrderID,
+            status: GX_ORDER_STATUS.COMPLETE,
+            userTelegramID: mockUserTelegramID,
+          },
+          {
+            orderId: mockOrderID1,
+            status: GX_ORDER_STATUS.COMPLETE,
+            userTelegramID: mockUserTelegramID,
+          },
+        ]);
+    });
+
+    it('Should return an empty array if no quote for the user', async function () {
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/orders')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          userTelegramID: mockUserTelegramID1,
+        });
+
+      chai.expect(res.body).to.be.empty;
     });
   });
 

@@ -243,6 +243,55 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
   }
 });
 
+/**
+ * GET /v1/tge/orders
+ *
+ * @summary Get all orders for a specific user
+ * @description Retrieves all orders associated with a specific user identified by userTelegramID.
+ * @tags Orders
+ * @security BearerAuth
+ * @param {string} req.query.userTelegramID - The Telegram ID of the user to fetch orders.
+ * @return {object[]} 200 - Success response with an array of orders for the specified user
+ * @return {object} 404 - Error response if no orders are found for the given user
+ * @return {object} 500 - Error response if an error occurs during order retrieval
+ *
+ * @example request - 200 - Example request query parameter
+ * /v1/tge/orders?userTelegramID=user-telegram-id
+ *
+ * @example response - 200 - Success response example
+ * [
+ *   {
+ *     "orderId": "order-id-1",
+ *     "date": "2023-12-31T12:00:00Z",
+ *     "status": "PENDING",
+ *     "userTelegramID": "user-telegram-id",
+ *     "g1_amount": "1000.00",
+ *     "transactionHash": "transaction-hash",
+ *     "userOpHash": "user-operation-hash"
+ *   },
+ *   {
+ *     "orderId": "order-id-2",
+ *     "date": "2023-12-30T12:00:00Z",
+ *     "status": "COMPLETE",
+ *     "userTelegramID": "user-telegram-id",
+ *     "g1_amount": "500.00",
+ *     "transactionHash": "transaction-hash",
+ *     "userOpHash": "user-operation-hash"
+ *   },
+ *   // ...other orders
+ * ]
+ *
+ * @example response - 404 - Error response example
+ * {
+ *   "msg": "No orders found for this user"
+ * }
+ *
+ * @example response - 500 - Error response example
+ * {
+ *   "msg": "An error occurred",
+ *   "error": "Error details here"
+ * }
+ */
 router.get('/orders', authenticateApiKey, async (req, res) => {
   try {
     const db = await Database.getInstance();
@@ -260,6 +309,49 @@ router.get('/orders', authenticateApiKey, async (req, res) => {
   }
 });
 
+/**
+ * GET /v1/tge/quotes
+ *
+ * @summary Get all quotes for a specific user
+ * @description Retrieves all quotes associated with a specific user identified by userTelegramID.
+ * @tags Quotes
+ * @security BearerAuth
+ * @param {string} req.query.userTelegramID - The Telegram ID of the user to fetch quotes.
+ * @return {object[]} 200 - Success response with an array of quotes for the specified user
+ * @return {object} 404 - Error response if no quotes are found for the given user
+ * @return {object} 500 - Error response if an error occurs during quote retrieval
+ *
+ * @example request - 200 - Example request query parameter
+ * /v1/tge/quotes?userTelegramID=user-telegram-id
+ *
+ * @example response - 200 - Success response example
+ * [
+ *   {
+ *     "quoteId": "quote-id-1",
+ *     "date": "2023-12-31T12:00:00Z",
+ *     "usd_from_usd_investment": "10",
+ *     // ...other fields
+ *   },
+ *   {
+ *     "quoteId": "quote-id-2",
+ *     "date": "2023-12-30T12:00:00Z",
+ *     "usd_from_usd_investment": "20",
+ *     // ...other fields
+ *   },
+ *   // ...other quotes
+ * ]
+ *
+ * @example response - 404 - Error response example
+ * {
+ *   "msg": "No quotes found for this user"
+ * }
+ *
+ * @example response - 500 - Error response example
+ * {
+ *   "msg": "An error occurred",
+ *   "error": "Error details here"
+ * }
+ */
 router.get('/quotes', authenticateApiKey, async (req, res) => {
   try {
     const db = await Database.getInstance();
