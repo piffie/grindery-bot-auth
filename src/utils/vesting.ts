@@ -244,7 +244,7 @@ export class VestingTelegram {
           senderHandle: this.params.senderInformation?.userHandle,
           recipients: this.params.recipients,
           status: status,
-          ...(date !== null ? { dateAdded: date } : {}),
+          ...(date ? { dateAdded: date } : {}),
           transactionHash: this.txHash,
           userOpHash: this.userOpHash,
         },

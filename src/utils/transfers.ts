@@ -397,7 +397,7 @@ export class TransferTelegram {
           recipientWallet: this.recipientWallet,
           tokenAmount: this.params.amount,
           status: status,
-          ...(date !== null ? { dateAdded: date } : {}),
+          ...(date ? { dateAdded: date } : {}),
           transactionHash: this.txHash,
           userOpHash: this.userOpHash,
         },

@@ -150,7 +150,7 @@ export class SwapTelegram {
           gas: this.params.gas,
           status: status,
           transactionHash: this.txHash,
-          ...(date !== null ? { dateAdded: date } : {}),
+          ...(date ? { dateAdded: date } : {}),
           to: this.params.to,
           from: this.params.from,
           tokenInSymbol: this.params.tokenInSymbol,
