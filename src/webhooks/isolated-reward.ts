@@ -9,7 +9,7 @@ import {
   createIsolatedRewardTelegram,
 } from '../utils/rewards';
 import {
-  getStatusRewards,
+  getStatus,
   isPendingTransactionHash,
   isTreatmentDurationExceeded,
   sendTransaction,
@@ -60,7 +60,7 @@ export async function handleIsolatedReward(
         );
 
       // Get status of reward test
-      if ((txReward = await getStatusRewards(reward)).isError) return false;
+      if ((txReward = await getStatus(reward)).isError) return false;
     }
 
     // Check for txReward and send transaction if not present
