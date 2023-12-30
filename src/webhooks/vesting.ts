@@ -4,6 +4,7 @@ import { PatchResult } from '../types/webhook.types';
 import { TRANSACTION_STATUS, USERS_COLLECTION } from '../utils/constants';
 import { VestingTelegram, createVestingTelegram } from '../utils/vesting';
 import {
+  getStatus,
   isFailedTransaction,
   isPendingTransactionHash,
   isSuccessfulTransaction,
@@ -71,7 +72,7 @@ export async function handleNewVesting(
       );
 
     // Check status for userOpHash and return the status if it's retrieved successfully or false if failed
-    tx = await vesting.getStatus();
+    tx = await getStatus(vesting);
     if (tx.isError) return true;
     if (!tx.txHash && !tx.userOpHash) return false;
   }

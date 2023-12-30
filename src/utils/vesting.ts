@@ -9,11 +9,7 @@ import {
   TRANSACTION_STATUS,
   VESTING_COLLECTION,
 } from './constants';
-import {
-  getPatchWalletAccessToken,
-  getTxStatus,
-  hedgeyLockTokens,
-} from './patchwallet';
+import { getPatchWalletAccessToken, hedgeyLockTokens } from './patchwallet';
 import { addVestingSegment } from './segment';
 import axios, { AxiosError } from 'axios';
 import {
@@ -33,11 +29,7 @@ import {
   scaleDecimals,
 } from './web3';
 import BigNumber from 'bignumber.js';
-import {
-  PatchRawResult,
-  PatchResult,
-  TransactionStatus,
-} from '../types/webhook.types';
+import { PatchRawResult, TransactionStatus } from '../types/webhook.types';
 
 /**
  * Calculates and generates plans for distributing tokens to recipients over time.
@@ -289,34 +281,6 @@ export class VestingTelegram {
       dateAdded: new Date(),
       apiKey: FLOWXO_WEBHOOK_API_KEY,
     });
-  }
-
-  /**
-   * Retrieves the status of the PatchWallet transaction.
-   * @returns {Promise<PatchResult>} - True if the transaction status is retrieved successfully, false otherwise.
-   */
-  async getStatus(): Promise<PatchResult> {
-    try {
-      // Retrieve the status of the PatchWallet transaction
-      const res = await getTxStatus(this.userOpHash);
-
-      return {
-        isError: false,
-        userOpHash: res.data.userOpHash,
-        txHash: res.data.txHash,
-      };
-    } catch (error) {
-      // Log error if retrieving transaction status fails
-      console.error(
-        `[${this.eventId}] Error processing PatchWallet transaction status: ${error}`,
-      );
-      // Return true if the error status is 470, marking the transaction as failed
-      return (
-        (error?.response?.status === 470 &&
-          (await this.updateInDatabase(TRANSACTION_STATUS.FAILURE, new Date()),
-          { isError: true })) || { isError: false }
-      );
-    }
   }
 
   /**

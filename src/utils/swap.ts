@@ -5,17 +5,12 @@ import {
   nativeTokenAddresses,
 } from './constants';
 import { Db, Document, WithId } from 'mongodb';
-import {
-  getPatchWalletAccessToken,
-  getTxStatus,
-  swapTokens,
-} from './patchwallet';
+import { getPatchWalletAccessToken, swapTokens } from './patchwallet';
 import { FLOWXO_NEW_SWAP_WEBHOOK, FLOWXO_WEBHOOK_API_KEY } from '../../secrets';
 import axios, { AxiosError } from 'axios';
 import { addTrackSwapSegment } from './segment';
 import {
   PatchRawResult,
-  PatchResult,
   SwapParams,
   TransactionStatus,
 } from '../types/webhook.types';
@@ -233,34 +228,6 @@ export class SwapTelegram {
       transactionLink:
         CHAIN_MAPPING[this.params.chainOut || ''].explorer + this.txHash,
     });
-  }
-
-  /**
-   * Retrieves the status of the PatchWallet transaction.
-   * @returns {Promise<PatchResult>} - True if the transaction status is retrieved successfully, false otherwise.
-   */
-  async getStatus(): Promise<PatchResult> {
-    try {
-      // Retrieve the status of the PatchWallet transaction
-      const res = await getTxStatus(this.userOpHash);
-
-      return {
-        isError: false,
-        userOpHash: res.data.userOpHash,
-        txHash: res.data.txHash,
-      };
-    } catch (error) {
-      // Log error if retrieving transaction status fails
-      console.error(
-        `[${this.eventId}] Error processing PatchWallet transaction status: ${error}`,
-      );
-      // Return true if the error status is 470, marking the transaction as failed
-      return (
-        (error?.response?.status === 470 &&
-          (await this.updateInDatabase(TRANSACTION_STATUS.FAILURE, new Date()),
-          { isError: true })) || { isError: false }
-      );
-    }
   }
 
   /**

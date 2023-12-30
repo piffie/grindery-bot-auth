@@ -184,3 +184,32 @@ export async function sendTransaction(
     return { isError: true };
   }
 }
+
+export async function getStatus(
+  telegram_operation: TelegramOperations,
+): Promise<PatchResult> {
+  try {
+    // Retrieve the status of the PatchWallet transaction
+    const res = await getTxStatus(telegram_operation.userOpHash);
+
+    return {
+      isError: false,
+      userOpHash: res.data.userOpHash,
+      txHash: res.data.txHash,
+    };
+  } catch (error) {
+    // Log error if retrieving transaction status fails
+    console.error(
+      `[${telegram_operation.eventId}] Error processing PatchWallet transaction status: ${error}`,
+    );
+    // Return true if the error status is 470, marking the transaction as failed
+    return (
+      (error?.response?.status === 470 &&
+        (await telegram_operation.updateInDatabase(
+          TRANSACTION_STATUS.FAILURE,
+          new Date(),
+        ),
+        { isError: true })) || { isError: false }
+    );
+  }
+}
