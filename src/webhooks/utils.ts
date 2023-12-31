@@ -85,7 +85,7 @@ export async function isTreatmentDurationExceeded(
   return (
     (telegram_operation.tx?.dateAdded < getXMinBeforeDate(new Date(), 10) &&
       (console.log(
-        `[${telegram_operation.eventId}] was stopped due to too long treatment duration (> 10 min).`,
+        `[${telegram_operation.params.eventId}] was stopped due to too long treatment duration (> 10 min).`,
       ),
       await telegram_operation.updateInDatabase(
         TRANSACTION_STATUS.FAILURE,

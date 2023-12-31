@@ -36,10 +36,6 @@ export async function createSwapTelegram(
  */
 export class SwapTelegram {
   /**
-   * The event ID associated with the swap.
-   */
-  eventId: string;
-  /**
    * Parameters for the swap.
    */
   params: SwapParams;
@@ -77,7 +73,6 @@ export class SwapTelegram {
    * @param {SwapParams} params - Parameters for the swap.
    */
   constructor(params: SwapParams) {
-    this.eventId = params.eventId;
     this.params = params;
 
     this.isInDatabase = false;

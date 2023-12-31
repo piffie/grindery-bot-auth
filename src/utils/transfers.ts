@@ -286,9 +286,6 @@ export async function createTransferTelegram(
  * Represents a Telegram transfer.
  */
 export class TransferTelegram {
-  /** Unique identifier for the event. */
-  eventId: string;
-
   /** The parameters required for the transaction. */
   params: TransactionParams;
 
@@ -319,7 +316,6 @@ export class TransferTelegram {
    */
   constructor(params: TransactionParams) {
     // Properties related to user and transaction details
-    this.eventId = params.eventId;
     this.params = params;
 
     // Default values if not provided
@@ -366,7 +362,7 @@ export class TransferTelegram {
     if (this.db)
       return await this.db
         .collection(TRANSFERS_COLLECTION)
-        .findOne({ eventId: this.eventId });
+        .findOne({ eventId: this.params.eventId });
     return null;
   }
 
@@ -380,10 +376,10 @@ export class TransferTelegram {
     date: Date | null,
   ): Promise<void> {
     await this.db?.collection(TRANSFERS_COLLECTION).updateOne(
-      { eventId: this.eventId },
+      { eventId: this.params.eventId },
       {
         $set: {
-          eventId: this.eventId,
+          eventId: this.params.eventId,
           chainId: this.params.chainId,
           tokenSymbol: this.params.tokenSymbol,
           tokenAddress: this.params.tokenAddress,
@@ -403,7 +399,7 @@ export class TransferTelegram {
       { upsert: true },
     );
     console.log(
-      `[${this.eventId}] transaction from ${this.params.senderInformation?.userTelegramID} to ${this.params.recipientTgId} for ${this.params.amount} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
+      `[${this.params.eventId}] transaction from ${this.params.senderInformation?.userTelegramID} to ${this.params.recipientTgId} for ${this.params.amount} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
     );
   }
 
