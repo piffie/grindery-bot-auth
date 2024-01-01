@@ -124,13 +124,15 @@ router.get('/conversion-information', authenticateApiKey, async (req, res) => {
  *
  * @example response - 400 - Error response example if a quote is unavailable or the order is being processed
  * {
+ *   "success": false,
  *   "msg": "No quote available for this ID"
  * }
  *
  * @example response - 500 - Error response example if an error occurs during the pre-order process
  * {
+ *   "success": false,
  *   "msg": "An error occurred",
- *   "e": "Error details here"
+ *   "error": "Error details here"
  * }
  */
 router.post('/pre-order', authenticateApiKey, async (req, res) => {
@@ -143,7 +145,15 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
 
   // If quote is not found, return an error response
   if (!quote)
-    return res.status(400).json({ msg: 'No quote available for this ID' });
+    return res
+      .status(400)
+      .json({ success: false, msg: 'No quote available for this ID' });
+
+  if (quote.userTelegramID !== req.body.userTelegramID)
+    return res.status(400).json({
+      success: false,
+      msg: 'Quote ID is not linked to the provided user Telegram ID',
+    });
 
   // Check if an order with the same quoteId is already being processed
   const order = await db
@@ -154,7 +164,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
   if (order && order.status !== GX_ORDER_STATUS.FAILURE_G1)
     return res
       .status(400)
-      .json({ msg: 'This order is already being processed' });
+      .json({ success: false, msg: 'This order is already being processed' });
 
   // Create/update the pre-order with pending status and user details
   await db?.collection(GX_ORDER_COLLECTION).updateOne(
@@ -240,45 +250,111 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
     );
 
     // Return error response if an error occurs during the pre-order process
-    return res.status(500).json({ msg: 'An error occurred', e });
+    return res
+      .status(500)
+      .json({ success: false, msg: 'An error occurred', error: e });
   }
 });
 
+/**
+ * POST /v1/tge/usd-order
+ *
+ * @summary Process USD-based Gx token order
+ * @description Processes an order for Gx tokens using USD, linking it to the provided quote ID and user details.
+ * @tags USD Order
+ * @security BearerAuth
+ * @param {string} req.body.quoteId - The quote ID to process the order.
+ * @param {string} req.body.userTelegramID - The user's Telegram ID for identification.
+ * @param {string} req.body.token_address - The token address for USD-based order.
+ * @param {string} req.body.chainId - The chain ID for USD-based order.
+ * @return {object} 200 - Success response with processed order details
+ * @return {object} 400 - Error response if the quote is unavailable or order status is not ready for USD payment
+ * @return {object} 500 - Error response if an error occurs during the order processing
+ *
+ * @example request - 200 - Example request body
+ * {
+ *   "quoteId": "mocked-quote-id",
+ *   "userTelegramID": "user-telegram-id",
+ *   "token_address": "token-address",
+ *   "chainId": "chain-id"
+ * }
+ *
+ * @example response - 200 - Success response example
+ * {
+ *   "success": true,
+ *   "order": {
+ *     "orderId": "mocked-quote-id",
+ *     "dateUSD": "2023-12-31T12:00:00Z",
+ *     "status": "COMPLETE",
+ *     "userTelegramID": "user-telegram-id",
+ *     "transactionHash_USD": "transaction-hash",
+ *     "userOpHash_USD": "user-operation-hash",
+ *     "amount_USD": "250.00",
+ *     "tokenAmount_USD": "25.00",
+ *     "tokenAddress_USD": "token-address",
+ *     "chainId_USD": "chain-id"
+ *   }
+ * }
+ *
+ * @example response - 400 - Error response example if the quote is unavailable or order status is not ready for USD payment
+ * {
+ *   "success": false,
+ *   "msg": "No quote available for this ID"
+ * }
+ *
+ * @example response - 500 - Error response example if an error occurs during the order processing
+ * {
+ *   "success": false,
+ *   "msg": "An error occurred",
+ *   "error": "Error details here"
+ * }
+ */
 router.post('/usd-order', authenticateApiKey, async (req, res) => {
   const db = await Database.getInstance();
 
+  // Retrieve quote details based on the provided quoteId
   const quote = await db
     ?.collection(GX_QUOTE_COLLECTION)
     .findOne({ quoteId: req.body.quoteId });
 
+  // If quote is not found, return an error response
   if (!quote)
-    return res.status(400).json({ msg: 'No quote available for this ID' });
-
-  if (quote.userTelegramID !== req.body.userTelegramID)
     return res
       .status(400)
-      .json({ msg: 'Quote ID is not linked to the provided user Telegram ID' });
+      .json({ success: false, msg: 'No quote available for this ID' });
 
+  // Check if the quote's userTelegramID matches the provided userTelegramID
+  if (quote.userTelegramID !== req.body.userTelegramID)
+    return res.status(400).json({
+      success: false,
+      msg: 'Quote ID is not linked to the provided user Telegram ID',
+    });
+
+  // Fetch order details based on the quoteId
   const order = await db
     ?.collection(GX_ORDER_COLLECTION)
     .findOne({ orderId: req.body.quoteId });
 
+  // If an order exists and status is not ready for USD payment, return an error response
   if (order && order.status !== GX_ORDER_STATUS.WAITING_USD)
     return res
       .status(400)
       .json({ msg: 'Status of the order is not ready to process USD payment' });
 
   try {
+    // Calculate token price based on chainId and token address
     const token_price = await getTokenPrice(
       req.body.chainId,
       req.body.token_address,
     );
 
+    // Calculate token amount for the USD investment
     const token_amount = (
       parseFloat(quote.usd_from_usd_investment) /
       parseFloat(token_price.data.result.usdPrice)
     ).toFixed(2);
 
+    // Update order details with USD-based information
     await db?.collection(GX_ORDER_COLLECTION).updateOne(
       { orderId: req.body.quoteId },
       {
@@ -294,6 +370,7 @@ router.post('/usd-order', authenticateApiKey, async (req, res) => {
       { upsert: false },
     );
 
+    // Send tokens for the USD-based order and retrieve transaction details
     const { data } = await sendTokens(
       req.body.userTelegramID,
       SOURCE_WALLET_ADDRESS,
@@ -304,8 +381,10 @@ router.post('/usd-order', authenticateApiKey, async (req, res) => {
       req.body.chainId,
     );
 
+    // Record the date for the transaction
     const date = new Date();
 
+    // Update order status and transaction details upon successful transaction
     await db?.collection(GX_ORDER_COLLECTION).updateOne(
       { orderId: req.body.quoteId },
       {
@@ -319,6 +398,7 @@ router.post('/usd-order', authenticateApiKey, async (req, res) => {
       { upsert: false },
     );
 
+    // Return success response with processed order details
     return res.status(200).json({
       success: true,
       order: {
@@ -335,10 +415,12 @@ router.post('/usd-order', authenticateApiKey, async (req, res) => {
       },
     });
   } catch (e) {
+    // Log error if transaction fails and update order status to failure
     console.error(
       `[${req.body.quoteId}] Error processing PatchWallet pre-order G1 transaction: ${e}`,
     );
 
+    // Update order status to failure in case of transaction error
     await db?.collection(GX_ORDER_COLLECTION).updateOne(
       { orderId: req.body.quoteId },
       {
@@ -352,7 +434,10 @@ router.post('/usd-order', authenticateApiKey, async (req, res) => {
       { upsert: false },
     );
 
-    return res.status(500).json({ msg: 'An error occurred', e });
+    // Return error response if an error occurs during the order processing
+    return res
+      .status(500)
+      .json({ success: false, msg: 'An error occurred', error: e });
   }
 });
 

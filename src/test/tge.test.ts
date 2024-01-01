@@ -476,9 +476,26 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         });
 
-      chai
-        .expect(res.body)
-        .to.deep.equal({ msg: 'No quote available for this ID' });
+      chai.expect(res.body).to.deep.equal({
+        success: false,
+        msg: 'No quote available for this ID',
+      });
+    });
+
+    it('Should return an error message if provided Telegram ID is incorrect', async function () {
+      const res = await chai
+        .request(app)
+        .post('/v1/tge/pre-order')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .send({
+          quoteId: mockOrderID,
+          userTelegramID: 'incorrect_user_id',
+        });
+
+      chai.expect(res.body).to.deep.equal({
+        success: false,
+        msg: 'Quote ID is not linked to the provided user Telegram ID',
+      });
     });
 
     it('Should return an error message if order is pending', async function () {
@@ -496,9 +513,10 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         });
 
-      chai
-        .expect(res.body)
-        .to.deep.equal({ msg: 'This order is already being processed' });
+      chai.expect(res.body).to.deep.equal({
+        success: false,
+        msg: 'This order is already being processed',
+      });
     });
 
     it('Should return an error message if order is success', async function () {
@@ -516,9 +534,10 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         });
 
-      chai
-        .expect(res.body)
-        .to.deep.equal({ msg: 'This order is already being processed' });
+      chai.expect(res.body).to.deep.equal({
+        success: false,
+        msg: 'This order is already being processed',
+      });
     });
 
     it('Should call the sendTokens properly if order is not present in database', async function () {
@@ -735,9 +754,10 @@ describe('G1 to GX util functions', async function () {
           token_address: avax_address_polygon,
         });
 
-      chai
-        .expect(res.body)
-        .to.deep.equal({ msg: 'No quote available for this ID' });
+      chai.expect(res.body).to.deep.equal({
+        success: false,
+        msg: 'No quote available for this ID',
+      });
     });
 
     it('Should return an error message if user Telegram ID is wrong', async function () {
@@ -753,6 +773,7 @@ describe('G1 to GX util functions', async function () {
         });
 
       chai.expect(res.body).to.deep.equal({
+        success: false,
         msg: 'Quote ID is not linked to the provided user Telegram ID',
       });
     });
@@ -918,7 +939,10 @@ describe('G1 to GX util functions', async function () {
           },
         ]);
 
-      chai.expect(res.body.msg).to.be.equal('An error occurred');
+      chai
+        .expect(res.body)
+        .excluding(['error'])
+        .to.deep.equal({ success: false, msg: 'An error occurred' });
     });
 
     it('Should update the database with a failure status if order is not present in database and failure in token transfer', async function () {
@@ -967,7 +991,10 @@ describe('G1 to GX util functions', async function () {
           },
         ]);
 
-      chai.expect(res.body.msg).to.be.equal('An error occurred');
+      chai.expect(res.body).excluding(['error']).to.deep.equal({
+        success: false,
+        msg: 'An error occurred',
+      });
     });
   });
 });
