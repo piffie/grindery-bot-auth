@@ -3,7 +3,6 @@ import { Database } from '../db/conn';
 import { authenticateApiKey } from '../utils/auth';
 import { ANKR_MULTICHAIN_API_URL, USERS_COLLECTION } from '../utils/constants';
 import axios from 'axios';
-import { ANKR_KEY } from '../../secrets';
 
 const router = express.Router();
 
