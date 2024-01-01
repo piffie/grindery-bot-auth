@@ -21,4 +21,6 @@ export interface ChainInfo {
    * Display name of the blockchain.
    */
   name_display: string;
+
+  ankr_name?: string;
 }

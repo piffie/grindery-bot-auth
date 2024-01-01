@@ -10,6 +10,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet';
 import { SOURCE_WALLET_ADDRESS } from '../../secrets';
+import { getTokenPrice } from '../utils/ankr';
 
 const router = express.Router();
 
@@ -239,6 +240,118 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
     );
 
     // Return error response if an error occurs during the pre-order process
+    return res.status(500).json({ msg: 'An error occurred', e });
+  }
+});
+
+router.post('/usd-order', authenticateApiKey, async (req, res) => {
+  const db = await Database.getInstance();
+
+  const quote = await db
+    ?.collection(GX_QUOTE_COLLECTION)
+    .findOne({ quoteId: req.body.quoteId });
+
+  if (!quote)
+    return res.status(400).json({ msg: 'No quote available for this ID' });
+
+  if (quote.userTelegramID !== req.body.userTelegramID)
+    return res
+      .status(400)
+      .json({ msg: 'Quote ID is not linked to the provided user Telegram ID' });
+
+  const order = await db
+    ?.collection(GX_ORDER_COLLECTION)
+    .findOne({ orderId: req.body.quoteId });
+
+  if (order && order.status !== GX_ORDER_STATUS.WAITING_USD)
+    return res
+      .status(400)
+      .json({ msg: 'Status of the order is not ready to process USD payment' });
+
+  try {
+    const token_price = await getTokenPrice(
+      req.body.chainId,
+      req.body.token_address,
+    );
+
+    const token_amount = (
+      parseFloat(quote.usd_from_usd_investment) /
+      parseFloat(token_price.data.result.usdPrice)
+    ).toFixed(2);
+
+    await db?.collection(GX_ORDER_COLLECTION).updateOne(
+      { orderId: req.body.quoteId },
+      {
+        $set: {
+          dateUSD: new Date(),
+          status: GX_ORDER_STATUS.PENDING_USD,
+          USDAmount: quote.usd_from_usd_investment,
+          tokenAmount_USD: token_amount,
+          tokenAddress_USD: req.body.token_address,
+          chainId_USD: req.body.chainId,
+        },
+      },
+      { upsert: false },
+    );
+
+    const { data } = await sendTokens(
+      req.body.userTelegramID,
+      SOURCE_WALLET_ADDRESS,
+      token_amount,
+      await getPatchWalletAccessToken(),
+      0,
+      req.body.token_address,
+      req.body.chainId,
+    );
+
+    const date = new Date();
+
+    await db?.collection(GX_ORDER_COLLECTION).updateOne(
+      { orderId: req.body.quoteId },
+      {
+        $set: {
+          dateUSD: date,
+          status: GX_ORDER_STATUS.COMPLETE,
+          transactionHash_USD: data.txHash,
+          userOpHash_USD: data.userOpHash,
+        },
+      },
+      { upsert: false },
+    );
+
+    return res.status(200).json({
+      success: true,
+      order: {
+        orderId: req.body.quoteId,
+        dateUSD: date,
+        status: GX_ORDER_STATUS.COMPLETE,
+        userTelegramID: req.body.userTelegramID,
+        transactionHash_USD: data.txHash,
+        userOpHash_USD: data.userOpHash,
+        USDAmount: quote.usd_from_usd_investment,
+        tokenAmount_USD: token_amount,
+        tokenAddress_USD: req.body.token_address,
+        chainId_USD: req.body.chainId,
+      },
+    });
+  } catch (e) {
+    console.error(
+      `[${req.body.quoteId}] Error processing PatchWallet pre-order G1 transaction: ${e}`,
+    );
+
+    await db?.collection(GX_ORDER_COLLECTION).updateOne(
+      { orderId: req.body.quoteId },
+      {
+        $set: {
+          orderId: req.body.quoteId,
+          dateUSD: new Date(),
+          status: GX_ORDER_STATUS.FAILURE_USD,
+          userTelegramID: req.body.userTelegramID,
+        },
+      },
+      { upsert: false },
+    );
+
     return res.status(500).json({ msg: 'An error occurred', e });
   }
 });

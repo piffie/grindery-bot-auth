@@ -5,6 +5,7 @@ import * as g1gx from '../utils/g1gx';
 import app from '../index';
 import { getApiKey } from '../../secrets';
 import {
+  avax_address_polygon,
   getCollectionGXOrderMock,
   getCollectionGXQuoteMock,
   isUUIDv4,
@@ -14,7 +15,9 @@ import {
   mockOrderID1,
   mockTokenAddress,
   mockTransactionHash,
+  mockTransactionHash1,
   mockUserOpHash,
+  mockUserOpHash1,
   mockUserTelegramID,
   mockUserTelegramID1,
   mockWallet,
@@ -26,6 +29,7 @@ import {
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
   GX_ORDER_STATUS,
+  ANKR_MULTICHAIN_API_URL,
 } from '../utils/constants';
 import axios from 'axios';
 
@@ -90,6 +94,25 @@ describe('G1 to GX util functions', async function () {
           data: {
             txHash: mockTransactionHash,
             userOpHash: mockUserOpHash,
+          },
+        });
+      }
+
+      if (url === ANKR_MULTICHAIN_API_URL) {
+        return Promise.resolve({
+          data: {
+            jsonrpc: '2.0',
+            id: 1,
+            result: {
+              usdPrice: '10',
+              blockchain: 'polygon',
+              contractAddress: '0x2c89bbc92bd86f8075d1decc58c7f4e0107f286b',
+              syncStatus: {
+                timestamp: 1704124545,
+                lag: '-6s',
+                status: 'synced',
+              },
+            },
           },
         });
       }
@@ -551,7 +574,7 @@ describe('G1 to GX util functions', async function () {
       });
     });
 
-    it('Should update the database with a pending USD status if order is not present in database and USD amount is positive', async function () {
+    it('Should update the database with a waiting USD status if order is not present in database and USD amount is positive', async function () {
       await chai
         .request(app)
         .post('/v1/tge/pre-order')
@@ -632,6 +655,315 @@ describe('G1 to GX util functions', async function () {
             status: GX_ORDER_STATUS.FAILURE_G1,
             g1_amount: '1000.00',
             orderId: mockOrderID1,
+          },
+        ]);
+
+      chai.expect(res.body.msg).to.be.equal('An error occurred');
+    });
+  });
+
+  describe('Endpoint to make USD order for a user', async function () {
+    beforeEach(async function () {
+      await collectionQuotesMock.insertMany([
+        {
+          quoteId: mockOrderID,
+          g1_amount: '1000.00',
+          usd_from_usd_investment: '250.00',
+          usd_from_g1_holding: '1',
+          usd_from_mvu: '1',
+          usd_from_time: '1',
+          equivalent_usd_invested: '1',
+          gx_before_mvu: '1',
+          gx_mvu_effect: '1',
+          gx_time_effect: '1',
+          equivalent_gx_usd_exchange_rate: '1',
+          standard_gx_usd_exchange_rate: '1',
+          discount_received: '1',
+          gx_received: '1',
+          userTelegramID: mockUserTelegramID,
+        },
+        {
+          quoteId: mockOrderID1,
+          g1_amount: '1000.00',
+          usd_from_usd_investment: '600.00',
+          usd_from_g1_holding: '1',
+          usd_from_mvu: '1',
+          usd_from_time: '1',
+          equivalent_usd_invested: '1',
+          gx_before_mvu: '1',
+          gx_mvu_effect: '1',
+          gx_time_effect: '1',
+          equivalent_gx_usd_exchange_rate: '1',
+          standard_gx_usd_exchange_rate: '1',
+          discount_received: '1',
+          gx_received: '1',
+          userTelegramID: mockUserTelegramID1,
+        },
+      ]);
+
+      await collectionOrdersMock.insertMany([
+        {
+          orderId: mockOrderID,
+          date: new Date(),
+          status: GX_ORDER_STATUS.WAITING_USD,
+          userTelegramID: mockUserTelegramID,
+          g1_amount: '1000.00',
+          transactionHash: mockTransactionHash,
+          userOpHash: mockUserOpHash,
+        },
+        {
+          orderId: mockOrderID1,
+          date: new Date(),
+          status: GX_ORDER_STATUS.FAILURE_G1,
+          userTelegramID: mockUserTelegramID1,
+          g1_amount: '500.00',
+          transactionHash: mockTransactionHash1,
+          userOpHash: mockUserOpHash1,
+        },
+      ]);
+    });
+
+    it('Should return an error message if no quote available for the given quote ID', async function () {
+      const res = await chai
+        .request(app)
+        .post('/v1/tge/usd-order')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .send({
+          quoteId: 'not_existing_quote',
+          userTelegramID: mockUserTelegramID,
+          chainId: 'eip155:137',
+          token_address: avax_address_polygon,
+        });
+
+      chai
+        .expect(res.body)
+        .to.deep.equal({ msg: 'No quote available for this ID' });
+    });
+
+    it('Should return an error message if user Telegram ID is wrong', async function () {
+      const res = await chai
+        .request(app)
+        .post('/v1/tge/usd-order')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .send({
+          quoteId: mockOrderID,
+          userTelegramID: 'not_existing_user',
+          chainId: 'eip155:137',
+          token_address: avax_address_polygon,
+        });
+
+      chai.expect(res.body).to.deep.equal({
+        msg: 'Quote ID is not linked to the provided user Telegram ID',
+      });
+    });
+
+    it('Should fail with a message if order status is not waiting_usd', async function () {
+      const res = await chai
+        .request(app)
+        .post('/v1/tge/usd-order')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .send({
+          quoteId: mockOrderID1,
+          userTelegramID: mockUserTelegramID1,
+          chainId: 'eip155:137',
+          token_address: avax_address_polygon,
+        });
+
+      chai.expect(res.body).to.deep.equal({
+        msg: 'Status of the order is not ready to process USD payment',
+      });
+    });
+
+    it('Should call the sendTokens properly if order is not present in database', async function () {
+      await chai
+        .request(app)
+        .post('/v1/tge/usd-order')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .send({
+          quoteId: mockOrderID,
+          userTelegramID: mockUserTelegramID,
+          chainId: 'eip155:137',
+          token_address: avax_address_polygon,
+        });
+
+      chai
+        .expect(
+          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+            .args[1],
+        )
+        .to.deep.equal({
+          userId: `grindery:${mockUserTelegramID}`,
+          chain: 'matic',
+          to: [avax_address_polygon],
+          value: ['0x00'],
+          data: [
+            '0xa9059cbb0000000000000000000000006ef802abd3108411afe86656c9a369946aff590d0000000000000000000000000000000000000000000000015af1d78b58c40000',
+          ],
+          delegatecall: 0,
+          auth: '',
+        });
+    });
+
+    it('Should update the database with a complete status if everything is ok', async function () {
+      await chai
+        .request(app)
+        .post('/v1/tge/usd-order')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .send({
+          quoteId: mockOrderID,
+          userTelegramID: mockUserTelegramID,
+          chainId: 'eip155:137',
+          token_address: avax_address_polygon,
+        });
+      const orders = await collectionOrdersMock.find({}).toArray();
+
+      chai
+        .expect(orders)
+        .excluding(['_id', 'date', 'dateUSD'])
+        .to.deep.equal([
+          {
+            orderId: mockOrderID,
+            status: GX_ORDER_STATUS.COMPLETE,
+            userTelegramID: mockUserTelegramID,
+            g1_amount: '1000.00',
+            transactionHash: mockTransactionHash,
+            userOpHash: mockUserOpHash,
+            USDAmount: '250.00',
+            tokenAmount_USD: '25.00',
+            tokenAddress_USD: avax_address_polygon,
+            chainId_USD: 'eip155:137',
+            transactionHash_USD: mockTransactionHash,
+            userOpHash_USD: mockUserOpHash,
+          },
+          {
+            orderId: mockOrderID1,
+            status: GX_ORDER_STATUS.FAILURE_G1,
+            userTelegramID: mockUserTelegramID1,
+            g1_amount: '500.00',
+            transactionHash: mockTransactionHash1,
+            userOpHash: mockUserOpHash1,
+          },
+        ]);
+    });
+
+    it('Should return a proper payload if everything is ok', async function () {
+      const res = await chai
+        .request(app)
+        .post('/v1/tge/usd-order')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .send({
+          quoteId: mockOrderID,
+          userTelegramID: mockUserTelegramID,
+          chainId: 'eip155:137',
+          token_address: avax_address_polygon,
+        });
+
+      delete res.body.order.dateUSD;
+
+      chai.expect(res.body).to.deep.equal({
+        success: true,
+        order: {
+          orderId: mockOrderID,
+          status: GX_ORDER_STATUS.COMPLETE,
+          userTelegramID: mockUserTelegramID,
+          transactionHash_USD: mockTransactionHash,
+          userOpHash_USD: mockUserOpHash,
+          USDAmount: '250.00',
+          tokenAmount_USD: '25.00',
+          tokenAddress_USD: avax_address_polygon,
+          chainId_USD: 'eip155:137',
+        },
+      });
+    });
+
+    it('Should update the database with a failure status if there is an error in ANKR API to get token price', async function () {
+      axiosStub.withArgs(ANKR_MULTICHAIN_API_URL).rejects({
+        response: {
+          status: 400,
+        },
+      });
+
+      const res = await chai
+        .request(app)
+        .post('/v1/tge/usd-order')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .send({
+          quoteId: mockOrderID,
+          userTelegramID: mockUserTelegramID,
+          chainId: 'eip155:137',
+          token_address: avax_address_polygon,
+        });
+
+      const orders = await collectionOrdersMock.find({}).toArray();
+
+      chai
+        .expect(orders)
+        .excluding(['_id', 'date', 'dateUSD'])
+        .to.deep.equal([
+          {
+            orderId: mockOrderID,
+            status: GX_ORDER_STATUS.FAILURE_USD,
+            userTelegramID: mockUserTelegramID,
+            g1_amount: '1000.00',
+            transactionHash: mockTransactionHash,
+            userOpHash: mockUserOpHash,
+          },
+          {
+            orderId: mockOrderID1,
+            status: GX_ORDER_STATUS.FAILURE_G1,
+            userTelegramID: mockUserTelegramID1,
+            g1_amount: '500.00',
+            transactionHash: mockTransactionHash1,
+            userOpHash: mockUserOpHash1,
+          },
+        ]);
+
+      chai.expect(res.body.msg).to.be.equal('An error occurred');
+    });
+
+    it('Should update the database with a failure status if order is not present in database and failure in token transfer', async function () {
+      axiosStub.withArgs(PATCHWALLET_TX_URL).rejects({
+        response: {
+          status: 470,
+        },
+      });
+
+      const res = await chai
+        .request(app)
+        .post('/v1/tge/usd-order')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .send({
+          quoteId: mockOrderID,
+          userTelegramID: mockUserTelegramID,
+          chainId: 'eip155:137',
+          token_address: avax_address_polygon,
+        });
+
+      const orders = await collectionOrdersMock.find({}).toArray();
+
+      chai
+        .expect(orders)
+        .excluding(['_id', 'date', 'dateUSD'])
+        .to.deep.equal([
+          {
+            orderId: mockOrderID,
+            status: GX_ORDER_STATUS.FAILURE_USD,
+            userTelegramID: mockUserTelegramID,
+            g1_amount: '1000.00',
+            transactionHash: mockTransactionHash,
+            userOpHash: mockUserOpHash,
+            USDAmount: '250.00',
+            tokenAmount_USD: '25.00',
+            tokenAddress_USD: avax_address_polygon,
+            chainId_USD: 'eip155:137',
+          },
+          {
+            orderId: mockOrderID1,
+            status: GX_ORDER_STATUS.FAILURE_G1,
+            userTelegramID: mockUserTelegramID1,
+            g1_amount: '500.00',
+            transactionHash: mockTransactionHash1,
+            userOpHash: mockUserOpHash1,
           },
         ]);
 
