@@ -116,9 +116,9 @@ router.get('/conversion-information', authenticateApiKey, async (req, res) => {
  *     "date": "2023-12-31T12:00:00Z",
  *     "status": "PENDING",
  *     "userTelegramID": "user-telegram-id",
- *     "g1_amount": "1000.00",
- *     "transactionHash": "transaction-hash",
- *     "userOpHash": "user-operation-hash"
+ *     "tokenAmount_G1": "1000.00",
+ *     "transactionHash_G1": "transaction-hash",
+ *     "userOpHash_G1": "user-operation-hash"
  *   }
  * }
  *
@@ -165,7 +165,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
         date: new Date(),
         status: GX_ORDER_STATUS.PENDING,
         userTelegramID: req.body.userTelegramID,
-        g1_amount: quote.g1_amount,
+        tokenAmount_G1: quote.tokenAmount_G1,
       },
     },
     { upsert: true },
@@ -176,7 +176,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
     const { data } = await sendTokens(
       req.body.userTelegramID,
       SOURCE_WALLET_ADDRESS,
-      quote.g1_amount,
+      quote.tokenAmount_G1,
       await getPatchWalletAccessToken(),
       0,
     );
@@ -198,9 +198,9 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
           date: date,
           status,
           userTelegramID: req.body.userTelegramID,
-          g1_amount: quote.g1_amount,
-          transactionHash: data.txHash,
-          userOpHash: data.userOpHash,
+          tokenAmount_G1: quote.tokenAmount_G1,
+          transactionHash_G1: data.txHash,
+          userOpHash_G1: data.userOpHash,
         },
       },
       { upsert: true },
@@ -214,9 +214,9 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
         date: date,
         status,
         userTelegramID: req.body.userTelegramID,
-        g1_amount: quote.g1_amount,
-        transactionHash: data.txHash,
-        userOpHash: data.userOpHash,
+        tokenAmount_G1: quote.tokenAmount_G1,
+        transactionHash_G1: data.txHash,
+        userOpHash_G1: data.userOpHash,
       },
     });
   } catch (e) {
@@ -233,7 +233,7 @@ router.post('/pre-order', authenticateApiKey, async (req, res) => {
           date: new Date(),
           status: GX_ORDER_STATUS.FAILURE_G1,
           userTelegramID: req.body.userTelegramID,
-          g1_amount: quote.g1_amount,
+          tokenAmount_G1: quote.tokenAmount_G1,
         },
       },
       { upsert: true },
@@ -285,7 +285,7 @@ router.post('/usd-order', authenticateApiKey, async (req, res) => {
         $set: {
           dateUSD: new Date(),
           status: GX_ORDER_STATUS.PENDING_USD,
-          USDAmount: quote.usd_from_usd_investment,
+          amount_USD: quote.usd_from_usd_investment,
           tokenAmount_USD: token_amount,
           tokenAddress_USD: req.body.token_address,
           chainId_USD: req.body.chainId,
@@ -328,7 +328,7 @@ router.post('/usd-order', authenticateApiKey, async (req, res) => {
         userTelegramID: req.body.userTelegramID,
         transactionHash_USD: data.txHash,
         userOpHash_USD: data.userOpHash,
-        USDAmount: quote.usd_from_usd_investment,
+        amount_USD: quote.usd_from_usd_investment,
         tokenAmount_USD: token_amount,
         tokenAddress_USD: req.body.token_address,
         chainId_USD: req.body.chainId,
@@ -378,18 +378,18 @@ router.post('/usd-order', authenticateApiKey, async (req, res) => {
  *     "date": "2023-12-31T12:00:00Z",
  *     "status": "PENDING",
  *     "userTelegramID": "user-telegram-id",
- *     "g1_amount": "1000.00",
- *     "transactionHash": "transaction-hash",
- *     "userOpHash": "user-operation-hash"
+ *     "tokenAmount_G1": "1000.00",
+ *     "transactionHash_G1": "transaction-hash",
+ *     "userOpHash_G1": "user-operation-hash"
  *   },
  *   {
  *     "orderId": "order-id-2",
  *     "date": "2023-12-30T12:00:00Z",
  *     "status": "COMPLETE",
  *     "userTelegramID": "user-telegram-id",
- *     "g1_amount": "500.00",
- *     "transactionHash": "transaction-hash",
- *     "userOpHash": "user-operation-hash"
+ *     "tokenAmount_G1": "500.00",
+ *     "transactionHash_G1": "transaction-hash",
+ *     "userOpHash_G1": "user-operation-hash"
  *   },
  *   // ...other orders
  * ]
@@ -502,7 +502,7 @@ router.get('/quotes', authenticateApiKey, async (req, res) => {
  *   "orderId": "mocked-order-id",
  *   "status": "COMPLETE",
  *   "quoteId": "mocked-quote-id",
- *   "g1_amount": "1000.00",
+ *   "tokenAmount_G1": "1000.00",
  *   "usd_from_usd_investment": "1",
  *   "usd_from_g1_holding": "1",
  *   "usd_from_mvu": "1",

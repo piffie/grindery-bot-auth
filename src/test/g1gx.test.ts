@@ -329,7 +329,9 @@ describe('G1 to GX util functions', async function () {
 
       const result = computeG1ToGxConversion(usdQuantity, g1Quantity, mvu);
 
-      chai.expect(result.g1_amount).to.equal(Number(5000000000).toFixed(2));
+      chai
+        .expect(result.tokenAmount_G1)
+        .to.equal(Number(5000000000).toFixed(2));
       chai
         .expect(result.usd_from_usd_investment)
         .to.equal(Number(100).toFixed(2));

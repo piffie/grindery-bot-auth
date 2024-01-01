@@ -48,7 +48,7 @@ describe('G1 to GX util functions', async function () {
 
     sandbox = Sinon.createSandbox();
     sandbox.stub(g1gx, 'computeG1ToGxConversion').returns({
-      g1_amount: '1000.00',
+      tokenAmount_G1: '1000.00',
       usd_from_usd_investment: '1',
       usd_from_g1_holding: '1',
       usd_from_mvu: '1',
@@ -144,7 +144,7 @@ describe('G1 to GX util functions', async function () {
 
       chai.expect(res.body).to.deep.equal({
         userTelegramID: mockUserTelegramID,
-        g1_amount: '1000.00',
+        tokenAmount_G1: '1000.00',
         usd_from_usd_investment: '1',
         usd_from_g1_holding: '1',
         usd_from_mvu: '1',
@@ -178,7 +178,7 @@ describe('G1 to GX util functions', async function () {
         .excluding(['_id', 'date', 'quoteId'])
         .to.deep.equal([
           {
-            g1_amount: '1000.00',
+            tokenAmount_G1: '1000.00',
             usd_from_usd_investment: '1',
             usd_from_g1_holding: '1',
             usd_from_mvu: '1',
@@ -204,7 +204,7 @@ describe('G1 to GX util functions', async function () {
       await collectionQuotesMock.insertMany([
         {
           quoteId: mockOrderID,
-          g1_amount: '500.00',
+          tokenAmount_G1: '500.00',
           usd_from_usd_investment: '1',
           usd_from_g1_holding: '1',
           usd_from_mvu: '1',
@@ -221,7 +221,7 @@ describe('G1 to GX util functions', async function () {
         },
         {
           quoteId: mockOrderID1,
-          g1_amount: '1000.00',
+          tokenAmount_G1: '1000.00',
           usd_from_usd_investment: '1',
           usd_from_g1_holding: '1',
           usd_from_mvu: '1',
@@ -254,7 +254,7 @@ describe('G1 to GX util functions', async function () {
         .to.deep.equal([
           {
             quoteId: mockOrderID,
-            g1_amount: '500.00',
+            tokenAmount_G1: '500.00',
             usd_from_usd_investment: '1',
             usd_from_g1_holding: '1',
             usd_from_mvu: '1',
@@ -271,7 +271,7 @@ describe('G1 to GX util functions', async function () {
           },
           {
             quoteId: mockOrderID1,
-            g1_amount: '1000.00',
+            tokenAmount_G1: '1000.00',
             usd_from_usd_investment: '1',
             usd_from_g1_holding: '1',
             usd_from_mvu: '1',
@@ -361,7 +361,7 @@ describe('G1 to GX util functions', async function () {
     beforeEach(async function () {
       await collectionQuotesMock.insertOne({
         quoteId: mockOrderID,
-        g1_amount: '1000.00',
+        tokenAmount_G1: '1000.00',
         usd_from_usd_investment: '1',
         usd_from_g1_holding: '1',
         usd_from_mvu: '1',
@@ -396,7 +396,7 @@ describe('G1 to GX util functions', async function () {
         orderId: mockOrderID,
         status: GX_ORDER_STATUS.COMPLETE,
         quoteId: mockOrderID,
-        g1_amount: '1000.00',
+        tokenAmount_G1: '1000.00',
         usd_from_usd_investment: '1',
         usd_from_g1_holding: '1',
         usd_from_mvu: '1',
@@ -431,7 +431,7 @@ describe('G1 to GX util functions', async function () {
       await collectionQuotesMock.insertMany([
         {
           quoteId: mockOrderID,
-          g1_amount: '1000.00',
+          tokenAmount_G1: '1000.00',
           usd_from_usd_investment: '1',
           usd_from_g1_holding: '1',
           usd_from_mvu: '1',
@@ -448,7 +448,7 @@ describe('G1 to GX util functions', async function () {
         },
         {
           quoteId: mockOrderID1,
-          g1_amount: '1000.00',
+          tokenAmount_G1: '1000.00',
           usd_from_usd_investment: '0',
           usd_from_g1_holding: '1',
           usd_from_mvu: '1',
@@ -567,9 +567,9 @@ describe('G1 to GX util functions', async function () {
           orderId: mockOrderID,
           status: GX_ORDER_STATUS.WAITING_USD,
           userTelegramID: mockUserTelegramID,
-          g1_amount: '1000.00',
-          transactionHash: mockTransactionHash,
-          userOpHash: mockUserOpHash,
+          tokenAmount_G1: '1000.00',
+          transactionHash_G1: mockTransactionHash,
+          userOpHash_G1: mockUserOpHash,
         },
       });
     });
@@ -591,11 +591,11 @@ describe('G1 to GX util functions', async function () {
         .excluding(['_id', 'date'])
         .to.deep.equal([
           {
-            transactionHash: mockTransactionHash,
-            userOpHash: mockUserOpHash,
+            transactionHash_G1: mockTransactionHash,
+            userOpHash_G1: mockUserOpHash,
             userTelegramID: mockUserTelegramID,
             status: GX_ORDER_STATUS.WAITING_USD,
-            g1_amount: '1000.00',
+            tokenAmount_G1: '1000.00',
             orderId: mockOrderID,
           },
         ]);
@@ -618,11 +618,11 @@ describe('G1 to GX util functions', async function () {
         .excluding(['_id', 'date'])
         .to.deep.equal([
           {
-            transactionHash: mockTransactionHash,
-            userOpHash: mockUserOpHash,
+            transactionHash_G1: mockTransactionHash,
+            userOpHash_G1: mockUserOpHash,
             userTelegramID: mockUserTelegramID,
             status: GX_ORDER_STATUS.COMPLETE,
-            g1_amount: '1000.00',
+            tokenAmount_G1: '1000.00',
             orderId: mockOrderID1,
           },
         ]);
@@ -653,7 +653,7 @@ describe('G1 to GX util functions', async function () {
           {
             userTelegramID: mockUserTelegramID,
             status: GX_ORDER_STATUS.FAILURE_G1,
-            g1_amount: '1000.00',
+            tokenAmount_G1: '1000.00',
             orderId: mockOrderID1,
           },
         ]);
@@ -667,7 +667,7 @@ describe('G1 to GX util functions', async function () {
       await collectionQuotesMock.insertMany([
         {
           quoteId: mockOrderID,
-          g1_amount: '1000.00',
+          tokenAmount_G1: '1000.00',
           usd_from_usd_investment: '250.00',
           usd_from_g1_holding: '1',
           usd_from_mvu: '1',
@@ -684,7 +684,7 @@ describe('G1 to GX util functions', async function () {
         },
         {
           quoteId: mockOrderID1,
-          g1_amount: '1000.00',
+          tokenAmount_G1: '1000.00',
           usd_from_usd_investment: '600.00',
           usd_from_g1_holding: '1',
           usd_from_mvu: '1',
@@ -707,18 +707,18 @@ describe('G1 to GX util functions', async function () {
           date: new Date(),
           status: GX_ORDER_STATUS.WAITING_USD,
           userTelegramID: mockUserTelegramID,
-          g1_amount: '1000.00',
-          transactionHash: mockTransactionHash,
-          userOpHash: mockUserOpHash,
+          tokenAmount_G1: '1000.00',
+          transactionHash_G1: mockTransactionHash,
+          userOpHash_G1: mockUserOpHash,
         },
         {
           orderId: mockOrderID1,
           date: new Date(),
           status: GX_ORDER_STATUS.FAILURE_G1,
           userTelegramID: mockUserTelegramID1,
-          g1_amount: '500.00',
-          transactionHash: mockTransactionHash1,
-          userOpHash: mockUserOpHash1,
+          tokenAmount_G1: '500.00',
+          transactionHash_G1: mockTransactionHash1,
+          userOpHash_G1: mockUserOpHash1,
         },
       ]);
     });
@@ -825,10 +825,10 @@ describe('G1 to GX util functions', async function () {
             orderId: mockOrderID,
             status: GX_ORDER_STATUS.COMPLETE,
             userTelegramID: mockUserTelegramID,
-            g1_amount: '1000.00',
-            transactionHash: mockTransactionHash,
-            userOpHash: mockUserOpHash,
-            USDAmount: '250.00',
+            tokenAmount_G1: '1000.00',
+            transactionHash_G1: mockTransactionHash,
+            userOpHash_G1: mockUserOpHash,
+            amount_USD: '250.00',
             tokenAmount_USD: '25.00',
             tokenAddress_USD: avax_address_polygon,
             chainId_USD: 'eip155:137',
@@ -839,9 +839,9 @@ describe('G1 to GX util functions', async function () {
             orderId: mockOrderID1,
             status: GX_ORDER_STATUS.FAILURE_G1,
             userTelegramID: mockUserTelegramID1,
-            g1_amount: '500.00',
-            transactionHash: mockTransactionHash1,
-            userOpHash: mockUserOpHash1,
+            tokenAmount_G1: '500.00',
+            transactionHash_G1: mockTransactionHash1,
+            userOpHash_G1: mockUserOpHash1,
           },
         ]);
     });
@@ -868,7 +868,7 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           transactionHash_USD: mockTransactionHash,
           userOpHash_USD: mockUserOpHash,
-          USDAmount: '250.00',
+          amount_USD: '250.00',
           tokenAmount_USD: '25.00',
           tokenAddress_USD: avax_address_polygon,
           chainId_USD: 'eip155:137',
@@ -904,17 +904,17 @@ describe('G1 to GX util functions', async function () {
             orderId: mockOrderID,
             status: GX_ORDER_STATUS.FAILURE_USD,
             userTelegramID: mockUserTelegramID,
-            g1_amount: '1000.00',
-            transactionHash: mockTransactionHash,
-            userOpHash: mockUserOpHash,
+            tokenAmount_G1: '1000.00',
+            transactionHash_G1: mockTransactionHash,
+            userOpHash_G1: mockUserOpHash,
           },
           {
             orderId: mockOrderID1,
             status: GX_ORDER_STATUS.FAILURE_G1,
             userTelegramID: mockUserTelegramID1,
-            g1_amount: '500.00',
-            transactionHash: mockTransactionHash1,
-            userOpHash: mockUserOpHash1,
+            tokenAmount_G1: '500.00',
+            transactionHash_G1: mockTransactionHash1,
+            userOpHash_G1: mockUserOpHash1,
           },
         ]);
 
@@ -949,10 +949,10 @@ describe('G1 to GX util functions', async function () {
             orderId: mockOrderID,
             status: GX_ORDER_STATUS.FAILURE_USD,
             userTelegramID: mockUserTelegramID,
-            g1_amount: '1000.00',
-            transactionHash: mockTransactionHash,
-            userOpHash: mockUserOpHash,
-            USDAmount: '250.00',
+            tokenAmount_G1: '1000.00',
+            transactionHash_G1: mockTransactionHash,
+            userOpHash_G1: mockUserOpHash,
+            amount_USD: '250.00',
             tokenAmount_USD: '25.00',
             tokenAddress_USD: avax_address_polygon,
             chainId_USD: 'eip155:137',
@@ -961,9 +961,9 @@ describe('G1 to GX util functions', async function () {
             orderId: mockOrderID1,
             status: GX_ORDER_STATUS.FAILURE_G1,
             userTelegramID: mockUserTelegramID1,
-            g1_amount: '500.00',
-            transactionHash: mockTransactionHash1,
-            userOpHash: mockUserOpHash1,
+            tokenAmount_G1: '500.00',
+            transactionHash_G1: mockTransactionHash1,
+            userOpHash_G1: mockUserOpHash1,
           },
         ]);
 
