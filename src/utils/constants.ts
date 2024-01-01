@@ -158,6 +158,9 @@ export const PATCHWALLET_TX_URL = 'https://paymagicapi.com/v1/kernel/tx';
 export const PATCHWALLET_TX_STATUS_URL =
   'https://paymagicapi.com/v1/kernel/txStatus';
 
+/**
+ * URL for ANKR Multichain API.
+ */
 export const ANKR_MULTICHAIN_API_URL = `https://rpc.ankr.com/multichain/${ANKR_KEY}`;
 
 /**

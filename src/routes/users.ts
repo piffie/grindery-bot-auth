@@ -1,7 +1,7 @@
 import express from 'express';
 import { Database } from '../db/conn';
 import { authenticateApiKey } from '../utils/auth';
-import { USERS_COLLECTION } from '../utils/constants';
+import { ANKR_MULTICHAIN_API_URL, USERS_COLLECTION } from '../utils/constants';
 import axios from 'axios';
 import { ANKR_KEY } from '../../secrets';
 
@@ -91,7 +91,7 @@ router.get('/balance', authenticateApiKey, async (req, res) => {
     }
 
     const balance = await axios.post(
-      `https://rpc.ankr.com/multichain/${ANKR_KEY}`,
+      ANKR_MULTICHAIN_API_URL,
       {
         jsonrpc: '2.0',
         method: 'ankr_getAccountBalance',
