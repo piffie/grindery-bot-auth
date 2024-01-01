@@ -194,7 +194,7 @@ export async function getStatus(
   } catch (error) {
     // Log error if retrieving transaction status fails
     console.error(
-      `[${telegram_operation.eventId}] Error processing PatchWallet transaction status: ${error}`,
+      `[${telegram_operation.params.eventId}] Error processing PatchWallet transaction status: ${error}`,
     );
 
     // Check if the telegram_operation is of a Reward class and set isError to true if it is
