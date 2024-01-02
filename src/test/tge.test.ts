@@ -129,7 +129,7 @@ describe('G1 to GX util functions', async function () {
     it('Should return all conversion information', async function () {
       const res = await chai
         .request(app)
-        .get('/v1/tge/conversion-information')
+        .get('/v1/tge/quote')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .query({
           usdQuantity: '10',
@@ -163,7 +163,7 @@ describe('G1 to GX util functions', async function () {
     it('Should fill the quote database with a quote ID and conversion informations', async function () {
       await chai
         .request(app)
-        .get('/v1/tge/conversion-information')
+        .get('/v1/tge/quote')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .query({
           usdQuantity: '10',
@@ -386,7 +386,7 @@ describe('G1 to GX util functions', async function () {
     it('Should return the order status if orderId is present in database', async function () {
       const res = await chai
         .request(app)
-        .get('/v1/tge/order-status')
+        .get('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .query({
           orderId: mockOrderID,
@@ -416,7 +416,7 @@ describe('G1 to GX util functions', async function () {
     it('Should return an empty result if orderId is not present in database', async function () {
       const res = await chai
         .request(app)
-        .get('/v1/tge/order-status')
+        .get('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .query({
           orderId: 'another_order_ID',
@@ -469,7 +469,7 @@ describe('G1 to GX util functions', async function () {
     it('Should return an error message if no quote available for the given quote ID', async function () {
       const res = await chai
         .request(app)
-        .post('/v1/tge/pre-order')
+        .post('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: 'non_existing_quote_id',
@@ -485,7 +485,7 @@ describe('G1 to GX util functions', async function () {
     it('Should return an error message if provided Telegram ID is incorrect', async function () {
       const res = await chai
         .request(app)
-        .post('/v1/tge/pre-order')
+        .post('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID,
@@ -506,7 +506,7 @@ describe('G1 to GX util functions', async function () {
 
       const res = await chai
         .request(app)
-        .post('/v1/tge/pre-order')
+        .post('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID,
@@ -527,7 +527,7 @@ describe('G1 to GX util functions', async function () {
 
       const res = await chai
         .request(app)
-        .post('/v1/tge/pre-order')
+        .post('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID,
@@ -543,7 +543,7 @@ describe('G1 to GX util functions', async function () {
     it('Should call the sendTokens properly if order is not present in database', async function () {
       await chai
         .request(app)
-        .post('/v1/tge/pre-order')
+        .post('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID,
@@ -571,7 +571,7 @@ describe('G1 to GX util functions', async function () {
     it('Should return the transaction hash if order is not present in database', async function () {
       const res = await chai
         .request(app)
-        .post('/v1/tge/pre-order')
+        .post('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID,
@@ -596,7 +596,7 @@ describe('G1 to GX util functions', async function () {
     it('Should update the database with a waiting USD status if order is not present in database and USD amount is positive', async function () {
       await chai
         .request(app)
-        .post('/v1/tge/pre-order')
+        .post('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID,
@@ -623,7 +623,7 @@ describe('G1 to GX util functions', async function () {
     it('Should update the database with a complete status if order is not present in database and USD amount is 0', async function () {
       await chai
         .request(app)
-        .post('/v1/tge/pre-order')
+        .post('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID1,
@@ -656,7 +656,7 @@ describe('G1 to GX util functions', async function () {
 
       const res = await chai
         .request(app)
-        .post('/v1/tge/pre-order')
+        .post('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID1,
@@ -745,7 +745,7 @@ describe('G1 to GX util functions', async function () {
     it('Should return an error message if no quote available for the given quote ID', async function () {
       const res = await chai
         .request(app)
-        .post('/v1/tge/usd-order')
+        .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: 'not_existing_quote',
@@ -763,7 +763,7 @@ describe('G1 to GX util functions', async function () {
     it('Should return an error message if user Telegram ID is wrong', async function () {
       const res = await chai
         .request(app)
-        .post('/v1/tge/usd-order')
+        .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID,
@@ -781,7 +781,7 @@ describe('G1 to GX util functions', async function () {
     it('Should fail with a message if order status is not waiting_usd', async function () {
       const res = await chai
         .request(app)
-        .post('/v1/tge/usd-order')
+        .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID1,
@@ -798,7 +798,7 @@ describe('G1 to GX util functions', async function () {
     it('Should call the sendTokens properly if order is not present in database', async function () {
       await chai
         .request(app)
-        .post('/v1/tge/usd-order')
+        .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID,
@@ -828,7 +828,7 @@ describe('G1 to GX util functions', async function () {
     it('Should update the database with a complete status if everything is ok', async function () {
       await chai
         .request(app)
-        .post('/v1/tge/usd-order')
+        .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID,
@@ -870,7 +870,7 @@ describe('G1 to GX util functions', async function () {
     it('Should return a proper payload if everything is ok', async function () {
       const res = await chai
         .request(app)
-        .post('/v1/tge/usd-order')
+        .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID,
@@ -906,7 +906,7 @@ describe('G1 to GX util functions', async function () {
 
       const res = await chai
         .request(app)
-        .post('/v1/tge/usd-order')
+        .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID,
@@ -954,7 +954,7 @@ describe('G1 to GX util functions', async function () {
 
       const res = await chai
         .request(app)
-        .post('/v1/tge/usd-order')
+        .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
           quoteId: mockOrderID,
