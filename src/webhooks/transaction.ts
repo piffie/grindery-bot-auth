@@ -8,6 +8,7 @@ import { TRANSACTION_STATUS, USERS_COLLECTION } from '../utils/constants';
 import { sendTelegramMessage } from '../utils/telegram';
 import { TransferTelegram, createTransferTelegram } from '../utils/transfers';
 import {
+  getStatus,
   isFailedTransaction,
   isPendingTransactionHash,
   isSuccessfulTransaction,
@@ -75,7 +76,7 @@ export async function handleNewTransaction(
       );
 
     // Check status for userOpHash and return the status if it's retrieved successfully or false if failed
-    tx = await transfer.getStatus();
+    tx = await getStatus(transfer);
     if (tx.isError) return true;
     if (!tx.txHash && !tx.userOpHash) return false;
   }

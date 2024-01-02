@@ -2,6 +2,7 @@ import { TRANSACTION_STATUS, USERS_COLLECTION } from '../utils/constants';
 import { Database } from '../db/conn';
 import { createSwapTelegram } from '../utils/swap';
 import {
+  getStatus,
   isFailedTransaction,
   isPendingTransactionHash,
   isSuccessfulTransaction,
@@ -64,7 +65,7 @@ export async function handleSwap(params: SwapParams): Promise<boolean> {
     }
 
     // Check status for userOpHash and return the status if it's retrieved successfully or false if failed
-    tx = await swap.getStatus();
+    tx = await getStatus(swap);
     if (tx.isError) return true;
     if (!tx.txHash && !tx.userOpHash) return false;
   }

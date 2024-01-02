@@ -1,15 +1,34 @@
 import {
   PatchResult,
-  Reward,
   TelegramOperations,
   TransactionStatus,
 } from '../types/webhook.types';
 import { TRANSACTION_STATUS } from '../utils/constants';
 import { getTxStatus } from '../utils/patchwallet';
+import {
+  IsolatedRewardTelegram,
+  LinkRewardTelegram,
+  ReferralRewardTelegram,
+  SignUpRewardTelegram,
+} from '../utils/rewards';
 import { SwapTelegram } from '../utils/swap';
 import { getXMinBeforeDate } from '../utils/time';
 import { TransferTelegram } from '../utils/transfers';
 import { VestingTelegram } from '../utils/vesting';
+
+/**
+ * Checks if the provided Telegram operation is an instance of a Reward Telegram.
+ * @param telegram_operation The Telegram operation to check.
+ * @returns Returns true if the provided operation is an instance of a Reward Telegram, otherwise returns false.
+ */
+function isRewardClass(telegram_operation: TelegramOperations): boolean {
+  return (
+    telegram_operation instanceof IsolatedRewardTelegram ||
+    telegram_operation instanceof LinkRewardTelegram ||
+    telegram_operation instanceof ReferralRewardTelegram ||
+    telegram_operation instanceof SignUpRewardTelegram
+  );
+}
 
 /**
  * Checks if the provided status indicates a successful transaction.
@@ -75,36 +94,6 @@ export async function isTreatmentDurationExceeded(
       true)) ||
     false
   );
-}
-
-/**
- * Retrieves the status of rewards based on the provided reward instance.
- *
- * @param reward An instance representing various reward types:
- *  - `IsolatedRewardTelegram`
- *  - `LinkRewardTelegram`
- *  - `ReferralRewardTelegram`
- *  - `SignUpRewardTelegram`
- * @returns A Promise that resolves to the status of rewards retrieval.
- *   If successful, returns the status obtained from the transaction; otherwise, returns `false`.
- * @throws Error if there's an issue during the status retrieval process.
- */
-export async function getStatusRewards(reward: Reward): Promise<PatchResult> {
-  try {
-    // Retrieve the status of the PatchWallet transaction
-    const status = await getTxStatus(reward.userOpHash);
-    return {
-      isError: false,
-      userOpHash: status.data.userOpHash,
-      txHash: status.data.txHash,
-    };
-  } catch (error) {
-    // Log error if retrieving transaction status fails
-    console.error(
-      `[${reward.params.eventId}] Error processing PatchWallet transaction status: ${error}`,
-    );
-    return { isError: true };
-  }
 }
 
 /**
@@ -182,5 +171,43 @@ export async function sendTransaction(
 
     // Return indicating an error for other transaction types.
     return { isError: true };
+  }
+}
+
+/**
+ * Retrieves the status of the transaction associated with a Telegram operation.
+ * @param telegram_operation The Telegram operation to retrieve the transaction status for.
+ * @returns A Promise resolving to the transaction status result.
+ */
+export async function getStatus(
+  telegram_operation: TelegramOperations,
+): Promise<PatchResult> {
+  try {
+    // Retrieve the status of the PatchWallet transaction
+    const { data } = await getTxStatus(telegram_operation.userOpHash);
+
+    return {
+      isError: false,
+      userOpHash: data.userOpHash,
+      txHash: data.txHash,
+    };
+  } catch (error) {
+    // Log error if retrieving transaction status fails
+    console.error(
+      `[${telegram_operation.params.eventId}] Error processing PatchWallet transaction status: ${error}`,
+    );
+
+    // Check if the telegram_operation is of a Reward class and set isError to true if it is
+    if (isRewardClass(telegram_operation)) return { isError: true };
+
+    // Return true if the error status is 470, marking the transaction as failed
+    return (
+      (error?.response?.status === 470 &&
+        (await telegram_operation.updateInDatabase(
+          TRANSACTION_STATUS.FAILURE,
+          new Date(),
+        ),
+        { isError: true })) || { isError: false }
+    );
   }
 }
