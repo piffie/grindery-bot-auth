@@ -751,7 +751,7 @@ describe('G1 to GX util functions', async function () {
           quoteId: 'not_existing_quote',
           userTelegramID: mockUserTelegramID,
           chainId: 'eip155:137',
-          token_address: avax_address_polygon,
+          tokenAddress: avax_address_polygon,
         });
 
       chai.expect(res.body).to.deep.equal({
@@ -769,7 +769,7 @@ describe('G1 to GX util functions', async function () {
           quoteId: mockOrderID,
           userTelegramID: 'not_existing_user',
           chainId: 'eip155:137',
-          token_address: avax_address_polygon,
+          tokenAddress: avax_address_polygon,
         });
 
       chai.expect(res.body).to.deep.equal({
@@ -787,7 +787,7 @@ describe('G1 to GX util functions', async function () {
           quoteId: mockOrderID1,
           userTelegramID: mockUserTelegramID1,
           chainId: 'eip155:137',
-          token_address: avax_address_polygon,
+          tokenAddress: avax_address_polygon,
         });
 
       chai.expect(res.body).to.deep.equal({
@@ -804,7 +804,7 @@ describe('G1 to GX util functions', async function () {
           quoteId: mockOrderID,
           userTelegramID: mockUserTelegramID,
           chainId: 'eip155:137',
-          token_address: avax_address_polygon,
+          tokenAddress: avax_address_polygon,
         });
 
       chai
@@ -834,7 +834,7 @@ describe('G1 to GX util functions', async function () {
           quoteId: mockOrderID,
           userTelegramID: mockUserTelegramID,
           chainId: 'eip155:137',
-          token_address: avax_address_polygon,
+          tokenAddress: avax_address_polygon,
         });
       const orders = await collectionOrdersMock.find({}).toArray();
 
@@ -876,7 +876,7 @@ describe('G1 to GX util functions', async function () {
           quoteId: mockOrderID,
           userTelegramID: mockUserTelegramID,
           chainId: 'eip155:137',
-          token_address: avax_address_polygon,
+          tokenAddress: avax_address_polygon,
         });
 
       delete res.body.order.dateUSD;
@@ -912,7 +912,7 @@ describe('G1 to GX util functions', async function () {
           quoteId: mockOrderID,
           userTelegramID: mockUserTelegramID,
           chainId: 'eip155:137',
-          token_address: avax_address_polygon,
+          tokenAddress: avax_address_polygon,
         });
 
       const orders = await collectionOrdersMock.find({}).toArray();
@@ -960,7 +960,7 @@ describe('G1 to GX util functions', async function () {
           quoteId: mockOrderID,
           userTelegramID: mockUserTelegramID,
           chainId: 'eip155:137',
-          token_address: avax_address_polygon,
+          tokenAddress: avax_address_polygon,
         });
 
       const orders = await collectionOrdersMock.find({}).toArray();

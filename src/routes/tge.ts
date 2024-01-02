@@ -265,7 +265,7 @@ router.post('/order', authenticateApiKey, async (req, res) => {
  * @security BearerAuth
  * @param {string} req.body.quoteId - The quote ID to process the order.
  * @param {string} req.body.userTelegramID - The user's Telegram ID for identification.
- * @param {string} req.body.token_address - The token address for USD-based order.
+ * @param {string} req.body.tokenAddress - The token address for USD-based order.
  * @param {string} req.body.chainId - The chain ID for USD-based order.
  * @return {object} 200 - Success response with processed order details
  * @return {object} 400 - Error response if the quote is unavailable or order status is not ready for USD payment
@@ -275,7 +275,7 @@ router.post('/order', authenticateApiKey, async (req, res) => {
  * {
  *   "quoteId": "mocked-quote-id",
  *   "userTelegramID": "user-telegram-id",
- *   "token_address": "token-address",
+ *   "tokenAddress": "token-address",
  *   "chainId": "chain-id"
  * }
  *
@@ -345,7 +345,7 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
     // Calculate token price based on chainId and token address
     const token_price = await getTokenPrice(
       req.body.chainId,
-      req.body.token_address,
+      req.body.tokenAddress,
     );
 
     // Calculate token amount for the USD investment
@@ -363,7 +363,7 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
           status: GX_ORDER_STATUS.PENDING_USD,
           amount_USD: quote.usd_from_usd_investment,
           tokenAmount_USD: token_amount,
-          tokenAddress_USD: req.body.token_address,
+          tokenAddress_USD: req.body.tokenAddress,
           chainId_USD: req.body.chainId,
         },
       },
@@ -377,7 +377,7 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
       token_amount,
       await getPatchWalletAccessToken(),
       0,
-      req.body.token_address,
+      req.body.tokenAddress,
       req.body.chainId,
     );
 
@@ -410,7 +410,7 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
         userOpHash_USD: data.userOpHash,
         amount_USD: quote.usd_from_usd_investment,
         tokenAmount_USD: token_amount,
-        tokenAddress_USD: req.body.token_address,
+        tokenAddress_USD: req.body.tokenAddress,
         chainId_USD: req.body.chainId,
       },
     });
