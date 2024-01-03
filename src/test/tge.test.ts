@@ -608,6 +608,40 @@ describe('G1 to GX util functions', async function () {
       });
     });
 
+    it('Should delete quote from database if order is not present in database', async function () {
+      await chai
+        .request(app)
+        .post('/v1/tge/order')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .send({
+          quoteId: mockOrderID,
+          userTelegramID: mockUserTelegramID,
+        });
+
+      chai
+        .expect(await collectionQuotesMock.find({}).toArray())
+        .excluding(['_id'])
+        .to.deep.equal([
+          {
+            quoteId: mockOrderID1,
+            tokenAmountG1: '1000.00',
+            usdFromUsdInvestment: '0',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
+            userTelegramID: mockUserTelegramID,
+          },
+        ]);
+    });
+
     it('Should update the database with a waiting USD status if order is not present in database and USD amount is positive', async function () {
       await chai
         .request(app)
@@ -737,8 +771,13 @@ describe('G1 to GX util functions', async function () {
 
   describe('Endpoint to make USD order for a user', async function () {
     beforeEach(async function () {
-      await collectionQuotesMock.insertMany([
+      await collectionOrdersMock.insertMany([
         {
+          orderId: mockOrderID,
+          dateG1: new Date(),
+          status: GX_ORDER_STATUS.WAITING_USD,
+          transactionHashG1: mockTransactionHash,
+          userOpHashG1: mockUserOpHash,
           quoteId: mockOrderID,
           tokenAmountG1: '1000.00',
           usdFromUsdInvestment: '250.00',
@@ -756,6 +795,11 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         },
         {
+          orderId: mockOrderID1,
+          dateG1: new Date(),
+          status: GX_ORDER_STATUS.FAILURE_G1,
+          transactionHashG1: mockTransactionHash1,
+          userOpHashG1: mockUserOpHash1,
           quoteId: mockOrderID1,
           tokenAmountG1: '1000.00',
           usdFromUsdInvestment: '600.00',
@@ -773,27 +817,6 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID1,
         },
       ]);
-
-      await collectionOrdersMock.insertMany([
-        {
-          orderId: mockOrderID,
-          dateG1: new Date(),
-          status: GX_ORDER_STATUS.WAITING_USD,
-          userTelegramID: mockUserTelegramID,
-          tokenAmountG1: '1000.00',
-          transactionHashG1: mockTransactionHash,
-          userOpHashG1: mockUserOpHash,
-        },
-        {
-          orderId: mockOrderID1,
-          dateG1: new Date(),
-          status: GX_ORDER_STATUS.FAILURE_G1,
-          userTelegramID: mockUserTelegramID1,
-          tokenAmountG1: '500.00',
-          transactionHashG1: mockTransactionHash1,
-          userOpHashG1: mockUserOpHash1,
-        },
-      ]);
     });
 
     it('Should return an error message if no quote available for the given quote ID', async function () {
@@ -802,7 +825,7 @@ describe('G1 to GX util functions', async function () {
         .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
-          quoteId: 'not_existing_quote',
+          orderId: 'not_existing_order',
           userTelegramID: mockUserTelegramID,
           chainId: 'eip155:137',
           tokenAddress: avax_address_polygon,
@@ -810,7 +833,7 @@ describe('G1 to GX util functions', async function () {
 
       chai.expect(res.body).to.deep.equal({
         success: false,
-        msg: 'No quote available for this ID',
+        msg: 'No order available for this ID',
       });
     });
 
@@ -820,7 +843,7 @@ describe('G1 to GX util functions', async function () {
         .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
-          quoteId: mockOrderID,
+          orderId: mockOrderID,
           userTelegramID: 'not_existing_user',
           chainId: 'eip155:137',
           tokenAddress: avax_address_polygon,
@@ -828,7 +851,7 @@ describe('G1 to GX util functions', async function () {
 
       chai.expect(res.body).to.deep.equal({
         success: false,
-        msg: 'Quote ID is not linked to the provided user Telegram ID',
+        msg: 'Order ID is not linked to the provided user Telegram ID',
       });
     });
 
@@ -838,7 +861,7 @@ describe('G1 to GX util functions', async function () {
         .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
-          quoteId: mockOrderID1,
+          orderId: mockOrderID1,
           userTelegramID: mockUserTelegramID1,
           chainId: 'eip155:137',
           tokenAddress: avax_address_polygon,
@@ -855,7 +878,7 @@ describe('G1 to GX util functions', async function () {
         .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
-          quoteId: mockOrderID,
+          orderId: mockOrderID,
           userTelegramID: mockUserTelegramID,
           chainId: 'eip155:137',
           tokenAddress: avax_address_polygon,
@@ -885,7 +908,7 @@ describe('G1 to GX util functions', async function () {
         .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
-          quoteId: mockOrderID,
+          orderId: mockOrderID,
           userTelegramID: mockUserTelegramID,
           chainId: 'eip155:137',
           tokenAddress: avax_address_polygon,
@@ -899,24 +922,50 @@ describe('G1 to GX util functions', async function () {
           {
             orderId: mockOrderID,
             status: GX_ORDER_STATUS.COMPLETE,
-            userTelegramID: mockUserTelegramID,
-            tokenAmountG1: '1000.00',
             transactionHashG1: mockTransactionHash,
             userOpHashG1: mockUserOpHash,
-            amountUSD: '250.00',
             tokenAmountUSD: '25.00',
             tokenAddressUSD: avax_address_polygon,
             chainIdUSD: 'eip155:137',
             transactionHash_USD: mockTransactionHash,
             userOpHash_USD: mockUserOpHash,
+            quoteId: mockOrderID,
+            tokenAmountG1: '1000.00',
+            usdFromUsdInvestment: '250.00',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
+            userTelegramID: mockUserTelegramID,
           },
           {
             orderId: mockOrderID1,
+            dateG1: new Date(),
             status: GX_ORDER_STATUS.FAILURE_G1,
-            userTelegramID: mockUserTelegramID1,
-            tokenAmountG1: '500.00',
             transactionHashG1: mockTransactionHash1,
             userOpHashG1: mockUserOpHash1,
+            quoteId: mockOrderID1,
+            tokenAmountG1: '1000.00',
+            usdFromUsdInvestment: '600.00',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
+            userTelegramID: mockUserTelegramID1,
           },
         ]);
     });
@@ -927,12 +976,13 @@ describe('G1 to GX util functions', async function () {
         .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
-          quoteId: mockOrderID,
+          orderId: mockOrderID,
           userTelegramID: mockUserTelegramID,
           chainId: 'eip155:137',
           tokenAddress: avax_address_polygon,
         });
 
+      delete res.body.order.dateG1;
       delete res.body.order.dateUSD;
 
       chai.expect(res.body).to.deep.equal({
@@ -940,13 +990,28 @@ describe('G1 to GX util functions', async function () {
         order: {
           orderId: mockOrderID,
           status: GX_ORDER_STATUS.COMPLETE,
-          userTelegramID: mockUserTelegramID,
-          transactionHash_USD: mockTransactionHash,
-          userOpHash_USD: mockUserOpHash,
-          amountUSD: '250.00',
+          transactionHashG1: mockTransactionHash,
+          userOpHashG1: mockUserOpHash,
           tokenAmountUSD: '25.00',
           tokenAddressUSD: avax_address_polygon,
           chainIdUSD: 'eip155:137',
+          transactionHash_USD: mockTransactionHash,
+          userOpHash_USD: mockUserOpHash,
+          quoteId: mockOrderID,
+          tokenAmountG1: '1000.00',
+          usdFromUsdInvestment: '250.00',
+          usdFromG1Investment: '1',
+          usdFromMvu: '1',
+          usdFromTime: '1',
+          equivalentUsdInvested: '1',
+          gxBeforeMvu: '1',
+          gxMvuEffect: '1',
+          gxTimeEffect: '1',
+          GxUsdExchangeRate: '1',
+          standardGxUsdExchangeRate: '1',
+          discountReceived: '1',
+          gxReceived: '1',
+          userTelegramID: mockUserTelegramID,
         },
       });
     });
@@ -963,7 +1028,7 @@ describe('G1 to GX util functions', async function () {
         .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
-          quoteId: mockOrderID,
+          orderId: mockOrderID,
           userTelegramID: mockUserTelegramID,
           chainId: 'eip155:137',
           tokenAddress: avax_address_polygon,
@@ -978,18 +1043,45 @@ describe('G1 to GX util functions', async function () {
           {
             orderId: mockOrderID,
             status: GX_ORDER_STATUS.FAILURE_USD,
-            userTelegramID: mockUserTelegramID,
-            tokenAmountG1: '1000.00',
             transactionHashG1: mockTransactionHash,
             userOpHashG1: mockUserOpHash,
+            quoteId: mockOrderID,
+            tokenAmountG1: '1000.00',
+            usdFromUsdInvestment: '250.00',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
+            userTelegramID: mockUserTelegramID,
           },
           {
             orderId: mockOrderID1,
+            dateG1: new Date(),
             status: GX_ORDER_STATUS.FAILURE_G1,
-            userTelegramID: mockUserTelegramID1,
-            tokenAmountG1: '500.00',
             transactionHashG1: mockTransactionHash1,
             userOpHashG1: mockUserOpHash1,
+            quoteId: mockOrderID1,
+            tokenAmountG1: '1000.00',
+            usdFromUsdInvestment: '600.00',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
+            userTelegramID: mockUserTelegramID1,
           },
         ]);
 
@@ -1011,7 +1103,7 @@ describe('G1 to GX util functions', async function () {
         .patch('/v1/tge/order')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .send({
-          quoteId: mockOrderID,
+          orderId: mockOrderID,
           userTelegramID: mockUserTelegramID,
           chainId: 'eip155:137',
           tokenAddress: avax_address_polygon,
@@ -1026,22 +1118,48 @@ describe('G1 to GX util functions', async function () {
           {
             orderId: mockOrderID,
             status: GX_ORDER_STATUS.FAILURE_USD,
-            userTelegramID: mockUserTelegramID,
-            tokenAmountG1: '1000.00',
             transactionHashG1: mockTransactionHash,
             userOpHashG1: mockUserOpHash,
-            amountUSD: '250.00',
             tokenAmountUSD: '25.00',
             tokenAddressUSD: avax_address_polygon,
             chainIdUSD: 'eip155:137',
+            quoteId: mockOrderID,
+            tokenAmountG1: '1000.00',
+            usdFromUsdInvestment: '250.00',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
+            userTelegramID: mockUserTelegramID,
           },
           {
             orderId: mockOrderID1,
+            dateG1: new Date(),
             status: GX_ORDER_STATUS.FAILURE_G1,
-            userTelegramID: mockUserTelegramID1,
-            tokenAmountG1: '500.00',
             transactionHashG1: mockTransactionHash1,
             userOpHashG1: mockUserOpHash1,
+            quoteId: mockOrderID1,
+            tokenAmountG1: '1000.00',
+            usdFromUsdInvestment: '600.00',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
+            userTelegramID: mockUserTelegramID1,
           },
         ]);
 

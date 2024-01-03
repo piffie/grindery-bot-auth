@@ -230,6 +230,11 @@ router.post('/order', authenticateApiKey, async (req, res) => {
       { upsert: false },
     );
 
+    // Delete quote from the database
+    await db
+      ?.collection(GX_QUOTE_COLLECTION)
+      .deleteOne({ quoteId: req.body.quoteId });
+
     // Return success response with order transaction details
     return res.status(200).json({
       success: true,
@@ -324,34 +329,32 @@ router.post('/order', authenticateApiKey, async (req, res) => {
 router.patch('/order', authenticateApiKey, async (req, res) => {
   const db = await Database.getInstance();
 
-  // Retrieve quote details based on the provided quoteId
-  const quote = await db
-    ?.collection(GX_QUOTE_COLLECTION)
-    .findOne({ quoteId: req.body.quoteId });
-
-  // If quote is not found, return an error response
-  if (!quote)
-    return res
-      .status(400)
-      .json({ success: false, msg: 'No quote available for this ID' });
-
-  // Check if the quote's userTelegramID matches the provided userTelegramID
-  if (quote.userTelegramID !== req.body.userTelegramID)
-    return res.status(400).json({
-      success: false,
-      msg: 'Quote ID is not linked to the provided user Telegram ID',
-    });
-
   // Fetch order details based on the quoteId
   const order = await db
     ?.collection(GX_ORDER_COLLECTION)
-    .findOne({ orderId: req.body.quoteId });
+    .findOne({ orderId: req.body.orderId });
+
+  // If order is not found, return an error response
+  if (!order)
+    return res
+      .status(400)
+      .json({ success: false, msg: 'No order available for this ID' });
+
+  // Check if the order's userTelegramID matches the provided userTelegramID
+  if (order.userTelegramID !== req.body.userTelegramID)
+    return res.status(400).json({
+      success: false,
+      msg: 'Order ID is not linked to the provided user Telegram ID',
+    });
 
   // If an order exists and status is not ready for USD payment, return an error response
   if (order && order.status !== GX_ORDER_STATUS.WAITING_USD)
     return res
       .status(400)
       .json({ msg: 'Status of the order is not ready to process USD payment' });
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { _id, ...orderWithoutId } = order;
 
   try {
     // Calculate token price based on chainId and token address
@@ -362,18 +365,17 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
 
     // Calculate token amount for the USD investment
     const token_amount = (
-      parseFloat(quote.usdFromUsdInvestment) /
+      parseFloat(order.usdFromUsdInvestment) /
       parseFloat(token_price.data.result.usdPrice)
     ).toFixed(2);
 
     // Update order details with USD-based information
     await db?.collection(GX_ORDER_COLLECTION).updateOne(
-      { orderId: req.body.quoteId },
+      { orderId: req.body.orderId },
       {
         $set: {
           dateUSD: new Date(),
           status: GX_ORDER_STATUS.PENDING_USD,
-          amountUSD: quote.usdFromUsdInvestment,
           tokenAmountUSD: token_amount,
           tokenAddressUSD: req.body.tokenAddress,
           chainIdUSD: req.body.chainId,
@@ -398,7 +400,7 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
 
     // Update order status and transaction details upon successful transaction
     await db?.collection(GX_ORDER_COLLECTION).updateOne(
-      { orderId: req.body.quoteId },
+      { orderId: req.body.orderId },
       {
         $set: {
           dateUSD: date,
@@ -414,30 +416,29 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
     return res.status(200).json({
       success: true,
       order: {
-        orderId: req.body.quoteId,
+        ...orderWithoutId,
+        orderId: req.body.orderId,
         dateUSD: date,
         status: GX_ORDER_STATUS.COMPLETE,
-        userTelegramID: req.body.userTelegramID,
         transactionHash_USD: data.txHash,
         userOpHash_USD: data.userOpHash,
-        amountUSD: quote.usdFromUsdInvestment,
-        tokenAmountUSD: token_amount,
         tokenAddressUSD: req.body.tokenAddress,
         chainIdUSD: req.body.chainId,
+        tokenAmountUSD: token_amount,
       },
     });
   } catch (e) {
     // Log error if transaction fails and update order status to failure
     console.error(
-      `[${req.body.quoteId}] Error processing PatchWallet order G1 transaction: ${e}`,
+      `[${req.body.orderId}] Error processing PatchWallet order G1 transaction: ${e}`,
     );
 
     // Update order status to failure in case of transaction error
     await db?.collection(GX_ORDER_COLLECTION).updateOne(
-      { orderId: req.body.quoteId },
+      { orderId: req.body.orderId },
       {
         $set: {
-          orderId: req.body.quoteId,
+          orderId: req.body.orderId,
           dateUSD: new Date(),
           status: GX_ORDER_STATUS.FAILURE_USD,
           userTelegramID: req.body.userTelegramID,
