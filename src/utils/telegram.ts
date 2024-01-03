@@ -2,8 +2,9 @@ import { Api } from 'telegram';
 import { StringSession } from 'telegram/sessions/index';
 import TGClient from './telegramClient';
 import { decrypt } from './crypt';
-import { WithId, Document } from 'mongodb';
+import { WithId } from 'mongodb';
 import { TelegramMessageResponse } from '../types/telegram.types';
+import { MongoUser } from '../types/mongo.types';
 
 /**
  * Sends a message via Telegram to a recipient.
@@ -17,7 +18,7 @@ import { TelegramMessageResponse } from '../types/telegram.types';
 export const sendTelegramMessage = async (
   message: string,
   recipientId: string,
-  senderUser: WithId<Document>,
+  senderUser: WithId<MongoUser>,
 ): Promise<TelegramMessageResponse> => {
   try {
     // Validation checks for required parameters

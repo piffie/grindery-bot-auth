@@ -29,7 +29,8 @@ import BigNumber from 'bignumber.js';
 import { getContract } from '../utils/web3';
 import { CHAIN_MAPPING } from '../utils/chains';
 import { getPatchWalletAccessToken, swapTokens } from '../utils/patchwallet';
-import { Db, Document, WithId } from 'mongodb';
+import { Db, WithId } from 'mongodb';
+import { MongoSwap, MongoUser } from '../types/mongo.types';
 
 /**
  * Handles the swap process based on provided parameters.
@@ -41,9 +42,9 @@ export async function handleSwap(params: SwapParams): Promise<boolean> {
   const db = await Database.getInstance();
 
   // Fetch user information from the database based on the provided Telegram ID
-  const userInformation = await db
-    ?.collection(USERS_COLLECTION)
-    .findOne({ userTelegramID: params.userTelegramID });
+  const userInformation = (await db?.collection(USERS_COLLECTION).findOne({
+    userTelegramID: params.userTelegramID,
+  })) as WithId<MongoUser> | null;
 
   // If user information is not found, log an error and return true indicating handled status
   if (!userInformation) {
@@ -137,7 +138,7 @@ export class SwapTelegram {
   /**
    * Transaction details associated with the swap.
    */
-  tx: WithId<Document> | null;
+  tx: WithId<MongoSwap> | null;
   /**
    * The status of the swap.
    */
@@ -201,13 +202,13 @@ export class SwapTelegram {
 
   /**
    * Retrieves swap information from the database.
-   * @returns {Promise<WithId<Document>>} - Promise resolving to swap information or null if not found.
+   * @returns {Promise<WithId<MongoSwap>>} - Promise resolving to swap information or null if not found.
    */
-  async getSwapFromDatabase(): Promise<WithId<Document> | null> {
+  async getSwapFromDatabase(): Promise<WithId<MongoSwap> | null> {
     if (this.db)
-      return await this.db
+      return (await this.db
         .collection(SWAPS_COLLECTION)
-        .findOne({ eventId: this.params.eventId });
+        .findOne({ eventId: this.params.eventId })) as WithId<MongoSwap> | null;
     return null;
   }
 
@@ -330,7 +331,7 @@ export class SwapTelegram {
     axios.AxiosResponse<PatchRawResult, AxiosError>
   > {
     return await swapTokens(
-      this.params.userInformation?.userTelegramID,
+      this.params.userInformation?.userTelegramID || '',
       this.params.to || '',
       this.params.value,
       this.params.data || '',

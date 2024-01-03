@@ -31,8 +31,9 @@ import {
   updateTxHash,
   updateUserOpHash,
 } from './utils';
-import { Db, Document, WithId } from 'mongodb';
+import { Db, WithId } from 'mongodb';
 import { Database } from '../db/conn';
+import { MongoReward, MongoUser } from '../types/mongo.types';
 
 /**
  * Handles the processing of a link reward based on specified parameters.
@@ -114,7 +115,7 @@ export class LinkRewardTelegram {
   isInDatabase: boolean = false;
 
   /** Transaction details of the reward. */
-  tx: WithId<Document> | null;
+  tx: WithId<MongoReward> | null;
 
   /** Current status of the reward. */
   status: TransactionStatus;
@@ -126,7 +127,7 @@ export class LinkRewardTelegram {
   userOpHash?: string;
 
   /** Transaction details of the referent. */
-  referent: WithId<Document> | null;
+  referent: WithId<MongoUser> | null;
 
   /** Database reference. */
   db: Db | null;
@@ -197,13 +198,13 @@ export class LinkRewardTelegram {
 
   /**
    * Retrieves the referent user information from the database.
-   * @returns {Promise<object|null>} - The referent user information or null if not found.
+   * @returns {Promise<WithId<MongoUser>|null>} - The referent user information or null if not found.
    */
-  async getReferent(): Promise<object | null> {
+  async getReferent(): Promise<WithId<MongoUser> | null> {
     if (this.db)
-      this.referent = await this.db
-        ?.collection(USERS_COLLECTION)
-        .findOne({ userTelegramID: this.params.referentUserTelegramID });
+      this.referent = (await this.db.collection(USERS_COLLECTION).findOne({
+        userTelegramID: this.params.referentUserTelegramID,
+      })) as WithId<MongoUser>;
 
     if (this.referent) {
       this.referent.patchwallet =
@@ -217,16 +218,16 @@ export class LinkRewardTelegram {
 
   /**
    * Retrieves the reward information from the database.
-   * @returns {Promise<WithId<Document>>} - The reward information or null if not found.
+   * @returns {Promise<WithId<MongoReward>>} - The reward information or null if not found.
    */
-  async getRewardFromDatabase(): Promise<WithId<Document> | null> {
+  async getRewardFromDatabase(): Promise<WithId<MongoReward> | null> {
     if (this.db)
-      return await this.db.collection(REWARDS_COLLECTION).findOne({
+      return (await this.db.collection(REWARDS_COLLECTION).findOne({
         eventId: this.params.eventId,
         userTelegramID: this.params.referentUserTelegramID,
         sponsoredUserTelegramID: this.params.userTelegramID,
         reason: this.params.reason,
-      });
+      })) as WithId<MongoReward>;
     return null;
   }
 
@@ -311,7 +312,7 @@ export class LinkRewardTelegram {
   > {
     return await sendTokens(
       SOURCE_TG_ID,
-      this.referent?.patchwallet,
+      this.referent?.patchwallet || '',
       this.params.amount || '',
       await getPatchWalletAccessToken(),
       this.params.delegatecall || 0,

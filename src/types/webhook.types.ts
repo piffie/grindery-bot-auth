@@ -1,4 +1,4 @@
-import { Document, WithId } from 'mongodb';
+import { WithId } from 'mongodb';
 import {
   DEFAULT_CHAIN_ID,
   G1_TOKEN_SYMBOL,
@@ -12,6 +12,7 @@ import { SignUpRewardTelegram } from '../webhooks/signup-reward';
 import { ReferralRewardTelegram } from '../webhooks/referral-reward';
 import { LinkRewardTelegram } from '../webhooks/link-reward';
 import { IsolatedRewardTelegram } from '../webhooks/isolated-reward';
+import { MongoUser } from './mongo.types';
 
 /**
  * Represents the various transaction statuses.
@@ -31,7 +32,7 @@ export type SwapParams = {
   /** The Telegram user ID associated with the swap. */
   userTelegramID: string;
   /** Additional user information with MongoDB document ID. */
-  userInformation?: WithId<Document>;
+  userInformation?: WithId<MongoUser>;
   /** The recipient wallet address. */
   to?: string;
   /** Additional data for the swap. */
@@ -79,7 +80,7 @@ export type SwapParams = {
  */
 export function createSwapParams(
   params: SwapParams,
-  userInformation: WithId<Document>,
+  userInformation: WithId<MongoUser>,
 ): SwapParams {
   return {
     ...{
@@ -201,7 +202,7 @@ export type TransactionParams = {
   /** The symbol of the token for the transaction. */
   tokenSymbol?: string;
   /** Additional sender information with MongoDB document ID. */
-  senderInformation?: WithId<Document>;
+  senderInformation?: WithId<MongoUser>;
   /**
    * Represents whether the transaction is a delegate call.
    * - `0` for non-delegate call
@@ -218,7 +219,7 @@ export type TransactionParams = {
  */
 export function createTransaction(
   params: TransactionParams,
-  senderInformation: WithId<Document>,
+  senderInformation: WithId<MongoUser>,
 ): TransactionParams {
   return {
     ...{

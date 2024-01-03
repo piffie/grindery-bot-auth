@@ -31,8 +31,9 @@ import {
   updateTxHash,
   updateUserOpHash,
 } from './utils';
-import { Db, Document, FindCursor, WithId } from 'mongodb';
+import { Db, FindCursor, WithId } from 'mongodb';
 import { Database } from '../db/conn';
+import { MongoReward, MongoTransfer, MongoUser } from '../types/mongo.types';
 
 /**
  * Handles the processing of a referral reward based on specified parameters.
@@ -131,13 +132,13 @@ export class ReferralRewardTelegram {
   params: RewardParams;
 
   /** Transaction details of the parent. */
-  parentTx?: WithId<Document>;
+  parentTx?: WithId<MongoTransfer>;
 
   /** Transaction details of the referent. */
-  referent: WithId<Document> | null;
+  referent: WithId<MongoUser> | null;
 
   /** Transaction details of the reward. */
-  tx: WithId<Document> | null;
+  tx: WithId<MongoReward> | null;
 
   /** Current status of the reward. */
   status: TransactionStatus;
@@ -152,7 +153,7 @@ export class ReferralRewardTelegram {
   db: Db | null;
 
   /** Cursor for transfers related to the reward. */
-  transfers: FindCursor<WithId<Document>> | null;
+  transfers: FindCursor<WithId<MongoTransfer>> | null;
 
   /**
    * Creates an instance of ReferralRewardTelegram.
@@ -192,16 +193,17 @@ export class ReferralRewardTelegram {
 
   /**
    * Retrieves transfers from the database based on certain conditions.
-   * @returns {Promise<FindCursor<WithId<Document>>>} - The retrieved transfers.
+   * @returns {Promise<FindCursor<WithId<MongoTransfer>>>} - The retrieved transfers.
    */
   async getTransfersFromDatabase(): Promise<FindCursor<
-    WithId<Document>
+    WithId<MongoTransfer>
   > | null> {
-    if (this.db)
+    if (this.db) {
       return this.db.collection(TRANSFERS_COLLECTION).find({
         senderTgId: { $ne: this.params.userTelegramID },
         recipientTgId: this.params.userTelegramID,
-      });
+      }) as FindCursor<WithId<MongoTransfer>>;
+    }
     return null;
   }
 
@@ -235,9 +237,9 @@ export class ReferralRewardTelegram {
   async getReferent(): Promise<boolean> {
     try {
       if (this.db)
-        this.referent = await this.db.collection(USERS_COLLECTION).findOne({
+        this.referent = (await this.db.collection(USERS_COLLECTION).findOne({
           userTelegramID: this.parentTx?.senderTgId,
-        });
+        })) as WithId<MongoUser> | null;
       if (!this.referent) {
         console.log(
           `[${this.params.eventId}] sender ${this.parentTx?.senderTgId} who is supposed to receive a referral reward is not a user.`,
@@ -258,10 +260,10 @@ export class ReferralRewardTelegram {
    */
   async getRewardSameFromDatabase(): Promise<boolean> {
     if (this.db)
-      this.tx = await this.db.collection(REWARDS_COLLECTION).findOne({
+      this.tx = (await this.db.collection(REWARDS_COLLECTION).findOne({
         eventId: this.params.eventId,
         reason: this.params.reason,
-      });
+      })) as WithId<MongoReward> | null;
 
     if (this.tx) {
       this.userOpHash = this.tx.userOpHash;
@@ -367,7 +369,7 @@ export class ReferralRewardTelegram {
   > {
     return await sendTokens(
       SOURCE_TG_ID,
-      this.referent?.patchwallet,
+      this.referent?.patchwallet || '',
       this.params.amount || '',
       await getPatchWalletAccessToken(),
       this.params.delegatecall || 0,

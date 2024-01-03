@@ -81,7 +81,8 @@ export async function isTreatmentDurationExceeded(
   telegram_operation: TelegramOperations,
 ): Promise<boolean> {
   return (
-    (telegram_operation.tx?.dateAdded < getXMinBeforeDate(new Date(), 10) &&
+    (telegram_operation.tx &&
+      telegram_operation.tx.dateAdded < getXMinBeforeDate(new Date(), 10) &&
       (console.log(
         `[${telegram_operation.params.eventId}] was stopped due to too long treatment duration (> 10 min).`,
       ),
