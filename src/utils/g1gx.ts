@@ -244,46 +244,40 @@ export function computeG1ToGxConversion(
   );
 
   // Calculate quantities in USD
-  const usd_from_usd_investment = gxFromUSD / EXCHANGE_RATE_GX_USD;
-  const usd_from_g1_holding = gxFromG1 / EXCHANGE_RATE_GX_USD;
-  const usd_from_mvu = (gxAfterMVU - gxBeforeMVU) / EXCHANGE_RATE_GX_USD;
-  const usd_from_time =
+  const usdFromUsdInvestment = gxFromUSD / EXCHANGE_RATE_GX_USD;
+  const usdFromG1Investment = gxFromG1 / EXCHANGE_RATE_GX_USD;
+  const usdFromMvu = (gxAfterMVU - gxBeforeMVU) / EXCHANGE_RATE_GX_USD;
+  const usdFromTime =
     (gxAfterMVUWithTimeEffect - gxAfterMVU) / EXCHANGE_RATE_GX_USD;
-  const equivalent_usd_invested =
-    usd_from_usd_investment +
-    usd_from_g1_holding +
-    usd_from_mvu +
-    usd_from_time;
+  const equivalentUsdInvested =
+    usdFromUsdInvestment + usdFromG1Investment + usdFromMvu + usdFromTime;
 
   // Calculate different effects
-  const gx_before_mvu =
-    (usd_from_g1_holding + usd_from_usd_investment) * EXCHANGE_RATE_GX_USD;
-  const gx_mvu_effect = usd_from_mvu * EXCHANGE_RATE_GX_USD;
-  const gx_time_effect =
-    gxAfterMVUWithTimeEffect - (gx_before_mvu + gx_mvu_effect);
-  const equivalent_gx_usd_exchange_rate =
-    (gx_before_mvu + gx_mvu_effect + gx_time_effect) /
-    (usd_from_usd_investment + usd_from_g1_holding);
+  const gxBeforeMvu =
+    (usdFromG1Investment + usdFromUsdInvestment) * EXCHANGE_RATE_GX_USD;
+  const gxMvuEffect = usdFromMvu * EXCHANGE_RATE_GX_USD;
+  const gxTimeEffect = gxAfterMVUWithTimeEffect - (gxBeforeMvu + gxMvuEffect);
+  const GxUsdExchangeRate =
+    (gxBeforeMvu + gxMvuEffect + gxTimeEffect) /
+    (usdFromUsdInvestment + usdFromG1Investment);
 
   // Return an object with conversion details and equivalencies
   return {
-    tokenAmount_G1: g1Quantity.toFixed(2),
-    usd_from_usd_investment: usd_from_usd_investment.toFixed(2),
-    usd_from_g1_holding: usd_from_g1_holding.toFixed(2),
-    usd_from_mvu: usd_from_mvu.toFixed(2),
-    usd_from_time: usd_from_time.toFixed(2),
-    equivalent_usd_invested: equivalent_usd_invested.toFixed(2),
-    gx_before_mvu: gx_before_mvu.toFixed(2),
-    gx_mvu_effect: gx_mvu_effect.toFixed(2),
-    gx_time_effect: gx_time_effect.toFixed(2),
-    equivalent_gx_usd_exchange_rate: equivalent_gx_usd_exchange_rate.toFixed(2),
-    standard_gx_usd_exchange_rate: EXCHANGE_RATE_GX_USD.toFixed(2),
-    discount_received: (
-      (1 - EXCHANGE_RATE_GX_USD / equivalent_gx_usd_exchange_rate) *
+    tokenAmountG1: g1Quantity.toFixed(2),
+    usdFromUsdInvestment: usdFromUsdInvestment.toFixed(2),
+    usdFromG1Investment: usdFromG1Investment.toFixed(2),
+    usdFromMvu: usdFromMvu.toFixed(2),
+    usdFromTime: usdFromTime.toFixed(2),
+    equivalentUsdInvested: equivalentUsdInvested.toFixed(2),
+    gxBeforeMvu: gxBeforeMvu.toFixed(2),
+    gxMvuEffect: gxMvuEffect.toFixed(2),
+    gxTimeEffect: gxTimeEffect.toFixed(2),
+    GxUsdExchangeRate: GxUsdExchangeRate.toFixed(2),
+    standardGxUsdExchangeRate: EXCHANGE_RATE_GX_USD.toFixed(2),
+    discountReceived: (
+      (1 - EXCHANGE_RATE_GX_USD / GxUsdExchangeRate) *
       100
     ).toFixed(2),
-    gx_received: (
-      equivalent_usd_invested * equivalent_gx_usd_exchange_rate
-    ).toFixed(2),
+    gxReceived: (equivalentUsdInvested * GxUsdExchangeRate).toFixed(2),
   };
 }
