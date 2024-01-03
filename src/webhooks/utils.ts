@@ -5,16 +5,14 @@ import {
 } from '../types/webhook.types';
 import { TRANSACTION_STATUS } from '../utils/constants';
 import { getTxStatus } from '../utils/patchwallet';
-import {
-  IsolatedRewardTelegram,
-  LinkRewardTelegram,
-  ReferralRewardTelegram,
-  SignUpRewardTelegram,
-} from '../utils/rewards';
-import { SwapTelegram } from '../utils/swap';
 import { getXMinBeforeDate } from '../utils/time';
-import { TransferTelegram } from '../utils/transfers';
-import { VestingTelegram } from '../utils/vesting';
+import { IsolatedRewardTelegram } from './isolated-reward';
+import { LinkRewardTelegram } from './link-reward';
+import { ReferralRewardTelegram } from './referral-reward';
+import { SignUpRewardTelegram } from './signup-reward';
+import { SwapTelegram } from './swap';
+import { TransferTelegram } from './transaction';
+import { VestingTelegram } from './vesting';
 
 /**
  * Checks if the provided Telegram operation is an instance of a Reward Telegram.

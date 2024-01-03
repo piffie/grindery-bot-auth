@@ -1,4 +1,3 @@
-import { Database } from '../db/conn';
 import {
   DEFAULT_CHAIN_ID,
   GRINDERY_VESTING_ADMIN,
@@ -6,30 +5,15 @@ import {
   HEDGEY_VESTING_LOCKER,
   IDO_START_DATE,
   TOKEN_LOCK_TERM,
-  TRANSACTION_STATUS,
-  VESTING_COLLECTION,
 } from './constants';
-import { getPatchWalletAccessToken, hedgeyLockTokens } from './patchwallet';
-import { addVestingSegment } from './segment';
-import axios, { AxiosError } from 'axios';
-import {
-  FLOWXO_NEW_VESTING_WEBHOOK,
-  FLOWXO_WEBHOOK_API_KEY,
-  G1_POLYGON_ADDRESS,
-} from '../../secrets';
-import { Db, Document, WithId } from 'mongodb';
-import {
-  HedgeyPlanParams,
-  HedgeyRecipientParams,
-  VestingParams,
-} from '../types/hedgey.types';
+import { G1_POLYGON_ADDRESS } from '../../secrets';
+import { HedgeyPlanParams, HedgeyRecipientParams } from '../types/hedgey.types';
 import {
   getContract,
   getHedgeyBatchPlannerContract,
   scaleDecimals,
 } from './web3';
 import BigNumber from 'bignumber.js';
-import { PatchRawResult, TransactionStatus } from '../types/webhook.types';
 
 /**
  * Calculates and generates plans for distributing tokens to recipients over time.
@@ -121,175 +105,4 @@ export async function getData(
           5, // Investor Lockups (fixed Hedgey constant)
         )
         .encodeABI();
-}
-
-/**
- * Creates a vesting specific to Telegram based on the specified parameters.
- * @param params - The parameters required for the vesting.
- * @returns A promise resolving to a VestingTelegram instance or a boolean value.
- *          - If the VestingTelegram instance is successfully created and initialized, it's returned.
- *          - If initialization of the vesting's database fails, returns `false`.
- */
-export async function createVestingTelegram(
-  params: VestingParams,
-): Promise<VestingTelegram | boolean> {
-  const vesting = new VestingTelegram(params);
-  return (await vesting.initializeTransferDatabase()) && vesting;
-}
-
-/**
- * Represents a Telegram vesting.
- */
-export class VestingTelegram {
-  /** The parameters required for the transaction. */
-  params: VestingParams;
-
-  /** Indicates if the vesting is present in the database. */
-  isInDatabase: boolean = false;
-
-  /** Transaction details of the vesting. */
-  tx: WithId<Document> | null;
-
-  /** Current status of the vesting. */
-  status: TransactionStatus;
-
-  /** Transaction hash associated with the vesting. */
-  txHash?: string;
-
-  /** User operation hash. */
-  userOpHash?: string;
-
-  /** Database reference. */
-  db: Db | null;
-
-  /**
-   * Constructor for VestingTelegram class.
-   * @param params - The parameters required for the vesting.
-   */
-  constructor(params: VestingParams) {
-    // Properties related to user and transaction details
-    this.params = params;
-
-    // Default values if not provided
-    this.isInDatabase = false;
-    this.tx = null;
-    this.status = TRANSACTION_STATUS.UNDEFINED;
-    this.txHash = undefined;
-    this.userOpHash = undefined;
-  }
-
-  /**
-   * Initializes the vesting object by connecting to the database and retrieving relevant information.
-   * @returns {Promise<boolean>} - True if initialization is successful, false otherwise.
-   */
-  async initializeTransferDatabase(): Promise<boolean> {
-    this.db = await Database.getInstance();
-    this.tx = await this.getTransferFromDatabase();
-
-    if (this.tx) {
-      this.isInDatabase = true;
-      this.status = this.tx.status;
-      this.userOpHash = this.tx.userOpHash;
-    } else {
-      await this.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
-    }
-
-    return true;
-  }
-
-  /**
-   * Retrieves the vesting information from the database.
-   * @returns {Promise<WithId<Document>>} - The vesting information or null if not found.
-   */
-  async getTransferFromDatabase(): Promise<WithId<Document> | null> {
-    if (this.db)
-      return await this.db
-        .collection(VESTING_COLLECTION)
-        .findOne({ eventId: this.params.eventId });
-    return null;
-  }
-
-  /**
-   * Updates the vesting information in the database.
-   * @param {TransactionStatus} status - The transaction status.
-   * @param {Date|null} date - The date of the transaction.
-   */
-  async updateInDatabase(
-    status: TransactionStatus,
-    date: Date | null,
-  ): Promise<void> {
-    await this.db?.collection(VESTING_COLLECTION).updateOne(
-      { eventId: this.params.eventId },
-      {
-        $set: {
-          eventId: this.params.eventId,
-          chainId: this.params.chainId,
-          tokenSymbol: this.params.tokenSymbol,
-          tokenAddress: this.params.tokenAddress,
-          senderTgId: this.params.senderInformation?.userTelegramID,
-          senderWallet: this.params.senderInformation?.patchwallet,
-          senderName: this.params.senderInformation?.userName,
-          senderHandle: this.params.senderInformation?.userHandle,
-          recipients: this.params.recipients,
-          status: status,
-          ...(date ? { dateAdded: date } : {}),
-          transactionHash: this.txHash,
-          userOpHash: this.userOpHash,
-        },
-      },
-      { upsert: true },
-    );
-    console.log(
-      `[${this.params.eventId}] vesting from ${this.params.senderInformation?.userTelegramID} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
-    );
-  }
-
-  /**
-   * Saves transaction information to the Segment.
-   * @returns {Promise<void>} - The result of adding the transaction to the Segment.
-   */
-  async saveToSegment(): Promise<void> {
-    // Add transaction information to the Segment
-    await addVestingSegment({
-      ...this.params,
-      transactionHash: this.txHash || '',
-      dateAdded: new Date(),
-    });
-  }
-
-  /**
-   * Saves transaction information to FlowXO.
-   * @returns {Promise<void>} - The result of sending the transaction to FlowXO.
-   */
-  async saveToFlowXO(): Promise<void> {
-    // Send transaction information to FlowXO
-    await axios.post(FLOWXO_NEW_VESTING_WEBHOOK, {
-      senderResponsePath: this.params.senderInformation?.responsePath,
-      chainId: this.params.chainId,
-      tokenSymbol: this.params.tokenSymbol,
-      tokenAddress: this.params.tokenAddress,
-      senderTgId: this.params.senderInformation?.userTelegramID,
-      senderWallet: this.params.senderInformation?.patchwallet,
-      senderName: this.params.senderInformation?.userName,
-      senderHandle: this.params.senderInformation?.userHandle,
-      recipients: this.params.recipients,
-      transactionHash: this.txHash,
-      dateAdded: new Date(),
-      apiKey: FLOWXO_WEBHOOK_API_KEY,
-    });
-  }
-
-  /**
-   * Sends a transaction action, triggering PatchWallet.
-   * @returns Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> - Promise resolving to an AxiosResponse object with PatchRawResult data or AxiosError on failure.
-   */
-  async sendTransactionAction(): Promise<
-    axios.AxiosResponse<PatchRawResult, AxiosError>
-  > {
-    return await hedgeyLockTokens(
-      this.params.senderInformation?.userTelegramID,
-      this.params.recipients,
-      await getPatchWalletAccessToken(),
-    );
-  }
 }

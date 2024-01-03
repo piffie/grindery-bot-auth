@@ -1,19 +1,17 @@
 import { Document, WithId } from 'mongodb';
 import {
-  IsolatedRewardTelegram,
-  LinkRewardTelegram,
-  ReferralRewardTelegram,
-  SignUpRewardTelegram,
-} from '../utils/rewards';
-import { TransferTelegram } from '../utils/transfers';
-import { SwapTelegram } from '../utils/swap';
-import {
   DEFAULT_CHAIN_ID,
   G1_TOKEN_SYMBOL,
   TRANSACTION_STATUS,
 } from '../utils/constants';
 import { G1_POLYGON_ADDRESS } from '../../secrets';
-import { VestingTelegram } from '../utils/vesting';
+import { SwapTelegram } from '../webhooks/swap';
+import { TransferTelegram } from '../webhooks/transaction';
+import { VestingTelegram } from '../webhooks/vesting';
+import { SignUpRewardTelegram } from '../webhooks/signup-reward';
+import { ReferralRewardTelegram } from '../webhooks/referral-reward';
+import { LinkRewardTelegram } from '../webhooks/link-reward';
+import { IsolatedRewardTelegram } from '../webhooks/isolated-reward';
 
 /**
  * Represents the various transaction statuses.
@@ -290,4 +288,34 @@ export interface PatchResult extends PatchRawResult {
    * Indicates whether an error occurred during the operation.
    */
   isError: boolean;
+}
+
+/**
+ * Represents the initialization result of a transaction operation.
+ */
+export interface TransactionInit {
+  /**
+   * The initialized transaction instance.
+   */
+  transactionInstance: TransferTelegram;
+
+  /**
+   * Indicates whether an error occurred during initialization.
+   */
+  isError: boolean;
+}
+
+/**
+ * Represents the initialization result of a SignUpRewardTelegram instance.
+ */
+export interface RewardInit {
+  /**
+   * The initialized reward instance.
+   */
+  RewardInstance: SignUpRewardTelegram | LinkRewardTelegram;
+
+  /**
+   * Indicates if a reward should not be issued.
+   */
+  ShouldBeIssued: boolean;
 }
