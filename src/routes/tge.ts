@@ -93,10 +93,10 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
  * POST /v1/tge/order
  *
  * @summary Create a Gx token order
- * @description Initiates a order for Gx tokens based on the provided quote ID and user details.
+ * @description Initiates an order for Gx tokens based on the provided quote ID and user details.
  * @tags Pre-Order
  * @security BearerAuth
- * @param {string} req.body.quoteId - The quote ID to create a order.
+ * @param {string} req.body.quoteId - The quote ID to create an order.
  * @param {string} req.body.userTelegramID - The user's Telegram ID for identification.
  * @return {object} 200 - Success response with the order transaction details
  * @return {object} 400 - Error response if a quote is unavailable or the order is being processed
@@ -113,12 +113,26 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
  *   "success": true,
  *   "order": {
  *     "orderId": "mocked-quote-id",
- *     "date": "2023-12-31T12:00:00Z",
- *     "status": "PENDING",
- *     "userTelegramID": "user-telegram-id",
- *     "tokenAmountG1": "1000.00",
- *     "transactionHashG1": "transaction-hash",
- *     "userOpHashG1": "user-operation-hash"
+ *     "status": "WAITING_USD",
+ *     "transactionHashG1": "mock-transaction-hash",
+ *     "userOpHashG1": "mock-user-op-hash",
+ *     "quote": {
+ *       "quoteId": "mocked-quote-id",
+ *       "tokenAmountG1": "1000.00",
+ *       "usdFromUsdInvestment": "1",
+ *       "usdFromG1Investment": "1",
+ *       "usdFromMvu": "1",
+ *       "usdFromTime": "1",
+ *       "equivalentUsdInvested": "1",
+ *       "gxBeforeMvu": "1",
+ *       "gxMvuEffect": "1",
+ *       "gxTimeEffect": "1",
+ *       "GxUsdExchangeRate": "1",
+ *       "standardGxUsdExchangeRate": "1",
+ *       "discountReceived": "1",
+ *       "gxReceived": "1",
+ *       "userTelegramID": "user-telegram-id"
+ *     }
  *   }
  * }
  *
@@ -149,6 +163,9 @@ router.post('/order', authenticateApiKey, async (req, res) => {
       .status(400)
       .json({ success: false, msg: 'No quote available for this ID' });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { _id, ...quoteWithoutId } = quote;
+
   if (quote.userTelegramID !== req.body.userTelegramID)
     return res.status(400).json({
       success: false,
@@ -172,10 +189,9 @@ router.post('/order', authenticateApiKey, async (req, res) => {
     {
       $set: {
         orderId: req.body.quoteId,
-        date: new Date(),
+        dateG1: new Date(),
         status: GX_ORDER_STATUS.PENDING,
-        userTelegramID: req.body.userTelegramID,
-        tokenAmountG1: quote.tokenAmountG1,
+        ...quoteWithoutId,
       },
     },
     { upsert: true },
@@ -205,15 +221,13 @@ router.post('/order', authenticateApiKey, async (req, res) => {
       {
         $set: {
           orderId: req.body.quoteId,
-          date: date,
+          dateG1: date,
           status,
-          userTelegramID: req.body.userTelegramID,
-          tokenAmountG1: quote.tokenAmountG1,
           transactionHashG1: data.txHash,
           userOpHashG1: data.userOpHash,
         },
       },
-      { upsert: true },
+      { upsert: false },
     );
 
     // Return success response with order transaction details
@@ -221,12 +235,11 @@ router.post('/order', authenticateApiKey, async (req, res) => {
       success: true,
       order: {
         orderId: req.body.quoteId,
-        date: date,
+        dateG1: date,
         status,
-        userTelegramID: req.body.userTelegramID,
-        tokenAmountG1: quote.tokenAmountG1,
         transactionHashG1: data.txHash,
         userOpHashG1: data.userOpHash,
+        quote: quoteWithoutId,
       },
     });
   } catch (e) {
@@ -240,13 +253,12 @@ router.post('/order', authenticateApiKey, async (req, res) => {
       {
         $set: {
           orderId: req.body.quoteId,
-          date: new Date(),
+          dateG1: new Date(),
           status: GX_ORDER_STATUS.FAILURE_G1,
-          userTelegramID: req.body.userTelegramID,
-          tokenAmountG1: quote.tokenAmountG1,
+          ...quoteWithoutId,
         },
       },
-      { upsert: true },
+      { upsert: false },
     );
 
     // Return error response if an error occurs during the order process

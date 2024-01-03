@@ -578,17 +578,32 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         });
 
-      delete res.body.order.date;
+      delete res.body.order.dateG1;
 
       chai.expect(res.body).to.deep.equal({
         success: true,
         order: {
           orderId: mockOrderID,
           status: GX_ORDER_STATUS.WAITING_USD,
-          userTelegramID: mockUserTelegramID,
-          tokenAmountG1: '1000.00',
           transactionHashG1: mockTransactionHash,
           userOpHashG1: mockUserOpHash,
+          quote: {
+            quoteId: mockOrderID,
+            tokenAmountG1: '1000.00',
+            usdFromUsdInvestment: '1',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
+            userTelegramID: mockUserTelegramID,
+          },
         },
       });
     });
@@ -607,15 +622,28 @@ describe('G1 to GX util functions', async function () {
 
       chai
         .expect(orders)
-        .excluding(['_id', 'date'])
+        .excluding(['_id', 'dateG1'])
         .to.deep.equal([
           {
             transactionHashG1: mockTransactionHash,
             userOpHashG1: mockUserOpHash,
             userTelegramID: mockUserTelegramID,
             status: GX_ORDER_STATUS.WAITING_USD,
-            tokenAmountG1: '1000.00',
             orderId: mockOrderID,
+            quoteId: mockOrderID,
+            tokenAmountG1: '1000.00',
+            usdFromUsdInvestment: '1',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
           },
         ]);
     });
@@ -634,15 +662,28 @@ describe('G1 to GX util functions', async function () {
 
       chai
         .expect(orders)
-        .excluding(['_id', 'date'])
+        .excluding(['_id', 'dateG1'])
         .to.deep.equal([
           {
             transactionHashG1: mockTransactionHash,
             userOpHashG1: mockUserOpHash,
             userTelegramID: mockUserTelegramID,
             status: GX_ORDER_STATUS.COMPLETE,
-            tokenAmountG1: '1000.00',
             orderId: mockOrderID1,
+            quoteId: mockOrderID1,
+            tokenAmountG1: '1000.00',
+            usdFromUsdInvestment: '0',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
           },
         ]);
     });
@@ -667,13 +708,26 @@ describe('G1 to GX util functions', async function () {
 
       chai
         .expect(orders)
-        .excluding(['_id', 'date'])
+        .excluding(['_id', 'dateG1'])
         .to.deep.equal([
           {
             userTelegramID: mockUserTelegramID,
             status: GX_ORDER_STATUS.FAILURE_G1,
-            tokenAmountG1: '1000.00',
             orderId: mockOrderID1,
+            quoteId: mockOrderID1,
+            tokenAmountG1: '1000.00',
+            usdFromUsdInvestment: '0',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
           },
         ]);
 
@@ -723,7 +777,7 @@ describe('G1 to GX util functions', async function () {
       await collectionOrdersMock.insertMany([
         {
           orderId: mockOrderID,
-          date: new Date(),
+          dateG1: new Date(),
           status: GX_ORDER_STATUS.WAITING_USD,
           userTelegramID: mockUserTelegramID,
           tokenAmountG1: '1000.00',
@@ -732,7 +786,7 @@ describe('G1 to GX util functions', async function () {
         },
         {
           orderId: mockOrderID1,
-          date: new Date(),
+          dateG1: new Date(),
           status: GX_ORDER_STATUS.FAILURE_G1,
           userTelegramID: mockUserTelegramID1,
           tokenAmountG1: '500.00',
@@ -840,7 +894,7 @@ describe('G1 to GX util functions', async function () {
 
       chai
         .expect(orders)
-        .excluding(['_id', 'date', 'dateUSD'])
+        .excluding(['_id', 'dateG1', 'dateUSD'])
         .to.deep.equal([
           {
             orderId: mockOrderID,
@@ -919,7 +973,7 @@ describe('G1 to GX util functions', async function () {
 
       chai
         .expect(orders)
-        .excluding(['_id', 'date', 'dateUSD'])
+        .excluding(['_id', 'dateG1', 'dateUSD'])
         .to.deep.equal([
           {
             orderId: mockOrderID,
@@ -967,7 +1021,7 @@ describe('G1 to GX util functions', async function () {
 
       chai
         .expect(orders)
-        .excluding(['_id', 'date', 'dateUSD'])
+        .excluding(['_id', 'dateG1', 'dateUSD'])
         .to.deep.equal([
           {
             orderId: mockOrderID,
