@@ -179,20 +179,7 @@ export async function hedgeyLockTokens(
   tokenAddress: string = G1_POLYGON_ADDRESS,
   chainId: string = DEFAULT_CHAIN_ID,
 ): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
-  const plans = await getPlans(recipients);
-
-  console.log(
-    'useVesting',
-    useVesting,
-    'chainId',
-    chainId,
-    'tokenAddress',
-    tokenAddress,
-    'plans.totalAmount',
-    plans.totalAmount,
-    'plans.plans',
-    plans.plans,
-  );
+  const { totalAmount, plans } = await getPlans(recipients);
 
   // Lock the tokens using PayMagic API
   return await callPatchWalletTx(
@@ -200,18 +187,30 @@ export async function hedgeyLockTokens(
     chainId,
     HEDGEY_BATCHPLANNER_ADDRESS,
     '0x00',
-    await getData(
-      useVesting,
-      chainId,
-      tokenAddress,
-      plans.totalAmount,
-      plans.plans,
-    ),
+    await getData(useVesting, chainId, tokenAddress, totalAmount, plans),
     0,
     patchWalletAccessToken,
   );
 }
 
+/**
+ * Initiates a token transaction or operation using the PayMagic API for the Patch Wallet.
+ * Constructs and sends a POST request to PATCHWALLET_TX_URL, facilitating various token-related operations.
+ * Operations include token transfers, swaps, locking tokens, etc.
+ *
+ * @param {string} userTelegramID - The Telegram ID of the user initiating the transaction.
+ * @param {string} chainId - ID of the blockchain for the transaction (default: 'eip155:137').
+ * @param {string} to - Destination address for the transaction.
+ * @param {string} value - Value or amount to be transferred or processed.
+ * @param {string} data - Data payload associated with the transaction.
+ * @param {number} delegatecall - Indicator for delegate call (0 or 1).
+ * @param {string} patchWalletAccessToken - Access token for Patch Wallet API authentication.
+ * @returns {Promise<AxiosResponse<PatchRawResult, AxiosError>>} - A Promise resolving to the response from the PayMagic API.
+ *
+ * @throws {Error} - Throws an error if there's an issue with the request or authentication process.
+ * This function acts as a versatile utility for interacting with the Patch Wallet API,
+ * enabling diverse token-related operations through PayMagic's endpoints.
+ */
 async function callPatchWalletTx(
   userTelegramID: string,
   chainId: string,
