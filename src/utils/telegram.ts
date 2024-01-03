@@ -3,6 +3,7 @@ import { StringSession } from 'telegram/sessions/index';
 import TGClient from './telegramClient';
 import { decrypt } from './crypt';
 import { WithId, Document } from 'mongodb';
+import { TelegramMessageResponse } from '../types/telegram.types';
 
 /**
  * Sends a message via Telegram to a recipient.
@@ -17,49 +18,54 @@ export const sendTelegramMessage = async (
   message: string,
   recipientId: string,
   senderUser: WithId<Document>,
-): Promise<{
-  success: boolean;
-  message: string;
-}> => {
+): Promise<TelegramMessageResponse> => {
   try {
+    // Validation checks for required parameters
     if (!message) throw new Error('Message is required');
     if (!recipientId) throw new Error('Recipient ID is required');
     if (!senderUser.userHandle) throw new Error('Sender username not found');
     if (!senderUser.telegramSession)
       throw new Error('Telegram session not found');
 
+    // Establishing a Telegram client
     const client = TGClient(
       new StringSession(decrypt(senderUser.telegramSession)),
     );
 
+    // Connect to Telegram
     await client.connect();
 
+    // Check if the client is connected successfully
     if (!client.connected) {
       throw new Error('Telegram client not connected');
     }
 
-    // get recipient handle
+    // Fetch recipient's handle
     const recipient: Api.users.UserFull = await client.invoke(
       new Api.users.GetFullUser({
         id: recipientId,
       }),
     );
 
+    // Extract recipient's handle or set an empty string if not found
     const recipientHandle = (recipient.users?.[0] as Api.User)?.username || '';
 
+    // Prepare data to send the message
     const data = {
       peer: recipientHandle,
       message: message,
     };
 
+    // Send the message and await the result
     const result = await client.invoke(new Api.messages.SendMessage(data));
 
+    // Check if the message was sent successfully and return appropriate response
     if (result) {
       return { success: true, message: 'Message sent successfully' };
-    } else {
-      return { success: false, message: 'Message sending failed' };
     }
+    return { success: false, message: 'Message sending failed' };
   } catch (error) {
+    // Return error response in case of exceptions
     return { success: false, message: error.message };
   }
 };
