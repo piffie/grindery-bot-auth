@@ -301,15 +301,13 @@ router.post('/order', authenticateApiKey, async (req, res) => {
  *   "success": true,
  *   "order": {
  *     "orderId": "mocked-quote-id",
- *     "dateUSD": "2023-12-31T12:00:00Z",
  *     "status": "COMPLETE",
- *     "userTelegramID": "user-telegram-id",
- *     "transactionHash_USD": "transaction-hash",
- *     "userOpHash_USD": "user-operation-hash",
- *     "amountUSD": "250.00",
+ *     "transactionHashUSD": "transaction-hash",
+ *     "userOpHashUSD": "user-operation-hash",
  *     "tokenAmountUSD": "25.00",
  *     "tokenAddressUSD": "token-address",
  *     "chainIdUSD": "chain-id"
+ *     // Other properties omitted for brevity
  *   }
  * }
  *
@@ -405,8 +403,8 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
         $set: {
           dateUSD: date,
           status: GX_ORDER_STATUS.COMPLETE,
-          transactionHash_USD: data.txHash,
-          userOpHash_USD: data.userOpHash,
+          transactionHashUSD: data.txHash,
+          userOpHashUSD: data.userOpHash,
         },
       },
       { upsert: false },
@@ -420,8 +418,8 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
         orderId: req.body.orderId,
         dateUSD: date,
         status: GX_ORDER_STATUS.COMPLETE,
-        transactionHash_USD: data.txHash,
-        userOpHash_USD: data.userOpHash,
+        transactionHashUSD: data.txHash,
+        userOpHashUSD: data.userOpHash,
         tokenAddressUSD: req.body.tokenAddress,
         chainIdUSD: req.body.chainId,
         tokenAmountUSD: token_amount,
