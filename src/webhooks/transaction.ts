@@ -132,7 +132,7 @@ export async function handleNewTransaction(
     );
 
     console.log(
-      `[${transfer.txHash}] transaction from ${transfer.params.senderInformation?.senderTgId} to ${transfer.params.recipientTgId} for ${transfer.params.amount} with event ID ${transfer.params.eventId} finished.`,
+      `[${transfer.txHash}] transaction from ${transfer.params.senderInformation?.userTelegramID} to ${transfer.params.recipientTgId} for ${transfer.params.amount} with event ID ${transfer.params.eventId} finished.`,
     );
     return true;
   }
