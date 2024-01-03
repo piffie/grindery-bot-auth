@@ -56,24 +56,28 @@ export const CHAIN_MAPPING: Record<string, ChainInfo> = {
     name_patch: 'eth',
     name_display: 'Ethereum',
     explorer: 'https://etherscan.io/tx/',
+    ankr_name: 'eth',
   },
   'eip155:42161': {
     endpoint: ANKR('arbitrum'),
     name_patch: 'arb1',
     name_display: 'Arbitrum',
     explorer: 'https://arbiscan.io/tx/',
+    ankr_name: 'arbitrum',
   },
   'eip155:100': {
     endpoint: ANKR('gnosis'),
     name_patch: 'gno',
     name_display: 'Gnosis',
     explorer: 'https://gnosisscan.io/tx/',
+    ankr_name: 'gnosis',
   },
   'eip155:137': {
     endpoint: ANKR('polygon'),
     name_patch: 'matic',
     explorer: 'https://polygonscan.com/tx/',
     name_display: 'Polygon',
+    ankr_name: 'polygon',
   },
   'eip155:42220': {
     endpoint: ANKR('celo'),
@@ -84,17 +88,20 @@ export const CHAIN_MAPPING: Record<string, ChainInfo> = {
     endpoint: ANKR('avalanche'),
     name_display: 'Avalanche',
     explorer: 'https://avascan.info/blockchain/c/tx/',
+    ankr_name: 'avalanche',
   },
   'eip155:56': {
     endpoint: ANKR('bsc'),
     name_patch: 'bnb',
     name_display: 'Binance Smart Chain',
     explorer: 'https://bscscan.com/tx/',
+    ankr_name: 'bsc',
   },
   'eip155:250': {
     endpoint: ANKR('fantom'),
     name_display: 'Fantom',
     explorer: 'https://ftmscan.com/tx/',
+    ankr_name: 'fantom',
   },
   'eip155:1666600000': {
     endpoint: ANKR('harmony'),
@@ -113,6 +120,7 @@ export const CHAIN_MAPPING: Record<string, ChainInfo> = {
     endpoint: ANKR('polygon_zkevm'),
     name_display: 'Polygon ZKEVM',
     explorer: 'https://zkevm.polygonscan.com/tx/',
+    ankr_name: 'polygon_zkevm',
   },
   'eip155:1284': {
     endpoint: ANKR('moonbeam'),
@@ -124,11 +132,13 @@ export const CHAIN_MAPPING: Record<string, ChainInfo> = {
     name_patch: 'maticmum',
     name_display: 'Polygon Mumbai',
     explorer: 'https://mumbai.polygonscan.com/tx/',
+    ankr_name: 'polygon_mumbai',
   },
   'eip155:5': {
     endpoint: ALCHEMY('eth-goerli'),
     name_display: 'Ethereum Goerli',
     explorer: 'https://goerli.etherscan.io/tx/',
+    ankr_name: 'eth_goerli',
   },
   'eip155:11155111': {
     endpoint: ANKR('eth_sepolia'),
@@ -170,5 +180,6 @@ export const CHAIN_MAPPING: Record<string, ChainInfo> = {
     name_patch: 'linea',
     explorer: 'https://lineascan.build/tx/',
     name_display: 'Linea',
+    ankr_name: 'linea',
   },
 };

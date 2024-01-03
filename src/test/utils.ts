@@ -108,6 +108,8 @@ export const mockUserName3 = 'myUserName3';
 export const mockWallet3 = '0x51a1449b3B6D635EddeC781cD47a99221712De97';
 
 export const mockTokenAddress = '0xe36BD65609c08Cd17b53520293523CF4560533d0';
+export const avax_address_polygon =
+  '0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b';
 export const mockChainId = 'eip155:137';
 export const mockChainName = 'matic';
 
