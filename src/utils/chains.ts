@@ -58,20 +58,6 @@ export const CHAIN_MAPPING: Record<string, ChainInfo> = {
     explorer: 'https://etherscan.io/tx/',
     ankr_name: 'eth',
   },
-  eth: {
-    endpoint: ANKR('eth'),
-    name_patch: 'eth',
-    name_display: 'Ethereum',
-    explorer: 'https://etherscan.io/tx/',
-    ankr_name: 'eth',
-  },
-  arb1: {
-    endpoint: ANKR('arbitrum'),
-    name_patch: 'arb1',
-    name_display: 'Arbitrum',
-    explorer: 'https://arbiscan.io/tx/',
-    ankr_name: 'arbitrum',
-  },
   'eip155:42161': {
     endpoint: ANKR('arbitrum'),
     name_patch: 'arb1',
@@ -86,21 +72,7 @@ export const CHAIN_MAPPING: Record<string, ChainInfo> = {
     explorer: 'https://gnosisscan.io/tx/',
     ankr_name: 'gnosis',
   },
-  gno: {
-    endpoint: ANKR('gnosis'),
-    name_patch: 'gno',
-    name_display: 'Gnosis',
-    explorer: 'https://gnosisscan.io/tx/',
-    ankr_name: 'gnosis',
-  },
   'eip155:137': {
-    endpoint: ANKR('polygon'),
-    name_patch: 'matic',
-    explorer: 'https://polygonscan.com/tx/',
-    name_display: 'Polygon',
-    ankr_name: 'polygon',
-  },
-  matic: {
     endpoint: ANKR('polygon'),
     name_patch: 'matic',
     explorer: 'https://polygonscan.com/tx/',
@@ -156,13 +128,6 @@ export const CHAIN_MAPPING: Record<string, ChainInfo> = {
     explorer: 'https://moonscan.io/tx/',
   },
   'eip155:80001': {
-    endpoint: ANKR('polygon_mumbai'),
-    name_patch: 'maticmum',
-    name_display: 'Polygon Mumbai',
-    explorer: 'https://mumbai.polygonscan.com/tx/',
-    ankr_name: 'polygon_mumbai',
-  },
-  maticmum: {
     endpoint: ANKR('polygon_mumbai'),
     name_patch: 'maticmum',
     name_display: 'Polygon Mumbai',
