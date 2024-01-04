@@ -68,54 +68,58 @@ export async function handleNewTransaction(
       true
     );
 
-  // Create a transfer object
-  const transferRaw = await TransferTelegram.build(
+  // Create a transactionInstance object
+  const { isError, transactionInstance } = await TransferTelegram.build(
     createTransaction(params, senderInformation),
   );
 
-  if (transferRaw.isError) return false;
-
-  const transfer = transferRaw.transactionInstance;
+  if (isError) return false;
 
   if (
-    isSuccessfulTransaction(transfer.status) ||
-    isFailedTransaction(transfer.status)
+    isSuccessfulTransaction(transactionInstance.status) ||
+    isFailedTransaction(transactionInstance.status)
   )
     return true;
 
   let tx: PatchResult | undefined;
 
   // Handle pending hash status
-  if (isPendingTransactionHash(transfer.status)) {
-    if (await isTreatmentDurationExceeded(transfer)) return true;
+  if (isPendingTransactionHash(transactionInstance.status)) {
+    if (await isTreatmentDurationExceeded(transactionInstance)) return true;
 
     // Check userOpHash and updateInDatabase for success
-    if (!transfer.userOpHash)
+    if (!transactionInstance.userOpHash)
       return (
-        await transfer.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
+        await transactionInstance.updateInDatabase(
+          TRANSACTION_STATUS.SUCCESS,
+          new Date(),
+        ),
         true
       );
 
     // Check status for userOpHash and return the status if it's retrieved successfully or false if failed
-    tx = await getStatus(transfer);
+    tx = await getStatus(transactionInstance);
     if (tx.isError) return true;
     if (!tx.txHash && !tx.userOpHash) return false;
   }
 
   // Handle sending transaction if not already handled
   if (!tx) {
-    tx = await sendTransaction(transfer);
+    tx = await sendTransaction(transactionInstance);
     if (tx.isError) return true;
     if (!tx.txHash && !tx.userOpHash) return false;
   }
 
   // Finalize transaction handling
   if (tx && tx.txHash) {
-    updateTxHash(transfer, tx.txHash);
+    updateTxHash(transactionInstance, tx.txHash);
     await Promise.all([
-      transfer.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
-      transfer.saveToSegment(),
-      transfer.saveToFlowXO(),
+      transactionInstance.updateInDatabase(
+        TRANSACTION_STATUS.SUCCESS,
+        new Date(),
+      ),
+      transactionInstance.saveToSegment(),
+      transactionInstance.saveToFlowXO(),
       params.message &&
         senderInformation?.telegramSession &&
         sendTelegramMessage(
@@ -134,7 +138,7 @@ export async function handleNewTransaction(
     );
 
     console.log(
-      `[${transfer.txHash}] transaction from ${transfer.params.senderInformation?.userTelegramID} to ${transfer.params.recipientTgId} for ${transfer.params.amount} with event ID ${transfer.params.eventId} finished.`,
+      `[${transactionInstance.txHash}] transaction from ${transactionInstance.params.senderInformation?.userTelegramID} to ${transactionInstance.params.recipientTgId} for ${transactionInstance.params.amount} with event ID ${transactionInstance.params.eventId} finished.`,
     );
     return true;
   }
@@ -142,8 +146,11 @@ export async function handleNewTransaction(
   // Handle pending hash for userOpHash
   tx &&
     tx.userOpHash &&
-    updateUserOpHash(transfer, tx.userOpHash) &&
-    (await transfer.updateInDatabase(TRANSACTION_STATUS.PENDING_HASH, null));
+    updateUserOpHash(transactionInstance, tx.userOpHash) &&
+    (await transactionInstance.updateInDatabase(
+      TRANSACTION_STATUS.PENDING_HASH,
+      null,
+    ));
 
   return false;
 }

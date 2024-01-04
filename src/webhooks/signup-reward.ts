@@ -38,46 +38,47 @@ export async function handleSignUpReward(
   params: RewardParams,
 ): Promise<boolean> {
   try {
-    // Create a raw sign-up reward object
-    const rewardRaw = await SignUpRewardTelegram.build(
+    // Create a raw sign-up rewardInstance object
+    const { shouldBeIssued, rewardInstance } = await SignUpRewardTelegram.build(
       createRewardParams(params, params.patchwallet || ''),
     );
 
-    // If reward already exists, return true
-    if (!rewardRaw.ShouldBeIssued) return true;
-
-    const reward = rewardRaw.RewardInstance;
+    // If rewardInstance already exists, return true
+    if (!shouldBeIssued) return true;
 
     let txReward: PatchResult | undefined;
 
     // Handle pending hash status
-    if (isPendingTransactionHash(reward.status)) {
-      if (await isTreatmentDurationExceeded(reward)) return true;
+    if (isPendingTransactionHash(rewardInstance.status)) {
+      if (await isTreatmentDurationExceeded(rewardInstance)) return true;
 
       // Check userOpHash and updateInDatabase for success
-      if (!reward.userOpHash)
+      if (!rewardInstance.userOpHash)
         return (
-          await reward.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
+          await rewardInstance.updateInDatabase(
+            TRANSACTION_STATUS.SUCCESS,
+            new Date(),
+          ),
           true
         );
 
-      // Get status of reward test
-      if ((txReward = await getStatus(reward)).isError) return false;
+      // Get status of rewardInstance test
+      if ((txReward = await getStatus(rewardInstance)).isError) return false;
     }
 
     // Check for txReward and send transaction if not present
-    if (!txReward && (txReward = await sendTransaction(reward)).isError)
+    if (!txReward && (txReward = await sendTransaction(rewardInstance)).isError)
       return false;
 
     // Update transaction hash and perform additional actions
     if (txReward && txReward.txHash) {
-      updateTxHash(reward, txReward.txHash);
+      updateTxHash(rewardInstance, txReward.txHash);
       await Promise.all([
-        reward.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
-        reward.saveToFlowXO(),
+        rewardInstance.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
+        rewardInstance.saveToFlowXO(),
       ]).catch((error) =>
         console.error(
-          `[${params.eventId}] Error processing FlowXO webhook during sign up reward: ${error}`,
+          `[${params.eventId}] Error processing FlowXO webhook during sign up rewardInstance: ${error}`,
         ),
       );
       return true;
@@ -85,14 +86,17 @@ export async function handleSignUpReward(
 
     // Update userOpHash if present in txReward
     if (txReward && txReward.userOpHash) {
-      updateUserOpHash(reward, txReward.userOpHash);
-      await reward.updateInDatabase(TRANSACTION_STATUS.PENDING_HASH, null);
+      updateUserOpHash(rewardInstance, txReward.userOpHash);
+      await rewardInstance.updateInDatabase(
+        TRANSACTION_STATUS.PENDING_HASH,
+        null,
+      );
     }
     return false;
   } catch (error) {
     // Handle error
     console.error(
-      `[${params.eventId}] Error processing sign up reward event: ${error}`,
+      `[${params.eventId}] Error processing sign up rewardInstance event: ${error}`,
     );
   }
 
@@ -165,21 +169,21 @@ export class SignUpRewardTelegram {
 
     // Check if another reward already exists in the database
     if (await reward.getOtherRewardFromDatabase())
-      return { RewardInstance: reward, ShouldBeIssued: false };
+      return { rewardInstance: reward, shouldBeIssued: false };
 
     // Check if the reward exists and the transaction is successful
     if (reward.tx) {
       reward.isInDatabase = true;
       ({ status: reward.status, userOpHash: reward.userOpHash } = reward.tx);
       if (isSuccessfulTransaction(reward.status))
-        return { RewardInstance: reward, ShouldBeIssued: false };
+        return { rewardInstance: reward, shouldBeIssued: false };
     } else {
       // If the reward doesn't exist, add it to the database with PENDING status and current date
       await reward.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
     }
 
     // Return the fully initialized SignUpRewardTelegram instance and indicate the existence of the reward
-    return { RewardInstance: reward, ShouldBeIssued: true };
+    return { rewardInstance: reward, shouldBeIssued: true };
   }
 
   /**
