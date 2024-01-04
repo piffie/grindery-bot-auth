@@ -3,12 +3,13 @@ import {
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
 } from './constants';
-import { Db, ObjectId } from 'mongodb';
+import { Db, WithId } from 'mongodb';
 import { formatDate } from './time';
 import {
-  IncomingTransaction,
-  OutgoingTransaction,
-} from '../types/tx_formatting.types';
+  MongoIncomingTransfer,
+  MongoOutgoingTransfer,
+  MongoRewardFmt,
+} from '../types/mongo.types';
 
 /**
  * Retrieves incoming transactions for a user from the database.
@@ -23,7 +24,7 @@ export async function getIncomingTxsUser(
   userId: string,
   start: number,
   limit: number,
-): Promise<IncomingTransaction[]> {
+): Promise<WithId<MongoIncomingTransfer>[]> {
   return await Promise.all(
     (
       await db
@@ -44,7 +45,7 @@ export async function getIncomingTxsUser(
                 .collection(USERS_COLLECTION)
                 .findOne({ userTelegramID: entry.senderTgId })
             )?.userHandle || null,
-        } as IncomingTransaction),
+        } as WithId<MongoIncomingTransfer>),
     ),
   );
 }
@@ -62,7 +63,7 @@ export async function getOutgoingTxsUser(
   userId: string,
   start: number,
   limit: number,
-): Promise<OutgoingTransaction[]> {
+): Promise<WithId<MongoOutgoingTransfer>[]> {
   return await Promise.all(
     (
       await db
@@ -83,7 +84,7 @@ export async function getOutgoingTxsUser(
                 .collection(USERS_COLLECTION)
                 .findOne({ userTelegramID: entry.recipientTgId })
             )?.userHandle || null,
-        } as OutgoingTransaction),
+        } as WithId<MongoOutgoingTransfer>),
     ),
   );
 }
@@ -101,7 +102,7 @@ export async function getOutgoingTxsToNewUsers(
   userId: string,
   start: number,
   limit: number,
-): Promise<OutgoingTransaction[]> {
+): Promise<WithId<MongoOutgoingTransfer>[]> {
   return await Promise.all(
     (
       await db
@@ -153,35 +154,10 @@ export async function getOutgoingTxsToNewUsers(
         ({
           ...entry,
           dateAdded: formatDate(entry.dateAdded),
-        } as OutgoingTransaction),
+        } as WithId<MongoOutgoingTransfer>),
     ),
   );
 }
-
-/**
- * Represents a transaction involving rewards in the system.
- */
-type RewardTransaction = {
-  /**
-   * The date when the reward transaction was added.
-   */
-  dateAdded: string;
-
-  /**
-   * A descriptive message associated with the reward transaction.
-   */
-  message: string;
-
-  /**
-   * The unique identifier of the reward transaction.
-   */
-  _id: ObjectId;
-
-  /**
-   * The amount of tokens associated with the reward transaction.
-   */
-  amount: string;
-};
 
 /**
  * Retrieves reward transactions for a user from the database.
@@ -196,7 +172,7 @@ export async function getRewardTxsUser(
   userId: string,
   start: number,
   limit: number,
-): Promise<RewardTransaction[]> {
+): Promise<WithId<MongoRewardFmt>[]> {
   return (
     await db
       .collection(REWARDS_COLLECTION)
@@ -210,7 +186,7 @@ export async function getRewardTxsUser(
       ({
         ...entry,
         dateAdded: formatDate(entry.dateAdded),
-      } as RewardTransaction),
+      } as WithId<MongoRewardFmt>),
   );
 }
 
@@ -227,7 +203,7 @@ export async function getRewardLinkTxsUser(
   userId: string,
   start: number,
   limit: number,
-) {
+): Promise<WithId<MongoRewardFmt>[]> {
   return await Promise.all(
     (
       await db
@@ -237,15 +213,18 @@ export async function getRewardLinkTxsUser(
         .skip(start)
         .limit(limit)
         .toArray()
-    ).map(async (entry) => ({
-      ...entry,
-      dateAdded: formatDate(entry.dateAdded),
-      sponsoredUserHandle:
-        (
-          await db
-            .collection(USERS_COLLECTION)
-            .findOne({ userTelegramID: entry.sponsoredUserTelegramID })
-        )?.userHandle || null,
-    })),
+    ).map(
+      async (entry) =>
+        ({
+          ...entry,
+          dateAdded: formatDate(entry.dateAdded),
+          sponsoredUserHandle:
+            (
+              await db
+                .collection(USERS_COLLECTION)
+                .findOne({ userTelegramID: entry.sponsoredUserTelegramID })
+            )?.userHandle || null,
+        } as WithId<MongoRewardFmt>),
+    ),
   );
 }
