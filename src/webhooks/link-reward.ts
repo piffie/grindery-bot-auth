@@ -204,7 +204,7 @@ export class LinkRewardTelegram {
     if (this.db)
       this.referent = (await this.db.collection(USERS_COLLECTION).findOne({
         userTelegramID: this.params.referentUserTelegramID,
-      })) as WithId<MongoUser>;
+      })) as WithId<MongoUser> | null;
 
     if (this.referent) {
       this.referent.patchwallet =
@@ -227,7 +227,7 @@ export class LinkRewardTelegram {
         userTelegramID: this.params.referentUserTelegramID,
         sponsoredUserTelegramID: this.params.userTelegramID,
         reason: this.params.reason,
-      })) as WithId<MongoReward>;
+      })) as WithId<MongoReward> | null;
     return null;
   }
 

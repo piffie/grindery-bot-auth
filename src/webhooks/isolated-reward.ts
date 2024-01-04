@@ -210,7 +210,7 @@ export class IsolatedRewardTelegram {
         userTelegramID: this.params.userTelegramID,
         eventId: this.params.eventId,
         reason: this.params.reason,
-      })) as WithId<MongoReward>;
+      })) as WithId<MongoReward> | null;
     return null;
   }
 

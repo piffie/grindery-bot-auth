@@ -75,7 +75,7 @@ export class UserTelegram {
     if (this.db)
       return (await this.db.collection(USERS_COLLECTION).findOne({
         userTelegramID: this.params.userTelegramID,
-      })) as WithId<MongoUser>;
+      })) as WithId<MongoUser> | null;
     return null;
   }
 
@@ -152,7 +152,7 @@ export class UserTelegram {
           userTelegramID: this.params.userTelegramID,
           reason: 'user_sign_up',
         })
-        .toArray()) as WithId<MongoReward>[];
+        .toArray()) as WithId<MongoReward>[] | [];
     return [];
   }
 
@@ -176,7 +176,7 @@ export class UserTelegram {
           userTelegramID: this.params.userTelegramID,
           reason: '2x_reward',
         })
-        .toArray()) as WithId<MongoReward>[];
+        .toArray()) as WithId<MongoReward>[] | [];
     return [];
   }
 
@@ -200,7 +200,7 @@ export class UserTelegram {
           userTelegramID: this.params.userTelegramID,
           reason: 'referral_link',
         })
-        .toArray()) as WithId<MongoReward>[];
+        .toArray()) as WithId<MongoReward>[] | [];
     return [];
   }
 
