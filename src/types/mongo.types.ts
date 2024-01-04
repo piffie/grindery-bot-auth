@@ -32,9 +32,6 @@ export type MongoTransfer = {
   /** Date when the transfer was added */
   dateAdded: Date;
 
-  /** Transaction ID */
-  TxId: string;
-
   /** Wallet address of the recipient */
   recipientWallet: string;
 
@@ -157,9 +154,6 @@ export type MongoSwap = {
 
   /** Date when the swap was added */
   dateAdded: Date;
-
-  /** Transaction ID */
-  TxId: string;
 
   /** Transaction hash */
   transactionHash: string;
