@@ -32,11 +32,11 @@ import { Database } from '../db/conn';
 import { MongoReward } from '../types/mongo.types';
 
 /**
- * Handles the processing of an isolated RewardInstance based on specified parameters.
- * @param params - The parameters required for the RewardInstance.
+ * Handles the processing of an isolated rewardInstance based on specified parameters.
+ * @param params - The parameters required for the rewardInstance.
  * @returns A promise resolving to a boolean value.
- *          - Returns `true` if the RewardInstance handling is completed or conditions are not met.
- *          - Returns `false` if an error occurs during the RewardInstance processing.
+ *          - Returns `true` if the rewardInstance handling is completed or conditions are not met.
+ *          - Returns `false` if an error occurs during the rewardInstance processing.
  */
 export async function handleIsolatedReward(
   params: RewardParams,
@@ -51,47 +51,47 @@ export async function handleIsolatedReward(
       return true;
     }
 
-    const { ShouldBeIssued, RewardInstance } =
+    const { shouldBeIssued, rewardInstance } =
       await IsolatedRewardTelegram.build(
         createRewardParams(params, params.patchwallet || ''),
       );
 
-    if (!ShouldBeIssued) return true;
+    if (!shouldBeIssued) return true;
 
     // Check if this event already exists
     let txReward: PatchResult | undefined;
 
     // Handle pending hash status
-    if (isPendingTransactionHash(RewardInstance.status)) {
-      if (await isTreatmentDurationExceeded(RewardInstance)) return true;
+    if (isPendingTransactionHash(rewardInstance.status)) {
+      if (await isTreatmentDurationExceeded(rewardInstance)) return true;
 
       // Check userOpHash and updateInDatabase for success
-      if (!RewardInstance.userOpHash)
+      if (!rewardInstance.userOpHash)
         return (
-          await RewardInstance.updateInDatabase(
+          await rewardInstance.updateInDatabase(
             TRANSACTION_STATUS.SUCCESS,
             new Date(),
           ),
           true
         );
 
-      // Get status of RewardInstance test
-      if ((txReward = await getStatus(RewardInstance)).isError) return false;
+      // Get status of rewardInstance test
+      if ((txReward = await getStatus(rewardInstance)).isError) return false;
     }
 
     // Check for txReward and send transaction if not present
-    if (!txReward && (txReward = await sendTransaction(RewardInstance)).isError)
+    if (!txReward && (txReward = await sendTransaction(rewardInstance)).isError)
       return false;
 
     // Update transaction hash and perform additional actions
     if (txReward && txReward.txHash) {
-      updateTxHash(RewardInstance, txReward.txHash);
+      updateTxHash(rewardInstance, txReward.txHash);
       await Promise.all([
-        RewardInstance.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
-        RewardInstance.saveToFlowXO(),
+        rewardInstance.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
+        rewardInstance.saveToFlowXO(),
       ]).catch((error) =>
         console.error(
-          `[${params.eventId}] Error processing FlowXO webhook during sign up RewardInstance: ${error}`,
+          `[${params.eventId}] Error processing FlowXO webhook during sign up rewardInstance: ${error}`,
         ),
       );
       return true;
@@ -99,8 +99,8 @@ export async function handleIsolatedReward(
 
     // Update userOpHash if present in txReward
     if (txReward && txReward.userOpHash) {
-      updateUserOpHash(RewardInstance, txReward.userOpHash);
-      await RewardInstance.updateInDatabase(
+      updateUserOpHash(rewardInstance, txReward.userOpHash);
+      await rewardInstance.updateInDatabase(
         TRANSACTION_STATUS.PENDING_HASH,
         null,
       );
@@ -108,7 +108,7 @@ export async function handleIsolatedReward(
     return false;
   } catch (error) {
     console.error(
-      `[${params.eventId}] Error processing ${params.reason} RewardInstance event: ${error}`,
+      `[${params.eventId}] Error processing ${params.reason} rewardInstance event: ${error}`,
     );
   }
 
@@ -183,7 +183,7 @@ export class IsolatedRewardTelegram {
 
     // Check if another reward already exists in the database
     if (await reward.getOtherRewardFromDatabase()) {
-      return { ShouldBeIssued: false, RewardInstance: reward };
+      return { shouldBeIssued: false, rewardInstance: reward };
     }
 
     // If the reward exists in the database
@@ -194,7 +194,7 @@ export class IsolatedRewardTelegram {
 
       // Check if the transaction status is successful
       if (isSuccessfulTransaction(reward.status)) {
-        return { ShouldBeIssued: false, RewardInstance: reward };
+        return { shouldBeIssued: false, rewardInstance: reward };
       }
     } else {
       // If the reward doesn't exist, add it to the database with PENDING status and the current date
@@ -202,7 +202,7 @@ export class IsolatedRewardTelegram {
     }
 
     // Return the fully initialized IsolatedRewardTelegram instance and indicate if it should be issued
-    return { ShouldBeIssued: true, RewardInstance: reward };
+    return { shouldBeIssued: true, rewardInstance: reward };
   }
 
   /**
