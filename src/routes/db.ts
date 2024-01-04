@@ -295,7 +295,7 @@ router.get(
             ? `<b>Transfers to non-Grindery users:</b>\n${outgoingTxs
                 .map(
                   (transfer) =>
-                    `${transfer.recipientTgId} | ${transfer.dateAdded} | ${transfer.tokenAmount} G1`,
+                    `${transfer.recipientTgId} | ${transfer.dateAdded} | ${transfer.tokenAmount} ${transfer.tokenSymbol}`,
                 )
                 .join('\n')}`
             : '';
@@ -371,7 +371,7 @@ router.get('/format-transfers-user', authenticateApiKey, async (req, res) => {
           ? `<b>Incoming transfers:</b>\n${incomingTxs
               .map(
                 (transfer) =>
-                  `- ${transfer.tokenAmount} g1 from @${
+                  `- ${transfer.tokenAmount} ${transfer.tokenSymbol} from @${
                     transfer.senderUserHandle
                   } on ${transfer.dateAdded} ${
                     transfer.message ? `[${transfer.message}]` : ''
@@ -393,7 +393,7 @@ router.get('/format-transfers-user', authenticateApiKey, async (req, res) => {
           ? `<b>Outgoing transfers:</b>\n${outgoingTxs
               .map(
                 (transfer) =>
-                  `- ${transfer.tokenAmount} g1 to ${
+                  `- ${transfer.tokenAmount} ${transfer.tokenSymbol} to ${
                     transfer.recipientUserHandle
                       ? `@${transfer.recipientUserHandle}`
                       : `a new user (Telegram ID: ${transfer.recipientTgId})`
@@ -417,7 +417,7 @@ router.get('/format-transfers-user', authenticateApiKey, async (req, res) => {
           ? `<b>Reward transfers:</b>\n${rewardTxs
               .map(
                 (transfer) =>
-                  `- ${transfer.amount} g1 on ${transfer.dateAdded} ${
+                  `- ${transfer.amount} G1 on ${transfer.dateAdded} ${
                     transfer.message ? `[${transfer.message}]` : ''
                   }`,
               )
@@ -457,7 +457,7 @@ router.get('/format-transfers-user', authenticateApiKey, async (req, res) => {
           ? `<b>Incoming transfers:</b>\n${incomingTxs
               .map(
                 (transfer) =>
-                  `- ${transfer.tokenAmount} g1 from @${
+                  `- ${transfer.tokenAmount} ${transfer.tokenSymbol} from @${
                     transfer.senderUserHandle
                   } on ${transfer.dateAdded} ${
                     transfer.message ? `[${transfer.message}]` : ''
@@ -479,7 +479,7 @@ router.get('/format-transfers-user', authenticateApiKey, async (req, res) => {
           ? `<b>Outgoing transfers:</b>\n${outgoingTxs
               .map(
                 (transfer) =>
-                  `- ${transfer.tokenAmount} g1 to ${
+                  `- ${transfer.tokenAmount} ${transfer.tokenSymbol} to ${
                     transfer.recipientUserHandle
                       ? `@${transfer.recipientUserHandle}`
                       : `a new user (Telegram ID: ${transfer.recipientTgId})`
@@ -503,7 +503,7 @@ router.get('/format-transfers-user', authenticateApiKey, async (req, res) => {
           ? `<b>Reward transfers:</b>\n${rewardTxs
               .map(
                 (transfer) =>
-                  `- ${transfer.amount} g1 on ${transfer.dateAdded} ${
+                  `- ${transfer.amount} G1 on ${transfer.dateAdded} ${
                     transfer.message ? `[${transfer.message}]` : ''
                   }`,
               )
