@@ -30,7 +30,8 @@ import {
   FLOWXO_WEBHOOK_API_KEY,
 } from '../../secrets';
 import { addVestingSegment } from '../utils/segment';
-import { Db, Document, WithId } from 'mongodb';
+import { Db, WithId } from 'mongodb';
+import { MongoUser, MongoVesting } from '../types/mongo.types';
 
 /**
  * Handles a new transaction based on the provided parameters.
@@ -51,9 +52,13 @@ export async function handleNewVesting(
   const db = await Database.getInstance();
 
   // Retrieve sender information from the "users" collection
-  const senderInformation = await db
+  const senderInformation = (await db
     ?.collection(USERS_COLLECTION)
-    .findOne({ userTelegramID: params.senderTgId });
+    .findOne({ userTelegramID: params.senderTgId })) as
+    | WithId<MongoUser>
+    | null
+    | undefined;
+
   if (!senderInformation)
     return (
       console.error(
@@ -112,7 +117,7 @@ export async function handleNewVesting(
     );
 
     console.log(
-      `[${vesting.txHash}] vesting from ${vesting.params.senderInformation?.senderTgId} with event ID ${vesting.params.eventId} finished.`,
+      `[${vesting.txHash}] vesting from ${vesting.params.senderInformation?.userTelegramID} with event ID ${vesting.params.eventId} finished.`,
     );
     return true;
   }
@@ -137,7 +142,7 @@ export class VestingTelegram {
   isInDatabase: boolean = false;
 
   /** Transaction details of the vesting. */
-  tx: WithId<Document> | null;
+  tx: WithId<MongoVesting> | null;
 
   /** Current status of the vesting. */
   status: TransactionStatus;
@@ -197,13 +202,13 @@ export class VestingTelegram {
 
   /**
    * Retrieves the vesting information from the database.
-   * @returns {Promise<WithId<Document>>} - The vesting information or null if not found.
+   * @returns {Promise<WithId<MongoVesting>>} - The vesting information or null if not found.
    */
-  async getTransferFromDatabase(): Promise<WithId<Document> | null> {
+  async getTransferFromDatabase(): Promise<WithId<MongoVesting> | null> {
     if (this.db)
-      return await this.db
-        .collection(VESTING_COLLECTION)
-        .findOne({ eventId: this.params.eventId });
+      return (await this.db.collection(VESTING_COLLECTION).findOne({
+        eventId: this.params.eventId,
+      })) as WithId<MongoVesting> | null;
     return null;
   }
 

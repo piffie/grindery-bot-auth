@@ -27,8 +27,9 @@ import {
   updateTxHash,
   updateUserOpHash,
 } from './utils';
-import { Db, Document, WithId } from 'mongodb';
+import { Db, WithId } from 'mongodb';
 import { Database } from '../db/conn';
+import { MongoReward } from '../types/mongo.types';
 
 /**
  * Handles the processing of an isolated reward based on specified parameters.
@@ -120,7 +121,7 @@ export class IsolatedRewardTelegram {
   isInDatabase: boolean = false;
 
   /** Transaction details. */
-  tx: WithId<Document> | null;
+  tx: WithId<MongoReward> | null;
 
   /** Current status of the reward. */
   status: TransactionStatus;
@@ -201,15 +202,15 @@ export class IsolatedRewardTelegram {
 
   /**
    * Retrieves the status of the PatchWallet transaction.
-   * @returns {Promise<WithId<Document>>} - True if the transaction status is retrieved successfully, false otherwise.
+   * @returns {Promise<WithId<MongoReward>>} - True if the transaction status is retrieved successfully, false otherwise.
    */
-  async getRewardFromDatabase(): Promise<WithId<Document> | null> {
+  async getRewardFromDatabase(): Promise<WithId<MongoReward> | null> {
     if (this.db)
-      return await this.db.collection(REWARDS_COLLECTION).findOne({
+      return (await this.db.collection(REWARDS_COLLECTION).findOne({
         userTelegramID: this.params.userTelegramID,
         eventId: this.params.eventId,
         reason: this.params.reason,
-      });
+      })) as WithId<MongoReward> | null;
     return null;
   }
 

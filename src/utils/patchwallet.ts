@@ -172,7 +172,7 @@ export async function swapTokens(
  * @returns {Promise<axios.AxiosResponse<PatchRawResult, AxiosError>>} - Promise resolving to the response from the PayMagic API.
  */
 export async function hedgeyLockTokens(
-  senderTgId: string,
+  senderTgId: string | undefined,
   recipients: HedgeyRecipientParams[],
   patchWalletAccessToken: string,
   useVesting: boolean = false,
@@ -183,7 +183,7 @@ export async function hedgeyLockTokens(
 
   // Lock the tokens using PayMagic API
   return await callPatchWalletTx(
-    senderTgId,
+    senderTgId || '',
     chainId,
     HEDGEY_BATCHPLANNER_ADDRESS,
     '0x00',

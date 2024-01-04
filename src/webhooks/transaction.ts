@@ -34,7 +34,8 @@ import {
   FLOWXO_WEBHOOK_API_KEY,
 } from '../../secrets';
 import { addTrackSegment } from '../utils/segment';
-import { Db, Document, WithId } from 'mongodb';
+import { Db, WithId } from 'mongodb';
+import { MongoTransfer, MongoUser } from '../types/mongo.types';
 
 /**
  * Handles a new transaction based on the provided parameters.
@@ -55,9 +56,10 @@ export async function handleNewTransaction(
   const db = await Database.getInstance();
 
   // Retrieve sender information from the "users" collection
-  const senderInformation = await db
-    ?.collection(USERS_COLLECTION)
-    .findOne({ userTelegramID: params.senderTgId });
+  const senderInformation = (await db?.collection(USERS_COLLECTION).findOne({
+    userTelegramID: params.senderTgId,
+  })) as WithId<MongoUser> | null;
+
   if (!senderInformation)
     return (
       console.error(
@@ -115,7 +117,7 @@ export async function handleNewTransaction(
       transfer.saveToSegment(),
       transfer.saveToFlowXO(),
       params.message &&
-        senderInformation.telegramSession &&
+        senderInformation?.telegramSession &&
         sendTelegramMessage(
           params.message,
           params.recipientTgId,
@@ -157,7 +159,7 @@ export class TransferTelegram {
   isInDatabase: boolean = false;
 
   /** Transaction details of the transfer. */
-  tx: WithId<Document> | null;
+  tx: WithId<MongoTransfer> | null;
 
   /** Current status of the transfer. */
   status: TransactionStatus;
@@ -231,13 +233,13 @@ export class TransferTelegram {
 
   /**
    * Retrieves the transfer information from the database.
-   * @returns {Promise<WithId<Document>>} - The transfer information or null if not found.
+   * @returns {Promise<WithId<MongoTransfer>>} - The transfer information or null if not found.
    */
-  async getTransferFromDatabase(): Promise<WithId<Document> | null> {
+  async getTransferFromDatabase(): Promise<WithId<MongoTransfer> | null> {
     if (this.db)
-      return await this.db
-        .collection(TRANSFERS_COLLECTION)
-        .findOne({ eventId: this.params.eventId });
+      return (await this.db.collection(TRANSFERS_COLLECTION).findOne({
+        eventId: this.params.eventId,
+      })) as WithId<MongoTransfer> | null;
     return null;
   }
 
@@ -324,7 +326,7 @@ export class TransferTelegram {
     axios.AxiosResponse<PatchRawResult, AxiosError>
   > {
     return await sendTokens(
-      this.params.senderInformation?.userTelegramID,
+      this.params.senderInformation?.userTelegramID || '',
       this.recipientWallet || '',
       this.params.amount,
       await getPatchWalletAccessToken(),

@@ -1,6 +1,7 @@
-import { Document, WithId } from 'mongodb';
+import { WithId } from 'mongodb';
 import { DEFAULT_CHAIN_ID, G1_TOKEN_SYMBOL } from '../utils/constants';
 import { G1_POLYGON_ADDRESS } from '../../secrets';
+import { MongoUser } from './mongo.types';
 
 export type HedgeyRecipientParams = {
   /** The address of the recipient. */
@@ -41,7 +42,7 @@ export type VestingParams = {
   /** The symbol of the token for the transaction. */
   tokenSymbol?: string;
   /** Additional sender information with MongoDB document ID. */
-  senderInformation?: WithId<Document>;
+  senderInformation?: WithId<MongoUser>;
 };
 
 /**
@@ -52,7 +53,7 @@ export type VestingParams = {
  */
 export function createVesting(
   params: VestingParams,
-  senderInformation: WithId<Document>,
+  senderInformation: WithId<MongoUser>,
 ): VestingParams {
   return {
     ...{
