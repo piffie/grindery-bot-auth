@@ -31,18 +31,18 @@ const router = express.Router();
  *
  * @example response - 200 - Success response example
  * {
- *   "usd_from_usd_investment": "10",
- *   "usd_from_g1_holding": "0.049",
- *   "usd_from_mvu": "0.80",
- *   "usd_from_time": "1.04",
- *   "equivalent_usd_invested": "11.89",
- *   "gx_before_mvu": "279.16",
- *   "gx_mvu_effect": "22.33",
- *   "gx_time_effect": "29.00",
- *   "gx_received": "1200",
- *   "equivalent_gx_usd_exchange_rate": "32.88",
- *   "standard_gx_usd_exchange_rate": "27.77",
- *   "discount_received": "15.53",
+ *   "usdFromUsdInvestment": "10",
+ *   "usdFromG1Investment": "0.049",
+ *   "usdFromMvu": "0.80",
+ *   "usdFromTime": "1.04",
+ *   "equivalentUsdInvested": "11.89",
+ *   "gxBeforeMvu": "279.16",
+ *   "gxMvuEffect": "22.33",
+ *   "gxTimeEffect": "29.00",
+ *   "gxReceived": "1200",
+ *   "GxUsdExchangeRate": "32.88",
+ *   "standardGxUsdExchangeRate": "27.77",
+ *   "discountReceived": "15.53",
  *   "date": "2023-12-31T12:00:00Z",
  *   "quoteId": "some-unique-id",
  *   "userTelegramID": "user-telegram-id"
@@ -93,10 +93,10 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
  * POST /v1/tge/order
  *
  * @summary Create a Gx token order
- * @description Initiates a order for Gx tokens based on the provided quote ID and user details.
+ * @description Initiates an order for Gx tokens based on the provided quote ID and user details.
  * @tags Pre-Order
  * @security BearerAuth
- * @param {string} req.body.quoteId - The quote ID to create a order.
+ * @param {string} req.body.quoteId - The quote ID to create an order.
  * @param {string} req.body.userTelegramID - The user's Telegram ID for identification.
  * @return {object} 200 - Success response with the order transaction details
  * @return {object} 400 - Error response if a quote is unavailable or the order is being processed
@@ -113,12 +113,26 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
  *   "success": true,
  *   "order": {
  *     "orderId": "mocked-quote-id",
- *     "date": "2023-12-31T12:00:00Z",
- *     "status": "PENDING",
- *     "userTelegramID": "user-telegram-id",
- *     "tokenAmount_G1": "1000.00",
- *     "transactionHash_G1": "transaction-hash",
- *     "userOpHash_G1": "user-operation-hash"
+ *     "status": "WAITING_USD",
+ *     "transactionHashG1": "mock-transaction-hash",
+ *     "userOpHashG1": "mock-user-op-hash",
+ *     "quote": {
+ *       "quoteId": "mocked-quote-id",
+ *       "tokenAmountG1": "1000.00",
+ *       "usdFromUsdInvestment": "1",
+ *       "usdFromG1Investment": "1",
+ *       "usdFromMvu": "1",
+ *       "usdFromTime": "1",
+ *       "equivalentUsdInvested": "1",
+ *       "gxBeforeMvu": "1",
+ *       "gxMvuEffect": "1",
+ *       "gxTimeEffect": "1",
+ *       "GxUsdExchangeRate": "1",
+ *       "standardGxUsdExchangeRate": "1",
+ *       "discountReceived": "1",
+ *       "gxReceived": "1",
+ *       "userTelegramID": "user-telegram-id"
+ *     }
  *   }
  * }
  *
@@ -149,6 +163,9 @@ router.post('/order', authenticateApiKey, async (req, res) => {
       .status(400)
       .json({ success: false, msg: 'No quote available for this ID' });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { _id, ...quoteWithoutId } = quote;
+
   if (quote.userTelegramID !== req.body.userTelegramID)
     return res.status(400).json({
       success: false,
@@ -172,10 +189,9 @@ router.post('/order', authenticateApiKey, async (req, res) => {
     {
       $set: {
         orderId: req.body.quoteId,
-        date: new Date(),
+        dateG1: new Date(),
         status: GX_ORDER_STATUS.PENDING,
-        userTelegramID: req.body.userTelegramID,
-        tokenAmount_G1: quote.tokenAmount_G1,
+        ...quoteWithoutId,
       },
     },
     { upsert: true },
@@ -186,14 +202,14 @@ router.post('/order', authenticateApiKey, async (req, res) => {
     const { data } = await sendTokens(
       req.body.userTelegramID,
       SOURCE_WALLET_ADDRESS,
-      quote.tokenAmount_G1,
+      quote.tokenAmountG1,
       await getPatchWalletAccessToken(),
       0,
     );
 
     // Determine the status of the order based on additional conditions
     const status =
-      Number(quote.usd_from_usd_investment) > 0
+      Number(quote.usdFromUsdInvestment) > 0
         ? GX_ORDER_STATUS.WAITING_USD
         : GX_ORDER_STATUS.COMPLETE;
 
@@ -205,28 +221,30 @@ router.post('/order', authenticateApiKey, async (req, res) => {
       {
         $set: {
           orderId: req.body.quoteId,
-          date: date,
+          dateG1: date,
           status,
-          userTelegramID: req.body.userTelegramID,
-          tokenAmount_G1: quote.tokenAmount_G1,
-          transactionHash_G1: data.txHash,
-          userOpHash_G1: data.userOpHash,
+          transactionHashG1: data.txHash,
+          userOpHashG1: data.userOpHash,
         },
       },
-      { upsert: true },
+      { upsert: false },
     );
+
+    // Delete quote from the database
+    await db
+      ?.collection(GX_QUOTE_COLLECTION)
+      .deleteOne({ quoteId: req.body.quoteId });
 
     // Return success response with order transaction details
     return res.status(200).json({
       success: true,
       order: {
         orderId: req.body.quoteId,
-        date: date,
+        dateG1: date,
         status,
-        userTelegramID: req.body.userTelegramID,
-        tokenAmount_G1: quote.tokenAmount_G1,
-        transactionHash_G1: data.txHash,
-        userOpHash_G1: data.userOpHash,
+        transactionHashG1: data.txHash,
+        userOpHashG1: data.userOpHash,
+        quote: quoteWithoutId,
       },
     });
   } catch (e) {
@@ -240,13 +258,12 @@ router.post('/order', authenticateApiKey, async (req, res) => {
       {
         $set: {
           orderId: req.body.quoteId,
-          date: new Date(),
+          dateG1: new Date(),
           status: GX_ORDER_STATUS.FAILURE_G1,
-          userTelegramID: req.body.userTelegramID,
-          tokenAmount_G1: quote.tokenAmount_G1,
+          ...quoteWithoutId,
         },
       },
-      { upsert: true },
+      { upsert: false },
     );
 
     // Return error response if an error occurs during the order process
@@ -284,15 +301,13 @@ router.post('/order', authenticateApiKey, async (req, res) => {
  *   "success": true,
  *   "order": {
  *     "orderId": "mocked-quote-id",
- *     "dateUSD": "2023-12-31T12:00:00Z",
  *     "status": "COMPLETE",
- *     "userTelegramID": "user-telegram-id",
- *     "transactionHash_USD": "transaction-hash",
- *     "userOpHash_USD": "user-operation-hash",
- *     "amount_USD": "250.00",
- *     "tokenAmount_USD": "25.00",
- *     "tokenAddress_USD": "token-address",
- *     "chainId_USD": "chain-id"
+ *     "transactionHashUSD": "transaction-hash",
+ *     "userOpHashUSD": "user-operation-hash",
+ *     "tokenAmountUSD": "25.00",
+ *     "tokenAddressUSD": "token-address",
+ *     "chainIdUSD": "chain-id"
+ *     // Other properties omitted for brevity
  *   }
  * }
  *
@@ -312,34 +327,32 @@ router.post('/order', authenticateApiKey, async (req, res) => {
 router.patch('/order', authenticateApiKey, async (req, res) => {
   const db = await Database.getInstance();
 
-  // Retrieve quote details based on the provided quoteId
-  const quote = await db
-    ?.collection(GX_QUOTE_COLLECTION)
-    .findOne({ quoteId: req.body.quoteId });
-
-  // If quote is not found, return an error response
-  if (!quote)
-    return res
-      .status(400)
-      .json({ success: false, msg: 'No quote available for this ID' });
-
-  // Check if the quote's userTelegramID matches the provided userTelegramID
-  if (quote.userTelegramID !== req.body.userTelegramID)
-    return res.status(400).json({
-      success: false,
-      msg: 'Quote ID is not linked to the provided user Telegram ID',
-    });
-
   // Fetch order details based on the quoteId
   const order = await db
     ?.collection(GX_ORDER_COLLECTION)
-    .findOne({ orderId: req.body.quoteId });
+    .findOne({ orderId: req.body.orderId });
+
+  // If order is not found, return an error response
+  if (!order)
+    return res
+      .status(400)
+      .json({ success: false, msg: 'No order available for this ID' });
+
+  // Check if the order's userTelegramID matches the provided userTelegramID
+  if (order.userTelegramID !== req.body.userTelegramID)
+    return res.status(400).json({
+      success: false,
+      msg: 'Order ID is not linked to the provided user Telegram ID',
+    });
 
   // If an order exists and status is not ready for USD payment, return an error response
   if (order && order.status !== GX_ORDER_STATUS.WAITING_USD)
     return res
       .status(400)
       .json({ msg: 'Status of the order is not ready to process USD payment' });
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { _id, ...orderWithoutId } = order;
 
   try {
     // Calculate token price based on chainId and token address
@@ -350,21 +363,20 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
 
     // Calculate token amount for the USD investment
     const token_amount = (
-      parseFloat(quote.usd_from_usd_investment) /
+      parseFloat(order.usdFromUsdInvestment) /
       parseFloat(token_price.data.result.usdPrice)
     ).toFixed(2);
 
     // Update order details with USD-based information
     await db?.collection(GX_ORDER_COLLECTION).updateOne(
-      { orderId: req.body.quoteId },
+      { orderId: req.body.orderId },
       {
         $set: {
           dateUSD: new Date(),
           status: GX_ORDER_STATUS.PENDING_USD,
-          amount_USD: quote.usd_from_usd_investment,
-          tokenAmount_USD: token_amount,
-          tokenAddress_USD: req.body.tokenAddress,
-          chainId_USD: req.body.chainId,
+          tokenAmountUSD: token_amount,
+          tokenAddressUSD: req.body.tokenAddress,
+          chainIdUSD: req.body.chainId,
         },
       },
       { upsert: false },
@@ -386,13 +398,13 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
 
     // Update order status and transaction details upon successful transaction
     await db?.collection(GX_ORDER_COLLECTION).updateOne(
-      { orderId: req.body.quoteId },
+      { orderId: req.body.orderId },
       {
         $set: {
           dateUSD: date,
           status: GX_ORDER_STATUS.COMPLETE,
-          transactionHash_USD: data.txHash,
-          userOpHash_USD: data.userOpHash,
+          transactionHashUSD: data.txHash,
+          userOpHashUSD: data.userOpHash,
         },
       },
       { upsert: false },
@@ -402,30 +414,29 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
     return res.status(200).json({
       success: true,
       order: {
-        orderId: req.body.quoteId,
+        ...orderWithoutId,
+        orderId: req.body.orderId,
         dateUSD: date,
         status: GX_ORDER_STATUS.COMPLETE,
-        userTelegramID: req.body.userTelegramID,
-        transactionHash_USD: data.txHash,
-        userOpHash_USD: data.userOpHash,
-        amount_USD: quote.usd_from_usd_investment,
-        tokenAmount_USD: token_amount,
-        tokenAddress_USD: req.body.tokenAddress,
-        chainId_USD: req.body.chainId,
+        transactionHashUSD: data.txHash,
+        userOpHashUSD: data.userOpHash,
+        tokenAddressUSD: req.body.tokenAddress,
+        chainIdUSD: req.body.chainId,
+        tokenAmountUSD: token_amount,
       },
     });
   } catch (e) {
     // Log error if transaction fails and update order status to failure
     console.error(
-      `[${req.body.quoteId}] Error processing PatchWallet order G1 transaction: ${e}`,
+      `[${req.body.orderId}] Error processing PatchWallet order G1 transaction: ${e}`,
     );
 
     // Update order status to failure in case of transaction error
     await db?.collection(GX_ORDER_COLLECTION).updateOne(
-      { orderId: req.body.quoteId },
+      { orderId: req.body.orderId },
       {
         $set: {
-          orderId: req.body.quoteId,
+          orderId: req.body.orderId,
           dateUSD: new Date(),
           status: GX_ORDER_STATUS.FAILURE_USD,
           userTelegramID: req.body.userTelegramID,
@@ -463,18 +474,18 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
  *     "date": "2023-12-31T12:00:00Z",
  *     "status": "PENDING",
  *     "userTelegramID": "user-telegram-id",
- *     "tokenAmount_G1": "1000.00",
- *     "transactionHash_G1": "transaction-hash",
- *     "userOpHash_G1": "user-operation-hash"
+ *     "tokenAmountG1": "1000.00",
+ *     "transactionHashG1": "transaction-hash",
+ *     "userOpHashG1": "user-operation-hash"
  *   },
  *   {
  *     "orderId": "order-id-2",
  *     "date": "2023-12-30T12:00:00Z",
  *     "status": "COMPLETE",
  *     "userTelegramID": "user-telegram-id",
- *     "tokenAmount_G1": "500.00",
- *     "transactionHash_G1": "transaction-hash",
- *     "userOpHash_G1": "user-operation-hash"
+ *     "tokenAmountG1": "500.00",
+ *     "transactionHashG1": "transaction-hash",
+ *     "userOpHashG1": "user-operation-hash"
  *   },
  *   // ...other orders
  * ]
@@ -527,13 +538,13 @@ router.get('/orders', authenticateApiKey, async (req, res) => {
  *   {
  *     "quoteId": "quote-id-1",
  *     "date": "2023-12-31T12:00:00Z",
- *     "usd_from_usd_investment": "10",
+ *     "usdFromUsdInvestment": "10",
  *     // ...other fields
  *   },
  *   {
  *     "quoteId": "quote-id-2",
  *     "date": "2023-12-30T12:00:00Z",
- *     "usd_from_usd_investment": "20",
+ *     "usdFromUsdInvestment": "20",
  *     // ...other fields
  *   },
  *   // ...other quotes
@@ -587,19 +598,19 @@ router.get('/quotes', authenticateApiKey, async (req, res) => {
  *   "orderId": "mocked-order-id",
  *   "status": "COMPLETE",
  *   "quoteId": "mocked-quote-id",
- *   "tokenAmount_G1": "1000.00",
- *   "usd_from_usd_investment": "1",
- *   "usd_from_g1_holding": "1",
- *   "usd_from_mvu": "1",
- *   "usd_from_time": "1",
- *   "equivalent_usd_invested": "1",
- *   "gx_before_mvu": "1",
- *   "gx_mvu_effect": "1",
- *   "gx_time_effect": "1",
- *   "equivalent_gx_usd_exchange_rate": "1",
- *   "standard_gx_usd_exchange_rate": "1",
- *   "discount_received": "1",
- *   "gx_received": "1",
+ *   "tokenAmountG1": "1000.00",
+ *   "usdFromUsdInvestment": "1",
+ *   "usdFromG1Investment": "1",
+ *   "usdFromMvu": "1",
+ *   "usdFromTime": "1",
+ *   "equivalentUsdInvested": "1",
+ *   "gxBeforeMvu": "1",
+ *   "gxMvuEffect": "1",
+ *   "gxTimeEffect": "1",
+ *   "GxUsdExchangeRate": "1",
+ *   "standardGxUsdExchangeRate": "1",
+ *   "discountReceived": "1",
+ *   "gxReceived": "1",
  *   "userTelegramID": "user-telegram-id"
  * }
  *
