@@ -60,47 +60,42 @@ export async function handleNewTransaction(
     userTelegramID: params.senderTgId,
   })) as WithId<MongoUser> | null;
 
-  // If sender information is not found, log an error and return true indicating failure
-  if (!senderInformation) {
-    console.error(
-      `[${params.eventId}] Sender ${params.senderTgId} is not a user`,
+  if (!senderInformation)
+    return (
+      console.error(
+        `[${params.eventId}] Sender ${params.senderTgId} is not a user`,
+      ),
+      true
     );
-    return true;
-  }
 
   // Create a transactionInstance object
   const { isError, transactionInstance } = await TransferTelegram.build(
     createTransaction(params, senderInformation),
   );
 
-  // If there's an error in creating the transaction instance, return false indicating failure
   if (isError) return false;
 
-  // If the transaction is already successful or failed, return true indicating success
   if (
     isSuccessfulTransaction(transactionInstance.status) ||
     isFailedTransaction(transactionInstance.status)
-  ) {
+  )
     return true;
-  }
 
   let tx: PatchResult | undefined;
 
   // Handle pending hash status
   if (isPendingTransactionHash(transactionInstance.status)) {
-    // Check if treatment duration is exceeded, if so, return true indicating success
-    if (await isTreatmentDurationExceeded(transactionInstance)) {
-      return true;
-    }
+    if (await isTreatmentDurationExceeded(transactionInstance)) return true;
 
     // Check userOpHash and updateInDatabase for success
-    if (!transactionInstance.userOpHash) {
-      await transactionInstance.updateInDatabase(
-        TRANSACTION_STATUS.SUCCESS,
-        new Date(),
+    if (!transactionInstance.userOpHash)
+      return (
+        await transactionInstance.updateInDatabase(
+          TRANSACTION_STATUS.SUCCESS,
+          new Date(),
+        ),
+        true
       );
-      return true;
-    }
 
     // Check status for userOpHash and return the status if it's retrieved successfully or false if failed
     tx = await getStatus(transactionInstance);
@@ -118,34 +113,30 @@ export async function handleNewTransaction(
   // Finalize transaction handling
   if (tx && tx.txHash) {
     updateTxHash(transactionInstance, tx.txHash);
-    try {
-      // Update database, save to external services, and send a Telegram message (if applicable)
-      await Promise.all([
-        transactionInstance.updateInDatabase(
-          TRANSACTION_STATUS.SUCCESS,
-          new Date(),
+    await Promise.all([
+      transactionInstance.updateInDatabase(
+        TRANSACTION_STATUS.SUCCESS,
+        new Date(),
+      ),
+      transactionInstance.saveToSegment(),
+      transactionInstance.saveToFlowXO(),
+      params.message &&
+        senderInformation?.telegramSession &&
+        sendTelegramMessage(
+          params.message,
+          params.recipientTgId,
+          senderInformation,
+        ).then(
+          (result) =>
+            result.success ||
+            console.error('Error sending telegram message:', result.message),
         ),
-        transactionInstance.saveToSegment(),
-        transactionInstance.saveToFlowXO(),
-        params.message &&
-          senderInformation?.telegramSession &&
-          sendTelegramMessage(
-            params.message,
-            params.recipientTgId,
-            senderInformation,
-          ).then(
-            (result) =>
-              result.success ||
-              console.error('Error sending telegram message:', result.message),
-          ),
-      ]);
-    } catch (error) {
+    ]).catch((error) =>
       console.error(
         `[${params.eventId}] Error processing Segment or FlowXO webhook, or sending telegram message: ${error}`,
-      );
-    }
+      ),
+    );
 
-    // Log successful transaction completion
     console.log(
       `[${transactionInstance.txHash}] transaction from ${transactionInstance.params.senderInformation?.userTelegramID} to ${transactionInstance.params.recipientTgId} for ${transactionInstance.params.amount} with event ID ${transactionInstance.params.eventId} finished.`,
     );
@@ -153,15 +144,14 @@ export async function handleNewTransaction(
   }
 
   // Handle pending hash for userOpHash
-  if (tx && tx.userOpHash) {
-    updateUserOpHash(transactionInstance, tx.userOpHash);
-    await transactionInstance.updateInDatabase(
+  tx &&
+    tx.userOpHash &&
+    updateUserOpHash(transactionInstance, tx.userOpHash) &&
+    (await transactionInstance.updateInDatabase(
       TRANSACTION_STATUS.PENDING_HASH,
       null,
-    );
-  }
+    ));
 
-  // Return false indicating the handling of the transaction is incomplete
   return false;
 }
 
