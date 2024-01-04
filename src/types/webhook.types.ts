@@ -328,28 +328,28 @@ export interface PatchRawResult {
 }
 
 /**
- * Represents the result of a wallet patch operation, including raw result details.
+ * Represents an indicator for error occurrence.
  */
-export interface PatchResult extends PatchRawResult {
+type ErrorIndicator = {
   /**
    * Indicates whether an error occurred during the operation.
    */
   isError: boolean;
-}
+};
+
+/**
+ * Represents the result of a wallet patch operation, including raw result details.
+ */
+export interface PatchResult extends PatchRawResult, ErrorIndicator {}
 
 /**
  * Represents the initialization result of a transaction operation.
  */
-export interface TransactionInit {
+export interface TransactionInit extends ErrorIndicator {
   /**
    * The initialized transaction instance.
    */
   transactionInstance: TransferTelegram;
-
-  /**
-   * Indicates whether an error occurred during initialization.
-   */
-  isError: boolean;
 }
 
 /**
