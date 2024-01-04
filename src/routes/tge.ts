@@ -346,7 +346,11 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
     });
 
   // If an order exists and status is not ready for USD payment, return an error response
-  if (order && order.status !== GX_ORDER_STATUS.WAITING_USD)
+  if (
+    order &&
+    order.status !== GX_ORDER_STATUS.WAITING_USD &&
+    order.status !== GX_ORDER_STATUS.FAILURE_USD
+  )
     return res
       .status(400)
       .json({ msg: 'Status of the order is not ready to process USD payment' });

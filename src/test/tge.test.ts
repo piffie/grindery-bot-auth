@@ -13,13 +13,17 @@ import {
   mockChainName,
   mockOrderID,
   mockOrderID1,
+  mockOrderID2,
   mockTokenAddress,
   mockTransactionHash,
   mockTransactionHash1,
+  mockTransactionHash2,
   mockUserOpHash,
   mockUserOpHash1,
+  mockUserOpHash2,
   mockUserTelegramID,
   mockUserTelegramID1,
+  mockUserTelegramID2,
   mockWallet,
 } from './utils';
 import chaiExclude from 'chai-exclude';
@@ -886,6 +890,28 @@ describe('G1 to GX util functions', async function () {
           gxReceived: '1',
           userTelegramID: mockUserTelegramID1,
         },
+        {
+          orderId: mockOrderID2,
+          dateG1: new Date(),
+          status: GX_ORDER_STATUS.FAILURE_USD,
+          transactionHashG1: mockTransactionHash2,
+          userOpHashG1: mockUserOpHash2,
+          quoteId: mockOrderID1,
+          tokenAmountG1: '1000.00',
+          usdFromUsdInvestment: '100.00',
+          usdFromG1Investment: '1',
+          usdFromMvu: '1',
+          usdFromTime: '1',
+          equivalentUsdInvested: '1',
+          gxBeforeMvu: '1',
+          gxMvuEffect: '1',
+          gxTimeEffect: '1',
+          GxUsdExchangeRate: '1',
+          standardGxUsdExchangeRate: '1',
+          discountReceived: '1',
+          gxReceived: '1',
+          userTelegramID: mockUserTelegramID2,
+        },
       ]);
     });
 
@@ -1037,6 +1063,28 @@ describe('G1 to GX util functions', async function () {
             gxReceived: '1',
             userTelegramID: mockUserTelegramID1,
           },
+          {
+            orderId: mockOrderID2,
+            dateG1: new Date(),
+            status: GX_ORDER_STATUS.FAILURE_USD,
+            transactionHashG1: mockTransactionHash2,
+            userOpHashG1: mockUserOpHash2,
+            quoteId: mockOrderID1,
+            tokenAmountG1: '1000.00',
+            usdFromUsdInvestment: '100.00',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
+            userTelegramID: mockUserTelegramID2,
+          },
         ]);
     });
 
@@ -1082,6 +1130,52 @@ describe('G1 to GX util functions', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+        },
+      });
+    });
+
+    it('Should allow USD payment is status is a failure USD before the call', async function () {
+      const res = await chai
+        .request(app)
+        .patch('/v1/tge/order')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .send({
+          orderId: mockOrderID2,
+          userTelegramID: mockUserTelegramID2,
+          chainId: 'eip155:137',
+          tokenAddress: avax_address_polygon,
+        });
+
+      delete res.body.order.dateG1;
+      delete res.body.order.dateUSD;
+
+      chai.expect(res.body).to.deep.equal({
+        success: true,
+        order: {
+          orderId: mockOrderID2,
+          status: GX_ORDER_STATUS.COMPLETE,
+          tokenAmountUSD: '10.00',
+          tokenAddressUSD: avax_address_polygon,
+          chainIdUSD: 'eip155:137',
+          transactionHashUSD: mockTransactionHash,
+          userOpHashUSD: mockUserOpHash,
+          transactionHashG1: mockTransactionHash2,
+          userOpHashG1: mockUserOpHash2,
+          quoteId: mockOrderID1,
+          tokenAmountG1: '1000.00',
+          usdFromUsdInvestment: '100.00',
+          usdFromG1Investment: '1',
+          usdFromMvu: '1',
+          usdFromTime: '1',
+          equivalentUsdInvested: '1',
+          gxBeforeMvu: '1',
+          gxMvuEffect: '1',
+          gxTimeEffect: '1',
+          GxUsdExchangeRate: '1',
+          standardGxUsdExchangeRate: '1',
+          discountReceived: '1',
+          gxReceived: '1',
+          userTelegramID: mockUserTelegramID2,
         },
       });
     });
@@ -1152,6 +1246,28 @@ describe('G1 to GX util functions', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID1,
+          },
+          {
+            orderId: mockOrderID2,
+            dateG1: new Date(),
+            status: GX_ORDER_STATUS.FAILURE_USD,
+            transactionHashG1: mockTransactionHash2,
+            userOpHashG1: mockUserOpHash2,
+            quoteId: mockOrderID1,
+            tokenAmountG1: '1000.00',
+            usdFromUsdInvestment: '100.00',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
+            userTelegramID: mockUserTelegramID2,
           },
         ]);
 
@@ -1230,6 +1346,28 @@ describe('G1 to GX util functions', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID1,
+          },
+          {
+            orderId: mockOrderID2,
+            dateG1: new Date(),
+            status: GX_ORDER_STATUS.FAILURE_USD,
+            transactionHashG1: mockTransactionHash2,
+            userOpHashG1: mockUserOpHash2,
+            quoteId: mockOrderID1,
+            tokenAmountG1: '1000.00',
+            usdFromUsdInvestment: '100.00',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
+            userTelegramID: mockUserTelegramID2,
           },
         ]);
 
