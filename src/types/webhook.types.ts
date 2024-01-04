@@ -359,7 +359,10 @@ export interface RewardInit {
   /**
    * The initialized reward instance.
    */
-  RewardInstance: SignUpRewardTelegram | LinkRewardTelegram;
+  RewardInstance:
+    | IsolatedRewardTelegram
+    | LinkRewardTelegram
+    | SignUpRewardTelegram;
 
   /**
    * Indicates if a reward should not be issued.

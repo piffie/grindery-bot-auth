@@ -71,6 +71,7 @@ export async function handleNewVesting(
   const vesting = await VestingTelegram.build(
     createVesting(params, senderInformation),
   );
+
   if (
     isSuccessfulTransaction(vesting.status) ||
     isFailedTransaction(vesting.status)

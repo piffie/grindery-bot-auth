@@ -36,51 +36,52 @@ import { Database } from '../db/conn';
 import { MongoReward, MongoUser } from '../types/mongo.types';
 
 /**
- * Handles the processing of a link reward based on specified parameters.
- * @param params - The parameters required for the link reward.
+ * Handles the processing of a link RewardInstance based on specified parameters.
+ * @param params - The parameters required for the link RewardInstance.
  * @returns A promise resolving to a boolean value.
- *          - Returns `true` if the link reward handling is completed or conditions are not met.
- *          - Returns `false` if an error occurs during the link reward processing.
+ *          - Returns `true` if the link RewardInstance handling is completed or conditions are not met.
+ *          - Returns `false` if an error occurs during the link RewardInstance processing.
  */
 export async function handleLinkReward(params: RewardParams): Promise<boolean> {
   try {
-    const rewardRaw = await LinkRewardTelegram.build(
+    const { ShouldBeIssued, RewardInstance } = await LinkRewardTelegram.build(
       createRewardParams(params, params.patchwallet || ''),
     );
 
-    if (!rewardRaw.ShouldBeIssued) return true;
-
-    const reward = rewardRaw.RewardInstance;
+    if (!ShouldBeIssued) return true;
 
     let txReward: PatchResult | undefined;
 
     // Handle pending hash status
-    if (isPendingTransactionHash(reward.status)) {
-      if (await isTreatmentDurationExceeded(reward)) return true;
+    if (isPendingTransactionHash(RewardInstance.status)) {
+      if (await isTreatmentDurationExceeded(RewardInstance)) return true;
 
       // Check userOpHash and updateInDatabase for success
-      if (!reward.userOpHash)
+      if (!RewardInstance.userOpHash)
         return (
-          await reward.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
+          await RewardInstance.updateInDatabase(
+            TRANSACTION_STATUS.SUCCESS,
+            new Date(),
+          ),
           true
         );
 
-      // Get status of reward test
-      if ((txReward = await getStatus(reward)).isError) return false;
+      // Get status of RewardInstance test
+      if ((txReward = await getStatus(RewardInstance)).isError) return false;
     }
 
     // Check for txReward and send transaction if not present
-    if (!txReward && (txReward = await sendTransaction(reward)).isError)
+    if (!txReward && (txReward = await sendTransaction(RewardInstance)).isError)
       return false;
 
     if (txReward && txReward.txHash) {
-      updateTxHash(reward, txReward.txHash);
+      updateTxHash(RewardInstance, txReward.txHash);
       await Promise.all([
-        reward.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
-        reward.saveToFlowXO(),
+        RewardInstance.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
+        RewardInstance.saveToFlowXO(),
       ]).catch((error) =>
         console.error(
-          `[${params.eventId}] Error processing FlowXO webhook during sign up reward: ${error}`,
+          `[${params.eventId}] Error processing FlowXO webhook during sign up RewardInstance: ${error}`,
         ),
       );
       return true;
@@ -88,13 +89,16 @@ export async function handleLinkReward(params: RewardParams): Promise<boolean> {
 
     // Update userOpHash if present in txReward
     if (txReward && txReward.userOpHash) {
-      updateUserOpHash(reward, txReward.userOpHash);
-      await reward.updateInDatabase(TRANSACTION_STATUS.PENDING_HASH, null);
+      updateUserOpHash(RewardInstance, txReward.userOpHash);
+      await RewardInstance.updateInDatabase(
+        TRANSACTION_STATUS.PENDING_HASH,
+        null,
+      );
     }
     return false;
   } catch (error) {
     console.error(
-      `[${params.eventId}] Error processing link reward event: ${error}`,
+      `[${params.eventId}] Error processing link RewardInstance event: ${error}`,
     );
   }
   return true;
