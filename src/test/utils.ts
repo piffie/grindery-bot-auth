@@ -185,10 +185,16 @@ export function isUUIDv4(input: string): boolean {
  * Mock order ID generated using uuidv4().
  * @type {string}
  */
-export const mockOrderID = uuidv4();
+export const mockOrderID: string = uuidv4();
 
 /**
- * Another mock order ID generated using uuidv4().
+ * Mock order ID generated using uuidv4().
  * @type {string}
  */
-export const mockOrderID1 = uuidv4();
+export const mockOrderID1: string = uuidv4();
+
+/**
+ * Mock order ID generated using uuidv4().
+ * @type {string}
+ */
+export const mockOrderID2: string = uuidv4();

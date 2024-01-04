@@ -346,7 +346,11 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
     });
 
   // If an order exists and status is not ready for USD payment, return an error response
-  if (order && order.status !== GX_ORDER_STATUS.WAITING_USD)
+  if (
+    order &&
+    order.status !== GX_ORDER_STATUS.WAITING_USD &&
+    order.status !== GX_ORDER_STATUS.FAILURE_USD
+  )
     return res
       .status(400)
       .json({ msg: 'Status of the order is not ready to process USD payment' });
@@ -586,40 +590,63 @@ router.get('/quotes', authenticateApiKey, async (req, res) => {
  * @tags Order Status
  * @security BearerAuth
  * @param {string} req.query.orderId - The order ID to fetch the status.
- * @return {object} 200 - Success response with the merged order and quote details
+ * @return {object} 200 - Success response with the merged order and quote details or individual order/quote
  * @return {object} 404 - Error response if either order or quote not found
  * @return {object} 500 - Error response if an error occurs during status retrieval
  *
  * @example request - 200 - Example request query parameter
  * /v1/tge/order?orderId=mocked-order-id
  *
- * @example response - 200 - Success response example
+ * @example response - 200 - Success response example if order ID is present in the database
  * {
- *   "orderId": "mocked-order-id",
- *   "status": "COMPLETE",
- *   "quoteId": "mocked-quote-id",
- *   "tokenAmountG1": "1000.00",
- *   "usdFromUsdInvestment": "1",
- *   "usdFromG1Investment": "1",
- *   "usdFromMvu": "1",
- *   "usdFromTime": "1",
- *   "equivalentUsdInvested": "1",
- *   "gxBeforeMvu": "1",
- *   "gxMvuEffect": "1",
- *   "gxTimeEffect": "1",
- *   "GxUsdExchangeRate": "1",
- *   "standardGxUsdExchangeRate": "1",
- *   "discountReceived": "1",
- *   "gxReceived": "1",
- *   "userTelegramID": "user-telegram-id"
+ *   "order": {
+ *     "orderId": "mocked-order-id",
+ *     "status": "COMPLETE",
+ *     "quoteId": "mocked-quote-id",
+ *     "tokenAmountG1": "1000.00",
+ *     "usdFromUsdInvestment": "1",
+ *     "usdFromG1Investment": "1",
+ *     "usdFromMvu": "1",
+ *     "usdFromTime": "1",
+ *     "equivalentUsdInvested": "1",
+ *     "gxBeforeMvu": "1",
+ *     "gxMvuEffect": "1",
+ *     "gxTimeEffect": "1",
+ *     "GxUsdExchangeRate": "1",
+ *     "standardGxUsdExchangeRate": "1",
+ *     "discountReceived": "1",
+ *     "gxReceived": "1",
+ *     "userTelegramID": "user-telegram-id"
+ *   }
  * }
  *
- * @example response - 404 - Error response example
+ * @example response - 200 - Success response example if quote ID is present in the database
  * {
- *   "msg": "Order or quote not found"
+ *   "quote": {
+ *     "quoteId": "mocked-quote-id",
+ *     "tokenAmountG1": "1000.00",
+ *     "usdFromUsdInvestment": "1",
+ *     "usdFromG1Investment": "1",
+ *     "usdFromMvu": "1",
+ *     "usdFromTime": "1",
+ *     "equivalentUsdInvested": "1",
+ *     "gxBeforeMvu": "1",
+ *     "gxMvuEffect": "1",
+ *     "gxTimeEffect": "1",
+ *     "GxUsdExchangeRate": "1",
+ *     "standardGxUsdExchangeRate": "1",
+ *     "discountReceived": "1",
+ *     "gxReceived": "1",
+ *     "userTelegramID": "user-telegram-id"
+ *   }
  * }
  *
- * @example response - 500 - Error response example
+ * @example response - 404 - Error response example if order and quote IDs are not present in the database
+ * {
+ *   "msg": "Order and quote not found"
+ * }
+ *
+ * @example response - 500 - Error response example if an error occurs during status retrieval
  * {
  *   "msg": "An error occurred",
  *   "error": "Error details here"
@@ -627,23 +654,34 @@ router.get('/quotes', authenticateApiKey, async (req, res) => {
  */
 router.get('/order', authenticateApiKey, async (req, res) => {
   try {
+    // Retrieves the instance of the database
     const db = await Database.getInstance();
 
-    const [order, quote] = await Promise.all([
-      db
-        ?.collection(GX_ORDER_COLLECTION)
-        .findOne({ orderId: req.query.orderId }),
-      db
-        ?.collection(GX_QUOTE_COLLECTION)
-        .findOne({ quoteId: req.query.orderId }),
-    ]);
+    // Retrieves an order based on the orderId from the GX_ORDER_COLLECTION
+    const order = await db
+      ?.collection(GX_ORDER_COLLECTION)
+      .findOne({ orderId: req.query.orderId });
 
-    if (!order || !quote) {
-      return res.status(404).json({ msg: 'Order or quote not found' });
+    // If no order is found
+    if (!order) {
+      // Retrieves a quote based on the orderId from the GX_QUOTE_COLLECTION
+      const quote = await db
+        ?.collection(GX_QUOTE_COLLECTION)
+        .findOne({ quoteId: req.query.orderId });
+
+      // If no quote is found for the provided orderId
+      if (!quote)
+        // Returns a 404 status with a JSON response indicating 'Order and quote not found'
+        return res.status(404).json({ msg: 'Order and quote not found' });
+
+      // Returns a 200 status with a JSON response containing the found quote
+      return res.status(200).json({ quote });
     }
 
-    return res.status(200).json({ ...order, ...quote });
+    // Returns a 200 status with a JSON response containing the found order
+    return res.status(200).json({ order });
   } catch (error) {
+    // Returns a 500 status with a JSON response indicating an error occurred
     return res.status(500).json({ msg: 'An error occurred', error });
   }
 });
