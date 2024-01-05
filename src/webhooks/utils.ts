@@ -1,9 +1,5 @@
-import {
-  PatchResult,
-  TelegramOperations,
-  TransactionStatus,
-} from '../types/webhook.types';
-import { TRANSACTION_STATUS } from '../utils/constants';
+import { PatchResult, TelegramOperations } from '../types/webhook.types';
+import { TransactionStatus } from '../utils/constants';
 import { getTxStatus } from '../utils/patchwallet';
 import { getXMinBeforeDate } from '../utils/time';
 import { IsolatedRewardTelegram } from './isolated-reward';
@@ -34,7 +30,7 @@ function isRewardClass(telegram_operation: TelegramOperations): boolean {
  * @returns {boolean} - True if the transaction status represents success, otherwise false.
  */
 export function isSuccessfulTransaction(status: TransactionStatus): boolean {
-  return status === TRANSACTION_STATUS.SUCCESS;
+  return status === TransactionStatus.SUCCESS;
 }
 
 /**
@@ -44,8 +40,8 @@ export function isSuccessfulTransaction(status: TransactionStatus): boolean {
  */
 export function isFailedTransaction(status: TransactionStatus): boolean {
   return (
-    status === TRANSACTION_STATUS.FAILURE ||
-    status === TRANSACTION_STATUS.FAILURE_503
+    status === TransactionStatus.FAILURE ||
+    status === TransactionStatus.FAILURE_503
   );
 }
 
@@ -55,7 +51,7 @@ export function isFailedTransaction(status: TransactionStatus): boolean {
  * @returns {boolean} - True if the transaction is in the pending hash state, false otherwise.
  */
 export function isPendingTransactionHash(status: TransactionStatus): boolean {
-  return status === TRANSACTION_STATUS.PENDING_HASH;
+  return status === TransactionStatus.PENDING_HASH;
 }
 
 /**
@@ -87,7 +83,7 @@ export async function isTreatmentDurationExceeded(
         `[${telegram_operation.params.eventId}] was stopped due to too long treatment duration (> 10 min).`,
       ),
       await telegram_operation.updateInDatabase(
-        TRANSACTION_STATUS.FAILURE,
+        TransactionStatus.FAILURE,
         new Date(),
       ),
       true)) ||
@@ -155,8 +151,8 @@ export async function sendTransaction(
         // If the status is a handled error code, update the database accordingly.
         await telegram_operation.updateInDatabase(
           status === 503
-            ? TRANSACTION_STATUS.FAILURE_503
-            : TRANSACTION_STATUS.FAILURE,
+            ? TransactionStatus.FAILURE_503
+            : TransactionStatus.FAILURE,
           new Date(),
         );
 
@@ -203,7 +199,7 @@ export async function getStatus(
     return (
       (error?.response?.status === 470 &&
         (await telegram_operation.updateInDatabase(
-          TRANSACTION_STATUS.FAILURE,
+          TransactionStatus.FAILURE,
           new Date(),
         ),
         { isError: true })) || { isError: false }

@@ -75,28 +75,74 @@ export const TRANSFERS_TABLE_ID = 'transfer';
 export const WALLET_USERS_TABLE_ID = 'wallet_users';
 
 /**
- * Different transaction statuses.
+ * Enum representing different transaction statuses.
  */
-export const TRANSACTION_STATUS = {
-  PENDING: 'pending',
-  SUCCESS: 'success',
-  FAILURE: 'failure',
-  PENDING_HASH: 'pending_hash',
-  FAILURE_503: 'failure_503',
-  UNDEFINED: '',
-} as const;
+export const enum TransactionStatus {
+  /**
+   * Transaction is pending.
+   */
+  PENDING = 'pending',
+
+  /**
+   * Transaction was successful.
+   */
+  SUCCESS = 'success',
+
+  /**
+   * Transaction encountered a failure.
+   */
+  FAILURE = 'failure',
+
+  /**
+   * Transaction is pending due to hash verification.
+   */
+  PENDING_HASH = 'pending_hash',
+
+  /**
+   * Transaction failed due to a 503 error.
+   */
+  FAILURE_503 = 'failure_503',
+
+  /**
+   * Undefined transaction status.
+   */
+  UNDEFINED = '',
+}
 
 /**
- * Various statuses for GX orders.
+ * Enum representing various statuses for GX orders.
  */
-export const GX_ORDER_STATUS = {
-  PENDING: 'pending',
-  COMPLETE: 'complete',
-  FAILURE_G1: 'failure_G1',
-  FAILURE_USD: 'failure_USD',
-  WAITING_USD: 'waiting_usd',
-  PENDING_USD: 'pending_usd',
-} as const;
+export const enum GxOrderStatus {
+  /**
+   * Order is pending.
+   */
+  PENDING = 'pending',
+
+  /**
+   * Order is complete.
+   */
+  COMPLETE = 'complete',
+
+  /**
+   * Order failed due to G1 issue.
+   */
+  FAILURE_G1 = 'failure_G1',
+
+  /**
+   * Order failed due to USD issue.
+   */
+  FAILURE_USD = 'failure_USD',
+
+  /**
+   * Waiting for USD in the order.
+   */
+  WAITING_USD = 'waiting_usd',
+
+  /**
+   * Order is pending for USD.
+   */
+  PENDING_USD = 'pending_usd',
+}
 
 /**
  * Segment API endpoint.

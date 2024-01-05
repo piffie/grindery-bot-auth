@@ -8,12 +8,11 @@ import {
   PatchRawResult,
   PatchResult,
   RewardParams,
-  TransactionStatus,
   createRewardParams,
 } from '../types/webhook.types';
 import {
   REWARDS_COLLECTION,
-  TRANSACTION_STATUS,
+  TransactionStatus,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
 } from '../utils/constants';
@@ -68,7 +67,7 @@ export async function handleReferralReward(
     await reward.updateReferentWallet();
 
     if (!reward.tx)
-      await reward.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
+      await reward.updateInDatabase(TransactionStatus.PENDING, new Date());
 
     let txReward: PatchResult | undefined;
 
@@ -79,7 +78,7 @@ export async function handleReferralReward(
       // Check userOpHash and updateInDatabase for success
       if (!reward.userOpHash)
         return (
-          await reward.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
+          await reward.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
           true
         );
 
@@ -95,7 +94,7 @@ export async function handleReferralReward(
     if (txReward && txReward.txHash) {
       updateTxHash(reward, txReward.txHash);
       await Promise.all([
-        reward.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
+        reward.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
         reward.saveToFlowXO(),
       ]).catch((error) =>
         console.error(
@@ -108,7 +107,7 @@ export async function handleReferralReward(
     // Update userOpHash if present in txReward
     if (txReward && txReward.userOpHash) {
       updateUserOpHash(reward, txReward.userOpHash);
-      await reward.updateInDatabase(TRANSACTION_STATUS.PENDING_HASH, null);
+      await reward.updateInDatabase(TransactionStatus.PENDING_HASH, null);
     }
     return false;
   } catch (error) {
@@ -168,8 +167,8 @@ export class ReferralRewardTelegram {
     this.params.amount = '50';
     this.params.message = 'Referral reward';
 
-    // Initializes the 'status' property to 'TRANSACTION_STATUS.UNDEFINED' by default
-    this.status = TRANSACTION_STATUS.UNDEFINED;
+    // Initializes the 'status' property to 'TransactionStatus.UNDEFINED' by default
+    this.status = TransactionStatus.UNDEFINED;
   }
 
   /**

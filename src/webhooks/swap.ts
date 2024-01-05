@@ -1,6 +1,6 @@
 import {
   SWAPS_COLLECTION,
-  TRANSACTION_STATUS,
+  TransactionStatus,
   USERS_COLLECTION,
   nativeTokenAddresses,
 } from '../utils/constants';
@@ -19,7 +19,6 @@ import {
   PatchRawResult,
   PatchResult,
   SwapParams,
-  TransactionStatus,
   createSwapParams,
 } from '../types/webhook.types';
 import { addTrackSwapSegment } from '../utils/segment';
@@ -72,7 +71,7 @@ export async function handleSwap(params: SwapParams): Promise<boolean> {
 
     // If userOpHash is not available, mark the swap as successful and return true indicating handled status
     if (!swap.userOpHash) {
-      await swap.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date());
+      await swap.updateInDatabase(TransactionStatus.SUCCESS, new Date());
       console.log(
         `[SWAP EVENT] Event ID [${params.eventId}] Swap marked as successful as userOpHash is not available.`,
       );
@@ -97,7 +96,7 @@ export async function handleSwap(params: SwapParams): Promise<boolean> {
     // Update transaction hash, update database, save to Segment and FlowXO
     updateTxHash(swap, tx.txHash);
     await Promise.all([
-      swap.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
+      swap.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
       swap.saveToSegment(),
       swap.saveToFlowXO(),
     ]).catch((error) =>
@@ -117,7 +116,7 @@ export async function handleSwap(params: SwapParams): Promise<boolean> {
   tx &&
     tx.userOpHash &&
     updateUserOpHash(swap, tx.userOpHash) &&
-    (await swap.updateInDatabase(TRANSACTION_STATUS.PENDING_HASH, null));
+    (await swap.updateInDatabase(TransactionStatus.PENDING_HASH, null));
 
   // Return false indicating swap process is not fully handled
   return false;
@@ -167,8 +166,8 @@ export class SwapTelegram {
     // Initializes the 'isInDatabase' property to 'false' by default
     this.isInDatabase = false;
 
-    // Initializes the 'status' property to 'TRANSACTION_STATUS.UNDEFINED' by default
-    this.status = TRANSACTION_STATUS.UNDEFINED;
+    // Initializes the 'status' property to 'TransactionStatus.UNDEFINED' by default
+    this.status = TransactionStatus.UNDEFINED;
   }
 
   /**
@@ -193,7 +192,7 @@ export class SwapTelegram {
       ({ status: swap.status, userOpHash: swap.userOpHash } = swap.tx);
     } else {
       // If the swap doesn't exist, add it to the database with PENDING status and current date
-      await swap.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
+      await swap.updateInDatabase(TransactionStatus.PENDING, new Date());
     }
 
     // Return the fully initialized SwapTelegram instance
@@ -265,7 +264,7 @@ export class SwapTelegram {
       ...this.params,
       transactionHash: this.txHash || '',
       dateAdded: new Date(),
-      status: TRANSACTION_STATUS.SUCCESS,
+      status: TransactionStatus.SUCCESS,
     });
   }
 
@@ -306,7 +305,7 @@ export class SwapTelegram {
         .toString(),
       priceImpact: this.params.priceImpact,
       gas: this.params.gas,
-      status: TRANSACTION_STATUS.SUCCESS,
+      status: TransactionStatus.SUCCESS,
       transactionHash: this.txHash,
       dateAdded: new Date(),
       to: this.params.to,

@@ -32,7 +32,7 @@ import {
   PATCHWALLET_RESOLVER_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
-  GX_ORDER_STATUS,
+  GxOrderStatus,
   ANKR_MULTICHAIN_API_URL,
 } from '../utils/constants';
 import axios from 'axios';
@@ -311,12 +311,12 @@ describe('G1 to GX util functions', async function () {
       await collectionOrdersMock.insertMany([
         {
           orderId: mockOrderID,
-          status: GX_ORDER_STATUS.COMPLETE,
+          status: GxOrderStatus.COMPLETE,
           userTelegramID: mockUserTelegramID,
         },
         {
           orderId: mockOrderID1,
-          status: GX_ORDER_STATUS.COMPLETE,
+          status: GxOrderStatus.COMPLETE,
           userTelegramID: mockUserTelegramID,
         },
       ]);
@@ -337,12 +337,12 @@ describe('G1 to GX util functions', async function () {
         .to.deep.equal([
           {
             orderId: mockOrderID,
-            status: GX_ORDER_STATUS.COMPLETE,
+            status: GxOrderStatus.COMPLETE,
             userTelegramID: mockUserTelegramID,
           },
           {
             orderId: mockOrderID1,
-            status: GX_ORDER_STATUS.COMPLETE,
+            status: GxOrderStatus.COMPLETE,
             userTelegramID: mockUserTelegramID,
           },
         ]);
@@ -402,7 +402,7 @@ describe('G1 to GX util functions', async function () {
 
       await collectionOrdersMock.insertOne({
         orderId: mockOrderID,
-        status: GX_ORDER_STATUS.COMPLETE,
+        status: GxOrderStatus.COMPLETE,
         quoteId: mockOrderID,
         tokenAmountG1: '1000.00',
         usdFromUsdInvestment: '1',
@@ -435,7 +435,7 @@ describe('G1 to GX util functions', async function () {
       chai.expect(res.body).to.deep.equal({
         order: {
           orderId: mockOrderID,
-          status: GX_ORDER_STATUS.COMPLETE,
+          status: GxOrderStatus.COMPLETE,
           quoteId: mockOrderID,
           tokenAmountG1: '1000.00',
           usdFromUsdInvestment: '1',
@@ -575,7 +575,7 @@ describe('G1 to GX util functions', async function () {
     it('Should return an error message if order is pending', async function () {
       await collectionOrdersMock.insertOne({
         orderId: mockOrderID,
-        status: GX_ORDER_STATUS.PENDING,
+        status: GxOrderStatus.PENDING,
       });
 
       const res = await chai
@@ -596,7 +596,7 @@ describe('G1 to GX util functions', async function () {
     it('Should return an error message if order is success', async function () {
       await collectionOrdersMock.insertOne({
         orderId: mockOrderID,
-        status: GX_ORDER_STATUS.COMPLETE,
+        status: GxOrderStatus.COMPLETE,
       });
 
       const res = await chai
@@ -658,7 +658,7 @@ describe('G1 to GX util functions', async function () {
         success: true,
         order: {
           orderId: mockOrderID,
-          status: GX_ORDER_STATUS.WAITING_USD,
+          status: GxOrderStatus.WAITING_USD,
           transactionHashG1: mockTransactionHash,
           userOpHashG1: mockUserOpHash,
           quote: {
@@ -736,7 +736,7 @@ describe('G1 to GX util functions', async function () {
             transactionHashG1: mockTransactionHash,
             userOpHashG1: mockUserOpHash,
             userTelegramID: mockUserTelegramID,
-            status: GX_ORDER_STATUS.WAITING_USD,
+            status: GxOrderStatus.WAITING_USD,
             orderId: mockOrderID,
             quoteId: mockOrderID,
             tokenAmountG1: '1000.00',
@@ -776,7 +776,7 @@ describe('G1 to GX util functions', async function () {
             transactionHashG1: mockTransactionHash,
             userOpHashG1: mockUserOpHash,
             userTelegramID: mockUserTelegramID,
-            status: GX_ORDER_STATUS.COMPLETE,
+            status: GxOrderStatus.COMPLETE,
             orderId: mockOrderID1,
             quoteId: mockOrderID1,
             tokenAmountG1: '1000.00',
@@ -820,7 +820,7 @@ describe('G1 to GX util functions', async function () {
         .to.deep.equal([
           {
             userTelegramID: mockUserTelegramID,
-            status: GX_ORDER_STATUS.FAILURE_G1,
+            status: GxOrderStatus.FAILURE_G1,
             orderId: mockOrderID1,
             quoteId: mockOrderID1,
             tokenAmountG1: '1000.00',
@@ -849,7 +849,7 @@ describe('G1 to GX util functions', async function () {
         {
           orderId: mockOrderID,
           dateG1: new Date(),
-          status: GX_ORDER_STATUS.WAITING_USD,
+          status: GxOrderStatus.WAITING_USD,
           transactionHashG1: mockTransactionHash,
           userOpHashG1: mockUserOpHash,
           quoteId: mockOrderID,
@@ -871,7 +871,7 @@ describe('G1 to GX util functions', async function () {
         {
           orderId: mockOrderID1,
           dateG1: new Date(),
-          status: GX_ORDER_STATUS.FAILURE_G1,
+          status: GxOrderStatus.FAILURE_G1,
           transactionHashG1: mockTransactionHash1,
           userOpHashG1: mockUserOpHash1,
           quoteId: mockOrderID1,
@@ -893,7 +893,7 @@ describe('G1 to GX util functions', async function () {
         {
           orderId: mockOrderID2,
           dateG1: new Date(),
-          status: GX_ORDER_STATUS.FAILURE_USD,
+          status: GxOrderStatus.FAILURE_USD,
           transactionHashG1: mockTransactionHash2,
           userOpHashG1: mockUserOpHash2,
           quoteId: mockOrderID1,
@@ -1017,7 +1017,7 @@ describe('G1 to GX util functions', async function () {
         .to.deep.equal([
           {
             orderId: mockOrderID,
-            status: GX_ORDER_STATUS.COMPLETE,
+            status: GxOrderStatus.COMPLETE,
             transactionHashG1: mockTransactionHash,
             userOpHashG1: mockUserOpHash,
             tokenAmountUSD: '25.00',
@@ -1044,7 +1044,7 @@ describe('G1 to GX util functions', async function () {
           {
             orderId: mockOrderID1,
             dateG1: new Date(),
-            status: GX_ORDER_STATUS.FAILURE_G1,
+            status: GxOrderStatus.FAILURE_G1,
             transactionHashG1: mockTransactionHash1,
             userOpHashG1: mockUserOpHash1,
             quoteId: mockOrderID1,
@@ -1066,7 +1066,7 @@ describe('G1 to GX util functions', async function () {
           {
             orderId: mockOrderID2,
             dateG1: new Date(),
-            status: GX_ORDER_STATUS.FAILURE_USD,
+            status: GxOrderStatus.FAILURE_USD,
             transactionHashG1: mockTransactionHash2,
             userOpHashG1: mockUserOpHash2,
             quoteId: mockOrderID1,
@@ -1107,7 +1107,7 @@ describe('G1 to GX util functions', async function () {
         success: true,
         order: {
           orderId: mockOrderID,
-          status: GX_ORDER_STATUS.COMPLETE,
+          status: GxOrderStatus.COMPLETE,
           transactionHashG1: mockTransactionHash,
           userOpHashG1: mockUserOpHash,
           tokenAmountUSD: '25.00',
@@ -1153,7 +1153,7 @@ describe('G1 to GX util functions', async function () {
         success: true,
         order: {
           orderId: mockOrderID2,
-          status: GX_ORDER_STATUS.COMPLETE,
+          status: GxOrderStatus.COMPLETE,
           tokenAmountUSD: '10.00',
           tokenAddressUSD: avax_address_polygon,
           chainIdUSD: 'eip155:137',
@@ -1206,7 +1206,7 @@ describe('G1 to GX util functions', async function () {
         .to.deep.equal([
           {
             orderId: mockOrderID,
-            status: GX_ORDER_STATUS.FAILURE_USD,
+            status: GxOrderStatus.FAILURE_USD,
             transactionHashG1: mockTransactionHash,
             userOpHashG1: mockUserOpHash,
             quoteId: mockOrderID,
@@ -1228,7 +1228,7 @@ describe('G1 to GX util functions', async function () {
           {
             orderId: mockOrderID1,
             dateG1: new Date(),
-            status: GX_ORDER_STATUS.FAILURE_G1,
+            status: GxOrderStatus.FAILURE_G1,
             transactionHashG1: mockTransactionHash1,
             userOpHashG1: mockUserOpHash1,
             quoteId: mockOrderID1,
@@ -1250,7 +1250,7 @@ describe('G1 to GX util functions', async function () {
           {
             orderId: mockOrderID2,
             dateG1: new Date(),
-            status: GX_ORDER_STATUS.FAILURE_USD,
+            status: GxOrderStatus.FAILURE_USD,
             transactionHashG1: mockTransactionHash2,
             userOpHashG1: mockUserOpHash2,
             quoteId: mockOrderID1,
@@ -1303,7 +1303,7 @@ describe('G1 to GX util functions', async function () {
         .to.deep.equal([
           {
             orderId: mockOrderID,
-            status: GX_ORDER_STATUS.FAILURE_USD,
+            status: GxOrderStatus.FAILURE_USD,
             transactionHashG1: mockTransactionHash,
             userOpHashG1: mockUserOpHash,
             tokenAmountUSD: '25.00',
@@ -1328,7 +1328,7 @@ describe('G1 to GX util functions', async function () {
           {
             orderId: mockOrderID1,
             dateG1: new Date(),
-            status: GX_ORDER_STATUS.FAILURE_G1,
+            status: GxOrderStatus.FAILURE_G1,
             transactionHashG1: mockTransactionHash1,
             userOpHashG1: mockUserOpHash1,
             quoteId: mockOrderID1,
@@ -1350,7 +1350,7 @@ describe('G1 to GX util functions', async function () {
           {
             orderId: mockOrderID2,
             dateG1: new Date(),
-            status: GX_ORDER_STATUS.FAILURE_USD,
+            status: GxOrderStatus.FAILURE_USD,
             transactionHashG1: mockTransactionHash2,
             userOpHashG1: mockUserOpHash2,
             quoteId: mockOrderID1,

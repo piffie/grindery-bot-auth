@@ -26,7 +26,7 @@ import {
   PATCHWALLET_RESOLVER_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
-  TRANSACTION_STATUS,
+  TransactionStatus,
 } from '../utils/constants';
 import { handleIsolatedReward } from '../webhooks/isolated-reward';
 import {
@@ -233,7 +233,7 @@ describe('handleIsolatedReward function', async function () {
         userTelegramID: mockUserTelegramID,
         reason: 'isolated_reason_1',
         patchwallet: mockWallet,
-        status: TRANSACTION_STATUS.SUCCESS,
+        status: TransactionStatus.SUCCESS,
       });
 
       await handleIsolatedReward({
@@ -302,7 +302,7 @@ describe('handleIsolatedReward function', async function () {
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         reason: 'isolated_reason_1',
-        status: TRANSACTION_STATUS.SUCCESS,
+        status: TransactionStatus.SUCCESS,
       });
     });
 
@@ -361,7 +361,7 @@ describe('handleIsolatedReward function', async function () {
             eventId: rewardId,
             userTelegramID: mockUserTelegramID,
             reason: 'isolated_reason_1',
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
           },
         ]);
     });
@@ -393,7 +393,7 @@ describe('handleIsolatedReward function', async function () {
         eventId: 'anotherEventId',
         userTelegramID: mockUserTelegramID,
         reason: 'isolated_reason_1',
-        status: TRANSACTION_STATUS.SUCCESS,
+        status: TransactionStatus.SUCCESS,
       });
     });
 
@@ -452,7 +452,7 @@ describe('handleIsolatedReward function', async function () {
             eventId: 'anotherEventId',
             userTelegramID: mockUserTelegramID,
             reason: 'isolated_reason_1',
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
           },
         ]);
     });
@@ -483,7 +483,7 @@ describe('handleIsolatedReward function', async function () {
       await collectionRewardsMock.insertOne({
         userTelegramID: mockUserTelegramID,
         reason: 'isolated_reason_1',
-        status: TRANSACTION_STATUS.SUCCESS,
+        status: TransactionStatus.SUCCESS,
       });
     });
 
@@ -541,7 +541,7 @@ describe('handleIsolatedReward function', async function () {
           {
             userTelegramID: mockUserTelegramID,
             reason: 'isolated_reason_1',
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
           },
         ]);
     });
@@ -573,7 +573,7 @@ describe('handleIsolatedReward function', async function () {
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         reason: 'isolated_reason_1',
-        status: TRANSACTION_STATUS.PENDING,
+        status: TransactionStatus.PENDING,
       });
     });
 
@@ -652,7 +652,7 @@ describe('handleIsolatedReward function', async function () {
             amount: '100',
             message: 'isolated message 1',
             transactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             userOpHash: null,
           },
         ]);
@@ -701,7 +701,7 @@ describe('handleIsolatedReward function', async function () {
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         reason: 'isolated_reason_1',
-        status: TRANSACTION_STATUS.FAILURE,
+        status: TransactionStatus.FAILURE,
       });
     });
 
@@ -782,7 +782,7 @@ describe('handleIsolatedReward function', async function () {
             amount: '100',
             message: 'isolated message 1',
             transactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             userOpHash: null,
           },
         ]);
@@ -837,13 +837,13 @@ describe('handleIsolatedReward function', async function () {
           eventId: 'eventID1',
           userTelegramID: mockUserTelegramID,
           reason: 'isolated_reason_2',
-          status: TRANSACTION_STATUS.SUCCESS,
+          status: TransactionStatus.SUCCESS,
         },
         {
           eventId: 'eventID2',
           userTelegramID: mockUserTelegramID1,
           reason: 'isolated_reason_1',
-          status: TRANSACTION_STATUS.SUCCESS,
+          status: TransactionStatus.SUCCESS,
         },
       ]);
     });
@@ -934,13 +934,13 @@ describe('handleIsolatedReward function', async function () {
             eventId: 'eventID1',
             userTelegramID: mockUserTelegramID,
             reason: 'isolated_reason_2',
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
           },
           {
             eventId: 'eventID2',
             userTelegramID: mockUserTelegramID1,
             reason: 'isolated_reason_1',
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
           },
           {
             eventId: rewardId,
@@ -953,7 +953,7 @@ describe('handleIsolatedReward function', async function () {
             amount: '100',
             message: 'isolated message 1',
             transactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             userOpHash: null,
           },
         ]);
@@ -1079,7 +1079,7 @@ describe('handleIsolatedReward function', async function () {
             amount: '34',
             message: 'isolated message 1',
             dateAdded: new Date(),
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
           },
@@ -1161,7 +1161,7 @@ describe('handleIsolatedReward function', async function () {
             userName: mockUserName,
             amount: '34',
             message: 'isolated message 1',
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
           },
@@ -1239,7 +1239,7 @@ describe('handleIsolatedReward function', async function () {
               userName: mockUserName,
               amount: '34',
               message: 'isolated message 1',
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
             },
@@ -1275,7 +1275,7 @@ describe('handleIsolatedReward function', async function () {
           walletAddress: mockWallet,
           userHandle: mockUserHandle,
           userName: mockUserName,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
           reason: 'isolated_reason_1',
           message: 'isolated message 1',
@@ -1341,7 +1341,7 @@ describe('handleIsolatedReward function', async function () {
               userName: mockUserName,
               amount: '34',
               message: 'isolated message 1',
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               transactionHash: mockTransactionHash,
               userOpHash: mockUserOpHash,
             },
@@ -1395,7 +1395,7 @@ describe('handleIsolatedReward function', async function () {
           userName: mockUserName,
           amount: '34',
           message: 'isolated message 1',
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
         axiosStub.withArgs(PATCHWALLET_TX_STATUS_URL).resolves({
@@ -1464,7 +1464,7 @@ describe('handleIsolatedReward function', async function () {
               userName: mockUserName,
               amount: '34',
               message: 'isolated message 1',
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
             },
@@ -1499,7 +1499,7 @@ describe('handleIsolatedReward function', async function () {
           walletAddress: mockWallet,
           userHandle: mockUserHandle,
           userName: mockUserName,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
           reason: 'isolated_reason_1',
           amount: '34',
@@ -1568,7 +1568,7 @@ describe('handleIsolatedReward function', async function () {
               userName: mockUserName,
               amount: '34',
               message: 'isolated message 1',
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
             },
           ]);
@@ -1602,7 +1602,7 @@ describe('handleIsolatedReward function', async function () {
           walletAddress: mockWallet,
           userHandle: mockUserHandle,
           userName: mockUserName,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           reason: 'isolated_reason_1',
           amount: '34',
           message: 'isolated message 1',
@@ -1667,7 +1667,7 @@ describe('handleIsolatedReward function', async function () {
               userName: mockUserName,
               amount: '34',
               message: 'isolated message 1',
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               transactionHash: null,
               userOpHash: null,
             },
@@ -1703,7 +1703,7 @@ describe('handleIsolatedReward function', async function () {
           walletAddress: mockWallet,
           userHandle: mockUserHandle,
           userName: mockUserName,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
           dateAdded: new Date(Date.now() - 12 * 60 * 1000),
           reason: 'isolated_reason_1',
@@ -1776,7 +1776,7 @@ describe('handleIsolatedReward function', async function () {
               amount: '34',
               message: 'isolated message 1',
               userOpHash: mockUserOpHash,
-              status: TRANSACTION_STATUS.FAILURE,
+              status: TransactionStatus.FAILURE,
               transactionHash: null,
             },
           ]);

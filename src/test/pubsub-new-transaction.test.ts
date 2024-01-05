@@ -25,7 +25,7 @@ import {
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
   SEGMENT_TRACK_URL,
-  TRANSACTION_STATUS,
+  TransactionStatus,
   nativeTokenAddresses,
 } from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
@@ -181,7 +181,7 @@ describe('handleNewTransaction function', async function () {
             recipientWallet: mockWallet,
             tokenAmount: '100',
             transactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             userOpHash: null,
           },
         ]);
@@ -400,7 +400,7 @@ describe('handleNewTransaction function', async function () {
             recipientWallet: mockWallet,
             tokenAmount: '10.002',
             transactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             userOpHash: null,
           },
         ]);
@@ -470,7 +470,7 @@ describe('handleNewTransaction function', async function () {
 
       await collectionTransfersMock.insertOne({
         eventId: txId,
-        status: TRANSACTION_STATUS.SUCCESS,
+        status: TransactionStatus.SUCCESS,
       });
     });
 
@@ -512,7 +512,7 @@ describe('handleNewTransaction function', async function () {
         .to.deep.equal([
           {
             eventId: txId,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
           },
         ]);
     });
@@ -557,7 +557,7 @@ describe('handleNewTransaction function', async function () {
 
       await collectionTransfersMock.insertOne({
         eventId: txId,
-        status: TRANSACTION_STATUS.FAILURE,
+        status: TransactionStatus.FAILURE,
       });
     });
 
@@ -599,7 +599,7 @@ describe('handleNewTransaction function', async function () {
         .to.deep.equal([
           {
             eventId: txId,
-            status: TRANSACTION_STATUS.FAILURE,
+            status: TransactionStatus.FAILURE,
           },
         ]);
     });
@@ -644,7 +644,7 @@ describe('handleNewTransaction function', async function () {
 
       await collectionTransfersMock.insertOne({
         eventId: txId,
-        status: TRANSACTION_STATUS.FAILURE_503,
+        status: TransactionStatus.FAILURE_503,
       });
     });
 
@@ -686,7 +686,7 @@ describe('handleNewTransaction function', async function () {
         .to.deep.equal([
           {
             eventId: txId,
-            status: TRANSACTION_STATUS.FAILURE_503,
+            status: TransactionStatus.FAILURE_503,
           },
         ]);
     });
@@ -771,7 +771,7 @@ describe('handleNewTransaction function', async function () {
             recipientTgId: mockUserTelegramID1,
             recipientWallet: mockWallet,
             tokenAmount: '100',
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
           },
@@ -1079,7 +1079,7 @@ describe('handleNewTransaction function', async function () {
             recipientTgId: mockUserTelegramID1,
             recipientWallet: mockWallet,
             tokenAmount: '100',
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
           },
@@ -1167,7 +1167,7 @@ describe('handleNewTransaction function', async function () {
             recipientTgId: mockUserTelegramID1,
             recipientWallet: mockWallet,
             tokenAmount: '100',
-            status: TRANSACTION_STATUS.FAILURE,
+            status: TransactionStatus.FAILURE,
             transactionHash: null,
             userOpHash: null,
           },
@@ -1255,7 +1255,7 @@ describe('handleNewTransaction function', async function () {
             recipientTgId: mockUserTelegramID1,
             recipientWallet: mockWallet,
             tokenAmount: '100',
-            status: TRANSACTION_STATUS.FAILURE_503,
+            status: TransactionStatus.FAILURE_503,
             transactionHash: null,
             userOpHash: null,
           },
@@ -1343,7 +1343,7 @@ describe('handleNewTransaction function', async function () {
             recipientTgId: mockUserTelegramID1,
             recipientWallet: mockWallet,
             tokenAmount: '100',
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
           },
@@ -1433,7 +1433,7 @@ describe('handleNewTransaction function', async function () {
               recipientTgId: mockUserTelegramID1,
               recipientWallet: mockWallet,
               tokenAmount: '100',
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
             },
@@ -1478,7 +1478,7 @@ describe('handleNewTransaction function', async function () {
           recipientTgId: mockUserTelegramID1,
           recipientWallet: mockWallet,
           tokenAmount: '100',
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
       });
@@ -1531,7 +1531,7 @@ describe('handleNewTransaction function', async function () {
               recipientTgId: mockUserTelegramID1,
               recipientWallet: mockWallet,
               tokenAmount: '100',
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               userOpHash: mockUserOpHash,
               transactionHash: mockTransactionHash,
             },
@@ -1595,7 +1595,7 @@ describe('handleNewTransaction function', async function () {
           recipientTgId: mockUserTelegramID1,
           recipientWallet: mockWallet,
           tokenAmount: '100',
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -1655,7 +1655,7 @@ describe('handleNewTransaction function', async function () {
               recipientTgId: mockUserTelegramID1,
               recipientWallet: mockWallet,
               tokenAmount: '100',
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
             },
@@ -1700,7 +1700,7 @@ describe('handleNewTransaction function', async function () {
           recipientTgId: mockUserTelegramID1,
           recipientWallet: mockWallet,
           tokenAmount: '100',
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -1757,7 +1757,7 @@ describe('handleNewTransaction function', async function () {
               recipientTgId: mockUserTelegramID1,
               recipientWallet: mockWallet,
               tokenAmount: '100',
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
             },
           ]);
@@ -1801,7 +1801,7 @@ describe('handleNewTransaction function', async function () {
           recipientTgId: mockUserTelegramID1,
           recipientWallet: mockWallet,
           tokenAmount: '100',
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -1860,7 +1860,7 @@ describe('handleNewTransaction function', async function () {
               recipientTgId: mockUserTelegramID1,
               recipientWallet: mockWallet,
               tokenAmount: '100',
-              status: TRANSACTION_STATUS.FAILURE,
+              status: TransactionStatus.FAILURE,
               userOpHash: mockUserOpHash,
               transactionHash: null,
             },
@@ -1905,7 +1905,7 @@ describe('handleNewTransaction function', async function () {
           recipientTgId: mockUserTelegramID1,
           recipientWallet: mockWallet,
           tokenAmount: '100',
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
         });
       });
 
@@ -1957,7 +1957,7 @@ describe('handleNewTransaction function', async function () {
               recipientTgId: mockUserTelegramID1,
               recipientWallet: mockWallet,
               tokenAmount: '100',
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               transactionHash: null,
               userOpHash: null,
             },
@@ -2002,7 +2002,7 @@ describe('handleNewTransaction function', async function () {
           recipientTgId: mockUserTelegramID1,
           recipientWallet: mockWallet,
           tokenAmount: '100',
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           dateAdded: new Date(Date.now() - 12 * 60 * 1000),
         });
 
@@ -2062,7 +2062,7 @@ describe('handleNewTransaction function', async function () {
               recipientTgId: mockUserTelegramID1,
               recipientWallet: mockWallet,
               tokenAmount: '100',
-              status: TRANSACTION_STATUS.FAILURE,
+              status: TransactionStatus.FAILURE,
               transactionHash: null,
               userOpHash: null,
             },
