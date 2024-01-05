@@ -1,6 +1,8 @@
 import express from 'express';
 import { PubSub, Duration } from '@google-cloud/pubsub';
 import { authenticateApiKey } from '../utils/auth';
+import { webhookValidator } from '../validators/webhooks.validator';
+import { validateResult } from '../validators/utils';
 import { handleNewReward } from '../webhooks/webhook';
 import { v4 as uuidv4 } from 'uuid';
 import { MetricServiceClient } from '@google-cloud/monitoring';
@@ -17,7 +19,6 @@ import {
   PUBSUB_TOPIC_NAME,
 } from '../../secrets';
 import { google } from '@google-cloud/monitoring/build/protos/protos';
-import { isPositiveFloat } from '../webhooks/utils';
 
 /**
  * This is a generic and extendable implementation of a webhook endpoint and pub/sub messages queue.
@@ -108,50 +109,14 @@ router.get('/unacked-messages', authenticateApiKey, async (_req, res) => {
  *   "error": "error message"
  * }
  */
-router.post('/', authenticateApiKey, async (req, res) => {
+router.post('/', authenticateApiKey, webhookValidator, async (req, res) => {
+  const validator = validateResult(req);
+
+  if (validator.length) {
+    return res.status(400).send(validator);
+  }
+
   try {
-    // Filter and validate transaction amounts for the 'new_transaction_batch' event
-    if (req.body.event === 'new_transaction_batch') {
-      req.body.params = req.body.params.filter(
-        (transaction: { amount: string }) =>
-          isPositiveFloat(transaction.amount),
-      );
-
-      // Check if all token amounts are incorrect
-      if (req.body.params.length === 0) {
-        return res
-          .status(400)
-          .json({ success: false, message: 'all token amounts incorrect' });
-      }
-    }
-
-    // Validate token amount for 'new_transaction' event
-    if (
-      req.body.event === 'new_transaction' &&
-      !isPositiveFloat(req.body.params.amount)
-    ) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'token amount incorrect' });
-    }
-
-    // Validate parameters for 'isolated_reward' event
-    if (req.body.event === 'isolated_reward') {
-      if (!req.body.params.userTelegramID) {
-        return res
-          .status(400)
-          .json({ success: false, message: 'User Telegram ID is missing' });
-      } else if (!req.body.params.amount) {
-        return res
-          .status(400)
-          .json({ success: false, message: 'Amount is missing' });
-      } else if (!req.body.params.reason) {
-        return res
-          .status(400)
-          .json({ success: false, message: 'Reason is missing' });
-      }
-    }
-
     // Generate unique eventId for each transaction
     req.body.event === 'new_transaction_batch'
       ? req.body.params.forEach(
