@@ -1,5 +1,5 @@
+import { TransactionStatus } from '../utils/constants';
 import { HedgeyRecipientParams } from './hedgey.types';
-import { TransactionStatus } from './webhook.types';
 
 /**
  * Represents a MongoDB document for Transfer transactions.
