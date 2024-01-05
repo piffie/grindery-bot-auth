@@ -1,11 +1,11 @@
 import chai from 'chai';
-import { TransactionStatus } from '../utils/constants';
 import {
   isFailedTransaction,
   isPendingTransactionHash,
   isPositiveFloat,
   isSuccessfulTransaction,
 } from '../webhooks/utils';
+import { TransactionStatus } from 'grindery-nexus-common-utils';
 
 describe('Transaction Status Functions', async function () {
   describe('isSuccessfulTransaction', async function () {

@@ -44,7 +44,8 @@
     "node-cron": "^3.0.3",
     "sinon": "^16.0.0",
     "telegram": "^2.18.26",
-    "web3": "^1.7.4"
+    "web3": "^1.7.4",
+    "grindery-nexus-common-utils": "^2.0.25"
   },
   "devDependencies": {
     "@types/chai": "^4.3.11",

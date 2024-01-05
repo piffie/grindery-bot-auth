@@ -1,7 +1,7 @@
 import { WithId } from 'mongodb';
 import { DEFAULT_CHAIN_ID, G1_TOKEN_SYMBOL } from '../utils/constants';
 import { G1_POLYGON_ADDRESS } from '../../secrets';
-import { MongoUser } from './mongo.types';
+import { MongoUser } from 'grindery-nexus-common-utils';
 
 export type HedgeyRecipientParams = {
   /** The address of the recipient. */

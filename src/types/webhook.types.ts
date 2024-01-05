@@ -1,9 +1,5 @@
 import { WithId } from 'mongodb';
-import {
-  DEFAULT_CHAIN_ID,
-  G1_TOKEN_SYMBOL,
-  TransactionStatus,
-} from '../utils/constants';
+import { DEFAULT_CHAIN_ID, G1_TOKEN_SYMBOL } from '../utils/constants';
 import { G1_POLYGON_ADDRESS } from '../../secrets';
 import { SwapTelegram } from '../webhooks/swap';
 import { TransferTelegram } from '../webhooks/transaction';
@@ -12,7 +8,7 @@ import { SignUpRewardTelegram } from '../webhooks/signup-reward';
 import { ReferralRewardTelegram } from '../webhooks/referral-reward';
 import { LinkRewardTelegram } from '../webhooks/link-reward';
 import { IsolatedRewardTelegram } from '../webhooks/isolated-reward';
-import { MongoUser } from './mongo.types';
+import { MongoUser, TransactionStatus } from 'grindery-nexus-common-utils';
 
 /**
  * Defines the structure for SwapParams.

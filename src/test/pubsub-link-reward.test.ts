@@ -26,7 +26,6 @@ import {
   PATCHWALLET_RESOLVER_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
-  TransactionStatus,
 } from '../utils/constants';
 import {
   FLOWXO_NEW_LINK_REWARD_WEBHOOK,
@@ -35,6 +34,7 @@ import {
 } from '../../secrets';
 import { handleLinkReward } from '../webhooks/link-reward';
 import { ContractStub } from '../types/tests.types';
+import { TransactionStatus } from 'grindery-nexus-common-utils';
 
 chai.use(chaiExclude);
 

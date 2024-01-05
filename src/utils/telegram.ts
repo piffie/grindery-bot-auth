@@ -4,7 +4,7 @@ import TGClient from './telegramClient';
 import { decrypt } from './crypt';
 import { WithId } from 'mongodb';
 import { TelegramMessageResponse } from '../types/telegram.types';
-import { MongoUser } from '../types/mongo.types';
+import { MongoUser } from 'grindery-nexus-common-utils';
 
 /**
  * Sends a message via Telegram to a recipient.

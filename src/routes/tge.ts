@@ -2,15 +2,12 @@ import express from 'express';
 import { authenticateApiKey } from '../utils/auth';
 import { computeG1ToGxConversion } from '../utils/g1gx';
 import { Database } from '../db/conn';
-import {
-  GX_ORDER_COLLECTION,
-  GX_QUOTE_COLLECTION,
-  GxOrderStatus,
-} from '../utils/constants';
+import { GX_ORDER_COLLECTION, GX_QUOTE_COLLECTION } from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet';
 import { SOURCE_WALLET_ADDRESS } from '../../secrets';
 import { getTokenPrice } from '../utils/ankr';
+import { GxOrderStatus } from 'grindery-nexus-common-utils';
 
 const router = express.Router();
 

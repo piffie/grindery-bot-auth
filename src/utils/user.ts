@@ -4,7 +4,7 @@ import { REWARDS_COLLECTION, USERS_COLLECTION } from './constants';
 import { getPatchWalletAddressFromTgId } from './patchwallet';
 import { addIdentitySegment } from './segment';
 import { RewardParams } from '../types/webhook.types';
-import { MongoReward, MongoUser } from '../types/mongo.types';
+import { MongoReward, MongoUser } from 'grindery-nexus-common-utils';
 
 /**
  * Creates a new instance of UserTelegram and initializes its database.

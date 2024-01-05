@@ -25,7 +25,6 @@ import {
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
   SEGMENT_TRACK_URL,
-  TransactionStatus,
   nativeTokenAddresses,
 } from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
@@ -37,6 +36,7 @@ import {
 } from '../../secrets';
 import * as web3 from '../utils/web3';
 import { ContractStub } from '../types/tests.types';
+import { TransactionStatus } from 'grindery-nexus-common-utils';
 
 chai.use(chaiExclude);
 

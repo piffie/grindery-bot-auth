@@ -1,5 +1,4 @@
 import { PatchResult, TelegramOperations } from '../types/webhook.types';
-import { TransactionStatus } from '../utils/constants';
 import { getTxStatus } from '../utils/patchwallet';
 import { getXMinBeforeDate } from '../utils/time';
 import { IsolatedRewardTelegram } from './isolated-reward';
@@ -9,6 +8,7 @@ import { SignUpRewardTelegram } from './signup-reward';
 import { SwapTelegram } from './swap';
 import { TransferTelegram } from './transaction';
 import { VestingTelegram } from './vesting';
+import { TransactionStatus } from 'grindery-nexus-common-utils';
 
 /**
  * Checks if the provided Telegram operation is an instance of a Reward Telegram.
