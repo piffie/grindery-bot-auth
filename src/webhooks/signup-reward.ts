@@ -9,10 +9,9 @@ import {
   PatchResult,
   RewardInit,
   RewardParams,
-  TransactionStatus,
   createRewardParams,
 } from '../types/webhook.types';
-import { REWARDS_COLLECTION, TRANSACTION_STATUS } from '../utils/constants';
+import { REWARDS_COLLECTION, TransactionStatus } from '../utils/constants';
 import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet';
 import {
   getStatus,
@@ -56,7 +55,7 @@ export async function handleSignUpReward(
       if (!rewardInstance.userOpHash)
         return (
           await rewardInstance.updateInDatabase(
-            TRANSACTION_STATUS.SUCCESS,
+            TransactionStatus.SUCCESS,
             new Date(),
           ),
           true
@@ -74,7 +73,7 @@ export async function handleSignUpReward(
     if (txReward && txReward.txHash) {
       updateTxHash(rewardInstance, txReward.txHash);
       await Promise.all([
-        rewardInstance.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
+        rewardInstance.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
         rewardInstance.saveToFlowXO(),
       ]).catch((error) =>
         console.error(
@@ -88,7 +87,7 @@ export async function handleSignUpReward(
     if (txReward && txReward.userOpHash) {
       updateUserOpHash(rewardInstance, txReward.userOpHash);
       await rewardInstance.updateInDatabase(
-        TRANSACTION_STATUS.PENDING_HASH,
+        TransactionStatus.PENDING_HASH,
         null,
       );
     }
@@ -148,8 +147,8 @@ export class SignUpRewardTelegram {
     // Initializes the 'isInDatabase' property to 'false' by default
     this.isInDatabase = false;
 
-    // Initializes the 'status' property to 'TRANSACTION_STATUS.UNDEFINED' by default
-    this.status = TRANSACTION_STATUS.UNDEFINED;
+    // Initializes the 'status' property to 'TransactionStatus.UNDEFINED' by default
+    this.status = TransactionStatus.UNDEFINED;
   }
 
   /**
@@ -179,7 +178,7 @@ export class SignUpRewardTelegram {
         return { rewardInstance: reward, shouldBeIssued: false };
     } else {
       // If the reward doesn't exist, add it to the database with PENDING status and current date
-      await reward.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
+      await reward.updateInDatabase(TransactionStatus.PENDING, new Date());
     }
 
     // Return the fully initialized SignUpRewardTelegram instance and indicate the existence of the reward

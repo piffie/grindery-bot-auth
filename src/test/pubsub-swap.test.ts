@@ -34,7 +34,7 @@ import {
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
   SEGMENT_TRACK_URL,
-  TRANSACTION_STATUS,
+  TransactionStatus,
 } from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 import { handleSwap } from '../webhooks/swap';
@@ -201,7 +201,7 @@ describe('handleSwap function', async function () {
             from: mockFromSwap,
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             transactionHash: mockTransactionHash,
             to: mockToSwap,
             userOpHash: null,
@@ -255,7 +255,7 @@ describe('handleSwap function', async function () {
             from: mockFromSwap,
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             transactionHash: mockTransactionHash,
             chainIn: mockChainId,
             chainOut: mockChainId,
@@ -306,7 +306,7 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
-          status: TRANSACTION_STATUS.SUCCESS,
+          status: TransactionStatus.SUCCESS,
           transactionHash: mockTransactionHash,
           apiKey: FLOWXO_WEBHOOK_API_KEY,
           chainIn: mockChainId,
@@ -405,7 +405,7 @@ describe('handleSwap function', async function () {
 
       await collectionSwapsMock.insertOne({
         eventId: swapId,
-        status: TRANSACTION_STATUS.SUCCESS,
+        status: TransactionStatus.SUCCESS,
       });
     });
 
@@ -474,7 +474,7 @@ describe('handleSwap function', async function () {
         .to.deep.equal([
           {
             eventId: swapId,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
           },
         ]);
     });
@@ -537,7 +537,7 @@ describe('handleSwap function', async function () {
 
       await collectionSwapsMock.insertOne({
         eventId: swapId,
-        status: TRANSACTION_STATUS.FAILURE,
+        status: TransactionStatus.FAILURE,
       });
     });
 
@@ -606,7 +606,7 @@ describe('handleSwap function', async function () {
         .to.deep.equal([
           {
             eventId: swapId,
-            status: TRANSACTION_STATUS.FAILURE,
+            status: TransactionStatus.FAILURE,
           },
         ]);
     });
@@ -669,7 +669,7 @@ describe('handleSwap function', async function () {
 
       await collectionSwapsMock.insertOne({
         eventId: swapId,
-        status: TRANSACTION_STATUS.FAILURE_503,
+        status: TransactionStatus.FAILURE_503,
       });
     });
 
@@ -738,7 +738,7 @@ describe('handleSwap function', async function () {
         .to.deep.equal([
           {
             eventId: swapId,
-            status: TRANSACTION_STATUS.FAILURE_503,
+            status: TransactionStatus.FAILURE_503,
           },
         ]);
     });
@@ -863,7 +863,7 @@ describe('handleSwap function', async function () {
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userHandle: mockUserHandle,
             userName: mockUserName,
@@ -1144,7 +1144,7 @@ describe('handleSwap function', async function () {
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
             userHandle: mockUserHandle,
@@ -1279,7 +1279,7 @@ describe('handleSwap function', async function () {
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
-            status: TRANSACTION_STATUS.FAILURE,
+            status: TransactionStatus.FAILURE,
             transactionHash: null,
             userOpHash: null,
             chainIn: mockChainId,
@@ -1409,7 +1409,7 @@ describe('handleSwap function', async function () {
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
-            status: TRANSACTION_STATUS.FAILURE_503,
+            status: TransactionStatus.FAILURE_503,
             transactionHash: null,
             userOpHash: null,
             chainIn: mockChainId,
@@ -1538,7 +1538,7 @@ describe('handleSwap function', async function () {
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
-            status: TRANSACTION_STATUS.FAILURE,
+            status: TransactionStatus.FAILURE,
             transactionHash: null,
             userOpHash: null,
             chainIn: mockChainId,
@@ -1664,7 +1664,7 @@ describe('handleSwap function', async function () {
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
             userHandle: mockUserHandle,
@@ -1800,7 +1800,7 @@ describe('handleSwap function', async function () {
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
               chainIn: mockChainId,
@@ -1872,7 +1872,7 @@ describe('handleSwap function', async function () {
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
       });
@@ -1959,7 +1959,7 @@ describe('handleSwap function', async function () {
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
               userOpHash: mockUserOpHash,
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               chainIn: mockChainId,
               chainOut: mockChainId,
             },
@@ -2009,7 +2009,7 @@ describe('handleSwap function', async function () {
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
             transactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             apiKey: FLOWXO_WEBHOOK_API_KEY,
             chainIn: mockChainId,
             chainOut: mockChainId,
@@ -2049,7 +2049,7 @@ describe('handleSwap function', async function () {
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -2143,7 +2143,7 @@ describe('handleSwap function', async function () {
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
               chainIn: mockChainId,
@@ -2200,7 +2200,7 @@ describe('handleSwap function', async function () {
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -2286,7 +2286,7 @@ describe('handleSwap function', async function () {
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
             },
           ]);
@@ -2340,7 +2340,7 @@ describe('handleSwap function', async function () {
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -2433,7 +2433,7 @@ describe('handleSwap function', async function () {
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
-              status: TRANSACTION_STATUS.FAILURE,
+              status: TransactionStatus.FAILURE,
               userOpHash: mockUserOpHash,
               transactionHash: null,
               chainIn: mockChainId,
@@ -2490,7 +2490,7 @@ describe('handleSwap function', async function () {
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
         });
       });
 
@@ -2574,7 +2574,7 @@ describe('handleSwap function', async function () {
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               transactionHash: null,
               userOpHash: null,
               chainIn: null,
@@ -2631,7 +2631,7 @@ describe('handleSwap function', async function () {
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           dateAdded: new Date(Date.now() - 12 * 60 * 1000),
         });
 
@@ -2725,7 +2725,7 @@ describe('handleSwap function', async function () {
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
-              status: TRANSACTION_STATUS.FAILURE,
+              status: TransactionStatus.FAILURE,
               transactionHash: null,
               userOpHash: null,
               chainIn: mockChainId,

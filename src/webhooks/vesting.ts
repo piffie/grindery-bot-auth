@@ -1,13 +1,9 @@
 import axios, { AxiosError } from 'axios';
 import { Database } from '../db/conn';
 import { VestingParams, createVesting } from '../types/hedgey.types';
+import { PatchRawResult, PatchResult } from '../types/webhook.types';
 import {
-  PatchRawResult,
-  PatchResult,
   TransactionStatus,
-} from '../types/webhook.types';
-import {
-  TRANSACTION_STATUS,
   USERS_COLLECTION,
   VESTING_COLLECTION,
 } from '../utils/constants';
@@ -87,7 +83,7 @@ export async function handleNewVesting(
     // Check userOpHash and updateInDatabase for success
     if (!vesting.userOpHash)
       return (
-        await vesting.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
+        await vesting.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
         true
       );
 
@@ -108,7 +104,7 @@ export async function handleNewVesting(
   if (tx && tx.txHash) {
     updateTxHash(vesting, tx.txHash);
     await Promise.all([
-      vesting.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
+      vesting.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
       vesting.saveToSegment(),
       vesting.saveToFlowXO(),
     ]).catch((error) =>
@@ -127,7 +123,7 @@ export async function handleNewVesting(
   tx &&
     tx.userOpHash &&
     updateUserOpHash(vesting, tx.userOpHash) &&
-    (await vesting.updateInDatabase(TRANSACTION_STATUS.PENDING_HASH, null));
+    (await vesting.updateInDatabase(TransactionStatus.PENDING_HASH, null));
 
   return false;
 }
@@ -168,8 +164,8 @@ export class VestingTelegram {
     // Initializes the 'isInDatabase' property to 'false' by default
     this.isInDatabase = false;
 
-    // Initializes the 'status' property to 'TRANSACTION_STATUS.UNDEFINED' by default
-    this.status = TRANSACTION_STATUS.UNDEFINED;
+    // Initializes the 'status' property to 'TransactionStatus.UNDEFINED' by default
+    this.status = TransactionStatus.UNDEFINED;
   }
 
   /**
@@ -194,7 +190,7 @@ export class VestingTelegram {
       ({ status: vesting.status, userOpHash: vesting.userOpHash } = vesting.tx);
     } else {
       // If the transfer doesn't exist, add it to the database with PENDING status and current date
-      await vesting.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
+      await vesting.updateInDatabase(TransactionStatus.PENDING, new Date());
     }
 
     // Return the fully initialized VestingTelegram instance

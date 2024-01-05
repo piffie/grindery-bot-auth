@@ -2,7 +2,7 @@ import { WithId } from 'mongodb';
 import {
   DEFAULT_CHAIN_ID,
   G1_TOKEN_SYMBOL,
-  TRANSACTION_STATUS,
+  TransactionStatus,
 } from '../utils/constants';
 import { G1_POLYGON_ADDRESS } from '../../secrets';
 import { SwapTelegram } from '../webhooks/swap';
@@ -13,13 +13,6 @@ import { ReferralRewardTelegram } from '../webhooks/referral-reward';
 import { LinkRewardTelegram } from '../webhooks/link-reward';
 import { IsolatedRewardTelegram } from '../webhooks/isolated-reward';
 import { MongoUser } from './mongo.types';
-
-/**
- * Represents the various transaction statuses.
- * Possible values are constrained to those defined in TRANSACTION_STATUS.
- */
-export type TransactionStatus =
-  (typeof TRANSACTION_STATUS)[keyof typeof TRANSACTION_STATUS];
 
 /**
  * Defines the structure for SwapParams.
@@ -117,7 +110,7 @@ export function createSwapParams(
  * Extends SwapParams and includes additional fields for tracking swap segments.
  */
 export type TrackSwapSegmentParams = SwapParams & {
-  /** The status of the swap transaction. Must be one of the TRANSACTION_STATUS values. */
+  /** The status of the swap transaction. Must be one of the TransactionStatus values. */
   status: TransactionStatus;
   /** The hash associated with the transaction. */
   transactionHash: string;

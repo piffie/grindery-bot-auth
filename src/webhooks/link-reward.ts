@@ -9,12 +9,11 @@ import {
   PatchResult,
   RewardInit,
   RewardParams,
-  TransactionStatus,
   createRewardParams,
 } from '../types/webhook.types';
 import {
   REWARDS_COLLECTION,
-  TRANSACTION_STATUS,
+  TransactionStatus,
   USERS_COLLECTION,
 } from '../utils/constants';
 import {
@@ -60,7 +59,7 @@ export async function handleLinkReward(params: RewardParams): Promise<boolean> {
       if (!rewardInstance.userOpHash)
         return (
           await rewardInstance.updateInDatabase(
-            TRANSACTION_STATUS.SUCCESS,
+            TransactionStatus.SUCCESS,
             new Date(),
           ),
           true
@@ -77,7 +76,7 @@ export async function handleLinkReward(params: RewardParams): Promise<boolean> {
     if (txReward && txReward.txHash) {
       updateTxHash(rewardInstance, txReward.txHash);
       await Promise.all([
-        rewardInstance.updateInDatabase(TRANSACTION_STATUS.SUCCESS, new Date()),
+        rewardInstance.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
         rewardInstance.saveToFlowXO(),
       ]).catch((error) =>
         console.error(
@@ -91,7 +90,7 @@ export async function handleLinkReward(params: RewardParams): Promise<boolean> {
     if (txReward && txReward.userOpHash) {
       updateUserOpHash(rewardInstance, txReward.userOpHash);
       await rewardInstance.updateInDatabase(
-        TRANSACTION_STATUS.PENDING_HASH,
+        TransactionStatus.PENDING_HASH,
         null,
       );
     }
@@ -149,8 +148,8 @@ export class LinkRewardTelegram {
     this.params.amount = '10';
     this.params.message = 'Referral link';
 
-    // Initializes the 'status' property to 'TRANSACTION_STATUS.UNDEFINED' by default
-    this.status = TRANSACTION_STATUS.UNDEFINED;
+    // Initializes the 'status' property to 'TransactionStatus.UNDEFINED' by default
+    this.status = TransactionStatus.UNDEFINED;
   }
 
   /**
@@ -193,7 +192,7 @@ export class LinkRewardTelegram {
       }
     } else {
       // If the reward doesn't exist, add it to the database with PENDING status and the current date
-      await reward.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
+      await reward.updateInDatabase(TransactionStatus.PENDING, new Date());
     }
 
     // Return the fully initialized LinkRewardTelegram instance and indicate if it should be issued

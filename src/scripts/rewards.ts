@@ -10,7 +10,7 @@ import csv from 'csv-parser';
 import web3 from 'web3';
 import {
   REWARDS_COLLECTION,
-  TRANSACTION_STATUS,
+  TransactionStatus,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
 } from '../utils/constants';
@@ -182,13 +182,13 @@ export async function distributeReferralRewards(): Promise<void> {
       ?.find({ dateAdded: { $gt: new Date(startDate) } })
       .toArray();
     const allTransfers = await transfersCollection
-      ?.find({ status: TRANSACTION_STATUS.SUCCESS })
+      ?.find({ status: TransactionStatus.SUCCESS })
       .sort({ dateAdded: 1 })
       .toArray();
     const allRewards = await rewardsCollection
       ?.find({
         reason: '2x_reward',
-        status: TRANSACTION_STATUS.SUCCESS,
+        status: TransactionStatus.SUCCESS,
         dateAdded: {
           $gt: get24HoursBeforeDate(new Date(startDate)),
         },
@@ -277,7 +277,7 @@ export async function distributeReferralRewards(): Promise<void> {
               newUserAddress:
                 user.patchwallet ??
                 (await getPatchWalletAddressFromTgId(user.userTelegramID)),
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
             });
 
             console.log(

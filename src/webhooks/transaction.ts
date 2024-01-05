@@ -5,11 +5,10 @@ import {
   PatchResult,
   TransactionInit,
   TransactionParams,
-  TransactionStatus,
   createTransaction,
 } from '../types/webhook.types';
 import {
-  TRANSACTION_STATUS,
+  TransactionStatus,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
 } from '../utils/constants';
@@ -91,7 +90,7 @@ export async function handleNewTransaction(
     if (!transactionInstance.userOpHash)
       return (
         await transactionInstance.updateInDatabase(
-          TRANSACTION_STATUS.SUCCESS,
+          TransactionStatus.SUCCESS,
           new Date(),
         ),
         true
@@ -115,7 +114,7 @@ export async function handleNewTransaction(
     updateTxHash(transactionInstance, tx.txHash);
     await Promise.all([
       transactionInstance.updateInDatabase(
-        TRANSACTION_STATUS.SUCCESS,
+        TransactionStatus.SUCCESS,
         new Date(),
       ),
       transactionInstance.saveToSegment(),
@@ -148,7 +147,7 @@ export async function handleNewTransaction(
     tx.userOpHash &&
     updateUserOpHash(transactionInstance, tx.userOpHash) &&
     (await transactionInstance.updateInDatabase(
-      TRANSACTION_STATUS.PENDING_HASH,
+      TransactionStatus.PENDING_HASH,
       null,
     ));
 
@@ -194,8 +193,8 @@ export class TransferTelegram {
     // Initializes the 'isInDatabase' property to 'false' by default
     this.isInDatabase = false;
 
-    // Initializes the 'status' property to 'TRANSACTION_STATUS.UNDEFINED' by default
-    this.status = TRANSACTION_STATUS.UNDEFINED;
+    // Initializes the 'status' property to 'TransactionStatus.UNDEFINED' by default
+    this.status = TransactionStatus.UNDEFINED;
   }
 
   /**
@@ -231,7 +230,7 @@ export class TransferTelegram {
         transfer.tx);
     } else {
       // If the transfer doesn't exist, add it to the database with PENDING status and current date
-      await transfer.updateInDatabase(TRANSACTION_STATUS.PENDING, new Date());
+      await transfer.updateInDatabase(TransactionStatus.PENDING, new Date());
     }
 
     // Return a success indicator with the transfer instance

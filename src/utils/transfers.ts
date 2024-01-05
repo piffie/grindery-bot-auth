@@ -1,6 +1,6 @@
 import {
   REWARDS_COLLECTION,
-  TRANSACTION_STATUS,
+  TransactionStatus,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
 } from './constants';
@@ -30,7 +30,7 @@ export async function getIncomingTxsUser(
     (
       await db
         .collection(TRANSFERS_COLLECTION)
-        .find({ recipientTgId: userId, status: TRANSACTION_STATUS.SUCCESS })
+        .find({ recipientTgId: userId, status: TransactionStatus.SUCCESS })
         .sort({ dateAdded: -1 })
         .skip(start)
         .limit(limit)
@@ -69,7 +69,7 @@ export async function getOutgoingTxsUser(
     (
       await db
         .collection(TRANSFERS_COLLECTION)
-        .find({ senderTgId: userId, status: TRANSACTION_STATUS.SUCCESS })
+        .find({ senderTgId: userId, status: TransactionStatus.SUCCESS })
         .sort({ dateAdded: -1 })
         .skip(start)
         .limit(limit)
@@ -113,7 +113,7 @@ export async function getOutgoingTxsToNewUsers(
             $match: {
               senderTgId: userId,
               recipientTgId: { $ne: null },
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
             },
           },
           {

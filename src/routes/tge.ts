@@ -5,7 +5,7 @@ import { Database } from '../db/conn';
 import {
   GX_ORDER_COLLECTION,
   GX_QUOTE_COLLECTION,
-  GX_ORDER_STATUS,
+  GxOrderStatus,
 } from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet';
@@ -178,7 +178,7 @@ router.post('/order', authenticateApiKey, async (req, res) => {
     .findOne({ orderId: req.body.quoteId });
 
   // If an order is already being processed, return an error response
-  if (order && order.status !== GX_ORDER_STATUS.FAILURE_G1)
+  if (order && order.status !== GxOrderStatus.FAILURE_G1)
     return res
       .status(400)
       .json({ success: false, msg: 'This order is already being processed' });
@@ -190,7 +190,7 @@ router.post('/order', authenticateApiKey, async (req, res) => {
       $set: {
         orderId: req.body.quoteId,
         dateG1: new Date(),
-        status: GX_ORDER_STATUS.PENDING,
+        status: GxOrderStatus.PENDING,
         ...quoteWithoutId,
       },
     },
@@ -210,8 +210,8 @@ router.post('/order', authenticateApiKey, async (req, res) => {
     // Determine the status of the order based on additional conditions
     const status =
       Number(quote.usdFromUsdInvestment) > 0
-        ? GX_ORDER_STATUS.WAITING_USD
-        : GX_ORDER_STATUS.COMPLETE;
+        ? GxOrderStatus.WAITING_USD
+        : GxOrderStatus.COMPLETE;
 
     const date = new Date();
 
@@ -259,7 +259,7 @@ router.post('/order', authenticateApiKey, async (req, res) => {
         $set: {
           orderId: req.body.quoteId,
           dateG1: new Date(),
-          status: GX_ORDER_STATUS.FAILURE_G1,
+          status: GxOrderStatus.FAILURE_G1,
           ...quoteWithoutId,
         },
       },
@@ -348,8 +348,8 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
   // If an order exists and status is not ready for USD payment, return an error response
   if (
     order &&
-    order.status !== GX_ORDER_STATUS.WAITING_USD &&
-    order.status !== GX_ORDER_STATUS.FAILURE_USD
+    order.status !== GxOrderStatus.WAITING_USD &&
+    order.status !== GxOrderStatus.FAILURE_USD
   )
     return res
       .status(400)
@@ -377,7 +377,7 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
       {
         $set: {
           dateUSD: new Date(),
-          status: GX_ORDER_STATUS.PENDING_USD,
+          status: GxOrderStatus.PENDING_USD,
           tokenAmountUSD: token_amount,
           tokenAddressUSD: req.body.tokenAddress,
           chainIdUSD: req.body.chainId,
@@ -406,7 +406,7 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
       {
         $set: {
           dateUSD: date,
-          status: GX_ORDER_STATUS.COMPLETE,
+          status: GxOrderStatus.COMPLETE,
           transactionHashUSD: data.txHash,
           userOpHashUSD: data.userOpHash,
         },
@@ -421,7 +421,7 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
         ...orderWithoutId,
         orderId: req.body.orderId,
         dateUSD: date,
-        status: GX_ORDER_STATUS.COMPLETE,
+        status: GxOrderStatus.COMPLETE,
         transactionHashUSD: data.txHash,
         userOpHashUSD: data.userOpHash,
         tokenAddressUSD: req.body.tokenAddress,
@@ -442,7 +442,7 @@ router.patch('/order', authenticateApiKey, async (req, res) => {
         $set: {
           orderId: req.body.orderId,
           dateUSD: new Date(),
-          status: GX_ORDER_STATUS.FAILURE_USD,
+          status: GxOrderStatus.FAILURE_USD,
           userTelegramID: req.body.userTelegramID,
         },
       },
