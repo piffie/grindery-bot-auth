@@ -10,7 +10,6 @@ import csv from 'csv-parser';
 import web3 from 'web3';
 import {
   REWARDS_COLLECTION,
-  TransactionStatus,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
 } from '../utils/constants';
@@ -20,6 +19,7 @@ import { SOURCE_TG_ID, SOURCE_WALLET_ADDRESS } from '../../secrets';
 import { Database } from '../db/conn';
 import { get24HoursBeforeDate } from '../utils/time';
 import { ObjectMap } from 'csv-writer/src/lib/lang/object';
+import { TransactionStatus } from 'grindery-nexus-common-utils';
 
 /**
  * Distributes sign-up rewards of 100 Grindery One Tokens to eligible users.
