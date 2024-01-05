@@ -8,12 +8,12 @@ export const withdrawValidator = [
   body('recipientwallet').custom(async (value, { req }) => {
     const db = await Database.getInstance();
     const user = await db
-      .collection(WITHDRAW_WHITELIST_COLLECTION)
+      ?.collection(WITHDRAW_WHITELIST_COLLECTION)
       .findOne({ userTelegramID: req.body.tgId });
 
     if (
       !Web3.utils.isAddress(value) ||
-      !user.withdrawAddresses?.includes(value)
+      !user?.withdrawAddresses?.includes(value)
     ) {
       throw new Error('Invalid recipient wallet');
     }

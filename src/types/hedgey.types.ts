@@ -1,10 +1,7 @@
-import { Document, WithId } from 'mongodb';
-import {
-  DEFAULT_CHAIN_ID,
-  DEFAULT_CHAIN_NAME,
-  G1_TOKEN_SYMBOL,
-} from '../utils/constants';
+import { WithId } from 'mongodb';
+import { DEFAULT_CHAIN_ID, G1_TOKEN_SYMBOL } from '../utils/constants';
 import { G1_POLYGON_ADDRESS } from '../../secrets';
+import { MongoUser } from './mongo.types';
 
 export type HedgeyRecipientParams = {
   /** The address of the recipient. */
@@ -40,14 +37,12 @@ export type VestingParams = {
   chainId?: string;
   /** The token address for the transaction. */
   tokenAddress?: string;
-  /** The chain name for the transaction. */
-  chainName?: string;
   /** The message associated with the transaction. */
   message?: string;
   /** The symbol of the token for the transaction. */
   tokenSymbol?: string;
   /** Additional sender information with MongoDB document ID. */
-  senderInformation?: WithId<Document>;
+  senderInformation?: WithId<MongoUser>;
 };
 
 /**
@@ -58,16 +53,26 @@ export type VestingParams = {
  */
 export function createVesting(
   params: VestingParams,
-  senderInformation: WithId<Document>,
+  senderInformation: WithId<MongoUser>,
 ): VestingParams {
   return {
     ...{
       tokenSymbol: G1_TOKEN_SYMBOL,
       tokenAddress: G1_POLYGON_ADDRESS,
       chainId: DEFAULT_CHAIN_ID,
-      chainName: DEFAULT_CHAIN_NAME,
     },
     ...params,
     senderInformation,
   };
 }
+
+/**
+ * Defines the structure for VestingSegmentParams.
+ * Extends VestingParams and includes additional fields for tracking vesting segments.
+ */
+export type VestingSegmentParams = VestingParams & {
+  /** The hash associated with the transaction. */
+  transactionHash: string;
+  /** The date when the segment was added. */
+  dateAdded: Date;
+};

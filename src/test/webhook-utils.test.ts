@@ -1,5 +1,5 @@
 import chai from 'chai';
-import { TRANSACTION_STATUS } from '../utils/constants';
+import { TransactionStatus } from '../utils/constants';
 import {
   isFailedTransaction,
   isPendingTransactionHash,
@@ -11,19 +11,19 @@ describe('Transaction Status Functions', async function () {
   describe('isSuccessfulTransaction', async function () {
     it('Should identify a successful transaction', async function () {
       chai
-        .expect(isSuccessfulTransaction(TRANSACTION_STATUS.SUCCESS))
+        .expect(isSuccessfulTransaction(TransactionStatus.SUCCESS))
         .to.equal(true);
     });
 
     it('Should identify a failed transaction', async function () {
       chai
-        .expect(isSuccessfulTransaction(TRANSACTION_STATUS.FAILURE))
+        .expect(isSuccessfulTransaction(TransactionStatus.FAILURE))
         .to.equal(false);
     });
 
     it('Should identify a pending hash transaction as not successful', async function () {
       chai
-        .expect(isSuccessfulTransaction(TRANSACTION_STATUS.PENDING_HASH))
+        .expect(isSuccessfulTransaction(TransactionStatus.PENDING_HASH))
         .to.equal(false);
     });
   });
@@ -31,19 +31,19 @@ describe('Transaction Status Functions', async function () {
   describe('isFailedTransaction', async function () {
     it('Should identify a failed transaction', async function () {
       chai
-        .expect(isFailedTransaction(TRANSACTION_STATUS.FAILURE))
+        .expect(isFailedTransaction(TransactionStatus.FAILURE))
         .to.equal(true);
     });
 
     it('Should identify a successful transaction as not failed', async function () {
       chai
-        .expect(isFailedTransaction(TRANSACTION_STATUS.SUCCESS))
+        .expect(isFailedTransaction(TransactionStatus.SUCCESS))
         .to.equal(false);
     });
 
     it('Should identify a pending hash transaction as not failed', async function () {
       chai
-        .expect(isFailedTransaction(TRANSACTION_STATUS.PENDING_HASH))
+        .expect(isFailedTransaction(TransactionStatus.PENDING_HASH))
         .to.equal(false);
     });
   });
@@ -51,19 +51,19 @@ describe('Transaction Status Functions', async function () {
   describe('isPendingTransactionHash', async function () {
     it('Should identify a pending hash transaction', async function () {
       chai
-        .expect(isPendingTransactionHash(TRANSACTION_STATUS.PENDING_HASH))
+        .expect(isPendingTransactionHash(TransactionStatus.PENDING_HASH))
         .to.equal(true);
     });
 
     it('Should identify a successful transaction as not pending hash', async function () {
       chai
-        .expect(isPendingTransactionHash(TRANSACTION_STATUS.SUCCESS))
+        .expect(isPendingTransactionHash(TransactionStatus.SUCCESS))
         .to.equal(false);
     });
 
     it('Should identify a failed transaction as not pending hash', async function () {
       chai
-        .expect(isPendingTransactionHash(TRANSACTION_STATUS.FAILURE))
+        .expect(isPendingTransactionHash(TransactionStatus.FAILURE))
         .to.equal(false);
     });
   });

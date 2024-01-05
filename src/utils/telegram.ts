@@ -2,20 +2,9 @@ import { Api } from 'telegram';
 import { StringSession } from 'telegram/sessions/index';
 import TGClient from './telegramClient';
 import { decrypt } from './crypt';
-import { WithId, Document } from 'mongodb';
-
-/**
- * Extracts user information from the request headers.
- * @param req The request object containing headers, particularly the 'authorization' header with user data.
- * @returns The user information parsed from the request headers.
- */
-export const getUser = (req: { headers: { [x: string]: any } }): any => {
-  const authorization = req.headers['authorization'];
-  const token = authorization.split(' ')[1];
-  const data = Object.fromEntries(new URLSearchParams(token));
-  const user = JSON.parse((data.user || {}) as string);
-  return user;
-};
+import { WithId } from 'mongodb';
+import { TelegramMessageResponse } from '../types/telegram.types';
+import { MongoUser } from '../types/mongo.types';
 
 /**
  * Sends a message via Telegram to a recipient.
@@ -29,55 +18,55 @@ export const getUser = (req: { headers: { [x: string]: any } }): any => {
 export const sendTelegramMessage = async (
   message: string,
   recipientId: string,
-  senderUser: WithId<Document>,
-): Promise<{
-  success: boolean;
-  message: string;
-}> => {
+  senderUser: WithId<MongoUser>,
+): Promise<TelegramMessageResponse> => {
   try {
+    // Validation checks for required parameters
     if (!message) throw new Error('Message is required');
     if (!recipientId) throw new Error('Recipient ID is required');
     if (!senderUser.userHandle) throw new Error('Sender username not found');
     if (!senderUser.telegramSession)
       throw new Error('Telegram session not found');
 
+    // Establishing a Telegram client
     const client = TGClient(
       new StringSession(decrypt(senderUser.telegramSession)),
     );
 
+    // Connect to Telegram
     await client.connect();
 
+    // Check if the client is connected successfully
     if (!client.connected) {
       throw new Error('Telegram client not connected');
     }
 
-    // get recipient handle
-    const recipient = await client.invoke(
+    // Fetch recipient's handle
+    const recipient: Api.users.UserFull = await client.invoke(
       new Api.users.GetFullUser({
         id: recipientId,
       }),
     );
 
-    const recipientHandle =
-      (recipient &&
-        recipient.users &&
-        recipient.users[0] &&
-        (recipient.users[0] as any).username) ||
-      '';
+    // Extract recipient's handle or set an empty string if not found
+    const recipientHandle = (recipient.users?.[0] as Api.User)?.username || '';
 
+    // Prepare data to send the message
     const data = {
       peer: recipientHandle,
       message: message,
     };
 
+    // Send the message and await the result
     const result = await client.invoke(new Api.messages.SendMessage(data));
 
+    // Check if the message was sent successfully and return appropriate response
     if (result) {
       return { success: true, message: 'Message sent successfully' };
-    } else {
-      return { success: false, message: 'Message sending failed' };
     }
+    return { success: false, message: 'Message sending failed' };
   } catch (error) {
+    // Return error response in case of exceptions
     return { success: false, message: error.message };
   }
 };

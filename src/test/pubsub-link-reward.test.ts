@@ -13,6 +13,7 @@ import {
   mockChainName,
   getCollectionUsersMock,
   getCollectionRewardsMock,
+  mockChainId,
 } from './utils';
 import Sinon from 'sinon';
 import axios from 'axios';
@@ -25,11 +26,15 @@ import {
   PATCHWALLET_RESOLVER_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
-  TRANSACTION_STATUS,
+  TransactionStatus,
 } from '../utils/constants';
-import { FLOWXO_NEW_LINK_REWARD_WEBHOOK, SOURCE_TG_ID } from '../../secrets';
+import {
+  FLOWXO_NEW_LINK_REWARD_WEBHOOK,
+  FLOWXO_WEBHOOK_API_KEY,
+  SOURCE_TG_ID,
+} from '../../secrets';
 import { handleLinkReward } from '../webhooks/link-reward';
-import { Collection, Document } from 'mongodb';
+import { ContractStub } from '../types/tests.types';
 
 chai.use(chaiExclude);
 
@@ -37,9 +42,9 @@ describe('handleLinkReward function', async function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
   let rewardId: string;
-  let collectionUsersMock: Collection<Document>;
-  let collectionRewardsMock: Collection<Document>;
-  let contractStub: { methods: any };
+  let collectionUsersMock;
+  let collectionRewardsMock;
+  let contractStub: ContractStub;
   let getContract;
 
   beforeEach(async function () {
@@ -349,7 +354,7 @@ describe('handleLinkReward function', async function () {
         amount: '10',
         message: 'Referral link',
         transactionHash: mockTransactionHash,
-        status: TRANSACTION_STATUS.SUCCESS,
+        status: TransactionStatus.SUCCESS,
       });
     });
 
@@ -397,7 +402,7 @@ describe('handleLinkReward function', async function () {
             amount: '10',
             message: 'Referral link',
             transactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
           },
         ]);
     });
@@ -434,7 +439,7 @@ describe('handleLinkReward function', async function () {
         userTelegramID: mockUserTelegramID,
         referentUserTelegramID: mockUserTelegramID1,
         tokenAddress: mockTokenAddress,
-        chainName: mockChainName,
+        chainId: mockChainId,
       });
 
       chai
@@ -461,7 +466,7 @@ describe('handleLinkReward function', async function () {
         userTelegramID: mockUserTelegramID,
         referentUserTelegramID: mockUserTelegramID1,
         tokenAddress: mockTokenAddress,
-        chainName: mockChainName,
+        chainId: mockChainId,
         delegatecall: 1,
       });
 
@@ -505,7 +510,7 @@ describe('handleLinkReward function', async function () {
         amount: '10',
         message: 'Referral link',
         transactionHash: mockTransactionHash,
-        status: TRANSACTION_STATUS.SUCCESS,
+        status: TransactionStatus.SUCCESS,
         userOpHash: null,
       });
       chai
@@ -549,6 +554,7 @@ describe('handleLinkReward function', async function () {
         amount: '10',
         message: 'Referral link',
         transactionHash: mockTransactionHash,
+        apiKey: FLOWXO_WEBHOOK_API_KEY,
       });
 
       chai
@@ -627,7 +633,7 @@ describe('handleLinkReward function', async function () {
             amount: '10',
             message: 'Referral link',
             sponsoredUserTelegramID: mockUserTelegramID,
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
           },
@@ -715,7 +721,7 @@ describe('handleLinkReward function', async function () {
             amount: '10',
             message: 'Referral link',
             sponsoredUserTelegramID: mockUserTelegramID,
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
           },
@@ -798,7 +804,7 @@ describe('handleLinkReward function', async function () {
               amount: '10',
               message: 'Referral link',
               sponsoredUserTelegramID: mockUserTelegramID,
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
             },
@@ -841,7 +847,7 @@ describe('handleLinkReward function', async function () {
           amount: '10',
           message: 'Referral link',
           sponsoredUserTelegramID: mockUserTelegramID,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
       });
@@ -891,7 +897,7 @@ describe('handleLinkReward function', async function () {
               message: 'Referral link',
               sponsoredUserTelegramID: mockUserTelegramID,
               transactionHash: mockTransactionHash,
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               userOpHash: mockUserOpHash,
             },
           ]);
@@ -919,6 +925,7 @@ describe('handleLinkReward function', async function () {
           amount: '10',
           message: 'Referral link',
           transactionHash: mockTransactionHash,
+          apiKey: FLOWXO_WEBHOOK_API_KEY,
         });
 
         chai
@@ -949,7 +956,7 @@ describe('handleLinkReward function', async function () {
           amount: '10',
           message: 'Referral link',
           sponsoredUserTelegramID: mockUserTelegramID,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -1005,7 +1012,7 @@ describe('handleLinkReward function', async function () {
               amount: '10',
               message: 'Referral link',
               sponsoredUserTelegramID: mockUserTelegramID,
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
             },
@@ -1048,7 +1055,7 @@ describe('handleLinkReward function', async function () {
           amount: '10',
           message: 'Referral link',
           sponsoredUserTelegramID: mockUserTelegramID,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -1101,7 +1108,7 @@ describe('handleLinkReward function', async function () {
               amount: '10',
               message: 'Referral link',
               sponsoredUserTelegramID: mockUserTelegramID,
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
             },
           ]);
@@ -1143,7 +1150,7 @@ describe('handleLinkReward function', async function () {
           amount: '10',
           message: 'Referral link',
           sponsoredUserTelegramID: mockUserTelegramID,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
         });
       });
 
@@ -1191,7 +1198,7 @@ describe('handleLinkReward function', async function () {
               amount: '10',
               message: 'Referral link',
               sponsoredUserTelegramID: mockUserTelegramID,
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               transactionHash: null,
               userOpHash: null,
             },
@@ -1234,7 +1241,7 @@ describe('handleLinkReward function', async function () {
           amount: '10',
           message: 'Referral link',
           sponsoredUserTelegramID: mockUserTelegramID,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           dateAdded: new Date(Date.now() - 12 * 60 * 1000),
         });
 
@@ -1290,7 +1297,7 @@ describe('handleLinkReward function', async function () {
               amount: '10',
               message: 'Referral link',
               sponsoredUserTelegramID: mockUserTelegramID,
-              status: TRANSACTION_STATUS.FAILURE,
+              status: TransactionStatus.FAILURE,
               transactionHash: null,
               userOpHash: null,
             },

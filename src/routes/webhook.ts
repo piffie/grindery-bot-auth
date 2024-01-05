@@ -10,6 +10,7 @@ import { handleIsolatedReward } from '../webhooks/isolated-reward';
 import { handleSwap } from '../webhooks/swap';
 import { handleNewTransaction } from '../webhooks/transaction';
 import {
+  PRODUCTION_ENV,
   PROJECT_ID,
   PUBSUB_CONCURRENCY,
   PUBSUB_MAX_ACK_DEADLINE,
@@ -27,8 +28,12 @@ import { google } from '@google-cloud/monitoring/build/protos/protos';
  * Events that are not defined in switch statement will be acknowledged and removed from the queue by default.
  */
 
-// Init pub/sub client
-const pubSubClient = new PubSub();
+let pubSubClient: PubSub | undefined;
+
+if (PRODUCTION_ENV) {
+  // Init pub/sub client
+  pubSubClient = new PubSub();
+}
 
 // Get topic and subscription names from env
 const topicName = PUBSUB_TOPIC_NAME;
@@ -62,7 +67,7 @@ router.get('/unacked-messages', authenticateApiKey, async (_req, res) => {
     timeSeries?.forEach((series) => {
       (series as google.monitoring.v3.ITimeSeries[])?.forEach((serie) => {
         serie?.points?.forEach((point) => {
-          sum += parseFloat(point.value.int64Value as string);
+          sum += parseFloat(point.value?.int64Value as string);
           count++;
         });
       });
@@ -125,7 +130,7 @@ router.post('/', authenticateApiKey, webhookValidator, async (req, res) => {
     console.log(`Publishing message: ${data}`);
     const dataBuffer = Buffer.from(data);
     const messageId = await pubSubClient
-      .topic(topicName)
+      ?.topic(topicName)
       .publishMessage({ data: dataBuffer });
 
     // Check if message was successfully published
@@ -146,7 +151,7 @@ router.post('/', authenticateApiKey, webhookValidator, async (req, res) => {
 // Subscribe to messages from Pub/Sub
 const listenForMessages = () => {
   // get subscription
-  const subscription = pubSubClient.subscription(subscriptionName, {
+  const subscription = pubSubClient?.subscription(subscriptionName, {
     minAckDeadline: Duration.from({
       millis: parseInt(PUBSUB_MIN_ACK_DEADLINE, 10) || 60 * 1000,
     }),
@@ -197,7 +202,7 @@ const listenForMessages = () => {
         case 'new_transaction_batch':
           for (const singleTransaction of messageData.params) {
             // Publishing each transaction as a new event
-            await pubSubClient.topic(topicName).publishMessage({
+            await pubSubClient?.topic(topicName).publishMessage({
               data: Buffer.from(
                 JSON.stringify({
                   event: 'new_transaction',
@@ -237,7 +242,7 @@ const listenForMessages = () => {
     }
   };
 
-  subscription.on('message', messageHandler);
+  subscription?.on('message', messageHandler);
 };
 
 // Start listening for pub/sub messages

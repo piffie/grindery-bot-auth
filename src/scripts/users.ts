@@ -4,6 +4,8 @@ import fs from 'fs';
 import csv from 'csv-parser';
 import { createObjectCsvWriter as createCsvWriter } from 'csv-writer';
 import { TRANSFERS_COLLECTION, USERS_COLLECTION } from '../utils/constants';
+import { AnyBulkWriteOperation, Document, OptionalId } from 'mongodb';
+import { ObjectMap } from 'csv-writer/src/lib/lang/object';
 
 // Usage: importUsersFromCSV(filePath)
 // Description: This function imports user data from a CSV file into the database.
@@ -13,8 +15,8 @@ import { TRANSFERS_COLLECTION, USERS_COLLECTION } from '../utils/constants';
 // @ts-expect-error
 async function importUsersFromCSV(filePath: fs.PathLike): Promise<void> {
   const db = await Database.getInstance();
-  const collection = db.collection(USERS_COLLECTION);
-  const toInsert = [];
+  const collection = db?.collection(USERS_COLLECTION);
+  const toInsert: OptionalId<Document>[] = [];
 
   try {
     // Read the CSV file and parse its contents
@@ -34,7 +36,7 @@ async function importUsersFromCSV(filePath: fs.PathLike): Promise<void> {
       .on('end', async () => {
         if (toInsert.length > 0) {
           // Insert new users into the database
-          await collection.insertMany(toInsert, { ordered: false });
+          await collection?.insertMany(toInsert, { ordered: false });
           console.log('Missing users inserted');
         } else {
           console.log('No new users to insert.');
@@ -59,9 +61,11 @@ async function importUsersFromJSON(
 ): Promise<void> {
   try {
     const db = await Database.getInstance();
-    const collection = db.collection(USERS_COLLECTION);
-    const existingUserIds = new Set(
-      (await collection.distinct('userTelegramID')).map(String),
+    const collection = db?.collection(USERS_COLLECTION);
+    const existingUserIds = new Set<string>(
+      collection
+        ? (await collection.distinct('userTelegramID')).map(String)
+        : [],
     );
 
     const fileContent = fs.readFileSync(filePath, 'utf8');
@@ -70,7 +74,14 @@ async function importUsersFromJSON(
     const objectRegex = /{[^{}]*}/g;
     const extractedObjects = fileContent.match(objectRegex);
 
-    const parsedObjects = [];
+    const parsedObjects: {
+      userTelegramID: string;
+      responsePath: string;
+      userHandle: string;
+      userName: string;
+      patchwallet: string;
+      dateAdded: Date;
+    }[] = [];
     let malformedObjectCount = 0;
 
     if (extractedObjects && extractedObjects.length > 0) {
@@ -107,7 +118,7 @@ async function importUsersFromJSON(
     );
 
     if (newUsers.length > 0) {
-      await collection.insertMany(newUsers);
+      await collection?.insertMany(newUsers);
       console.log('New users inserted.');
     } else {
       console.log('No new users to insert.');
@@ -129,16 +140,16 @@ async function importUsersFromJSON(
 async function removeUsersScientificNotationInTelegramID(): Promise<void> {
   try {
     const db = await Database.getInstance();
-    const collectionUsers = db.collection(USERS_COLLECTION);
+    const collectionUsers = db?.collection(USERS_COLLECTION);
 
     // Define a filter to find users with "+" in userTelegramID
     const filter = { userTelegramID: { $regex: /\+/ } };
 
     // Delete the matching documents
-    const deleteResult = await collectionUsers.deleteMany(filter);
+    const deleteResult = await collectionUsers?.deleteMany(filter);
 
     console.log(
-      `Deleted ${deleteResult.deletedCount} users with '+' in userTelegramID`,
+      `Deleted ${deleteResult?.deletedCount} users with '+' in userTelegramID`,
     );
   } catch (error) {
     console.error(`An error occurred: ${error.message}`);
@@ -147,6 +158,9 @@ async function removeUsersScientificNotationInTelegramID(): Promise<void> {
   }
 }
 
+type User = {
+  userTelegramID: string;
+};
 // Example usage of the functions:
 // const users = [
 //   { userTelegramID: "12345" },
@@ -158,7 +172,7 @@ async function removeUsersScientificNotationInTelegramID(): Promise<void> {
 // logUserTelegramIDsFromArrayOfUsers(users);
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
-function logUserTelegramIDsFromArrayOfUsers(users: any[]): Promise<void> {
+function logUserTelegramIDsFromArrayOfUsers(users: User[]): Promise<void> {
   const userTelegramIDCounts = {}; // To store the count of each unique userTelegramID
 
   // Iterate through the users array
@@ -187,28 +201,31 @@ function logUserTelegramIDsFromArrayOfUsers(users: any[]): Promise<void> {
 async function getUsersWithoutOutgoingTransfersAndExportToCSV(): Promise<void> {
   try {
     const db = await Database.getInstance();
-    const usersCollection = db.collection(USERS_COLLECTION);
-    const transfersCollection = db.collection(TRANSFERS_COLLECTION);
+    const usersCollection = db?.collection(USERS_COLLECTION);
+    const transfersCollection = db?.collection(TRANSFERS_COLLECTION);
 
     // Get all users
-    const allUsers = await usersCollection.find({}).toArray();
+    const allUsers = await usersCollection?.find({}).toArray();
 
     // Get all transfers as an array
-    const allTransfers = await transfersCollection.find({}).toArray();
+    const allTransfers = await transfersCollection?.find({}).toArray();
 
     // Create a Set of senderTgId values from transfers for efficient lookup
     const senderTgIdsSet = new Set(
-      allTransfers.map((transfer) => transfer.senderTgId),
+      allTransfers?.map((transfer) => transfer.senderTgId),
     );
 
     // Array to store users without outgoing transfers
-    const usersWithoutOutgoingTransfers = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const usersWithoutOutgoingTransfers: ObjectMap<any>[] = [];
 
     // Loop through all users
-    for (const user of allUsers) {
-      // Check if user's userTelegramID exists in the Set
-      if (!senderTgIdsSet.has(user.userTelegramID)) {
-        usersWithoutOutgoingTransfers.push(user);
+    if (allUsers) {
+      for (const user of allUsers) {
+        // Check if user's userTelegramID exists in the Set
+        if (!senderTgIdsSet.has(user.userTelegramID)) {
+          usersWithoutOutgoingTransfers.push(user);
+        }
       }
     }
 
@@ -245,17 +262,20 @@ async function getUsersWithoutOutgoingTransfersAndExportToCSV(): Promise<void> {
 async function exportUsersWithHandleEndingInDigitsToCSV(): Promise<void> {
   try {
     const db = await Database.getInstance();
-    const usersCollection = db.collection(USERS_COLLECTION);
+    const usersCollection = db?.collection(USERS_COLLECTION);
 
     // Define a filter to find users with userHandle ending in 4 digits
     const filter = { userHandle: { $regex: /\d{4}$/ } };
 
     // Find users matching the filter
     const usersWithHandleEndingInDigits = await usersCollection
-      .find(filter)
+      ?.find(filter)
       .toArray();
 
-    if (usersWithHandleEndingInDigits.length > 0) {
+    if (
+      usersWithHandleEndingInDigits &&
+      usersWithHandleEndingInDigits.length > 0
+    ) {
       const csvWriterObject = createCsvWriter({
         path: 'users_with_handle_ending_in_digits.csv',
         header: [
@@ -287,18 +307,18 @@ async function exportUsersWithHandleEndingInDigitsToCSV(): Promise<void> {
 async function convertDateAddedFieldToISODate(): Promise<void> {
   try {
     const db = await Database.getInstance();
-    const collection = db.collection(USERS_COLLECTION);
+    const collection = db?.collection(USERS_COLLECTION);
 
     // Filter for documents where dateAdded is not a Date type
     const filter = { dateAdded: { $not: { $type: 'date' } } };
 
     // Find documents matching the filter
-    const cursor = await collection.find(filter).toArray();
+    const cursor = await collection?.find(filter).toArray();
 
-    const bulkUpdateOps = [];
+    const bulkUpdateOps: AnyBulkWriteOperation<Document>[] = [];
 
     // Iterate over the cursor to prepare bulk update operations
-    await cursor.forEach((doc) => {
+    await cursor?.forEach((doc) => {
       const updatedDateAdded = new Date(doc.dateAdded);
       // Check if updatedDateAdded is a valid date
       if (!isNaN(updatedDateAdded.getTime())) {
@@ -313,7 +333,7 @@ async function convertDateAddedFieldToISODate(): Promise<void> {
 
     // Execute bulk write with all update operations
     if (bulkUpdateOps.length > 0) {
-      await collection.bulkWrite(bulkUpdateOps);
+      await collection?.bulkWrite(bulkUpdateOps);
     }
 
     console.log('DateAdded field updated for documents not in ISODate format.');

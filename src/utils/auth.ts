@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
 import jwt_decode from 'jwt-decode';
-import { webcrypto } from 'crypto';
-import { API_KEY_LINEA, getApiKey, getBotToken } from '../../secrets';
+import { API_KEY_LINEA, getApiKey } from '../../secrets';
 
 /**
  * Validates a token by making a request to an external service.
@@ -116,59 +116,6 @@ export const authenticateApiKeyLinea = async (req, res, next) => {
     return res.status(401).send({
       msg: 'Invalid API key',
     });
-  }
-  next();
-};
-
-/**
- * Middleware to validate a Telegram hash for user authentication.
- * @param req - The request object.
- * @param res - The response object.
- * @param next - The next middleware function.
- * @returns void
- */
-export const telegramHashIsValid = async (req, res, next) => {
-  const BOT_TOKEN = await getBotToken();
-  if (!BOT_TOKEN) {
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-  const authorization = req.headers['authorization'];
-  const hash = authorization.split(' ')[1];
-  const data = Object.fromEntries(new URLSearchParams(hash));
-  const encoder = new TextEncoder();
-  const checkString = Object.keys(data)
-    .filter((key) => key !== 'hash')
-    .map((key) => `${key}=${data[key]}`)
-    .sort()
-    .join('\n');
-  const secretKey = await webcrypto.subtle.importKey(
-    'raw',
-    encoder.encode('WebAppData'),
-    { name: 'HMAC', hash: 'SHA-256' },
-    true,
-    ['sign'],
-  );
-  const secret = await webcrypto.subtle.sign(
-    'HMAC',
-    secretKey,
-    encoder.encode(BOT_TOKEN),
-  );
-  const signatureKey = await webcrypto.subtle.importKey(
-    'raw',
-    secret,
-    { name: 'HMAC', hash: 'SHA-256' },
-    true,
-    ['sign'],
-  );
-  const signature = await webcrypto.subtle.sign(
-    'HMAC',
-    signatureKey,
-    encoder.encode(checkString),
-  );
-  const hex = Buffer.from(signature).toString('hex');
-  const isValid = data.hash === hex;
-  if (!isValid) {
-    return res.status(403).json({ error: 'User is not authenticated' });
   }
   next();
 };

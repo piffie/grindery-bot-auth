@@ -25,17 +25,18 @@ import {
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
   SEGMENT_TRACK_URL,
-  TRANSACTION_STATUS,
+  TransactionStatus,
   nativeTokenAddresses,
 } from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 import { handleNewTransaction } from '../webhooks/transaction';
 import {
   FLOWXO_NEW_TRANSACTION_WEBHOOK,
+  FLOWXO_WEBHOOK_API_KEY,
   G1_POLYGON_ADDRESS,
 } from '../../secrets';
 import * as web3 from '../utils/web3';
-import { Collection, Document } from 'mongodb';
+import { ContractStub } from '../types/tests.types';
 
 chai.use(chaiExclude);
 
@@ -43,9 +44,9 @@ describe('handleNewTransaction function', async function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
   let txId: string;
-  let collectionUsersMock: Collection<Document>;
-  let collectionTransfersMock: Collection<Document>;
-  let contractStub: { methods: any };
+  let collectionUsersMock;
+  let collectionTransfersMock;
+  let contractStub: ContractStub;
   let getContract;
 
   beforeEach(async function () {
@@ -159,7 +160,6 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
         chainId: mockChainId,
         tokenAddress: mockTokenAddress,
-        chainName: mockChainName,
       });
 
       const transfers = await collectionTransfersMock.find({}).toArray();
@@ -181,7 +181,7 @@ describe('handleNewTransaction function', async function () {
             recipientWallet: mockWallet,
             tokenAmount: '100',
             transactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             userOpHash: null,
           },
         ]);
@@ -355,6 +355,7 @@ describe('handleNewTransaction function', async function () {
         recipientWallet: mockWallet,
         tokenAmount: '100',
         transactionHash: mockTransactionHash,
+        apiKey: FLOWXO_WEBHOOK_API_KEY,
       });
     });
   });
@@ -378,7 +379,6 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
         chainId: mockChainId,
         tokenAddress: mockTokenAddress,
-        chainName: mockChainName,
       });
 
       const transfers = await collectionTransfersMock.find({}).toArray();
@@ -400,7 +400,7 @@ describe('handleNewTransaction function', async function () {
             recipientWallet: mockWallet,
             tokenAmount: '10.002',
             transactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             userOpHash: null,
           },
         ]);
@@ -470,7 +470,7 @@ describe('handleNewTransaction function', async function () {
 
       await collectionTransfersMock.insertOne({
         eventId: txId,
-        status: TRANSACTION_STATUS.SUCCESS,
+        status: TransactionStatus.SUCCESS,
       });
     });
 
@@ -512,7 +512,7 @@ describe('handleNewTransaction function', async function () {
         .to.deep.equal([
           {
             eventId: txId,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
           },
         ]);
     });
@@ -557,7 +557,7 @@ describe('handleNewTransaction function', async function () {
 
       await collectionTransfersMock.insertOne({
         eventId: txId,
-        status: TRANSACTION_STATUS.FAILURE,
+        status: TransactionStatus.FAILURE,
       });
     });
 
@@ -599,7 +599,94 @@ describe('handleNewTransaction function', async function () {
         .to.deep.equal([
           {
             eventId: txId,
-            status: TRANSACTION_STATUS.FAILURE,
+            status: TransactionStatus.FAILURE,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if is already a failure', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
+      ).to.be.undefined;
+    });
+
+    it('Should not call Segment if is already a failure', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
+      ).to.be.undefined;
+    });
+  });
+
+  describe('Transaction if is already a failure 503', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+      });
+
+      await collectionTransfersMock.insertOne({
+        eventId: txId,
+        status: TransactionStatus.FAILURE_503,
+      });
+    });
+
+    it('Should return true and no token sending if transaction if is already a failure', async function () {
+      chai.expect(
+        await handleNewTransaction({
+          senderTgId: mockUserTelegramID,
+          amount: '100',
+          recipientTgId: mockUserTelegramID1,
+          eventId: txId,
+        }),
+      ).to.be.true;
+    });
+
+    it('Should not send tokens if transaction if is already a failure', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
+      ).to.be.undefined;
+    });
+
+    it('Should not modify database if transaction if is already a failure', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai
+        .expect(await collectionTransfersMock.find({}).toArray())
+        .excluding(['_id'])
+        .to.deep.equal([
+          {
+            eventId: txId,
+            status: TransactionStatus.FAILURE_503,
           },
         ]);
     });
@@ -684,7 +771,7 @@ describe('handleNewTransaction function', async function () {
             recipientTgId: mockUserTelegramID1,
             recipientWallet: mockWallet,
             tokenAmount: '100',
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
           },
@@ -992,7 +1079,7 @@ describe('handleNewTransaction function', async function () {
             recipientTgId: mockUserTelegramID1,
             recipientWallet: mockWallet,
             tokenAmount: '100',
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
           },
@@ -1080,7 +1167,7 @@ describe('handleNewTransaction function', async function () {
             recipientTgId: mockUserTelegramID1,
             recipientWallet: mockWallet,
             tokenAmount: '100',
-            status: TRANSACTION_STATUS.FAILURE,
+            status: TransactionStatus.FAILURE,
             transactionHash: null,
             userOpHash: null,
           },
@@ -1103,6 +1190,94 @@ describe('handleNewTransaction function', async function () {
     });
 
     it('Should not call Segment if error 470 in PatchWallet transaction', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
+      ).to.be.undefined;
+    });
+  });
+
+  describe('PatchWallet 503 error', async function () {
+    beforeEach(async function () {
+      axiosStub.withArgs(PATCHWALLET_TX_URL).rejects({
+        response: {
+          status: 503,
+        },
+      });
+
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+        responsePath: mockResponsePath,
+      });
+    });
+
+    it('Should return true if error 503 in PatchWallet transaction', async function () {
+      const result = await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai.expect(result).to.be.true;
+    });
+
+    it('Should complete db status to failure 503 in database if error 503 in PatchWallet transaction', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai
+        .expect(await collectionTransfersMock.find({}).toArray())
+        .excluding(['dateAdded', '_id'])
+        .to.deep.equal([
+          {
+            eventId: txId,
+            chainId: mockChainId,
+            tokenSymbol: G1_TOKEN_SYMBOL,
+            tokenAddress: G1_POLYGON_ADDRESS,
+            senderTgId: mockUserTelegramID,
+            senderWallet: mockWallet,
+            senderName: mockUserName,
+            senderHandle: mockUserHandle,
+            recipientTgId: mockUserTelegramID1,
+            recipientWallet: mockWallet,
+            tokenAmount: '100',
+            status: TransactionStatus.FAILURE_503,
+            transactionHash: null,
+            userOpHash: null,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if error 503 in PatchWallet transaction', async function () {
+      await handleNewTransaction({
+        senderTgId: mockUserTelegramID,
+        amount: '100',
+        recipientTgId: mockUserTelegramID1,
+        eventId: txId,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
+      ).to.be.undefined;
+    });
+
+    it('Should not call Segment if error 503 in PatchWallet transaction', async function () {
       await handleNewTransaction({
         senderTgId: mockUserTelegramID,
         amount: '100',
@@ -1168,7 +1343,7 @@ describe('handleNewTransaction function', async function () {
             recipientTgId: mockUserTelegramID1,
             recipientWallet: mockWallet,
             tokenAmount: '100',
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
           },
@@ -1258,7 +1433,7 @@ describe('handleNewTransaction function', async function () {
               recipientTgId: mockUserTelegramID1,
               recipientWallet: mockWallet,
               tokenAmount: '100',
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
             },
@@ -1303,7 +1478,7 @@ describe('handleNewTransaction function', async function () {
           recipientTgId: mockUserTelegramID1,
           recipientWallet: mockWallet,
           tokenAmount: '100',
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
       });
@@ -1356,7 +1531,7 @@ describe('handleNewTransaction function', async function () {
               recipientTgId: mockUserTelegramID1,
               recipientWallet: mockWallet,
               tokenAmount: '100',
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               userOpHash: mockUserOpHash,
               transactionHash: mockTransactionHash,
             },
@@ -1388,6 +1563,7 @@ describe('handleNewTransaction function', async function () {
           recipientWallet: mockWallet,
           tokenAmount: '100',
           transactionHash: mockTransactionHash,
+          apiKey: FLOWXO_WEBHOOK_API_KEY,
         });
 
         chai
@@ -1419,7 +1595,7 @@ describe('handleNewTransaction function', async function () {
           recipientTgId: mockUserTelegramID1,
           recipientWallet: mockWallet,
           tokenAmount: '100',
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -1479,7 +1655,7 @@ describe('handleNewTransaction function', async function () {
               recipientTgId: mockUserTelegramID1,
               recipientWallet: mockWallet,
               tokenAmount: '100',
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
             },
@@ -1524,7 +1700,7 @@ describe('handleNewTransaction function', async function () {
           recipientTgId: mockUserTelegramID1,
           recipientWallet: mockWallet,
           tokenAmount: '100',
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -1581,7 +1757,7 @@ describe('handleNewTransaction function', async function () {
               recipientTgId: mockUserTelegramID1,
               recipientWallet: mockWallet,
               tokenAmount: '100',
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
             },
           ]);
@@ -1625,7 +1801,7 @@ describe('handleNewTransaction function', async function () {
           recipientTgId: mockUserTelegramID1,
           recipientWallet: mockWallet,
           tokenAmount: '100',
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -1684,7 +1860,7 @@ describe('handleNewTransaction function', async function () {
               recipientTgId: mockUserTelegramID1,
               recipientWallet: mockWallet,
               tokenAmount: '100',
-              status: TRANSACTION_STATUS.FAILURE,
+              status: TransactionStatus.FAILURE,
               userOpHash: mockUserOpHash,
               transactionHash: null,
             },
@@ -1729,7 +1905,7 @@ describe('handleNewTransaction function', async function () {
           recipientTgId: mockUserTelegramID1,
           recipientWallet: mockWallet,
           tokenAmount: '100',
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
         });
       });
 
@@ -1781,7 +1957,7 @@ describe('handleNewTransaction function', async function () {
               recipientTgId: mockUserTelegramID1,
               recipientWallet: mockWallet,
               tokenAmount: '100',
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               transactionHash: null,
               userOpHash: null,
             },
@@ -1826,7 +2002,7 @@ describe('handleNewTransaction function', async function () {
           recipientTgId: mockUserTelegramID1,
           recipientWallet: mockWallet,
           tokenAmount: '100',
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           dateAdded: new Date(Date.now() - 12 * 60 * 1000),
         });
 
@@ -1886,7 +2062,7 @@ describe('handleNewTransaction function', async function () {
               recipientTgId: mockUserTelegramID1,
               recipientWallet: mockWallet,
               tokenAmount: '100',
-              status: TRANSACTION_STATUS.FAILURE,
+              status: TransactionStatus.FAILURE,
               transactionHash: null,
               userOpHash: null,
             },

@@ -31,6 +31,7 @@ import {
   getCollectionTransfersMock,
   getCollectionUsersMock,
   getCollectionRewardsMock,
+  mockChainId,
 } from './utils';
 import Sinon from 'sinon';
 import axios from 'axios';
@@ -43,16 +44,17 @@ import {
   PATCHWALLET_RESOLVER_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
-  TRANSACTION_STATUS,
+  TransactionStatus,
 } from '../utils/constants';
 import {
   FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK,
+  FLOWXO_WEBHOOK_API_KEY,
   G1_POLYGON_ADDRESS,
   SOURCE_TG_ID,
 } from '../../secrets';
 import { handleReferralReward } from '../webhooks/referral-reward';
 import * as web3 from '../utils/web3';
-import { Collection, Document } from 'mongodb';
+import { ContractStub } from '../types/tests.types';
 
 chai.use(chaiExclude);
 
@@ -60,10 +62,10 @@ describe('handleReferralReward function', function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
   let rewardId: string;
-  let collectionTransfersMock: Collection<Document>;
-  let collectionUsersMock: Collection<Document>;
-  let collectionRewardsMock: Collection<Document>;
-  let contractStub: { methods: any };
+  let collectionTransfersMock;
+  let collectionUsersMock;
+  let collectionRewardsMock;
+  let contractStub: ContractStub;
   let getContract;
 
   beforeEach(async function () {
@@ -193,7 +195,7 @@ describe('handleReferralReward function', function () {
       chai.expect(result).to.be.true;
     });
 
-    it('Should not send any tokens if No transactions are eligible for a reward', async function () {
+    it('Should not send tokens if No transactions are eligible for a reward', async function () {
       await handleReferralReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
@@ -277,14 +279,14 @@ describe('handleReferralReward function', function () {
           reason: '2x_reward',
           parentTransactionHash: mockTransactionHash,
           userTelegramID: mockUserTelegramID1,
-          status: TRANSACTION_STATUS.SUCCESS,
+          status: TransactionStatus.SUCCESS,
         },
         {
           eventId: rewardId,
           reason: '2x_reward',
           parentTransactionHash: mockTransactionHash1,
           userTelegramID: mockUserTelegramID2,
-          status: TRANSACTION_STATUS.SUCCESS,
+          status: TransactionStatus.SUCCESS,
         },
       ]);
     });
@@ -302,7 +304,7 @@ describe('handleReferralReward function', function () {
       chai.expect(result).to.be.true;
     });
 
-    it('Should not send any tokens if The transaction is already rewarded with the same eventId', async function () {
+    it('Should not send tokens if The transaction is already rewarded with the same eventId', async function () {
       await handleReferralReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
@@ -336,14 +338,14 @@ describe('handleReferralReward function', function () {
             reason: '2x_reward',
             parentTransactionHash: mockTransactionHash,
             userTelegramID: mockUserTelegramID1,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
           },
           {
             eventId: rewardId,
             reason: '2x_reward',
             parentTransactionHash: mockTransactionHash1,
             userTelegramID: mockUserTelegramID2,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
           },
         ]);
     });
@@ -429,7 +431,7 @@ describe('handleReferralReward function', function () {
       chai.expect(result).to.be.true;
     });
 
-    it('Should not send any tokens if The transaction is already rewarded with another eventId', async function () {
+    it('Should not send tokens if The transaction is already rewarded with another eventId', async function () {
       await handleReferralReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
@@ -554,7 +556,7 @@ describe('handleReferralReward function', function () {
       chai.expect(result).to.be.true;
     });
 
-    it('Should not send any tokens if The transaction is already rewarded with no eventId', async function () {
+    it('Should not send tokens if The transaction is already rewarded with no eventId', async function () {
       await handleReferralReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
@@ -667,21 +669,21 @@ describe('handleReferralReward function', function () {
           reason: '2x_reward',
           userTelegramID: mockUserTelegramID1,
           parentTransactionHash: mockTransactionHash,
-          status: TRANSACTION_STATUS.PENDING,
+          status: TransactionStatus.PENDING,
         },
         {
           eventId: rewardId,
           reason: '2x_reward',
           userTelegramID: mockUserTelegramID1,
           parentTransactionHash: mockTransactionHash,
-          status: TRANSACTION_STATUS.PENDING,
+          status: TransactionStatus.PENDING,
         },
         {
           eventId: rewardId,
           reason: '2x_reward',
           userTelegramID: mockUserTelegramID2,
           parentTransactionHash: mockTransactionHash1,
-          status: TRANSACTION_STATUS.PENDING,
+          status: TransactionStatus.PENDING,
         },
       ]);
     });
@@ -708,7 +710,7 @@ describe('handleReferralReward function', function () {
         userName: mockUserName,
         patchwallet: mockWallet,
         tokenAddress: mockTokenAddress,
-        chainName: mockChainName,
+        chainId: mockChainId,
       });
 
       const sendTokensCalls = axiosStub
@@ -757,7 +759,7 @@ describe('handleReferralReward function', function () {
             message: 'Referral reward',
             transactionHash: mockTransactionHash,
             parentTransactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             newUserAddress: mockWallet,
             userOpHash: null,
           },
@@ -766,14 +768,14 @@ describe('handleReferralReward function', function () {
             reason: '2x_reward',
             userTelegramID: mockUserTelegramID1,
             parentTransactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
           },
           {
             eventId: rewardId,
             reason: '2x_reward',
             userTelegramID: mockUserTelegramID2,
             parentTransactionHash: mockTransactionHash1,
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
           },
         ]);
       chai
@@ -816,6 +818,7 @@ describe('handleReferralReward function', function () {
           message: 'Referral reward',
           transactionHash: mockTransactionHash,
           parentTransactionHash: mockTransactionHash,
+          apiKey: FLOWXO_WEBHOOK_API_KEY,
         });
       chai
         .expect(flowXOCalls[0].args[1].dateAdded)
@@ -871,7 +874,7 @@ describe('handleReferralReward function', function () {
           reason: '2x_reward',
           userTelegramID: mockUserTelegramID1,
           parentTransactionHash: mockTransactionHash,
-          status: TRANSACTION_STATUS.FAILURE,
+          status: TransactionStatus.FAILURE,
           newUserAddress: mockWallet,
         },
         {
@@ -879,7 +882,7 @@ describe('handleReferralReward function', function () {
           reason: '2x_reward',
           userTelegramID: mockUserTelegramID1,
           parentTransactionHash: mockTransactionHash,
-          status: TRANSACTION_STATUS.FAILURE,
+          status: TransactionStatus.FAILURE,
           newUserAddress: mockWallet,
         },
         {
@@ -887,7 +890,7 @@ describe('handleReferralReward function', function () {
           reason: '2x_reward',
           userTelegramID: mockUserTelegramID2,
           parentTransactionHash: mockTransactionHash1,
-          status: TRANSACTION_STATUS.FAILURE,
+          status: TransactionStatus.FAILURE,
         },
       ]);
     });
@@ -961,7 +964,7 @@ describe('handleReferralReward function', function () {
             message: 'Referral reward',
             transactionHash: mockTransactionHash,
             parentTransactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             newUserAddress: mockWallet,
             userOpHash: null,
           },
@@ -970,7 +973,7 @@ describe('handleReferralReward function', function () {
             reason: '2x_reward',
             userTelegramID: mockUserTelegramID1,
             parentTransactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.FAILURE,
+            status: TransactionStatus.FAILURE,
             newUserAddress: mockWallet,
           },
           {
@@ -978,7 +981,7 @@ describe('handleReferralReward function', function () {
             reason: '2x_reward',
             userTelegramID: mockUserTelegramID2,
             parentTransactionHash: mockTransactionHash1,
-            status: TRANSACTION_STATUS.FAILURE,
+            status: TransactionStatus.FAILURE,
           },
         ]);
       chai
@@ -1021,6 +1024,7 @@ describe('handleReferralReward function', function () {
           message: 'Referral reward',
           transactionHash: mockTransactionHash,
           parentTransactionHash: mockTransactionHash,
+          apiKey: FLOWXO_WEBHOOK_API_KEY,
         });
       chai
         .expect(flowXOCalls[0].args[1].dateAdded)
@@ -1176,7 +1180,7 @@ describe('handleReferralReward function', function () {
             message: 'Referral reward',
             transactionHash: mockTransactionHash,
             parentTransactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             newUserAddress: mockWallet,
             userOpHash: null,
           },
@@ -1221,6 +1225,7 @@ describe('handleReferralReward function', function () {
           message: 'Referral reward',
           transactionHash: mockTransactionHash,
           parentTransactionHash: mockTransactionHash,
+          apiKey: FLOWXO_WEBHOOK_API_KEY,
         });
       chai
         .expect(flowXOCalls[0].args[1].dateAdded)
@@ -1305,7 +1310,7 @@ describe('handleReferralReward function', function () {
             message: 'Referral reward',
             transactionHash: mockTransactionHash,
             parentTransactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             newUserAddress: mockWallet,
             userOpHash: null,
           },
@@ -1427,7 +1432,7 @@ describe('handleReferralReward function', function () {
             message: 'Referral reward',
             transactionHash: mockTransactionHash,
             parentTransactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             newUserAddress: mockWallet,
             userOpHash: null,
           },
@@ -1472,6 +1477,7 @@ describe('handleReferralReward function', function () {
           message: 'Referral reward',
           transactionHash: mockTransactionHash,
           parentTransactionHash: mockTransactionHash,
+          apiKey: FLOWXO_WEBHOOK_API_KEY,
         });
       chai
         .expect(flowXOCalls[0].args[1].dateAdded)
@@ -1592,7 +1598,7 @@ describe('handleReferralReward function', function () {
             message: 'Referral reward',
             transactionHash: mockTransactionHash,
             parentTransactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             newUserAddress: mockWallet,
             userOpHash: null,
           },
@@ -1637,6 +1643,7 @@ describe('handleReferralReward function', function () {
           message: 'Referral reward',
           transactionHash: mockTransactionHash,
           parentTransactionHash: mockTransactionHash,
+          apiKey: FLOWXO_WEBHOOK_API_KEY,
         });
       chai
         .expect(flowXOCalls[0].args[1].dateAdded)
@@ -1780,7 +1787,7 @@ describe('handleReferralReward function', function () {
             amount: '50',
             message: 'Referral reward',
             parentTransactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             newUserAddress: mockWallet,
             transactionHash: null,
             userOpHash: null,
@@ -1901,7 +1908,7 @@ describe('handleReferralReward function', function () {
             amount: '50',
             message: 'Referral reward',
             parentTransactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             newUserAddress: mockWallet,
             transactionHash: null,
             userOpHash: null,
@@ -2026,7 +2033,7 @@ describe('handleReferralReward function', function () {
               amount: '50',
               message: 'Referral reward',
               parentTransactionHash: mockTransactionHash,
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               newUserAddress: mockWallet,
               transactionHash: null,
@@ -2117,7 +2124,7 @@ describe('handleReferralReward function', function () {
             userName: mockUserName1,
             amount: '50',
             message: 'Referral reward',
-            status: TRANSACTION_STATUS.PENDING_HASH,
+            status: TransactionStatus.PENDING_HASH,
             userOpHash: mockUserOpHash1,
             parentTransactionHash: mockTransactionHash,
           },
@@ -2170,7 +2177,7 @@ describe('handleReferralReward function', function () {
               userName: mockUserName1,
               amount: '50',
               message: 'Referral reward',
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               userOpHash: mockUserOpHash1,
               transactionHash: mockTransactionHash,
               parentTransactionHash: mockTransactionHash,
@@ -2210,6 +2217,7 @@ describe('handleReferralReward function', function () {
             message: 'Referral reward',
             transactionHash: mockTransactionHash,
             parentTransactionHash: mockTransactionHash,
+            apiKey: FLOWXO_WEBHOOK_API_KEY,
           });
         chai
           .expect(flowXOCalls[0].args[1].dateAdded)
@@ -2288,7 +2296,7 @@ describe('handleReferralReward function', function () {
             userName: mockUserName1,
             amount: '50',
             message: 'Referral reward',
-            status: TRANSACTION_STATUS.PENDING_HASH,
+            status: TransactionStatus.PENDING_HASH,
             userOpHash: mockUserOpHash,
             parentTransactionHash: mockTransactionHash,
           },
@@ -2347,7 +2355,7 @@ describe('handleReferralReward function', function () {
               userName: mockUserName1,
               amount: '50',
               message: 'Referral reward',
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               parentTransactionHash: mockTransactionHash,
               newUserAddress: mockWallet,
@@ -2440,7 +2448,7 @@ describe('handleReferralReward function', function () {
             userName: mockUserName1,
             amount: '50',
             message: 'Referral reward',
-            status: TRANSACTION_STATUS.PENDING_HASH,
+            status: TransactionStatus.PENDING_HASH,
             userOpHash: mockUserOpHash,
             parentTransactionHash: mockTransactionHash,
           },
@@ -2496,7 +2504,7 @@ describe('handleReferralReward function', function () {
               userName: mockUserName1,
               amount: '50',
               message: 'Referral reward',
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               parentTransactionHash: mockTransactionHash,
             },
@@ -2587,7 +2595,7 @@ describe('handleReferralReward function', function () {
             userName: mockUserName1,
             amount: '50',
             message: 'Referral reward',
-            status: TRANSACTION_STATUS.PENDING_HASH,
+            status: TransactionStatus.PENDING_HASH,
             parentTransactionHash: mockTransactionHash,
           },
         ]);
@@ -2639,7 +2647,7 @@ describe('handleReferralReward function', function () {
               userName: mockUserName1,
               amount: '50',
               message: 'Referral reward',
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               parentTransactionHash: mockTransactionHash,
               newUserAddress: mockWallet,
               transactionHash: null,
@@ -2732,7 +2740,7 @@ describe('handleReferralReward function', function () {
             userName: mockUserName1,
             amount: '50',
             message: 'Referral reward',
-            status: TRANSACTION_STATUS.PENDING_HASH,
+            status: TransactionStatus.PENDING_HASH,
             userOpHash: mockUserOpHash,
             parentTransactionHash: mockTransactionHash,
             dateAdded: new Date(Date.now() - 12 * 60 * 1000),
@@ -2792,7 +2800,7 @@ describe('handleReferralReward function', function () {
               userName: mockUserName1,
               amount: '50',
               message: 'Referral reward',
-              status: TRANSACTION_STATUS.FAILURE,
+              status: TransactionStatus.FAILURE,
               userOpHash: mockUserOpHash,
               parentTransactionHash: mockTransactionHash,
               newUserAddress: mockWallet,

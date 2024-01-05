@@ -23,7 +23,7 @@ export function getContract(
     throw new Error('Invalid chain: ' + chainId);
   }
 
-  return new new Web3(CHAIN_MAPPING[chainId][1]).eth.Contract(
+  return new new Web3(CHAIN_MAPPING[chainId].endpoint[1]).eth.Contract(
     ERC20 as AbiItem[],
     tokenAddress,
   );
@@ -35,6 +35,7 @@ export function getContract(
  * @returns {string} - String representation of the input value.
  * @throws {Error} - Throws an error for invalid number values or types.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function numberToString(arg: any): string {
   if (typeof arg === 'string') {
     if (!arg.match(/^-?[0-9.]+$/)) {

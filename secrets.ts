@@ -16,8 +16,8 @@ async function getSecretVersion(secretName: string): Promise<string | null> {
     });
 
     // Extract the secret's content
-    const secretValue = version.payload.data.toString();
-    return secretValue;
+    const secretValue = version?.payload?.data?.toString();
+    return secretValue || '';
   } catch (err) {
     console.error(`Error retrieving the secret: ${err}`);
     return null; // Returns null in case of an error
@@ -81,7 +81,9 @@ export const CHAINSTACK_API_KEY_2 = process.env.CHAINSTACK_API_KEY_2 || '';
  */
 export async function getBotToken(): Promise<string> {
   return (
-    (await getSecret(process.env.BOT_TOKEN_NAME)) || process.env.BOT_TOKEN || ''
+    (await getSecret(process.env.BOT_TOKEN_NAME || '')) ||
+    process.env.BOT_TOKEN ||
+    ''
   );
 }
 
@@ -90,7 +92,9 @@ export async function getBotToken(): Promise<string> {
  */
 export async function getClientId(): Promise<string> {
   return (
-    (await getSecret(process.env.CLIENT_ID_NAME)) || process.env.CLIENT_ID || ''
+    (await getSecret(process.env.CLIENT_ID_NAME || '')) ||
+    process.env.CLIENT_ID ||
+    ''
   );
 }
 
@@ -99,7 +103,7 @@ export async function getClientId(): Promise<string> {
  */
 export async function getClientSecret(): Promise<string> {
   return (
-    (await getSecret(process.env.CLIENT_SECRET_NAME)) ||
+    (await getSecret(process.env.CLIENT_SECRET_NAME || '')) ||
     process.env.CLIENT_SECRET ||
     ''
   );
@@ -110,7 +114,9 @@ export async function getClientSecret(): Promise<string> {
  */
 export async function getApiKey(): Promise<string> {
   return (
-    (await getSecret(process.env.API_KEY_NAME)) || process.env.API_KEY || ''
+    (await getSecret(process.env.API_KEY_NAME || '')) ||
+    process.env.API_KEY ||
+    ''
   );
 }
 
@@ -124,7 +130,9 @@ export const API_KEY_LINEA = process.env.API_KEY_LINEA || '';
  */
 export async function getAtlasUri(): Promise<string> {
   return (
-    (await getSecret(process.env.ATLAS_URI_NAME)) || process.env.ATLAS_URI || ''
+    (await getSecret(process.env.ATLAS_URI_NAME || '')) ||
+    process.env.ATLAS_URI ||
+    ''
   );
 }
 
@@ -222,18 +230,6 @@ export const FLOWXO_NEW_SWAP_WEBHOOK =
   process.env.FLOWXO_NEW_SWAP_WEBHOOK || '';
 
 /**
- * The Airtable base ID used for something.
- * Fallback: an empty string if not defined in the environment.
- */
-export const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID || '';
-
-/**
- * The Airtable API key used for something.
- * Fallback: an empty string if not defined in the environment.
- */
-export const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY || '';
-
-/**
  * The Segment write key used for something.
  * Fallback: an empty string if not defined in the environment.
  */
@@ -310,3 +306,9 @@ export const PRODUCTION_ENV = process.env.PRODUCTION_ENV || '';
  */
 export const GRINDERY_NEXUS_REFRESH_TOKEN =
   process.env.GRINDERY_NEXUS_REFRESH_TOKEN || '';
+
+/**
+ * FlowXO Webhook api key
+ * Fallback: an empty string if not defined in the environment.
+ */
+export const FLOWXO_WEBHOOK_API_KEY = process.env.FLOWXO_WEBHOOK_API_KEY || '';

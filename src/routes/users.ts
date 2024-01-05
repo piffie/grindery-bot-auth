@@ -1,9 +1,8 @@
 import express from 'express';
 import { Database } from '../db/conn';
 import { authenticateApiKey } from '../utils/auth';
-import { USERS_COLLECTION } from '../utils/constants';
+import { ANKR_MULTICHAIN_API_URL, USERS_COLLECTION } from '../utils/constants';
 import axios from 'axios';
-import { ANKR_KEY } from '../../secrets';
 
 const router = express.Router();
 
@@ -39,7 +38,7 @@ router.post('/attributes', authenticateApiKey, async (req, res) => {
     }));
 
     const result = await db
-      .collection(USERS_COLLECTION)
+      ?.collection(USERS_COLLECTION)
       .bulkWrite(bulkOperations);
 
     return res.status(200).send({
@@ -64,7 +63,7 @@ router.get('/attributes', authenticateApiKey, async (req, res) => {
 
     const db = await Database.getInstance();
     const user = await db
-      .collection(USERS_COLLECTION)
+      ?.collection(USERS_COLLECTION)
       .findOne({ userTelegramID });
 
     return res.status(200).send({
@@ -83,7 +82,7 @@ router.get('/balance', authenticateApiKey, async (req, res) => {
     const db = await Database.getInstance();
 
     const user = await db
-      .collection(USERS_COLLECTION)
+      ?.collection(USERS_COLLECTION)
       .findOne({ userTelegramID: req.query.userTelegramID });
 
     if (!user) {
@@ -91,7 +90,7 @@ router.get('/balance', authenticateApiKey, async (req, res) => {
     }
 
     const balance = await axios.post(
-      `https://rpc.ankr.com/multichain/${ANKR_KEY}`,
+      ANKR_MULTICHAIN_API_URL,
       {
         jsonrpc: '2.0',
         method: 'ankr_getAccountBalance',

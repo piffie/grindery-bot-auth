@@ -25,13 +25,17 @@ import {
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
   SEGMENT_TRACK_URL,
-  TRANSACTION_STATUS,
+  TransactionStatus,
 } from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
-import { FLOWXO_NEW_VESTING_WEBHOOK, G1_POLYGON_ADDRESS } from '../../secrets';
+import {
+  FLOWXO_NEW_VESTING_WEBHOOK,
+  FLOWXO_WEBHOOK_API_KEY,
+  G1_POLYGON_ADDRESS,
+} from '../../secrets';
 import * as web3 from '../utils/web3';
-import { Collection, Document } from 'mongodb';
 import { handleNewVesting } from '../webhooks/vesting';
+import { ContractStub } from '../types/tests.types';
 
 chai.use(chaiExclude);
 
@@ -39,9 +43,9 @@ describe('handleNewVesting function', async function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
   let txId: string;
-  let collectionUsersMock: Collection<Document>;
-  let collectionVestingsMock: Collection<Document>;
-  let contractStub: { methods: any };
+  let collectionUsersMock;
+  let collectionVestingsMock;
+  let contractStub: ContractStub;
   let getContract;
 
   beforeEach(async function () {
@@ -154,7 +158,6 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
         chainId: mockChainId,
         tokenAddress: mockTokenAddress,
-        chainName: mockChainName,
       });
 
       const transfers = await collectionVestingsMock.find({}).toArray();
@@ -177,7 +180,7 @@ describe('handleNewVesting function', async function () {
               { recipientAddress: mockWallet1, amount: '15' },
             ],
             transactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             userOpHash: null,
           },
         ]);
@@ -281,6 +284,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet1, amount: '15' },
           ],
           transactionHash: mockTransactionHash,
+          apiKey: FLOWXO_WEBHOOK_API_KEY,
         });
     });
   });
@@ -306,7 +310,6 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
         chainId: mockChainId,
         tokenAddress: mockTokenAddress,
-        chainName: mockChainName,
       });
 
       const transfers = await collectionVestingsMock.find({}).toArray();
@@ -329,7 +332,7 @@ describe('handleNewVesting function', async function () {
               { recipientAddress: mockWallet1, amount: '15' },
             ],
             transactionHash: mockTransactionHash,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             userOpHash: null,
           },
         ]);
@@ -376,7 +379,7 @@ describe('handleNewVesting function', async function () {
 
       await collectionVestingsMock.insertOne({
         eventId: txId,
-        status: TRANSACTION_STATUS.SUCCESS,
+        status: TransactionStatus.SUCCESS,
       });
     });
 
@@ -424,7 +427,7 @@ describe('handleNewVesting function', async function () {
         .to.deep.equal([
           {
             eventId: txId,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
           },
         ]);
     });
@@ -473,7 +476,7 @@ describe('handleNewVesting function', async function () {
 
       await collectionVestingsMock.insertOne({
         eventId: txId,
-        status: TRANSACTION_STATUS.FAILURE,
+        status: TransactionStatus.FAILURE,
       });
     });
 
@@ -521,7 +524,7 @@ describe('handleNewVesting function', async function () {
         .to.deep.equal([
           {
             eventId: txId,
-            status: TRANSACTION_STATUS.FAILURE,
+            status: TransactionStatus.FAILURE,
           },
         ]);
     });
@@ -615,7 +618,7 @@ describe('handleNewVesting function', async function () {
               { recipientAddress: mockWallet, amount: '100' },
               { recipientAddress: mockWallet1, amount: '15' },
             ],
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
           },
@@ -819,7 +822,7 @@ describe('handleNewVesting function', async function () {
               { recipientAddress: mockWallet, amount: '100' },
               { recipientAddress: mockWallet1, amount: '15' },
             ],
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
           },
@@ -916,7 +919,7 @@ describe('handleNewVesting function', async function () {
               { recipientAddress: mockWallet, amount: '100' },
               { recipientAddress: mockWallet1, amount: '15' },
             ],
-            status: TRANSACTION_STATUS.FAILURE,
+            status: TransactionStatus.FAILURE,
             transactionHash: null,
             userOpHash: null,
           },
@@ -1013,7 +1016,7 @@ describe('handleNewVesting function', async function () {
               { recipientAddress: mockWallet, amount: '100' },
               { recipientAddress: mockWallet1, amount: '15' },
             ],
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
           },
@@ -1112,7 +1115,7 @@ describe('handleNewVesting function', async function () {
                 { recipientAddress: mockWallet, amount: '100' },
                 { recipientAddress: mockWallet1, amount: '15' },
               ],
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
             },
@@ -1160,7 +1163,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
       });
@@ -1220,7 +1223,7 @@ describe('handleNewVesting function', async function () {
                 { recipientAddress: mockWallet, amount: '100' },
                 { recipientAddress: mockWallet1, amount: '15' },
               ],
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               userOpHash: mockUserOpHash,
               transactionHash: mockTransactionHash,
             },
@@ -1258,6 +1261,7 @@ describe('handleNewVesting function', async function () {
               { recipientAddress: mockWallet1, amount: '15' },
             ],
             transactionHash: mockTransactionHash,
+            apiKey: FLOWXO_WEBHOOK_API_KEY,
           });
 
         chai
@@ -1290,7 +1294,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -1357,7 +1361,7 @@ describe('handleNewVesting function', async function () {
                 { recipientAddress: mockWallet, amount: '100' },
                 { recipientAddress: mockWallet1, amount: '15' },
               ],
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
             },
@@ -1405,7 +1409,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -1469,7 +1473,7 @@ describe('handleNewVesting function', async function () {
                 { recipientAddress: mockWallet, amount: '100' },
                 { recipientAddress: mockWallet1, amount: '15' },
               ],
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
             },
           ]);
@@ -1516,7 +1520,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -1582,7 +1586,7 @@ describe('handleNewVesting function', async function () {
                 { recipientAddress: mockWallet, amount: '100' },
                 { recipientAddress: mockWallet1, amount: '15' },
               ],
-              status: TRANSACTION_STATUS.FAILURE,
+              status: TransactionStatus.FAILURE,
               userOpHash: mockUserOpHash,
               transactionHash: null,
             },
@@ -1630,7 +1634,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
         });
       });
 
@@ -1689,7 +1693,7 @@ describe('handleNewVesting function', async function () {
                 { recipientAddress: mockWallet, amount: '100' },
                 { recipientAddress: mockWallet1, amount: '15' },
               ],
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               transactionHash: null,
               userOpHash: null,
             },
@@ -1737,7 +1741,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           dateAdded: new Date(Date.now() - 12 * 60 * 1000),
         });
 
@@ -1804,7 +1808,7 @@ describe('handleNewVesting function', async function () {
                 { recipientAddress: mockWallet, amount: '100' },
                 { recipientAddress: mockWallet1, amount: '15' },
               ],
-              status: TRANSACTION_STATUS.FAILURE,
+              status: TransactionStatus.FAILURE,
               transactionHash: null,
               userOpHash: null,
             },

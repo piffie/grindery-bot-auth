@@ -7,7 +7,6 @@ import {
 import { getContract, scaleDecimals } from './web3';
 import {
   DEFAULT_CHAIN_ID,
-  DEFAULT_CHAIN_NAME,
   HEDGEY_BATCHPLANNER_ADDRESS,
   PATCHWALLET_AUTH_URL,
   PATCHWALLET_RESOLVER_URL,
@@ -16,9 +15,9 @@ import {
   nativeTokenAddresses,
 } from './constants';
 import { PatchRawResult } from '../types/webhook.types';
-import { CHAIN_NAME_MAPPING } from './chains';
 import { HedgeyRecipientParams } from '../types/hedgey.types';
 import { getData, getPlans } from './vesting';
+import { CHAIN_MAPPING } from './chains';
 
 /**
  * Retrieves the Patch Wallet access token by making a POST request to the authentication endpoint.
@@ -69,7 +68,6 @@ export async function getPatchWalletAddressFromTgId(
  * @param {string} amountEther - Amount of tokens to send.
  * @param {string} patchWalletAccessToken - Access token for Patch Wallet API.
  * @param {string} tokenAddress - Token address (default: G1_POLYGON_ADDRESS).
- * @param {string} chainName - Name of the blockchain (default: 'matic').
  * @param {string} chainId - ID of the blockchain (default: 'eip155:137').
  * @returns {Promise<axios.AxiosResponse<PatchRawResult, AxiosError>>} - Promise resolving to the response from the PayMagic API.
  */
@@ -80,49 +78,35 @@ export async function sendTokens(
   patchWalletAccessToken: string,
   delegatecall: 0 | 1,
   tokenAddress: string = G1_POLYGON_ADDRESS,
-  chainName: string = DEFAULT_CHAIN_NAME,
   chainId: string = DEFAULT_CHAIN_ID,
 ): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   // Determine data, value, and address based on the token type
   const [data, value, address] = nativeTokenAddresses.includes(tokenAddress)
-    ? [['0x'], [scaleDecimals(amountEther, 18)], recipientwallet]
+    ? ['0x', scaleDecimals(amountEther, 18), recipientwallet]
     : [
-        [
-          getContract(chainId, tokenAddress)
-            .methods['transfer'](
-              recipientwallet,
-              scaleDecimals(
-                amountEther,
-                await getContract(chainId, tokenAddress)
-                  .methods.decimals()
-                  .call(),
-              ),
-            )
-            .encodeABI(),
-        ],
-        ['0x00'],
+        getContract(chainId, tokenAddress)
+          .methods['transfer'](
+            recipientwallet,
+            scaleDecimals(
+              amountEther,
+              await getContract(chainId, tokenAddress)
+                .methods.decimals()
+                .call(),
+            ),
+          )
+          .encodeABI(),
+        '0x00',
         tokenAddress,
       ];
-
   // Send the tokens using PayMagic API
-  return await axios.post(
-    PATCHWALLET_TX_URL,
-    {
-      userId: `grindery:${senderTgId}`,
-      chain: chainName,
-      to: [address],
-      value: value,
-      data: data,
-      delegatecall,
-      auth: '',
-    },
-    {
-      timeout: 100000,
-      headers: {
-        Authorization: `Bearer ${patchWalletAccessToken}`,
-        'Content-Type': 'application/json',
-      },
-    },
+  return await callPatchWalletTx(
+    senderTgId,
+    chainId,
+    address,
+    value,
+    data,
+    delegatecall,
+    patchWalletAccessToken,
   );
 }
 
@@ -132,12 +116,12 @@ export async function sendTokens(
  * @returns {Promise<axios.AxiosResponse<PatchRawResult, AxiosError>>} - Promise resolving to the response from the PayMagic API.
  */
 export async function getTxStatus(
-  userOpHash: string,
+  userOpHash: string | undefined,
 ): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   return await axios.post(
     PATCHWALLET_TX_STATUS_URL,
     {
-      userOpHash: userOpHash,
+      userOpHash: userOpHash || '',
     },
     {
       timeout: 100000,
@@ -163,30 +147,18 @@ export async function swapTokens(
   to: string,
   value: string,
   data: string,
-  chainId: string,
+  chainIn: string,
   patchWalletAccessToken: string,
   delegatecall: 0 | 1,
 ): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
-  return await axios.post(
-    PATCHWALLET_TX_URL,
-    {
-      userId: `grindery:${userTelegramID}`,
-      chain: chainId
-        ? CHAIN_NAME_MAPPING[chainId]
-        : CHAIN_NAME_MAPPING[DEFAULT_CHAIN_ID],
-      to: [to],
-      value: [value],
-      data: [data],
-      delegatecall,
-      auth: '',
-    },
-    {
-      timeout: 100000,
-      headers: {
-        Authorization: `Bearer ${patchWalletAccessToken}`,
-        'Content-Type': 'application/json',
-      },
-    },
+  return await callPatchWalletTx(
+    userTelegramID,
+    chainIn,
+    to,
+    value,
+    data,
+    delegatecall,
+    patchWalletAccessToken,
   );
 }
 
@@ -196,37 +168,69 @@ export async function swapTokens(
  * @param {string} recipients - Array of Recipients.
  * @param {string} patchWalletAccessToken - Access token for Patch Wallet API.
  * @param {string} tokenAddress - Token address (default: G1_POLYGON_ADDRESS).
- * @param {string} chainName - Name of the blockchain (default: 'matic').
  * @param {string} chainId - ID of the blockchain (default: 'eip155:137').
  * @returns {Promise<axios.AxiosResponse<PatchRawResult, AxiosError>>} - Promise resolving to the response from the PayMagic API.
  */
 export async function hedgeyLockTokens(
-  senderTgId: string,
+  senderTgId: string | undefined,
   recipients: HedgeyRecipientParams[],
   patchWalletAccessToken: string,
   useVesting: boolean = false,
   tokenAddress: string = G1_POLYGON_ADDRESS,
-  chainName: string = DEFAULT_CHAIN_NAME,
   chainId: string = DEFAULT_CHAIN_ID,
 ): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
-  const plans = await getPlans(recipients);
+  const { totalAmount, plans } = await getPlans(recipients);
 
   // Lock the tokens using PayMagic API
+  return await callPatchWalletTx(
+    senderTgId || '',
+    chainId,
+    HEDGEY_BATCHPLANNER_ADDRESS,
+    '0x00',
+    await getData(useVesting, chainId, tokenAddress, totalAmount, plans),
+    0,
+    patchWalletAccessToken,
+  );
+}
+
+/**
+ * Initiates a token transaction or operation using the PayMagic API for the Patch Wallet.
+ * Constructs and sends a POST request to PATCHWALLET_TX_URL, facilitating various token-related operations.
+ * Operations include token transfers, swaps, locking tokens, etc.
+ *
+ * @param {string} userTelegramID - The Telegram ID of the user initiating the transaction.
+ * @param {string} chainId - ID of the blockchain for the transaction (default: 'eip155:137').
+ * @param {string} to - Destination address for the transaction.
+ * @param {string} value - Value or amount to be transferred or processed.
+ * @param {string} data - Data payload associated with the transaction.
+ * @param {number} delegatecall - Indicator for delegate call (0 or 1).
+ * @param {string} patchWalletAccessToken - Access token for Patch Wallet API authentication.
+ * @returns {Promise<AxiosResponse<PatchRawResult, AxiosError>>} - A Promise resolving to the response from the PayMagic API.
+ *
+ * @throws {Error} - Throws an error if there's an issue with the request or authentication process.
+ * This function acts as a versatile utility for interacting with the Patch Wallet API,
+ * enabling diverse token-related operations through PayMagic's endpoints.
+ */
+async function callPatchWalletTx(
+  userTelegramID: string,
+  chainId: string,
+  to: string,
+  value: string,
+  data: string,
+  delegatecall: number,
+  patchWalletAccessToken: string,
+): Promise<axios.AxiosResponse<PatchRawResult, AxiosError>> {
   return await axios.post(
     PATCHWALLET_TX_URL,
     {
-      userId: `grindery:${senderTgId}`,
-      chain: chainName,
-      to: [HEDGEY_BATCHPLANNER_ADDRESS],
-      value: ['0x00'],
-      data: await getData(
-        useVesting,
-        chainId,
-        tokenAddress,
-        plans.totalAmount,
-        plans.plans,
-      ),
-      delegatecall: 0,
+      userId: `grindery:${userTelegramID}`,
+      chain: chainId
+        ? CHAIN_MAPPING[chainId].name_patch
+        : CHAIN_MAPPING[DEFAULT_CHAIN_ID].name_patch,
+      to: [to],
+      value: [value],
+      data: [data],
+      delegatecall: delegatecall,
       auth: '',
     },
     {

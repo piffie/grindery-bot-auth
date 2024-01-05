@@ -1,21 +1,21 @@
 import axios, { AxiosError } from 'axios';
 import { SEGMENT_KEY } from '../../secrets';
 import { SEGMENT_IDENTITY_URL, SEGMENT_TRACK_URL } from './constants';
-import { HedgeyRecipientParams } from '../types/hedgey.types';
+import { VestingSegmentParams } from '../types/hedgey.types';
+import {
+  IdentitySegmentParams,
+  TrackSegmentParams,
+  TrackSwapSegmentParams,
+} from '../types/webhook.types';
 
 /**
  * Adds an identity segment using the provided user data.
  * @param user The user data to identify and add to the segment.
  * @returns A Promise resolving to an AxiosResponse.
  */
-export async function addIdentitySegment(user: {
-  userTelegramID: string;
-  responsePath: string;
-  userHandle: string;
-  userName: string;
-  patchwallet: string;
-  dateAdded: Date;
-}): Promise<axios.AxiosResponse<any, AxiosError>> {
+export async function addIdentitySegment(
+  user: IdentitySegmentParams,
+): Promise<axios.AxiosResponse<unknown, AxiosError>> {
   return await axios.post(
     SEGMENT_IDENTITY_URL,
     {
@@ -42,38 +42,25 @@ export async function addIdentitySegment(user: {
  * @param params The parameters for the transfer event to track.
  * @returns A Promise resolving to an AxiosResponse.
  */
-export async function addTrackSegment(params: {
-  userTelegramID: string;
-  senderTgId: string;
-  senderWallet: string;
-  senderName: string;
-  senderHandle: string;
-  recipientTgId: string;
-  recipientWallet: string;
-  tokenAmount: string;
-  transactionHash: string;
-  dateAdded: Date;
-  eventId: string;
-  tokenSymbol: string;
-  tokenAddress: string;
-  chainId: string;
-}): Promise<axios.AxiosResponse<any, AxiosError>> {
+export async function addTrackSegment(
+  params: TrackSegmentParams,
+): Promise<axios.AxiosResponse<unknown, AxiosError>> {
   return await axios.post(
     SEGMENT_TRACK_URL,
     {
-      userId: params.userTelegramID,
+      userId: params.senderTgId,
       event: 'Transfer',
       properties: {
         chainId: params.chainId,
         tokenSymbol: params.tokenSymbol,
         tokenAddress: params.tokenAddress,
         senderTgId: params.senderTgId,
-        senderWallet: params.senderWallet,
-        senderHandle: params.senderHandle,
-        senderName: params.senderName,
+        senderWallet: params.senderInformation?.patchwallet,
+        senderHandle: params.senderInformation?.userHandle,
+        senderName: params.senderInformation?.userName,
         recipientTgId: params.recipientTgId,
         recipientWallet: params.recipientWallet,
-        tokenAmount: params.tokenAmount,
+        tokenAmount: params.amount,
         transactionHash: params.transactionHash,
         eventId: params.eventId,
       },
@@ -93,33 +80,22 @@ export async function addTrackSegment(params: {
  * @param params The parameters for the transfer event to track.
  * @returns A Promise resolving to an AxiosResponse.
  */
-export async function addVestingSegment(params: {
-  userTelegramID: string;
-  senderTgId: string;
-  senderWallet: string;
-  senderName: string;
-  senderHandle: string;
-  recipients: HedgeyRecipientParams[];
-  transactionHash: string;
-  dateAdded: Date;
-  eventId: string;
-  tokenSymbol: string;
-  tokenAddress: string;
-  chainId: string;
-}): Promise<axios.AxiosResponse<any, AxiosError>> {
+export async function addVestingSegment(
+  params: VestingSegmentParams,
+): Promise<axios.AxiosResponse<unknown, AxiosError>> {
   return await axios.post(
     SEGMENT_TRACK_URL,
     {
-      userId: params.userTelegramID,
+      userId: params.senderTgId,
       event: 'Vesting',
       properties: {
         chainId: params.chainId,
         tokenSymbol: params.tokenSymbol,
         tokenAddress: params.tokenAddress,
         senderTgId: params.senderTgId,
-        senderWallet: params.senderWallet,
-        senderHandle: params.senderHandle,
-        senderName: params.senderName,
+        senderWallet: params.senderInformation?.patchwallet,
+        senderHandle: params.senderInformation?.userHandle,
+        senderName: params.senderInformation?.userName,
         recipients: params.recipients,
         transactionHash: params.transactionHash,
         eventId: params.eventId,
@@ -140,27 +116,9 @@ export async function addVestingSegment(params: {
  * @param params The parameters for the swap event to track.
  * @returns A Promise resolving to an AxiosResponse.
  */
-export async function addTrackSwapSegment(params: {
-  eventId: string;
-  chainId: string;
-  userTelegramID: string;
-  userWallet?: string;
-  userName?: string;
-  userHandle?: string;
-  tokenIn: string;
-  amountIn: string;
-  tokenOut: string;
-  amountOut: string;
-  priceImpact: string;
-  gas: string;
-  status: string;
-  transactionHash: string;
-  dateAdded: Date;
-  to: string;
-  from: string;
-  tokenInSymbol: string;
-  tokenOutSymbol: string;
-}): Promise<axios.AxiosResponse<any, AxiosError>> {
+export async function addTrackSwapSegment(
+  params: TrackSwapSegmentParams,
+): Promise<axios.AxiosResponse<unknown, AxiosError>> {
   return await axios.post(
     SEGMENT_TRACK_URL,
     {
@@ -168,7 +126,6 @@ export async function addTrackSwapSegment(params: {
       event: 'Swap',
       properties: {
         eventId: params.eventId,
-        chainId: params.chainId,
         userTelegramID: params.userTelegramID,
         tokenIn: params.tokenIn,
         amountIn: params.amountIn,
@@ -182,6 +139,8 @@ export async function addTrackSwapSegment(params: {
         from: params.from,
         tokenInSymbol: params.tokenInSymbol,
         tokenOutSymbol: params.tokenOutSymbol,
+        chainIn: params.chainIn,
+        chainOut: params.chainOut,
       },
       timestamp: params.dateAdded,
     },

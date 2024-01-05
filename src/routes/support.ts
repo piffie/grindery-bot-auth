@@ -2,6 +2,7 @@ import express from 'express';
 import { Database } from '../db/conn';
 import { authenticateApiKey } from '../utils/auth';
 import { USERS_COLLECTION } from '../utils/constants';
+import { OptionalId, Document } from 'mongodb';
 
 const router = express.Router();
 
@@ -50,9 +51,9 @@ const router = express.Router();
  */
 router.post('/import', authenticateApiKey, async (req, res) => {
   const db = await Database.getInstance();
-  const collection = db.collection(USERS_COLLECTION);
+  const collection = db?.collection(USERS_COLLECTION);
   const inputData = req.body;
-  const toInsert = [];
+  const toInsert: OptionalId<Document>[] = [];
 
   if (!Array.isArray(inputData)) {
     return res.status(400).send({
@@ -65,16 +66,16 @@ router.post('/import', authenticateApiKey, async (req, res) => {
 
   // Fetch all users from DB that match the input IDs
   const existingUsers = await collection
-    .find({
+    ?.find({
       userTelegramID: { $in: inputTelegramIDs },
     })
     .toArray();
 
-  const existingTelegramIDs = existingUsers.map((user) => user.userTelegramID);
+  const existingTelegramIDs = existingUsers?.map((user) => user.userTelegramID);
 
   // Filter out the inputData entries that are not in the existing list
   const nonExistingUsers = inputData.filter(
-    (entry) => !existingTelegramIDs.includes(entry.UserID),
+    (entry) => !existingTelegramIDs?.includes(entry.UserID),
   );
 
   // Format the non-existing users for insertion
@@ -92,7 +93,7 @@ router.post('/import', authenticateApiKey, async (req, res) => {
 
   // Insert the non-existing users to the DB
   if (toInsert.length > 0) {
-    const insertedData = await collection.insertMany(toInsert);
+    const insertedData = await collection?.insertMany(toInsert);
     return res.status(201).send(insertedData);
   } else {
     return res.status(400).send({ message: 'No valid data to insert' });

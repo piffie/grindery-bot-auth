@@ -19,7 +19,6 @@ import {
   mockFromSwap,
   mockTokenInSymbol,
   mockTokenOutSymbol,
-  mockChainName,
   mockChainId,
   getCollectionUsersMock,
   getCollectionSwapsMock,
@@ -27,21 +26,21 @@ import {
 } from './utils';
 import Sinon from 'sinon';
 import axios from 'axios';
-
+import * as web3 from '../utils/web3';
 import chaiExclude from 'chai-exclude';
 import {
-  DEFAULT_CHAIN_ID,
   PATCHWALLET_AUTH_URL,
   PATCHWALLET_RESOLVER_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
   SEGMENT_TRACK_URL,
-  TRANSACTION_STATUS,
+  TransactionStatus,
 } from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 import { handleSwap } from '../webhooks/swap';
-import { FLOWXO_NEW_SWAP_WEBHOOK } from '../../secrets';
-import { Collection, Document } from 'mongodb';
+import { FLOWXO_NEW_SWAP_WEBHOOK, FLOWXO_WEBHOOK_API_KEY } from '../../secrets';
+import { CHAIN_MAPPING } from '../utils/chains';
+import { ContractStub } from '../types/tests.types';
 
 chai.use(chaiExclude);
 
@@ -49,8 +48,8 @@ describe('handleSwap function', async function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
   let swapId: string;
-  let collectionUsersMock: Collection<Document>;
-  let collectionSwapsMock: Collection<Document>;
+  let collectionUsersMock;
+  let collectionSwapsMock;
 
   beforeEach(async function () {
     collectionUsersMock = await getCollectionUsersMock();
@@ -114,7 +113,23 @@ describe('handleSwap function', async function () {
   });
 
   describe('Normal process to handle a swap', async function () {
+    let contractStub: ContractStub;
+    let getContract;
+
     beforeEach(async function () {
+      contractStub = {
+        methods: {
+          decimals: sandbox.stub().resolves('18'),
+        },
+      };
+      contractStub.methods.decimals = sandbox.stub().returns({
+        call: sandbox.stub().resolves('18'),
+      });
+      getContract = () => {
+        return contractStub;
+      };
+      sandbox.stub(web3, 'getContract').callsFake(getContract);
+
       await collectionUsersMock.insertOne({
         userTelegramID: mockUserTelegramID,
         userName: mockUserName,
@@ -161,8 +176,8 @@ describe('handleSwap function', async function () {
         from: mockFromSwap,
         tokenInSymbol: mockTokenInSymbol,
         tokenOutSymbol: mockTokenOutSymbol,
-        chainId: mockChainId,
-        chainName: mockChainName,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
       });
 
       const swaps = await collectionSwapsMock.find({}).toArray();
@@ -173,7 +188,6 @@ describe('handleSwap function', async function () {
         .to.deep.equal([
           {
             eventId: swapId,
-            chainId: mockChainId,
             userTelegramID: mockUserTelegramID,
             userWallet: mockWallet,
             userName: mockUserName,
@@ -187,10 +201,12 @@ describe('handleSwap function', async function () {
             from: mockFromSwap,
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             transactionHash: mockTransactionHash,
             to: mockToSwap,
             userOpHash: null,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
           },
         ]);
       chai.expect(swaps[0].dateAdded).to.be.a('date');
@@ -212,6 +228,8 @@ describe('handleSwap function', async function () {
         from: mockFromSwap,
         tokenInSymbol: mockTokenInSymbol,
         tokenOutSymbol: mockTokenOutSymbol,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
       });
 
       const segmentIdentityCall = axiosStub
@@ -226,7 +244,6 @@ describe('handleSwap function', async function () {
           event: 'Swap',
           properties: {
             eventId: swapId,
-            chainId: DEFAULT_CHAIN_ID,
             userTelegramID: mockUserTelegramID,
             tokenIn: mockTokenIn,
             amountIn: mockAmountIn,
@@ -238,8 +255,10 @@ describe('handleSwap function', async function () {
             from: mockFromSwap,
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
             transactionHash: mockTransactionHash,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
           },
         });
     });
@@ -248,52 +267,62 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
-        amountIn: mockAmountIn,
+        amountIn: '1000000000000000000',
         tokenOut: mockTokenOut,
-        amountOut: mockAmountOut,
+        amountOut: '1000000000000000000',
         priceImpact: mockPriceImpact,
         gas: mockGas,
         to: mockToSwap,
         from: mockFromSwap,
         tokenInSymbol: mockTokenInSymbol,
         tokenOutSymbol: mockTokenOutSymbol,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
       });
 
       const FlowXOCallArgs = axiosStub
         .getCalls()
         .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK).args[1];
 
-      chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
-        userResponsePath: mockResponsePath,
-        eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
-        userTelegramID: mockUserTelegramID,
-        userName: mockUserName,
-        userHandle: mockUserHandle,
-        userWallet: mockWallet,
-        tokenIn: mockTokenIn,
-        amountIn: mockAmountIn,
-        tokenOut: mockTokenOut,
-        amountOut: mockAmountOut,
-        priceImpact: mockPriceImpact,
-        gas: mockGas,
-        to: mockToSwap,
-        from: mockFromSwap,
-        tokenInSymbol: mockTokenInSymbol,
-        tokenOutSymbol: mockTokenOutSymbol,
-        status: TRANSACTION_STATUS.SUCCESS,
-        transactionHash: mockTransactionHash,
-      });
+      chai
+        .expect(FlowXOCallArgs)
+        .excluding(['dateAdded'])
+        .to.deep.equal({
+          userResponsePath: mockResponsePath,
+          eventId: swapId,
+          userTelegramID: mockUserTelegramID,
+          userName: mockUserName,
+          userHandle: mockUserHandle,
+          userWallet: mockWallet,
+          tokenIn: mockTokenIn,
+          amountIn: '1',
+          tokenOut: mockTokenOut,
+          amountOut: '1',
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+          to: mockToSwap,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
+          status: TransactionStatus.SUCCESS,
+          transactionHash: mockTransactionHash,
+          apiKey: FLOWXO_WEBHOOK_API_KEY,
+          chainIn: mockChainId,
+          chainOut: mockChainId,
+          chainInName: 'Polygon',
+          chainOutName: 'Polygon',
+          transactionLink:
+            CHAIN_MAPPING[mockChainId].explorer + mockTransactionHash,
+        });
     });
 
     it('Should call the swapTokens function properly', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: 'eip155:59144',
+        chainIn: 'eip155:59144',
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -330,7 +359,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: 'eip155:59144',
+        chainIn: 'eip155:59144',
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -376,7 +405,7 @@ describe('handleSwap function', async function () {
 
       await collectionSwapsMock.insertOne({
         eventId: swapId,
-        status: TRANSACTION_STATUS.SUCCESS,
+        status: TransactionStatus.SUCCESS,
       });
     });
 
@@ -385,7 +414,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -404,7 +433,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -426,7 +455,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -445,7 +474,7 @@ describe('handleSwap function', async function () {
         .to.deep.equal([
           {
             eventId: swapId,
-            status: TRANSACTION_STATUS.SUCCESS,
+            status: TransactionStatus.SUCCESS,
           },
         ]);
     });
@@ -454,7 +483,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -478,7 +507,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -508,7 +537,7 @@ describe('handleSwap function', async function () {
 
       await collectionSwapsMock.insertOne({
         eventId: swapId,
-        status: TRANSACTION_STATUS.FAILURE,
+        status: TransactionStatus.FAILURE,
       });
     });
 
@@ -517,7 +546,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -536,7 +565,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -558,7 +587,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -577,7 +606,7 @@ describe('handleSwap function', async function () {
         .to.deep.equal([
           {
             eventId: swapId,
-            status: TRANSACTION_STATUS.FAILURE,
+            status: TransactionStatus.FAILURE,
           },
         ]);
     });
@@ -586,7 +615,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -610,7 +639,139 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
+      });
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
+      ).to.be.undefined;
+    });
+  });
+
+  describe('Transaction if swap is already a failure 503', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+      });
+
+      await collectionSwapsMock.insertOne({
+        eventId: swapId,
+        status: TransactionStatus.FAILURE_503,
+      });
+    });
+
+    it('Should return true if swap is already a failure', async function () {
+      chai.expect(
+        await handleSwap({
+          value: mockAmountIn,
+          eventId: swapId,
+
+          userTelegramID: mockUserTelegramID,
+          tokenIn: mockTokenIn,
+          amountIn: mockAmountIn,
+          tokenOut: mockTokenOut,
+          amountOut: mockAmountOut,
+          priceImpact: mockPriceImpact,
+          gas: mockGas,
+          from: mockFromSwap,
+          tokenInSymbol: mockTokenInSymbol,
+          tokenOutSymbol: mockTokenOutSymbol,
+        }),
+      ).to.be.true;
+    });
+
+    it('Should not swap if swap if is already a failure', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
+      });
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
+      ).to.be.undefined;
+    });
+
+    it('Should not modify database if swap is already a failure', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
+      });
+
+      chai
+        .expect(await collectionSwapsMock.find({}).toArray())
+        .excluding(['_id'])
+        .to.deep.equal([
+          {
+            eventId: swapId,
+            status: TransactionStatus.FAILURE_503,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if swap is already a failure', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
+      ).to.be.undefined;
+    });
+
+    it('Should not call Segment if swap is already a failure', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -649,7 +810,7 @@ describe('handleSwap function', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -669,7 +830,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -681,6 +842,8 @@ describe('handleSwap function', async function () {
         from: mockFromSwap,
         tokenInSymbol: mockTokenInSymbol,
         tokenOutSymbol: mockTokenOutSymbol,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
       });
 
       chai
@@ -688,7 +851,6 @@ describe('handleSwap function', async function () {
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            chainId: DEFAULT_CHAIN_ID,
             userTelegramID: mockUserTelegramID,
             tokenIn: mockTokenIn,
             amountIn: mockAmountIn,
@@ -701,12 +863,14 @@ describe('handleSwap function', async function () {
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userHandle: mockUserHandle,
             userName: mockUserName,
             userOpHash: null,
             userWallet: mockWallet,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
           },
         ]);
     });
@@ -715,7 +879,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -739,7 +903,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -778,7 +942,7 @@ describe('handleSwap function', async function () {
     await handleSwap({
       value: mockAmountIn,
       eventId: swapId,
-      chainId: DEFAULT_CHAIN_ID,
+
       userTelegramID: mockUserTelegramID,
       tokenIn: mockTokenIn,
       amountIn: mockAmountIn,
@@ -801,7 +965,7 @@ describe('handleSwap function', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -821,7 +985,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -844,7 +1008,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -866,7 +1030,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -890,7 +1054,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -928,7 +1091,7 @@ describe('handleSwap function', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -948,7 +1111,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -960,6 +1123,8 @@ describe('handleSwap function', async function () {
         from: mockFromSwap,
         tokenInSymbol: mockTokenInSymbol,
         tokenOutSymbol: mockTokenOutSymbol,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
       });
 
       chai
@@ -967,7 +1132,6 @@ describe('handleSwap function', async function () {
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            chainId: DEFAULT_CHAIN_ID,
             userTelegramID: mockUserTelegramID,
             tokenIn: mockTokenIn,
             amountIn: mockAmountIn,
@@ -980,12 +1144,14 @@ describe('handleSwap function', async function () {
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
             userHandle: mockUserHandle,
             userName: mockUserName,
             userWallet: mockWallet,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
           },
         ]);
     });
@@ -994,7 +1160,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1018,7 +1184,7 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1058,7 +1224,7 @@ describe('handleSwap function', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1078,7 +1244,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1090,6 +1255,8 @@ describe('handleSwap function', async function () {
         from: mockFromSwap,
         tokenInSymbol: mockTokenInSymbol,
         tokenOutSymbol: mockTokenOutSymbol,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
       });
 
       chai
@@ -1097,7 +1264,6 @@ describe('handleSwap function', async function () {
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
-            chainId: DEFAULT_CHAIN_ID,
             userTelegramID: mockUserTelegramID,
             userName: mockUserName,
             userHandle: mockUserHandle,
@@ -1113,9 +1279,11 @@ describe('handleSwap function', async function () {
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
-            status: TRANSACTION_STATUS.FAILURE,
+            status: TransactionStatus.FAILURE,
             transactionHash: null,
             userOpHash: null,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
           },
         ]);
     });
@@ -1124,7 +1292,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1148,7 +1315,136 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
+      });
+
+      chai.expect(
+        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
+      ).to.be.undefined;
+    });
+  });
+
+  describe('PatchWallet 503 error', async function () {
+    beforeEach(async function () {
+      axiosStub.withArgs(PATCHWALLET_TX_URL).rejects({
+        response: {
+          status: 503,
+        },
+      });
+
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+        responsePath: mockResponsePath,
+      });
+    });
+
+    it('Should return true if error 503 in PatchWallet transaction', async function () {
+      const result = await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
+      });
+
+      chai.expect(result).to.be.true;
+    });
+
+    it('Should complete db status to failure in database if error 503 in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+        to: mockToSwap,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
+      });
+
+      chai
+        .expect(await collectionSwapsMock.find({}).toArray())
+        .excluding(['dateAdded', '_id'])
+        .to.deep.equal([
+          {
+            userTelegramID: mockUserTelegramID,
+            userName: mockUserName,
+            userHandle: mockUserHandle,
+            userWallet: mockWallet,
+            tokenIn: mockTokenIn,
+            amountIn: mockAmountIn,
+            tokenOut: mockTokenOut,
+            amountOut: mockAmountOut,
+            priceImpact: mockPriceImpact,
+            gas: mockGas,
+            to: mockToSwap,
+            from: mockFromSwap,
+            tokenInSymbol: mockTokenInSymbol,
+            tokenOutSymbol: mockTokenOutSymbol,
+            eventId: swapId,
+            status: TransactionStatus.FAILURE_503,
+            transactionHash: null,
+            userOpHash: null,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
+          },
+        ]);
+    });
+
+    it('Should not call FlowXO if error 503 in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
+        userTelegramID: mockUserTelegramID,
+        tokenIn: mockTokenIn,
+        amountIn: mockAmountIn,
+        tokenOut: mockTokenOut,
+        amountOut: mockAmountOut,
+        priceImpact: mockPriceImpact,
+        gas: mockGas,
+        from: mockFromSwap,
+        tokenInSymbol: mockTokenInSymbol,
+        tokenOutSymbol: mockTokenOutSymbol,
+      });
+
+      chai.expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
+      ).to.be.undefined;
+    });
+
+    it('Should not call Segment if error 503 in PatchWallet transaction', async function () {
+      await handleSwap({
+        value: mockAmountIn,
+        eventId: swapId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1188,7 +1484,6 @@ describe('handleSwap function', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1208,7 +1503,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1220,6 +1514,8 @@ describe('handleSwap function', async function () {
         from: mockFromSwap,
         tokenInSymbol: mockTokenInSymbol,
         tokenOutSymbol: mockTokenOutSymbol,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
       });
 
       chai
@@ -1227,7 +1523,6 @@ describe('handleSwap function', async function () {
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
-            chainId: DEFAULT_CHAIN_ID,
             userTelegramID: mockUserTelegramID,
             userName: mockUserName,
             userHandle: mockUserHandle,
@@ -1243,9 +1538,11 @@ describe('handleSwap function', async function () {
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
-            status: TRANSACTION_STATUS.FAILURE,
+            status: TransactionStatus.FAILURE,
             transactionHash: null,
             userOpHash: null,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
           },
         ]);
     });
@@ -1254,7 +1551,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1278,7 +1574,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1318,7 +1613,6 @@ describe('handleSwap function', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1338,7 +1632,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1350,6 +1643,8 @@ describe('handleSwap function', async function () {
         from: mockFromSwap,
         tokenInSymbol: mockTokenInSymbol,
         tokenOutSymbol: mockTokenOutSymbol,
+        chainIn: mockChainId,
+        chainOut: mockChainId,
       });
 
       chai
@@ -1357,7 +1652,6 @@ describe('handleSwap function', async function () {
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            chainId: DEFAULT_CHAIN_ID,
             userTelegramID: mockUserTelegramID,
             tokenIn: mockTokenIn,
             amountIn: mockAmountIn,
@@ -1370,12 +1664,14 @@ describe('handleSwap function', async function () {
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
             eventId: swapId,
-            status: TRANSACTION_STATUS.PENDING,
+            status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
             userHandle: mockUserHandle,
             userName: mockUserName,
             userWallet: mockWallet,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
           },
         ]);
     });
@@ -1384,7 +1680,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1408,7 +1703,6 @@ describe('handleSwap function', async function () {
       await handleSwap({
         value: mockAmountIn,
         eventId: swapId,
-        chainId: DEFAULT_CHAIN_ID,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1450,7 +1744,7 @@ describe('handleSwap function', async function () {
         const result = await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1470,7 +1764,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1482,6 +1776,8 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
+          chainIn: mockChainId,
+          chainOut: mockChainId,
         });
 
         chai
@@ -1489,7 +1785,6 @@ describe('handleSwap function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              chainId: DEFAULT_CHAIN_ID,
               userTelegramID: mockUserTelegramID,
               userName: mockUserName,
               userHandle: mockUserHandle,
@@ -1505,9 +1800,11 @@ describe('handleSwap function', async function () {
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
+              chainIn: mockChainId,
+              chainOut: mockChainId,
             },
           ]);
       });
@@ -1516,7 +1813,6 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1538,7 +1834,23 @@ describe('handleSwap function', async function () {
     });
 
     describe('Transaction hash is present in PatchWallet status endpoint', async function () {
+      let contractStub: ContractStub;
+      let getContract;
+
       beforeEach(async function () {
+        contractStub = {
+          methods: {
+            decimals: sandbox.stub().resolves('18'),
+          },
+        };
+        contractStub.methods.decimals = sandbox.stub().returns({
+          call: sandbox.stub().resolves('18'),
+        });
+        getContract = () => {
+          return contractStub;
+        };
+        sandbox.stub(web3, 'getContract').callsFake(getContract);
+
         await collectionUsersMock.insertOne({
           userTelegramID: mockUserTelegramID,
           userName: mockUserName,
@@ -1548,7 +1860,6 @@ describe('handleSwap function', async function () {
         });
 
         await collectionSwapsMock.insertOne({
-          chainId: DEFAULT_CHAIN_ID,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1561,7 +1872,7 @@ describe('handleSwap function', async function () {
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
       });
@@ -1570,7 +1881,6 @@ describe('handleSwap function', async function () {
         const result = await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1590,7 +1900,6 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1612,7 +1921,6 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1624,6 +1932,8 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
+          chainIn: mockChainId,
+          chainOut: mockChainId,
         });
 
         chai
@@ -1632,7 +1942,7 @@ describe('handleSwap function', async function () {
           .to.deep.equal([
             {
               transactionHash: mockTransactionHash,
-              chainId: DEFAULT_CHAIN_ID,
+
               userTelegramID: mockUserTelegramID,
               userName: mockUserName,
               userHandle: mockUserHandle,
@@ -1649,7 +1959,9 @@ describe('handleSwap function', async function () {
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
               userOpHash: mockUserOpHash,
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
+              chainIn: mockChainId,
+              chainOut: mockChainId,
             },
           ]);
       });
@@ -1658,44 +1970,54 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
-          amountIn: mockAmountIn,
+          amountIn: '1000000000000000000',
           tokenOut: mockTokenOut,
-          amountOut: mockAmountOut,
+          amountOut: '1000000000000000000',
           priceImpact: mockPriceImpact,
           gas: mockGas,
           to: mockToSwap,
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
+          chainIn: mockChainId,
+          chainOut: mockChainId,
         });
         const FlowXOCallArgs = axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK).args[1];
 
-        chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
-          userResponsePath: mockResponsePath,
-          eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
-          userTelegramID: mockUserTelegramID,
-          userName: mockUserName,
-          userHandle: mockUserHandle,
-          userWallet: mockWallet,
-          tokenIn: mockTokenIn,
-          amountIn: mockAmountIn,
-          tokenOut: mockTokenOut,
-          amountOut: mockAmountOut,
-          priceImpact: mockPriceImpact,
-          gas: mockGas,
-          to: mockToSwap,
-          from: mockFromSwap,
-          tokenInSymbol: mockTokenInSymbol,
-          tokenOutSymbol: mockTokenOutSymbol,
-          transactionHash: mockTransactionHash,
-          status: TRANSACTION_STATUS.SUCCESS,
-        });
+        chai
+          .expect(FlowXOCallArgs)
+          .excluding(['dateAdded'])
+          .to.deep.equal({
+            userResponsePath: mockResponsePath,
+            eventId: swapId,
+            userTelegramID: mockUserTelegramID,
+            userName: mockUserName,
+            userHandle: mockUserHandle,
+            userWallet: mockWallet,
+            tokenIn: mockTokenIn,
+            amountIn: '1',
+            tokenOut: mockTokenOut,
+            amountOut: '1',
+            priceImpact: mockPriceImpact,
+            gas: mockGas,
+            to: mockToSwap,
+            from: mockFromSwap,
+            tokenInSymbol: mockTokenInSymbol,
+            tokenOutSymbol: mockTokenOutSymbol,
+            transactionHash: mockTransactionHash,
+            status: TransactionStatus.SUCCESS,
+            apiKey: FLOWXO_WEBHOOK_API_KEY,
+            chainIn: mockChainId,
+            chainOut: mockChainId,
+            chainInName: 'Polygon',
+            chainOutName: 'Polygon',
+            transactionLink:
+              CHAIN_MAPPING[mockChainId].explorer + mockTransactionHash,
+          });
 
         chai
           .expect(FlowXOCallArgs.dateAdded)
@@ -1715,7 +2037,6 @@ describe('handleSwap function', async function () {
         });
 
         await collectionSwapsMock.insertOne({
-          chainId: DEFAULT_CHAIN_ID,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1728,7 +2049,7 @@ describe('handleSwap function', async function () {
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -1744,7 +2065,7 @@ describe('handleSwap function', async function () {
         const result = await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1764,7 +2085,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1786,7 +2107,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1798,6 +2119,8 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
+          chainIn: mockChainId,
+          chainOut: mockChainId,
         });
 
         chai
@@ -1805,7 +2128,6 @@ describe('handleSwap function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              chainId: DEFAULT_CHAIN_ID,
               userTelegramID: mockUserTelegramID,
               userName: mockUserName,
               userHandle: mockUserHandle,
@@ -1821,9 +2143,11 @@ describe('handleSwap function', async function () {
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
+              chainIn: mockChainId,
+              chainOut: mockChainId,
             },
           ]);
       });
@@ -1832,7 +2156,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1864,7 +2188,6 @@ describe('handleSwap function', async function () {
         });
 
         await collectionSwapsMock.insertOne({
-          chainId: DEFAULT_CHAIN_ID,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1877,7 +2200,7 @@ describe('handleSwap function', async function () {
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -1890,7 +2213,7 @@ describe('handleSwap function', async function () {
         const result = await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1910,7 +2233,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1932,7 +2255,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1951,7 +2274,6 @@ describe('handleSwap function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              chainId: DEFAULT_CHAIN_ID,
               userTelegramID: mockUserTelegramID,
               tokenIn: mockTokenIn,
               amountIn: mockAmountIn,
@@ -1964,7 +2286,7 @@ describe('handleSwap function', async function () {
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
-              status: TRANSACTION_STATUS.PENDING_HASH,
+              status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
             },
           ]);
@@ -1974,7 +2296,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2006,7 +2328,6 @@ describe('handleSwap function', async function () {
         });
 
         await collectionSwapsMock.insertOne({
-          chainId: DEFAULT_CHAIN_ID,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2019,7 +2340,7 @@ describe('handleSwap function', async function () {
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
 
@@ -2034,7 +2355,7 @@ describe('handleSwap function', async function () {
         const result = await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2054,7 +2375,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2076,7 +2397,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2088,6 +2409,8 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
+          chainIn: mockChainId,
+          chainOut: mockChainId,
         });
 
         chai
@@ -2095,7 +2418,6 @@ describe('handleSwap function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              chainId: DEFAULT_CHAIN_ID,
               userTelegramID: mockUserTelegramID,
               userName: mockUserName,
               userHandle: mockUserHandle,
@@ -2111,9 +2433,11 @@ describe('handleSwap function', async function () {
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
-              status: TRANSACTION_STATUS.FAILURE,
+              status: TransactionStatus.FAILURE,
               userOpHash: mockUserOpHash,
               transactionHash: null,
+              chainIn: mockChainId,
+              chainOut: mockChainId,
             },
           ]);
       });
@@ -2122,7 +2446,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2154,7 +2478,6 @@ describe('handleSwap function', async function () {
         });
 
         await collectionSwapsMock.insertOne({
-          chainId: DEFAULT_CHAIN_ID,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2167,7 +2490,7 @@ describe('handleSwap function', async function () {
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
         });
       });
 
@@ -2175,7 +2498,7 @@ describe('handleSwap function', async function () {
         const result = await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2195,7 +2518,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2217,7 +2540,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2236,7 +2559,6 @@ describe('handleSwap function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              chainId: DEFAULT_CHAIN_ID,
               userTelegramID: mockUserTelegramID,
               userName: mockUserName,
               userHandle: mockUserHandle,
@@ -2252,9 +2574,11 @@ describe('handleSwap function', async function () {
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
-              status: TRANSACTION_STATUS.SUCCESS,
+              status: TransactionStatus.SUCCESS,
               transactionHash: null,
               userOpHash: null,
+              chainIn: null,
+              chainOut: null,
             },
           ]);
       });
@@ -2263,7 +2587,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2295,7 +2619,6 @@ describe('handleSwap function', async function () {
         });
 
         await collectionSwapsMock.insertOne({
-          chainId: DEFAULT_CHAIN_ID,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2308,7 +2631,7 @@ describe('handleSwap function', async function () {
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
           eventId: swapId,
-          status: TRANSACTION_STATUS.PENDING_HASH,
+          status: TransactionStatus.PENDING_HASH,
           dateAdded: new Date(Date.now() - 12 * 60 * 1000),
         });
 
@@ -2324,7 +2647,7 @@ describe('handleSwap function', async function () {
         const result = await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2344,7 +2667,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2366,7 +2689,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -2378,6 +2701,8 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
+          chainIn: mockChainId,
+          chainOut: mockChainId,
         });
 
         chai
@@ -2385,7 +2710,6 @@ describe('handleSwap function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              chainId: DEFAULT_CHAIN_ID,
               userTelegramID: mockUserTelegramID,
               userName: mockUserName,
               userHandle: mockUserHandle,
@@ -2401,9 +2725,11 @@ describe('handleSwap function', async function () {
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
               eventId: swapId,
-              status: TRANSACTION_STATUS.FAILURE,
+              status: TransactionStatus.FAILURE,
               transactionHash: null,
               userOpHash: null,
+              chainIn: mockChainId,
+              chainOut: mockChainId,
             },
           ]);
       });
@@ -2412,7 +2738,7 @@ describe('handleSwap function', async function () {
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
-          chainId: DEFAULT_CHAIN_ID,
+
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
