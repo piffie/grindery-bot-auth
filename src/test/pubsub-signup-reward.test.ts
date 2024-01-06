@@ -25,7 +25,6 @@ import {
   PATCHWALLET_AUTH_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
-  TransactionStatus,
 } from '../utils/constants';
 import {
   FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK,
@@ -35,6 +34,7 @@ import {
 } from '../../secrets';
 import * as web3 from '../utils/web3';
 import { ContractStub } from '../types/tests.types';
+import { TransactionStatus } from 'grindery-nexus-common-utils';
 
 chai.use(chaiExclude);
 

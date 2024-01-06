@@ -7,11 +7,7 @@ import {
   TransactionParams,
   createTransaction,
 } from '../types/webhook.types';
-import {
-  TransactionStatus,
-  TRANSFERS_COLLECTION,
-  USERS_COLLECTION,
-} from '../utils/constants';
+import { TRANSFERS_COLLECTION, USERS_COLLECTION } from '../utils/constants';
 import {
   getPatchWalletAccessToken,
   getPatchWalletAddressFromTgId,
@@ -34,7 +30,11 @@ import {
 } from '../../secrets';
 import { addTrackSegment } from '../utils/segment';
 import { Db, WithId } from 'mongodb';
-import { MongoTransfer, MongoUser } from '../types/mongo.types';
+import {
+  MongoTransfer,
+  MongoUser,
+  TransactionStatus,
+} from 'grindery-nexus-common-utils';
 
 /**
  * Handles a new transaction based on the provided parameters.

@@ -32,10 +32,10 @@ import {
   PATCHWALLET_RESOLVER_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
-  GxOrderStatus,
   ANKR_MULTICHAIN_API_URL,
 } from '../utils/constants';
 import axios from 'axios';
+import { GxOrderStatus } from 'grindery-nexus-common-utils';
 
 chai.use(chaiHttp);
 chai.use(chaiExclude);

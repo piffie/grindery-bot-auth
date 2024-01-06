@@ -12,7 +12,6 @@ import {
 } from '../types/webhook.types';
 import {
   REWARDS_COLLECTION,
-  TransactionStatus,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
 } from '../utils/constants';
@@ -32,7 +31,12 @@ import {
 } from './utils';
 import { Db, FindCursor, WithId } from 'mongodb';
 import { Database } from '../db/conn';
-import { MongoReward, MongoTransfer, MongoUser } from '../types/mongo.types';
+import {
+  MongoReward,
+  MongoTransfer,
+  MongoUser,
+  TransactionStatus,
+} from 'grindery-nexus-common-utils';
 
 /**
  * Handles the processing of a referral reward based on specified parameters.

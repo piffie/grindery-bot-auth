@@ -11,11 +11,7 @@ import {
   RewardParams,
   createRewardParams,
 } from '../types/webhook.types';
-import {
-  REWARDS_COLLECTION,
-  TransactionStatus,
-  USERS_COLLECTION,
-} from '../utils/constants';
+import { REWARDS_COLLECTION, USERS_COLLECTION } from '../utils/constants';
 import {
   getPatchWalletAccessToken,
   getPatchWalletAddressFromTgId,
@@ -32,7 +28,11 @@ import {
 } from './utils';
 import { Db, WithId } from 'mongodb';
 import { Database } from '../db/conn';
-import { MongoReward, MongoUser } from '../types/mongo.types';
+import {
+  MongoReward,
+  MongoUser,
+  TransactionStatus,
+} from 'grindery-nexus-common-utils';
 
 /**
  * Handles the processing of a link rewardInstance based on specified parameters.

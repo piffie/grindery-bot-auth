@@ -11,7 +11,7 @@ import {
   RewardParams,
   createRewardParams,
 } from '../types/webhook.types';
-import { REWARDS_COLLECTION, TransactionStatus } from '../utils/constants';
+import { REWARDS_COLLECTION } from '../utils/constants';
 import {
   getPatchWalletAccessToken,
   getPatchWalletAddressFromTgId,
@@ -28,7 +28,8 @@ import {
 } from './utils';
 import { Db, WithId } from 'mongodb';
 import { Database } from '../db/conn';
-import { MongoReward } from '../types/mongo.types';
+import { MongoReward } from 'grindery-nexus-common-utils';
+import { TransactionStatus } from 'grindery-nexus-common-utils';
 
 /**
  * Handles the processing of an isolated rewardInstance based on specified parameters.

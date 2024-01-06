@@ -1,6 +1,5 @@
 import {
   SWAPS_COLLECTION,
-  TransactionStatus,
   USERS_COLLECTION,
   nativeTokenAddresses,
 } from '../utils/constants';
@@ -28,7 +27,11 @@ import { getContract, weiToEther } from '../utils/web3';
 import { CHAIN_MAPPING } from '../utils/chains';
 import { getPatchWalletAccessToken, swapTokens } from '../utils/patchwallet';
 import { Db, WithId } from 'mongodb';
-import { MongoSwap, MongoUser } from '../types/mongo.types';
+import {
+  MongoSwap,
+  MongoUser,
+  TransactionStatus,
+} from 'grindery-nexus-common-utils';
 
 /**
  * Handles the swap process based on provided parameters.

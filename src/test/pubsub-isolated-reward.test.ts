@@ -26,7 +26,6 @@ import {
   PATCHWALLET_RESOLVER_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
-  TransactionStatus,
 } from '../utils/constants';
 import { handleIsolatedReward } from '../webhooks/isolated-reward';
 import {
@@ -37,6 +36,7 @@ import {
 } from '../../secrets';
 import * as web3 from '../utils/web3';
 import { ContractStub } from '../types/tests.types';
+import { TransactionStatus } from 'grindery-nexus-common-utils';
 
 chai.use(chaiExclude);
 

@@ -2,11 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { Database } from '../db/conn';
 import { VestingParams, createVesting } from '../types/hedgey.types';
 import { PatchRawResult, PatchResult } from '../types/webhook.types';
-import {
-  TransactionStatus,
-  USERS_COLLECTION,
-  VESTING_COLLECTION,
-} from '../utils/constants';
+import { USERS_COLLECTION, VESTING_COLLECTION } from '../utils/constants';
 import {
   getStatus,
   isFailedTransaction,
@@ -27,7 +23,11 @@ import {
 } from '../../secrets';
 import { addVestingSegment } from '../utils/segment';
 import { Db, WithId } from 'mongodb';
-import { MongoUser, MongoVesting } from '../types/mongo.types';
+import {
+  MongoUser,
+  MongoVesting,
+  TransactionStatus,
+} from 'grindery-nexus-common-utils';
 
 /**
  * Handles a new transaction based on the provided parameters.

@@ -1,6 +1,5 @@
 import {
   REWARDS_COLLECTION,
-  TransactionStatus,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
 } from './constants';
@@ -11,6 +10,7 @@ import {
   MongoOutgoingTransfer,
   MongoRewardFmt,
 } from '../types/mongo.types';
+import { TransactionStatus } from 'grindery-nexus-common-utils';
 
 /**
  * Retrieves incoming transactions for a user from the database.
