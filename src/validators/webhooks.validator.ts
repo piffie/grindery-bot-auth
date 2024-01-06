@@ -326,12 +326,14 @@ export const swapValidator = [
   body('params.gas').isString().withMessage('gas must be a string'),
 
   // Validates from within params as a valid address
-  body('params.from').custom((value) => {
-    if (!Web3.utils.isAddress(value)) {
-      throw new Error('from must be a valid address');
-    }
-    return true;
-  }),
+  body('params.from')
+    .optional()
+    .custom((value) => {
+      if (!Web3.utils.isAddress(value)) {
+        throw new Error('from must be a valid address');
+      }
+      return true;
+    }),
 
   // Validates tokenInSymbol within params as a string
   body('params.tokenInSymbol')
@@ -348,6 +350,12 @@ export const swapValidator = [
     .optional()
     .isString()
     .withMessage('chainId must be a string'),
+
+  // Validates chainIn within params as a string
+  body('params.chainIn').isString().withMessage('chainIn must be a string'),
+
+  // Validates chainOut within params as a string
+  body('params.chainOut').isString().withMessage('chainOut must be a string'),
 
   // Validates chainName within params as an optional string
   body('params.chainName')
