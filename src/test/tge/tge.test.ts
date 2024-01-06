@@ -1,9 +1,9 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import Sinon from 'sinon';
-import * as g1gx from '../utils/g1gx';
-import app from '../index';
-import { getApiKey } from '../../secrets';
+import * as g1gx from '../../utils/g1gx';
+import app from '../../index';
+import { getApiKey } from '../../../secrets';
 import {
   avax_address_polygon,
   getCollectionGXOrderMock,
@@ -25,7 +25,7 @@ import {
   mockUserTelegramID1,
   mockUserTelegramID2,
   mockWallet,
-} from './utils';
+} from '../utils';
 import chaiExclude from 'chai-exclude';
 import {
   PATCHWALLET_AUTH_URL,
@@ -33,7 +33,7 @@ import {
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
   ANKR_MULTICHAIN_API_URL,
-} from '../utils/constants';
+} from '../../utils/constants';
 import axios from 'axios';
 import { GxOrderStatus } from 'grindery-nexus-common-utils';
 

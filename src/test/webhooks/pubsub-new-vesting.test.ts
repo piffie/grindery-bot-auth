@@ -14,7 +14,7 @@ import {
   getCollectionUsersMock,
   getCollectionVestingsMock,
   mockWallet1,
-} from './utils';
+} from '../utils';
 import Sinon from 'sinon';
 import axios from 'axios';
 import chaiExclude from 'chai-exclude';
@@ -25,16 +25,16 @@ import {
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
   SEGMENT_TRACK_URL,
-} from '../utils/constants';
+} from '../../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 import {
   FLOWXO_NEW_VESTING_WEBHOOK,
   FLOWXO_WEBHOOK_API_KEY,
   G1_POLYGON_ADDRESS,
-} from '../../secrets';
-import * as web3 from '../utils/web3';
-import { handleNewVesting } from '../webhooks/vesting';
-import { ContractStub } from '../types/tests.types';
+} from '../../../secrets';
+import * as web3 from '../../utils/web3';
+import { handleNewVesting } from '../../webhooks/vesting';
+import { ContractStub } from '../../types/tests.types';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
 
 chai.use(chaiExclude);

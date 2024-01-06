@@ -1,7 +1,7 @@
 import chai from 'chai';
 import Sinon from 'sinon';
-import * as authModule from '../utils/auth';
-import { mockedToken } from './utils';
+import * as authModule from '../../utils/auth';
+import { mockedToken } from '../utils';
 
 describe('isRequired Middleware', async function () {
   let req;

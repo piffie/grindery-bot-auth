@@ -8,7 +8,7 @@ import {
   getXHourBeforeDate,
   getXMinBeforeDate,
   minutesUntilJanFirst2024,
-} from '../utils/time';
+} from '../../utils/time';
 
 describe('Time function', async function () {
   describe('getLastHourDateTime function', async function () {

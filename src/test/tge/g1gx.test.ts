@@ -18,8 +18,8 @@ import {
   getGxFromG1,
   getGxFromUSD,
   getTotalUSD,
-} from '../utils/g1gx';
-import * as time from '../utils/time';
+} from '../../utils/g1gx';
+import * as time from '../../utils/time';
 import Sinon from 'sinon';
 
 describe('G1 to GX util functions', async function () {

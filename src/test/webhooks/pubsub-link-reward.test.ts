@@ -14,10 +14,10 @@ import {
   getCollectionUsersMock,
   getCollectionRewardsMock,
   mockChainId,
-} from './utils';
+} from '../utils';
 import Sinon from 'sinon';
 import axios from 'axios';
-import * as web3 from '../utils/web3';
+import * as web3 from '../../utils/web3';
 
 import chaiExclude from 'chai-exclude';
 import { v4 as uuidv4 } from 'uuid';
@@ -26,14 +26,14 @@ import {
   PATCHWALLET_RESOLVER_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
-} from '../utils/constants';
+} from '../../utils/constants';
 import {
   FLOWXO_NEW_LINK_REWARD_WEBHOOK,
   FLOWXO_WEBHOOK_API_KEY,
   SOURCE_TG_ID,
-} from '../../secrets';
-import { handleLinkReward } from '../webhooks/link-reward';
-import { ContractStub } from '../types/tests.types';
+} from '../../../secrets';
+import { handleLinkReward } from '../../webhooks/link-reward';
+import { ContractStub } from '../../types/tests.types';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
 
 chai.use(chaiExclude);

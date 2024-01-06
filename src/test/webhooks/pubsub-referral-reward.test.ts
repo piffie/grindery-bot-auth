@@ -32,7 +32,7 @@ import {
   getCollectionUsersMock,
   getCollectionRewardsMock,
   mockChainId,
-} from './utils';
+} from '../utils';
 import Sinon from 'sinon';
 import axios from 'axios';
 
@@ -44,16 +44,16 @@ import {
   PATCHWALLET_RESOLVER_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
-} from '../utils/constants';
+} from '../../utils/constants';
 import {
   FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK,
   FLOWXO_WEBHOOK_API_KEY,
   G1_POLYGON_ADDRESS,
   SOURCE_TG_ID,
-} from '../../secrets';
-import { handleReferralReward } from '../webhooks/referral-reward';
-import * as web3 from '../utils/web3';
-import { ContractStub } from '../types/tests.types';
+} from '../../../secrets';
+import { handleReferralReward } from '../../webhooks/referral-reward';
+import * as web3 from '../../utils/web3';
+import { ContractStub } from '../../types/tests.types';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
 
 chai.use(chaiExclude);

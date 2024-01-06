@@ -4,7 +4,7 @@ import {
   isPendingTransactionHash,
   isPositiveFloat,
   isSuccessfulTransaction,
-} from '../webhooks/utils';
+} from '../../webhooks/utils';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
 
 describe('Transaction Status Functions', async function () {
