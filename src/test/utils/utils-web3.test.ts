@@ -1,5 +1,5 @@
 import chai from 'chai';
-import { numberToString, scaleDecimals, weiToEther } from '../utils/web3';
+import { numberToString, scaleDecimals, weiToEther } from '../../utils/web3';
 import BN from 'bn.js';
 
 describe('Web3 utils ', async function () {

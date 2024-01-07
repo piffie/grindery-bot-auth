@@ -7,23 +7,23 @@ import {
   mockWallet,
   mockUserTelegramID1,
   getCollectionUsersMock,
-} from './utils';
-import { handleNewReward } from '../webhooks/webhook';
+} from '../utils';
+import { handleNewReward } from '../../webhooks/webhook';
 import Sinon from 'sinon';
 import axios from 'axios';
 
 import chaiExclude from 'chai-exclude';
 import { v4 as uuidv4 } from 'uuid';
-import { signup_utils } from '../webhooks/signup-reward';
-import { referral_utils } from '../webhooks/referral-reward';
-import { link_reward_utils } from '../webhooks/link-reward';
-import * as web3 from '../utils/web3';
-import { RewardParams } from '../types/webhook.types';
+import { signup_utils } from '../../webhooks/signup-reward';
+import { referral_utils } from '../../webhooks/referral-reward';
+import { link_reward_utils } from '../../webhooks/link-reward';
+import * as web3 from '../../utils/web3';
+import { RewardParams } from '../../types/webhook.types';
 import {
   PATCHWALLET_RESOLVER_URL,
   SEGMENT_IDENTITY_URL,
-} from '../utils/constants';
-import { ContractStub, RewardStub } from '../types/tests.types';
+} from '../../utils/constants';
+import { ContractStub, RewardStub } from '../../types/tests.types';
 
 chai.use(chaiExclude);
 
