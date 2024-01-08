@@ -1,5 +1,6 @@
-import { validationResult } from 'express-validator';
+import { ValidationChain, validationResult } from 'express-validator';
 import { Request } from 'express-validator/src/base';
+import { body } from 'express-validator';
 
 /**
  * This function validates the result of a request and returns an array of errors if any are found.
@@ -16,4 +17,36 @@ import { Request } from 'express-validator/src/base';
 export const validateResult = (req: Request) => {
   const errors = validationResult(req);
   return errors.isEmpty() ? [] : errors.array();
+};
+
+/**
+ * Validates whether a given field represents a 64-bit little-endian number encoded as a string.
+ *
+ * https://core.telegram.org/type/long
+ *
+ * @param {string} fieldName - The name of the field to be validated.
+ * @param {boolean} isOptional - Indicates whether the field is optional for validation.
+ * @returns {ValidationChain} - A validation chain object to validate the `fieldName`.
+ *
+ * @example
+ * validateUserTelegramID('params.userTelegramID', false);
+ */
+export const validateUserTelegramID = (
+  fieldName: string,
+  isOptional: boolean,
+): ValidationChain => {
+  // Creates a validation chain for the specified `fieldName`
+  const validationChain = body(fieldName).custom((value) => {
+    // Checks if the value is not a string or doesn't match the pattern of a 64-bit little-endian number encoded as a string
+    if (typeof value !== 'string' || !/^[0-9a-fA-F]+$/.test(value)) {
+      throw new Error(
+        `${fieldName} must be a string representing a 64-bit little-endian number`,
+      );
+    }
+    // Returns true if the validation succeeds
+    return true;
+  });
+
+  // Returns a validation chain that is optional or regular based on the `isOptional` flag
+  return isOptional ? validationChain.optional() : validationChain;
 };
