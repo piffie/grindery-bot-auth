@@ -1,4 +1,4 @@
-import chai from 'chai';
+import { expect } from 'chai';
 import {
   EXCHANGE_RATE_GX_USD,
   FUNCTION_PARAMETER_A,
@@ -44,7 +44,7 @@ describe('G1 to GX util functions', async function () {
       const expectedRatio = 2;
 
       const result = computeUSDtoG1Ratio(usdQuantity, g1Quantity);
-      chai.expect(result).to.equal(expectedRatio);
+      expect(result).to.equal(expectedRatio);
     });
 
     it('Should return the correct ratio when G1 quantity is greater than USD quantity', async function () {
@@ -53,7 +53,7 @@ describe('G1 to GX util functions', async function () {
       const expectedRatio = 0.5;
 
       const result = computeUSDtoG1Ratio(usdQuantity, g1Quantity);
-      chai.expect(result).to.equal(expectedRatio);
+      expect(result).to.equal(expectedRatio);
     });
 
     it('Should return the correct ratio with lots of G1', async function () {
@@ -63,16 +63,16 @@ describe('G1 to GX util functions', async function () {
 
       const result = computeUSDtoG1Ratio(usdQuantity, g1Quantity);
 
-      chai.expect(result).to.equal(expectedRatio);
+      expect(result).to.equal(expectedRatio);
     });
 
     it('Should handle a G1 quantity of 0 and throw an error', async function () {
       const usdQuantity = 50;
       const g1Quantity = 0;
 
-      chai
-        .expect(() => computeUSDtoG1Ratio(usdQuantity, g1Quantity))
-        .to.throw('G1 quantity cannot be zero.');
+      expect(() => computeUSDtoG1Ratio(usdQuantity, g1Quantity)).to.throw(
+        'G1 quantity cannot be zero.',
+      );
     });
   });
 
@@ -81,9 +81,9 @@ describe('G1 to GX util functions', async function () {
       const usdQuantity = 50;
       const g1Quantity = 0;
 
-      chai
-        .expect(() => computeFactor(usdQuantity, g1Quantity))
-        .to.throw('G1 quantity cannot be zero.');
+      expect(() => computeFactor(usdQuantity, g1Quantity)).to.throw(
+        'G1 quantity cannot be zero.',
+      );
     });
 
     it('Should return the correct factor when USD quantity is 0', async function () {
@@ -91,7 +91,7 @@ describe('G1 to GX util functions', async function () {
       const g1Quantity = 10;
 
       const result = computeFactor(usdQuantity, g1Quantity);
-      chai.expect(result.toFixed(2)).to.equal(Number(5).toFixed(2));
+      expect(result.toFixed(2)).to.equal(Number(5).toFixed(2));
     });
 
     it('Should return the correct factor when USD quantity is greater than 0 and G1 quantity is greater than 0', async function () {
@@ -99,7 +99,7 @@ describe('G1 to GX util functions', async function () {
       const g1Quantity = 50;
 
       const result = computeFactor(usdQuantity, g1Quantity);
-      chai.expect(result.toFixed(2)).to.equal(Number(5).toFixed(2));
+      expect(result.toFixed(2)).to.equal(Number(5).toFixed(2));
     });
 
     it('Should return the correct factor with lots of G1', async function () {
@@ -108,9 +108,7 @@ describe('G1 to GX util functions', async function () {
 
       const result = computeFactor(usdQuantity, g1Quantity);
 
-      chai
-        .expect(Number(result).toFixed(8))
-        .to.equal(Number(0.00002232).toFixed(8));
+      expect(Number(result).toFixed(8)).to.equal(Number(0.00002232).toFixed(8));
     });
   });
 
@@ -120,7 +118,7 @@ describe('G1 to GX util functions', async function () {
 
       const result = getGxFromUSD(usdQuantity);
 
-      chai.expect(result).to.equal(usdQuantity / 0.036);
+      expect(result).to.equal(usdQuantity / 0.036);
     });
 
     it('getGxFromG1 should convert G1 to GX correctly', async function () {
@@ -129,29 +127,27 @@ describe('G1 to GX util functions', async function () {
 
       const result = getGxFromG1(usdQuantity, g1Quantity);
 
-      chai
-        .expect(result)
-        .to.equal(
-          (g1Quantity / 1000 / 0.036) *
-            FUNCTION_PARAMETER_A *
-            (1 - Math.exp(-FUNCTION_PARAMETER_B * 2)),
-        );
+      expect(result).to.equal(
+        (g1Quantity / 1000 / 0.036) *
+          FUNCTION_PARAMETER_A *
+          (1 - Math.exp(-FUNCTION_PARAMETER_B * 2)),
+      );
     });
 
     it('getGxFromUSD should handle a 0 USD quantity', async function () {
       const usdQuantity = 0;
 
       const result = getGxFromUSD(usdQuantity);
-      chai.expect(result).to.equal(0);
+      expect(result).to.equal(0);
     });
 
     it('getGxFromG1 should handle a 0 G1 quantity', async function () {
       const g1Quantity = 0;
       const usdQuantity = 100;
 
-      chai
-        .expect(() => computeUSDtoG1Ratio(usdQuantity, g1Quantity))
-        .to.throw('G1 quantity cannot be zero.');
+      expect(() => computeUSDtoG1Ratio(usdQuantity, g1Quantity)).to.throw(
+        'G1 quantity cannot be zero.',
+      );
     });
   });
 
@@ -163,16 +159,16 @@ describe('G1 to GX util functions', async function () {
         getGxFromG1(usdQuantity, g1Quantity) + usdQuantity / 0.036;
 
       const result = getGxBeforeMVU(usdQuantity, g1Quantity);
-      chai.expect(result).to.equal(expectedGxBeforeMVU);
+      expect(result).to.equal(expectedGxBeforeMVU);
     });
 
     it('Should return the correct value for Gx before MVU when G1 quantity is 0', async function () {
       const usdQuantity = 100;
       const g1Quantity = 0;
 
-      chai
-        .expect(() => getGxBeforeMVU(usdQuantity, g1Quantity))
-        .to.throw('G1 quantity cannot be zero.');
+      expect(() => getGxBeforeMVU(usdQuantity, g1Quantity)).to.throw(
+        'G1 quantity cannot be zero.',
+      );
     });
 
     it('Should return the correct value for Gx before MVU when USD quantity is 0', async function () {
@@ -181,16 +177,16 @@ describe('G1 to GX util functions', async function () {
       const expectedGxBeforeMVU = getGxFromG1(usdQuantity, g1Quantity);
 
       const result = getGxBeforeMVU(usdQuantity, g1Quantity);
-      chai.expect(result).to.equal(expectedGxBeforeMVU);
+      expect(result).to.equal(expectedGxBeforeMVU);
     });
 
     it('Should return 0 when both USD and G1 quantities are 0', async function () {
       const usdQuantity = 0;
       const g1Quantity = 0;
 
-      chai
-        .expect(() => getGxBeforeMVU(usdQuantity, g1Quantity))
-        .to.throw('G1 quantity cannot be zero.');
+      expect(() => getGxBeforeMVU(usdQuantity, g1Quantity)).to.throw(
+        'G1 quantity cannot be zero.',
+      );
     });
   });
 
@@ -208,7 +204,7 @@ describe('G1 to GX util functions', async function () {
         (gxFromUSD + gxFromG1);
 
       const result = getGxAfterMVU(usdQuantity, g1Quantity, mvu);
-      chai.expect(result).to.equal(expectedGxAfterMVU);
+      expect(result).to.equal(expectedGxAfterMVU);
     });
 
     it('Should return the correct value when the total GX does not exceed the USD cap', async function () {
@@ -226,7 +222,7 @@ describe('G1 to GX util functions', async function () {
         (gxFromUSD + gxFromG1 - USD_CAP * EXCHANGE_RATE_GX_USD);
 
       const result = getGxAfterMVU(usdQuantity, g1Quantity, mvu);
-      chai.expect(result).to.equal(expectedGxAfterMVU);
+      expect(result).to.equal(expectedGxAfterMVU);
     });
   });
 
@@ -248,7 +244,7 @@ describe('G1 to GX util functions', async function () {
           TIME_EFFECT_DECAYING_SLOPE * maxDifference);
 
       const result = getGxAfterMVUWithTimeEffect(usdQuantity, g1Quantity, mvu);
-      chai.expect(result).to.equal(expectedGxAfterMVUWithTimeEffect);
+      expect(result).to.equal(expectedGxAfterMVUWithTimeEffect);
     });
 
     it('Should return the same value as getGxAfterMVU when time left is time left is equal minutesUntilJanFirst2024', async function () {
@@ -262,7 +258,7 @@ describe('G1 to GX util functions', async function () {
         getGxAfterMVU(usdQuantity, g1Quantity, mvu) *
         TIME_EFFECT_INITIAL_FACTOR;
       const result = getGxAfterMVUWithTimeEffect(usdQuantity, g1Quantity, mvu);
-      chai.expect(result).to.equal(expectedGxAfterMVU);
+      expect(result).to.equal(expectedGxAfterMVU);
     });
   });
 
@@ -284,9 +280,9 @@ describe('G1 to GX util functions', async function () {
           TIME_EFFECT_DECAYING_SLOPE * maxDifference);
 
       const result = getTotalUSD(usdQuantity, g1Quantity, mvu);
-      chai
-        .expect(result)
-        .to.equal(expectedGxAfterMVUWithTimeEffect / EXCHANGE_RATE_GX_USD);
+      expect(result).to.equal(
+        expectedGxAfterMVUWithTimeEffect / EXCHANGE_RATE_GX_USD,
+      );
     });
   });
 
@@ -298,24 +294,22 @@ describe('G1 to GX util functions', async function () {
 
       const result = computeG1ToGxConversion(usdQuantity, g1Quantity, mvu);
 
-      chai.expect(result.usdFromUsdInvestment).to.equal(Number(100).toFixed(2));
-      chai.expect(result.usdFromG1Investment).to.equal(Number(0.25).toFixed(2));
-      chai.expect(result.usdFromMvu).to.equal(Number(8.02).toFixed(2));
-      chai.expect(result.usdFromTime).to.equal(Number(13.7).toFixed(2));
-      chai
-        .expect(result.equivalentUsdInvested)
-        .to.equal(Number(121.97).toFixed(2));
+      expect(result.usdFromUsdInvestment).to.equal(Number(100).toFixed(2));
+      expect(result.usdFromG1Investment).to.equal(Number(0.25).toFixed(2));
+      expect(result.usdFromMvu).to.equal(Number(8.02).toFixed(2));
+      expect(result.usdFromTime).to.equal(Number(13.7).toFixed(2));
+      expect(result.equivalentUsdInvested).to.equal(Number(121.97).toFixed(2));
 
-      chai.expect(result.gxBeforeMvu).to.equal(Number(2784.72).toFixed(2));
-      chai.expect(result.gxMvuEffect).to.equal(Number(222.78).toFixed(2));
-      chai.expect(result.gxTimeEffect).to.equal(Number(380.5).toFixed(2));
-      chai.expect(result.GxUsdExchangeRate).to.equal(Number(33.8).toFixed(2));
+      expect(result.gxBeforeMvu).to.equal(Number(2784.72).toFixed(2));
+      expect(result.gxMvuEffect).to.equal(Number(222.78).toFixed(2));
+      expect(result.gxTimeEffect).to.equal(Number(380.5).toFixed(2));
+      expect(result.GxUsdExchangeRate).to.equal(Number(33.8).toFixed(2));
 
-      chai
-        .expect(result.standardGxUsdExchangeRate)
-        .to.equal(Number(27.78).toFixed(2));
+      expect(result.standardGxUsdExchangeRate).to.equal(
+        Number(27.78).toFixed(2),
+      );
 
-      chai.expect(result.discountReceived).to.equal(Number(17.81).toFixed(2));
+      expect(result.discountReceived).to.equal(Number(17.81).toFixed(2));
     });
 
     it('computeG1ToGxConversion function with lots of G1', async function () {
@@ -325,27 +319,23 @@ describe('G1 to GX util functions', async function () {
 
       const result = computeG1ToGxConversion(usdQuantity, g1Quantity, mvu);
 
-      chai.expect(result.tokenAmountG1).to.equal(Number(5000000000).toFixed(2));
-      chai.expect(result.usdFromUsdInvestment).to.equal(Number(100).toFixed(2));
-      chai
-        .expect(result.usdFromG1Investment)
-        .to.equal(Number(111.59).toFixed(2));
-      chai.expect(result.usdFromMvu).to.equal(Number(16.93).toFixed(2));
-      chai.expect(result.usdFromTime).to.equal(Number(28.91).toFixed(2));
-      chai
-        .expect(result.equivalentUsdInvested)
-        .to.equal(Number(257.43).toFixed(2));
+      expect(result.tokenAmountG1).to.equal(Number(5000000000).toFixed(2));
+      expect(result.usdFromUsdInvestment).to.equal(Number(100).toFixed(2));
+      expect(result.usdFromG1Investment).to.equal(Number(111.59).toFixed(2));
+      expect(result.usdFromMvu).to.equal(Number(16.93).toFixed(2));
+      expect(result.usdFromTime).to.equal(Number(28.91).toFixed(2));
+      expect(result.equivalentUsdInvested).to.equal(Number(257.43).toFixed(2));
 
-      chai.expect(result.gxBeforeMvu).to.equal(Number(5877.44).toFixed(2));
-      chai.expect(result.gxMvuEffect).to.equal(Number(470.19).toFixed(2));
-      chai.expect(result.gxTimeEffect).to.equal(Number(803.09).toFixed(2));
-      chai.expect(result.GxUsdExchangeRate).to.equal(Number(33.8).toFixed(2));
+      expect(result.gxBeforeMvu).to.equal(Number(5877.44).toFixed(2));
+      expect(result.gxMvuEffect).to.equal(Number(470.19).toFixed(2));
+      expect(result.gxTimeEffect).to.equal(Number(803.09).toFixed(2));
+      expect(result.GxUsdExchangeRate).to.equal(Number(33.8).toFixed(2));
 
-      chai
-        .expect(result.standardGxUsdExchangeRate)
-        .to.equal(Number(27.78).toFixed(2));
+      expect(result.standardGxUsdExchangeRate).to.equal(
+        Number(27.78).toFixed(2),
+      );
 
-      chai.expect(result.discountReceived).to.equal(Number(17.81).toFixed(2));
+      expect(result.discountReceived).to.equal(Number(17.81).toFixed(2));
     });
   });
 });

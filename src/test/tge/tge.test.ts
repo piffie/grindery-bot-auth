@@ -1,4 +1,4 @@
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import chaiHttp from 'chai-http';
 import Sinon from 'sinon';
 import * as g1gx from '../../utils/g1gx';
@@ -141,12 +141,12 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         });
 
-      chai.expect(isUUIDv4(res.body.quoteId)).to.be.true;
+      expect(isUUIDv4(res.body.quoteId)).to.be.true;
 
       delete res.body.date;
       delete res.body.quoteId;
 
-      chai.expect(res.body).to.deep.equal({
+      expect(res.body).to.deep.equal({
         userTelegramID: mockUserTelegramID,
         tokenAmountG1: '1000.00',
         usdFromUsdInvestment: '1',
@@ -177,8 +177,7 @@ describe('G1 to GX util functions', async function () {
 
       const quotes = await collectionQuotesMock.find({}).toArray();
 
-      chai
-        .expect(quotes)
+      expect(quotes)
         .excluding(['_id', 'date', 'quoteId'])
         .to.deep.equal([
           {
@@ -199,7 +198,7 @@ describe('G1 to GX util functions', async function () {
           },
         ]);
 
-      chai.expect(isUUIDv4(quotes[0].quoteId)).to.be.true;
+      expect(isUUIDv4(quotes[0].quoteId)).to.be.true;
     });
   });
 
@@ -252,8 +251,7 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         });
 
-      chai
-        .expect(res.body)
+      expect(res.body)
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -302,7 +300,7 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID1,
         });
 
-      chai.expect(res.body).to.be.empty;
+      expect(res.body).to.be.empty;
     });
   });
 
@@ -331,8 +329,7 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         });
 
-      chai
-        .expect(res.body)
+      expect(res.body)
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -357,7 +354,7 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID1,
         });
 
-      chai.expect(res.body).to.be.empty;
+      expect(res.body).to.be.empty;
     });
   });
 
@@ -432,7 +429,7 @@ describe('G1 to GX util functions', async function () {
 
       delete res.body.order._id;
 
-      chai.expect(res.body).to.deep.equal({
+      expect(res.body).to.deep.equal({
         order: {
           orderId: mockOrderID,
           status: GxOrderStatus.COMPLETE,
@@ -466,7 +463,7 @@ describe('G1 to GX util functions', async function () {
 
       delete res.body.quote._id;
 
-      chai.expect(res.body).to.deep.equal({
+      expect(res.body).to.deep.equal({
         quote: {
           quoteId: mockOrderID1,
           tokenAmountG1: '1000.00',
@@ -496,7 +493,7 @@ describe('G1 to GX util functions', async function () {
           orderId: 'another_order_ID',
         });
 
-      chai.expect(res.body).to.deep.equal({ msg: 'Order and quote not found' });
+      expect(res.body).to.deep.equal({ msg: 'Order and quote not found' });
     });
   });
 
@@ -550,7 +547,7 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         });
 
-      chai.expect(res.body).to.deep.equal({
+      expect(res.body).to.deep.equal({
         success: false,
         msg: 'No quote available for this ID',
       });
@@ -566,7 +563,7 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: 'incorrect_user_id',
         });
 
-      chai.expect(res.body).to.deep.equal({
+      expect(res.body).to.deep.equal({
         success: false,
         msg: 'Quote ID is not linked to the provided user Telegram ID',
       });
@@ -587,7 +584,7 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         });
 
-      chai.expect(res.body).to.deep.equal({
+      expect(res.body).to.deep.equal({
         success: false,
         msg: 'This order is already being processed',
       });
@@ -608,7 +605,7 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         });
 
-      chai.expect(res.body).to.deep.equal({
+      expect(res.body).to.deep.equal({
         success: false,
         msg: 'This order is already being processed',
       });
@@ -624,22 +621,20 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${mockUserTelegramID}`,
-          chain: mockChainName,
-          to: [mockTokenAddress],
-          value: ['0x00'],
-          data: [
-            '0xa9059cbb0000000000000000000000006ef802abd3108411afe86656c9a369946aff590d00000000000000000000000000000000000000000000003635c9adc5dea00000',
-          ],
-          delegatecall: 0,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${mockUserTelegramID}`,
+        chain: mockChainName,
+        to: [mockTokenAddress],
+        value: ['0x00'],
+        data: [
+          '0xa9059cbb0000000000000000000000006ef802abd3108411afe86656c9a369946aff590d00000000000000000000000000000000000000000000003635c9adc5dea00000',
+        ],
+        delegatecall: 0,
+        auth: '',
+      });
     });
 
     it('Should return the transaction hash if order is not present in database', async function () {
@@ -654,7 +649,7 @@ describe('G1 to GX util functions', async function () {
 
       delete res.body.order.dateG1;
 
-      chai.expect(res.body).to.deep.equal({
+      expect(res.body).to.deep.equal({
         success: true,
         order: {
           orderId: mockOrderID,
@@ -692,8 +687,7 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
         });
 
-      chai
-        .expect(await collectionQuotesMock.find({}).toArray())
+      expect(await collectionQuotesMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -728,8 +722,7 @@ describe('G1 to GX util functions', async function () {
 
       const orders = await collectionOrdersMock.find({}).toArray();
 
-      chai
-        .expect(orders)
+      expect(orders)
         .excluding(['_id', 'dateG1'])
         .to.deep.equal([
           {
@@ -768,8 +761,7 @@ describe('G1 to GX util functions', async function () {
 
       const orders = await collectionOrdersMock.find({}).toArray();
 
-      chai
-        .expect(orders)
+      expect(orders)
         .excluding(['_id', 'dateG1'])
         .to.deep.equal([
           {
@@ -814,8 +806,7 @@ describe('G1 to GX util functions', async function () {
 
       const orders = await collectionOrdersMock.find({}).toArray();
 
-      chai
-        .expect(orders)
+      expect(orders)
         .excluding(['_id', 'dateG1'])
         .to.deep.equal([
           {
@@ -839,7 +830,7 @@ describe('G1 to GX util functions', async function () {
           },
         ]);
 
-      chai.expect(res.body.msg).to.be.equal('An error occurred');
+      expect(res.body.msg).to.be.equal('An error occurred');
     });
   });
 
@@ -927,7 +918,7 @@ describe('G1 to GX util functions', async function () {
           tokenAddress: avax_address_polygon,
         });
 
-      chai.expect(res.body).to.deep.equal({
+      expect(res.body).to.deep.equal({
         success: false,
         msg: 'No order available for this ID',
       });
@@ -945,7 +936,7 @@ describe('G1 to GX util functions', async function () {
           tokenAddress: avax_address_polygon,
         });
 
-      chai.expect(res.body).to.deep.equal({
+      expect(res.body).to.deep.equal({
         success: false,
         msg: 'Order ID is not linked to the provided user Telegram ID',
       });
@@ -963,7 +954,7 @@ describe('G1 to GX util functions', async function () {
           tokenAddress: avax_address_polygon,
         });
 
-      chai.expect(res.body).to.deep.equal({
+      expect(res.body).to.deep.equal({
         msg: 'Status of the order is not ready to process USD payment',
       });
     });
@@ -980,22 +971,20 @@ describe('G1 to GX util functions', async function () {
           tokenAddress: avax_address_polygon,
         });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${mockUserTelegramID}`,
-          chain: 'matic',
-          to: [avax_address_polygon],
-          value: ['0x00'],
-          data: [
-            '0xa9059cbb0000000000000000000000006ef802abd3108411afe86656c9a369946aff590d0000000000000000000000000000000000000000000000015af1d78b58c40000',
-          ],
-          delegatecall: 0,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${mockUserTelegramID}`,
+        chain: 'matic',
+        to: [avax_address_polygon],
+        value: ['0x00'],
+        data: [
+          '0xa9059cbb0000000000000000000000006ef802abd3108411afe86656c9a369946aff590d0000000000000000000000000000000000000000000000015af1d78b58c40000',
+        ],
+        delegatecall: 0,
+        auth: '',
+      });
     });
 
     it('Should update the database with a complete status if everything is ok', async function () {
@@ -1011,8 +1000,7 @@ describe('G1 to GX util functions', async function () {
         });
       const orders = await collectionOrdersMock.find({}).toArray();
 
-      chai
-        .expect(orders)
+      expect(orders)
         .excluding(['_id', 'dateG1', 'dateUSD'])
         .to.deep.equal([
           {
@@ -1103,7 +1091,7 @@ describe('G1 to GX util functions', async function () {
       delete res.body.order.dateG1;
       delete res.body.order.dateUSD;
 
-      chai.expect(res.body).to.deep.equal({
+      expect(res.body).to.deep.equal({
         success: true,
         order: {
           orderId: mockOrderID,
@@ -1149,7 +1137,7 @@ describe('G1 to GX util functions', async function () {
       delete res.body.order.dateG1;
       delete res.body.order.dateUSD;
 
-      chai.expect(res.body).to.deep.equal({
+      expect(res.body).to.deep.equal({
         success: true,
         order: {
           orderId: mockOrderID2,
@@ -1200,8 +1188,7 @@ describe('G1 to GX util functions', async function () {
 
       const orders = await collectionOrdersMock.find({}).toArray();
 
-      chai
-        .expect(orders)
+      expect(orders)
         .excluding(['_id', 'dateG1', 'dateUSD'])
         .to.deep.equal([
           {
@@ -1271,8 +1258,7 @@ describe('G1 to GX util functions', async function () {
           },
         ]);
 
-      chai
-        .expect(res.body)
+      expect(res.body)
         .excluding(['error'])
         .to.deep.equal({ success: false, msg: 'An error occurred' });
     });
@@ -1297,8 +1283,7 @@ describe('G1 to GX util functions', async function () {
 
       const orders = await collectionOrdersMock.find({}).toArray();
 
-      chai
-        .expect(orders)
+      expect(orders)
         .excluding(['_id', 'dateG1', 'dateUSD'])
         .to.deep.equal([
           {
@@ -1371,7 +1356,7 @@ describe('G1 to GX util functions', async function () {
           },
         ]);
 
-      chai.expect(res.body).excluding(['error']).to.deep.equal({
+      expect(res.body).excluding(['error']).to.deep.equal({
         success: false,
         msg: 'An error occurred',
       });

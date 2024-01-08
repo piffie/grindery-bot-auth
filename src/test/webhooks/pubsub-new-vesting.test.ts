@@ -1,4 +1,4 @@
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import {
   mockResponsePath,
   mockUserName,
@@ -139,7 +139,7 @@ describe('handleNewVesting function', async function () {
     });
 
     it('Should return true', async function () {
-      chai.expect(
+      expect(
         await handleNewVesting({
           senderTgId: mockUserTelegramID,
           recipients: [{ recipientAddress: mockWallet, amount: '100' }],
@@ -162,8 +162,7 @@ describe('handleNewVesting function', async function () {
 
       const transfers = await collectionVestingsMock.find({}).toArray();
 
-      chai
-        .expect(transfers)
+      expect(transfers)
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
@@ -184,7 +183,7 @@ describe('handleNewVesting function', async function () {
             userOpHash: null,
           },
         ]);
-      chai.expect(transfers[0].dateAdded).to.be.a('date');
+      expect(transfers[0].dateAdded).to.be.a('date');
     });
 
     it('Should call the sendTokens function properly for ERC20 token vesting', async function () {
@@ -194,22 +193,20 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${mockUserTelegramID}`,
-          chain: mockChainName,
-          to: [HEDGEY_BATCHPLANNER_ADDRESS],
-          value: ['0x00'],
-          data: [
-            '0xae6253530000000000000000000000001961a23409ca59eedca6a99c97e4087dad752486000000000000000000000000e36bd65609c08cd17b53520293523cf4560533d00000000000000000000000000000000000000000000000056bc75e2d6310000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000005000000000000000000000000000000000000000000000000000000000000000100000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d6310000000000000000000000000000000000000000000000000000000000000659200800000000000000000000000000000000000000000000000000000000065920080000000000000000000000000000000000000000000000000000002e24d16b5a9',
-          ],
-          delegatecall: 0,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${mockUserTelegramID}`,
+        chain: mockChainName,
+        to: [HEDGEY_BATCHPLANNER_ADDRESS],
+        value: ['0x00'],
+        data: [
+          '0xae6253530000000000000000000000001961a23409ca59eedca6a99c97e4087dad752486000000000000000000000000e36bd65609c08cd17b53520293523cf4560533d00000000000000000000000000000000000000000000000056bc75e2d6310000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000005000000000000000000000000000000000000000000000000000000000000000100000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d6310000000000000000000000000000000000000000000000000000000000000659200800000000000000000000000000000000000000000000000000000000065920080000000000000000000000000000000000000000000000000000002e24d16b5a9',
+        ],
+        delegatecall: 0,
+        auth: '',
+      });
     });
 
     it('Should populate the segment vesting properly', async function () {
@@ -229,8 +226,7 @@ describe('handleNewVesting function', async function () {
         .getCalls()
         .filter((e) => e.firstArg === SEGMENT_TRACK_URL);
 
-      chai
-        .expect(segmentIdentityCall[0].args[1])
+      expect(segmentIdentityCall[0].args[1])
         .excluding(['timestamp'])
         .to.deep.equal({
           userId: mockUserTelegramID,
@@ -267,8 +263,7 @@ describe('handleNewVesting function', async function () {
         .getCalls()
         .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK).args[1];
 
-      chai
-        .expect(FlowXOCallArgs)
+      expect(FlowXOCallArgs)
         .excluding(['dateAdded'])
         .to.deep.equal({
           senderResponsePath: mockResponsePath,
@@ -314,8 +309,7 @@ describe('handleNewVesting function', async function () {
 
       const transfers = await collectionVestingsMock.find({}).toArray();
 
-      chai
-        .expect(transfers)
+      expect(transfers)
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
@@ -336,7 +330,7 @@ describe('handleNewVesting function', async function () {
             userOpHash: null,
           },
         ]);
-      chai.expect(transfers[0].dateAdded).to.be.a('date');
+      expect(transfers[0].dateAdded).to.be.a('date');
     });
 
     it('Should call the sendTokens function properly for ERC20 token vesting', async function () {
@@ -349,22 +343,20 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${mockUserTelegramID}`,
-          chain: mockChainName,
-          to: [HEDGEY_BATCHPLANNER_ADDRESS],
-          value: ['0x00'],
-          data: [
-            '0xae6253530000000000000000000000001961a23409ca59eedca6a99c97e4087dad752486000000000000000000000000e36bd65609c08cd17b53520293523cf4560533d00000000000000000000000000000000000000000000000063bf212b431ec000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000005000000000000000000000000000000000000000000000000000000000000000200000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d6310000000000000000000000000000000000000000000000000000000000000659200800000000000000000000000000000000000000000000000000000000065920080000000000000000000000000000000000000000000000000000002e24d16b5a9000000000000000000000000594cfcaa67bc8789d17d39eb5f1dfc7dd95242cd000000000000000000000000000000000000000000000000d02ab486cedc0000000000000000000000000000000000000000000000000000000000006592008000000000000000000000000000000000000000000000000000000000659200800000000000000000000000000000000000000000000000000000006ebec3680d',
-          ],
-          delegatecall: 0,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${mockUserTelegramID}`,
+        chain: mockChainName,
+        to: [HEDGEY_BATCHPLANNER_ADDRESS],
+        value: ['0x00'],
+        data: [
+          '0xae6253530000000000000000000000001961a23409ca59eedca6a99c97e4087dad752486000000000000000000000000e36bd65609c08cd17b53520293523cf4560533d00000000000000000000000000000000000000000000000063bf212b431ec000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000005000000000000000000000000000000000000000000000000000000000000000200000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d6310000000000000000000000000000000000000000000000000000000000000659200800000000000000000000000000000000000000000000000000000000065920080000000000000000000000000000000000000000000000000000002e24d16b5a9000000000000000000000000594cfcaa67bc8789d17d39eb5f1dfc7dd95242cd000000000000000000000000000000000000000000000000d02ab486cedc0000000000000000000000000000000000000000000000000000000000006592008000000000000000000000000000000000000000000000000000000000659200800000000000000000000000000000000000000000000000000000006ebec3680d',
+        ],
+        delegatecall: 0,
+        auth: '',
+      });
     });
   });
 
@@ -384,7 +376,7 @@ describe('handleNewVesting function', async function () {
     });
 
     it('Should return true and no token sending if vesting is already a success', async function () {
-      chai.expect(
+      expect(
         await handleNewVesting({
           senderTgId: mockUserTelegramID,
           recipients: [
@@ -406,7 +398,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -421,8 +413,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionVestingsMock.find({}).toArray())
+      expect(await collectionVestingsMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -442,7 +433,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK),
@@ -459,9 +450,8 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -481,7 +471,7 @@ describe('handleNewVesting function', async function () {
     });
 
     it('Should return true and no token sending if vesting if is already a failure', async function () {
-      chai.expect(
+      expect(
         await handleNewVesting({
           senderTgId: mockUserTelegramID,
           recipients: [
@@ -503,7 +493,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -518,8 +508,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionVestingsMock.find({}).toArray())
+      expect(await collectionVestingsMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -539,7 +528,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK),
@@ -556,9 +545,8 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -588,7 +576,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(result).to.be.false;
+      expect(result).to.be.false;
     });
 
     it('Should not modify vesting status in the database if there is an error in the send tokens request', async function () {
@@ -601,8 +589,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionVestingsMock.find({}).toArray())
+      expect(await collectionVestingsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -635,7 +622,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK),
@@ -652,9 +639,8 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -685,11 +671,9 @@ describe('handleNewVesting function', async function () {
       eventId: txId,
     });
 
-    chai
-      .expect(
-        (await collectionVestingsMock.find({}).toArray())[0]._id.toString(),
-      )
-      .to.equal(objectId);
+    expect(
+      (await collectionVestingsMock.find({}).toArray())[0]._id.toString(),
+    ).to.equal(objectId);
   });
 
   describe('Sender is not a user', async function () {
@@ -703,7 +687,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should not add anything in database if sender is not a user', async function () {
@@ -716,7 +700,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(await collectionVestingsMock.find({}).toArray()).to.be.empty;
+      expect(await collectionVestingsMock.find({}).toArray()).to.be.empty;
     });
 
     it('Should not send tokens if sender is not a user', async function () {
@@ -729,7 +713,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -744,7 +728,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK),
@@ -761,9 +745,8 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -792,7 +775,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(result).to.be.false;
+      expect(result).to.be.false;
     });
 
     it('Should not modify database if error in PatchWallet vesting', async function () {
@@ -805,8 +788,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionVestingsMock.find({}).toArray())
+      expect(await collectionVestingsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -839,7 +821,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK),
@@ -856,9 +838,8 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -889,7 +870,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should complete db status to failure in database if error 470 in PatchWallet vesting', async function () {
@@ -902,8 +883,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionVestingsMock.find({}).toArray())
+      expect(await collectionVestingsMock.find({}).toArray())
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
@@ -936,7 +916,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK),
@@ -953,9 +933,8 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -986,7 +965,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(result).to.be.false;
+      expect(result).to.be.false;
     });
 
     it('Should do no vesting status modification in database if no hash in PatchWallet vesting', async function () {
@@ -999,8 +978,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionVestingsMock.find({}).toArray())
+      expect(await collectionVestingsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -1033,7 +1011,7 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK),
@@ -1050,9 +1028,8 @@ describe('handleNewVesting function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -1085,7 +1062,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should update reward database with a pending_hash status and userOpHash if vesting hash is empty in tx PatchWallet endpoint', async function () {
@@ -1098,8 +1075,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai
-          .expect(await collectionVestingsMock.find({}).toArray())
+        expect(await collectionVestingsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1132,7 +1108,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK),
@@ -1178,7 +1154,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if vesting hash is present in PatchWallet status endpoint', async function () {
@@ -1191,7 +1167,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1206,8 +1182,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai
-          .expect(await collectionVestingsMock.find({}).toArray())
+        expect(await collectionVestingsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1244,8 +1219,7 @@ describe('handleNewVesting function', async function () {
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK).args[1];
 
-        chai
-          .expect(FlowXOCallArgs)
+        expect(FlowXOCallArgs)
           .excluding(['dateAdded'])
           .to.deep.equal({
             senderResponsePath: mockResponsePath,
@@ -1264,10 +1238,10 @@ describe('handleNewVesting function', async function () {
             apiKey: FLOWXO_WEBHOOK_API_KEY,
           });
 
-        chai
-          .expect(FlowXOCallArgs.dateAdded)
-          .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-        chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+        expect(FlowXOCallArgs.dateAdded).to.be.greaterThanOrEqual(
+          new Date(Date.now() - 20000),
+        ); // 20 seconds
+        expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
       });
     });
 
@@ -1316,7 +1290,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should not send tokens if vesting hash is not present in PatchWallet status endpoint', async function () {
@@ -1329,7 +1303,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1344,8 +1318,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai
-          .expect(await collectionVestingsMock.find({}).toArray())
+        expect(await collectionVestingsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1378,7 +1351,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK),
@@ -1428,7 +1401,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
@@ -1441,7 +1414,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1456,8 +1429,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai
-          .expect(await collectionVestingsMock.find({}).toArray())
+        expect(await collectionVestingsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1489,7 +1461,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK),
@@ -1541,7 +1513,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if Error 470 in PatchWallet get status endpoint', async function () {
@@ -1554,7 +1526,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1569,8 +1541,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai
-          .expect(await collectionVestingsMock.find({}).toArray())
+        expect(await collectionVestingsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1603,7 +1574,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK),
@@ -1648,7 +1619,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if vesting hash is pending_hash without userOpHash', async function () {
@@ -1661,7 +1632,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1676,8 +1647,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai
-          .expect(await collectionVestingsMock.find({}).toArray())
+        expect(await collectionVestingsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1710,7 +1680,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK),
@@ -1763,7 +1733,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens after 10 min of trying to get status', async function () {
@@ -1776,7 +1746,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1791,8 +1761,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai
-          .expect(await collectionVestingsMock.find({}).toArray())
+        expect(await collectionVestingsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1825,7 +1794,7 @@ describe('handleNewVesting function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_VESTING_WEBHOOK),

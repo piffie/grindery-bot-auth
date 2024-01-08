@@ -1,4 +1,4 @@
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import {
   mockResponsePath,
   mockUserHandle,
@@ -136,7 +136,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should send tokens if Sign up reward already exists with same eventId and is a success', async function () {
@@ -149,7 +149,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -164,8 +164,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -187,7 +186,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK),
@@ -215,7 +214,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should send tokens if Sign up reward already exists with another eventId', async function () {
@@ -228,7 +227,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -243,8 +242,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -266,7 +264,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK),
@@ -293,7 +291,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should send tokens if Sign up reward already exists with no eventId', async function () {
@@ -306,7 +304,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -321,8 +319,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -343,7 +340,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK),
@@ -379,7 +376,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should call the sendTokens function properly if Sign up reward status pending at the beginning with same eventID', async function () {
@@ -392,22 +389,20 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${SOURCE_TG_ID}`,
-          chain: DEFAULT_CHAIN_NAME,
-          to: [G1_POLYGON_ADDRESS],
-          value: ['0x00'],
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
-          ],
-          delegatecall: 0,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${SOURCE_TG_ID}`,
+        chain: DEFAULT_CHAIN_NAME,
+        to: [G1_POLYGON_ADDRESS],
+        value: ['0x00'],
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+        ],
+        delegatecall: 0,
+        auth: '',
+      });
     });
 
     it('Should update the database with a success if Sign up reward status pending at the beginning with same eventID', async function () {
@@ -420,8 +415,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -461,7 +455,7 @@ describe('handleSignUpReward function', async function () {
         .getCalls()
         .find((e) => e.firstArg === FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK).args[1];
 
-      chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+      expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
@@ -474,10 +468,10 @@ describe('handleSignUpReward function', async function () {
         apiKey: FLOWXO_WEBHOOK_API_KEY,
       });
 
-      chai
-        .expect(FlowXOCallArgs.dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(FlowXOCallArgs.dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
     });
   });
 
@@ -501,7 +495,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should call the sendTokens function properly if Sign up reward status is failure at beginning with same eventID', async function () {
@@ -514,22 +508,20 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${SOURCE_TG_ID}`,
-          chain: DEFAULT_CHAIN_NAME,
-          to: [G1_POLYGON_ADDRESS],
-          value: ['0x00'],
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
-          ],
-          delegatecall: 0,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${SOURCE_TG_ID}`,
+        chain: DEFAULT_CHAIN_NAME,
+        to: [G1_POLYGON_ADDRESS],
+        value: ['0x00'],
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+        ],
+        delegatecall: 0,
+        auth: '',
+      });
     });
 
     it('Should update reward status if Sign up reward status is failure at beginning with same eventID', async function () {
@@ -544,8 +536,7 @@ describe('handleSignUpReward function', async function () {
 
       const rewards = await collectionRewardsMock.find({}).toArray();
 
-      chai
-        .expect(rewards)
+      expect(rewards)
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -564,10 +555,10 @@ describe('handleSignUpReward function', async function () {
           },
         ]);
 
-      chai
-        .expect(rewards[0].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(rewards[0].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
     });
 
     it('Should call FlowXO properly if Sign up reward status is failure at beginning with same eventID', async function () {
@@ -584,7 +575,7 @@ describe('handleSignUpReward function', async function () {
         .getCalls()
         .find((e) => e.firstArg === FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK).args[1];
 
-      chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+      expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
@@ -597,10 +588,10 @@ describe('handleSignUpReward function', async function () {
         apiKey: FLOWXO_WEBHOOK_API_KEY,
       });
 
-      chai
-        .expect(FlowXOCallArgs.dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(FlowXOCallArgs.dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
     });
   });
 
@@ -617,22 +608,20 @@ describe('handleSignUpReward function', async function () {
         chainId: mockChainId,
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${SOURCE_TG_ID}`,
-          chain: mockChainName,
-          to: [mockTokenAddress],
-          value: ['0x00'],
-          delegatecall: 0,
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
-          ],
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${SOURCE_TG_ID}`,
+        chain: mockChainName,
+        to: [mockTokenAddress],
+        value: ['0x00'],
+        delegatecall: 0,
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+        ],
+        auth: '',
+      });
     });
 
     it('Should call the sendTokens function properly with delegate call if specified', async function () {
@@ -648,22 +637,20 @@ describe('handleSignUpReward function', async function () {
         delegatecall: 1,
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${SOURCE_TG_ID}`,
-          chain: mockChainName,
-          to: [mockTokenAddress],
-          value: ['0x00'],
-          delegatecall: 1,
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
-          ],
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${SOURCE_TG_ID}`,
+        chain: mockChainName,
+        to: [mockTokenAddress],
+        value: ['0x00'],
+        delegatecall: 1,
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+        ],
+        auth: '',
+      });
     });
 
     it('Should insert a new element in the reward collection of the database if the user is new', async function () {
@@ -678,8 +665,8 @@ describe('handleSignUpReward function', async function () {
 
       const rewards = await collectionRewardsMock.find({}).toArray();
 
-      chai.expect(rewards.length).to.equal(1);
-      chai.expect(rewards[0]).excluding(['_id', 'dateAdded']).to.deep.equal({
+      expect(rewards.length).to.equal(1);
+      expect(rewards[0]).excluding(['_id', 'dateAdded']).to.deep.equal({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
@@ -693,10 +680,10 @@ describe('handleSignUpReward function', async function () {
         status: TransactionStatus.SUCCESS,
         userOpHash: null,
       });
-      chai
-        .expect(rewards[0].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(rewards[0].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
     });
 
     it('Should call FlowXO webhook properly if the user is new', async function () {
@@ -713,7 +700,7 @@ describe('handleSignUpReward function', async function () {
         .getCalls()
         .find((e) => e.firstArg === FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK).args[1];
 
-      chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+      expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
@@ -726,14 +713,14 @@ describe('handleSignUpReward function', async function () {
         apiKey: FLOWXO_WEBHOOK_API_KEY,
       });
 
-      chai
-        .expect(FlowXOCallArgs.dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(FlowXOCallArgs.dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
     });
 
     it('Should return true if the user is new', async function () {
-      chai.expect(
+      expect(
         await handleSignUpReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -754,7 +741,7 @@ describe('handleSignUpReward function', async function () {
         userName: mockUserName,
         patchwallet: mockWallet,
       });
-      chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
+      expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
     });
   });
 
@@ -763,7 +750,7 @@ describe('handleSignUpReward function', async function () {
       .withArgs(FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK)
       .rejects(new Error('Service not available'));
 
-    chai.expect(
+    expect(
       await handleSignUpReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
@@ -781,7 +768,7 @@ describe('handleSignUpReward function', async function () {
         .withArgs(PATCHWALLET_TX_URL)
         .rejects(new Error('Service not available'));
 
-      chai.expect(
+      expect(
         await handleSignUpReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -806,8 +793,7 @@ describe('handleSignUpReward function', async function () {
         userName: mockUserName,
         patchwallet: mockWallet,
       });
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -842,7 +828,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK),
@@ -860,7 +846,7 @@ describe('handleSignUpReward function', async function () {
     });
 
     it('Should return false if there is no hash in PatchWallet response', async function () {
-      chai.expect(
+      expect(
         await handleSignUpReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -882,8 +868,7 @@ describe('handleSignUpReward function', async function () {
         patchwallet: mockWallet,
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -912,7 +897,7 @@ describe('handleSignUpReward function', async function () {
         userName: mockUserName,
         patchwallet: mockWallet,
       });
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK),
@@ -941,7 +926,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should update reward database with a pending_hash status and userOpHash if transaction hash is empty in tx PatchWallet endpoint', async function () {
@@ -954,8 +939,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -985,7 +969,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK),
@@ -1020,7 +1004,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if transaction hash is present in PatchWallet status endpoint', async function () {
@@ -1033,7 +1017,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1048,8 +1032,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1083,7 +1066,7 @@ describe('handleSignUpReward function', async function () {
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK).args[1];
 
-        chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+        expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
@@ -1096,10 +1079,10 @@ describe('handleSignUpReward function', async function () {
           apiKey: FLOWXO_WEBHOOK_API_KEY,
         });
 
-        chai
-          .expect(FlowXOCallArgs.dateAdded)
-          .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-        chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+        expect(FlowXOCallArgs.dateAdded).to.be.greaterThanOrEqual(
+          new Date(Date.now() - 20000),
+        ); // 20 seconds
+        expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
       });
     });
 
@@ -1137,7 +1120,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should not send tokens if transaction hash is not present in PatchWallet status endpoint', async function () {
@@ -1150,7 +1133,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1165,8 +1148,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1196,7 +1178,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK),
@@ -1235,7 +1217,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
@@ -1248,7 +1230,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1263,8 +1245,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1293,7 +1274,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK),
@@ -1327,7 +1308,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if transaction hash is pending_hash without userOpHash', async function () {
@@ -1340,7 +1321,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1355,8 +1336,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1386,7 +1366,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK),
@@ -1429,7 +1409,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens after 10 min of trying to get status', async function () {
@@ -1442,7 +1422,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1457,8 +1437,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1488,7 +1467,7 @@ describe('handleSignUpReward function', async function () {
           patchwallet: mockWallet,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK),

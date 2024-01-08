@@ -1,4 +1,4 @@
-import chai from 'chai';
+import { expect } from 'chai';
 import {
   isolatedRewardValidator,
   newRewardValidator,
@@ -57,7 +57,7 @@ describe('Webhook validators', function () {
       await Promise.all(
         newRewardValidator.map((middleware) => middleware(req, {}, () => {})),
       );
-      chai.expect(validateResult(req)).to.be.empty;
+      expect(validateResult(req)).to.be.empty;
     });
 
     it('Should fail with invalid params', async function () {
@@ -66,11 +66,9 @@ describe('Webhook validators', function () {
         newRewardValidator.map((middleware) => middleware(req, {}, () => {})),
       );
 
-      chai
-        .expect(validateResult(req).length)
-        .to.equal(NUMBER_PARAMETER_TEST_REWARD);
+      expect(validateResult(req).length).to.equal(NUMBER_PARAMETER_TEST_REWARD);
 
-      chai.expect(validateResult(req)).to.deep.equal([
+      expect(validateResult(req)).to.deep.equal([
         {
           type: 'field',
           value: 'invalid_event',
@@ -197,7 +195,7 @@ describe('Webhook validators', function () {
           middleware(req, {}, () => {}),
         ),
       );
-      chai.expect(validateResult(req)).to.be.empty;
+      expect(validateResult(req)).to.be.empty;
     });
 
     it('Should fail with invalid params', async function () {
@@ -208,11 +206,9 @@ describe('Webhook validators', function () {
         ),
       );
 
-      chai
-        .expect(validateResult(req).length)
-        .to.equal(NUMBER_PARAMETER_TEST_TX);
+      expect(validateResult(req).length).to.equal(NUMBER_PARAMETER_TEST_TX);
 
-      chai.expect(validateResult(req)).to.deep.equal([
+      expect(validateResult(req)).to.deep.equal([
         {
           type: 'field',
           value: 'invalid_event',
@@ -329,7 +325,7 @@ describe('Webhook validators', function () {
           middleware(req, {}, () => {}),
         ),
       );
-      chai.expect(validateResult(req)).to.be.empty;
+      expect(validateResult(req)).to.be.empty;
     });
 
     it('Should fail with invalid params', async function () {
@@ -340,11 +336,11 @@ describe('Webhook validators', function () {
         ),
       );
 
-      chai
-        .expect(validateResult(req).length)
-        .to.equal(NUMBER_PARAMETER_TEST_TX_BATCH);
+      expect(validateResult(req).length).to.equal(
+        NUMBER_PARAMETER_TEST_TX_BATCH,
+      );
 
-      chai.expect(validateResult(req)).to.deep.equal([
+      expect(validateResult(req)).to.deep.equal([
         {
           type: 'field',
           value: 'invalid_event',
@@ -499,7 +495,7 @@ describe('Webhook validators', function () {
       await Promise.all(
         swapValidator.map((middleware) => middleware(req, {}, () => {})),
       );
-      chai.expect(validateResult(req)).to.be.empty;
+      expect(validateResult(req)).to.be.empty;
     });
 
     it('Should pass with real data', async function () {
@@ -507,7 +503,7 @@ describe('Webhook validators', function () {
       await Promise.all(
         swapValidator.map((middleware) => middleware(req, {}, () => {})),
       );
-      chai.expect(validateResult(req)).to.be.empty;
+      expect(validateResult(req)).to.be.empty;
     });
 
     it('Should fail with invalid params', async function () {
@@ -516,11 +512,9 @@ describe('Webhook validators', function () {
         swapValidator.map((middleware) => middleware(req, {}, () => {})),
       );
 
-      chai
-        .expect(validateResult(req).length)
-        .to.equal(NUMBER_PARAMETER_TEST_SWAP);
+      expect(validateResult(req).length).to.equal(NUMBER_PARAMETER_TEST_SWAP);
 
-      chai.expect(validateResult(req)).to.deep.equal([
+      expect(validateResult(req)).to.deep.equal([
         {
           type: 'field',
           value: 'invalid_event',
@@ -722,7 +716,7 @@ describe('Webhook validators', function () {
           middleware(req, {}, () => {}),
         ),
       );
-      chai.expect(validateResult(req)).to.be.empty;
+      expect(validateResult(req)).to.be.empty;
     });
 
     it('Should fail with invalid params', async function () {
@@ -733,11 +727,11 @@ describe('Webhook validators', function () {
         ),
       );
 
-      chai
-        .expect(validateResult(req).length)
-        .to.equal(NUMBER_PARAMETER_TEST_ISOLATED_REWARD);
+      expect(validateResult(req).length).to.equal(
+        NUMBER_PARAMETER_TEST_ISOLATED_REWARD,
+      );
 
-      chai.expect(validateResult(req)).to.deep.equal([
+      expect(validateResult(req)).to.deep.equal([
         {
           type: 'field',
           value: 'invalid_event',
