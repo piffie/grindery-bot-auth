@@ -6,7 +6,6 @@ import {
 } from '../../secrets';
 import {
   PatchRawResult,
-  PatchResult,
   RewardParams,
   createRewardParams,
 } from '../types/webhook.types';
@@ -21,10 +20,8 @@ import {
   sendTokens,
 } from '../utils/patchwallet';
 import {
-  getStatus,
-  isPendingTransactionHash,
+  handlePendingHash,
   isSuccessfulTransaction,
-  isTreatmentDurationExceeded,
   sendTransaction,
   updateTxHash,
   updateUserOpHash,
@@ -73,30 +70,17 @@ export async function handleReferralReward(
     if (!reward.tx)
       await reward.updateInDatabase(TransactionStatus.PENDING, new Date());
 
-    let txReward: PatchResult | undefined;
+    // eslint-disable-next-line prefer-const
+    let { tx, outputPendingHash } = await handlePendingHash(reward);
 
-    // Handle pending hash status
-    if (isPendingTransactionHash(reward.status)) {
-      if (await isTreatmentDurationExceeded(reward)) return true;
+    if (outputPendingHash !== undefined) return outputPendingHash;
 
-      // Check userOpHash and updateInDatabase for success
-      if (!reward.userOpHash)
-        return (
-          await reward.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
-          true
-        );
-
-      // Get status of reward test
-      if ((txReward = await getStatus(reward)).isError) return false;
-    }
-
-    // Check for txReward and send transaction if not present
-    if (!txReward && (txReward = await sendTransaction(reward)).isError)
-      return false;
+    // Check for tx and send transaction if not present
+    if (!tx && (tx = await sendTransaction(reward)).isError) return false;
 
     // Update transaction hash and perform additional actions
-    if (txReward && txReward.txHash) {
-      updateTxHash(reward, txReward.txHash);
+    if (tx && tx.txHash) {
+      updateTxHash(reward, tx.txHash);
       await Promise.all([
         reward.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
         reward.saveToFlowXO(),
@@ -108,9 +92,9 @@ export async function handleReferralReward(
       return true;
     }
 
-    // Update userOpHash if present in txReward
-    if (txReward && txReward.userOpHash) {
-      updateUserOpHash(reward, txReward.userOpHash);
+    // Update userOpHash if present in tx
+    if (tx && tx.userOpHash) {
+      updateUserOpHash(reward, tx.userOpHash);
       await reward.updateInDatabase(TransactionStatus.PENDING_HASH, null);
     }
     return false;

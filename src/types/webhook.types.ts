@@ -358,3 +358,20 @@ export interface RewardInit {
    */
   shouldBeIssued: boolean;
 }
+
+/**
+ * Represents the result of handling a pending hash operation.
+ */
+export type HandlePendingHashResult = {
+  /**
+   * The transaction result or status.
+   * It could be an instance of `PatchResult` or `undefined`.
+   */
+  tx: PatchResult | undefined;
+
+  /**
+   * Indicates the status of output for a pending hash operation.
+   * It's an optional boolean field.
+   */
+  outputPendingHash?: boolean;
+};

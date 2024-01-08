@@ -2,7 +2,6 @@ import axios, { AxiosError } from 'axios';
 import { Database } from '../db/conn';
 import {
   PatchRawResult,
-  PatchResult,
   TransactionInit,
   TransactionParams,
   createTransaction,
@@ -15,11 +14,9 @@ import {
 } from '../utils/patchwallet';
 import { sendTelegramMessage } from '../utils/telegram';
 import {
-  getStatus,
+  handlePendingHash,
   isFailedTransaction,
-  isPendingTransactionHash,
   isSuccessfulTransaction,
-  isTreatmentDurationExceeded,
   sendTransaction,
   updateTxHash,
   updateUserOpHash,
@@ -80,27 +77,10 @@ export async function handleNewTransaction(
   )
     return true;
 
-  let tx: PatchResult | undefined;
+  // eslint-disable-next-line prefer-const
+  let { tx, outputPendingHash } = await handlePendingHash(transactionInstance);
 
-  // Handle pending hash status
-  if (isPendingTransactionHash(transactionInstance.status)) {
-    if (await isTreatmentDurationExceeded(transactionInstance)) return true;
-
-    // Check userOpHash and updateInDatabase for success
-    if (!transactionInstance.userOpHash)
-      return (
-        await transactionInstance.updateInDatabase(
-          TransactionStatus.SUCCESS,
-          new Date(),
-        ),
-        true
-      );
-
-    // Check status for userOpHash and return the status if it's retrieved successfully or false if failed
-    tx = await getStatus(transactionInstance);
-    if (tx.isError) return true;
-    if (!tx.txHash && !tx.userOpHash) return false;
-  }
+  if (outputPendingHash !== undefined) return outputPendingHash;
 
   // Handle sending transaction if not already handled
   if (!tx) {

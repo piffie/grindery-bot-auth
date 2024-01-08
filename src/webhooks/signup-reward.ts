@@ -6,7 +6,6 @@ import {
 } from '../../secrets';
 import {
   PatchRawResult,
-  PatchResult,
   RewardInit,
   RewardParams,
   createRewardParams,
@@ -14,10 +13,8 @@ import {
 import { REWARDS_COLLECTION } from '../utils/constants';
 import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet';
 import {
-  getStatus,
-  isPendingTransactionHash,
+  handlePendingHash,
   isSuccessfulTransaction,
-  isTreatmentDurationExceeded,
   sendTransaction,
   updateTxHash,
   updateUserOpHash,
@@ -45,33 +42,18 @@ export async function handleSignUpReward(
     // If rewardInstance already exists, return true
     if (!shouldBeIssued) return true;
 
-    let txReward: PatchResult | undefined;
+    // eslint-disable-next-line prefer-const
+    let { tx, outputPendingHash } = await handlePendingHash(rewardInstance);
 
-    // Handle pending hash status
-    if (isPendingTransactionHash(rewardInstance.status)) {
-      if (await isTreatmentDurationExceeded(rewardInstance)) return true;
+    if (outputPendingHash !== undefined) return outputPendingHash;
 
-      // Check userOpHash and updateInDatabase for success
-      if (!rewardInstance.userOpHash)
-        return (
-          await rewardInstance.updateInDatabase(
-            TransactionStatus.SUCCESS,
-            new Date(),
-          ),
-          true
-        );
-
-      // Get status of rewardInstance test
-      if ((txReward = await getStatus(rewardInstance)).isError) return false;
-    }
-
-    // Check for txReward and send transaction if not present
-    if (!txReward && (txReward = await sendTransaction(rewardInstance)).isError)
+    // Check for tx and send transaction if not present
+    if (!tx && (tx = await sendTransaction(rewardInstance)).isError)
       return false;
 
     // Update transaction hash and perform additional actions
-    if (txReward && txReward.txHash) {
-      updateTxHash(rewardInstance, txReward.txHash);
+    if (tx && tx.txHash) {
+      updateTxHash(rewardInstance, tx.txHash);
       await Promise.all([
         rewardInstance.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
         rewardInstance.saveToFlowXO(),
@@ -83,9 +65,9 @@ export async function handleSignUpReward(
       return true;
     }
 
-    // Update userOpHash if present in txReward
-    if (txReward && txReward.userOpHash) {
-      updateUserOpHash(rewardInstance, txReward.userOpHash);
+    // Update userOpHash if present in tx
+    if (tx && tx.userOpHash) {
+      updateUserOpHash(rewardInstance, tx.userOpHash);
       await rewardInstance.updateInDatabase(
         TransactionStatus.PENDING_HASH,
         null,

@@ -5,18 +5,15 @@ import {
 } from '../utils/constants';
 import { Database } from '../db/conn';
 import {
-  getStatus,
+  handlePendingHash,
   isFailedTransaction,
-  isPendingTransactionHash,
   isSuccessfulTransaction,
-  isTreatmentDurationExceeded,
   sendTransaction,
   updateTxHash,
   updateUserOpHash,
 } from './utils';
 import {
   PatchRawResult,
-  PatchResult,
   SwapParams,
   createSwapParams,
 } from '../types/webhook.types';
@@ -64,27 +61,10 @@ export async function handleSwap(params: SwapParams): Promise<boolean> {
   if (isSuccessfulTransaction(swap.status) || isFailedTransaction(swap.status))
     return true;
 
-  let tx: PatchResult | undefined;
+  // eslint-disable-next-line prefer-const
+  let { tx, outputPendingHash } = await handlePendingHash(swap);
 
-  // Handle pending hash status
-  if (isPendingTransactionHash(swap.status)) {
-    // Check if treatment duration for the swap is exceeded, if so, return true indicating handled status
-    if (await isTreatmentDurationExceeded(swap)) return true;
-
-    // If userOpHash is not available, mark the swap as successful and return true indicating handled status
-    if (!swap.userOpHash) {
-      await swap.updateInDatabase(TransactionStatus.SUCCESS, new Date());
-      console.log(
-        `[SWAP EVENT] Event ID [${params.eventId}] Swap marked as successful as userOpHash is not available.`,
-      );
-      return true; // Indicating handled status
-    }
-
-    // Check status for userOpHash and return the status if it's retrieved successfully or false if failed
-    tx = await getStatus(swap);
-    if (tx.isError) return true;
-    if (!tx.txHash && !tx.userOpHash) return false;
-  }
+  if (outputPendingHash !== undefined) return outputPendingHash;
 
   // Handle sending transaction if not already handled
   if (!tx) {
