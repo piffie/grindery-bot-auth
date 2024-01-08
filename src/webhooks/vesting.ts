@@ -1,14 +1,12 @@
 import axios, { AxiosError } from 'axios';
 import { Database } from '../db/conn';
 import { VestingParams, createVesting } from '../types/hedgey.types';
-import { PatchRawResult, PatchResult } from '../types/webhook.types';
+import { PatchRawResult } from '../types/webhook.types';
 import { USERS_COLLECTION, VESTING_COLLECTION } from '../utils/constants';
 import {
-  getStatus,
+  handlePendingHash,
   isFailedTransaction,
-  isPendingTransactionHash,
   isSuccessfulTransaction,
-  isTreatmentDurationExceeded,
   sendTransaction,
   updateTxHash,
   updateUserOpHash,
@@ -74,24 +72,29 @@ export async function handleNewVesting(
   )
     return true;
 
-  let tx: PatchResult | undefined;
+  // let tx: PatchResult | undefined;
 
-  // Handle pending hash status
-  if (isPendingTransactionHash(vesting.status)) {
-    if (await isTreatmentDurationExceeded(vesting)) return true;
+  // // Handle pending hash status
+  // if (isPendingTransactionHash(vesting.status)) {
+  //   if (await isTreatmentDurationExceeded(vesting)) return true;
 
-    // Check userOpHash and updateInDatabase for success
-    if (!vesting.userOpHash)
-      return (
-        await vesting.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
-        true
-      );
+  //   // Check userOpHash and updateInDatabase for success
+  //   if (!vesting.userOpHash)
+  //     return (
+  //       await vesting.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
+  //       true
+  //     );
 
-    // Check status for userOpHash and return the status if it's retrieved successfully or false if failed
-    tx = await getStatus(vesting);
-    if (tx.isError) return true;
-    if (!tx.txHash && !tx.userOpHash) return false;
-  }
+  //   // Check status for userOpHash and return the status if it's retrieved successfully or false if failed
+  //   tx = await getStatus(vesting);
+  //   if (tx.isError) return true;
+  //   if (!tx.txHash && !tx.userOpHash) return false;
+  // }
+
+  // eslint-disable-next-line prefer-const
+  let { tx, outputPendingHash } = await handlePendingHash(vesting);
+
+  if (outputPendingHash !== undefined) return outputPendingHash;
 
   // Handle sending transaction if not already handled
   if (!tx) {

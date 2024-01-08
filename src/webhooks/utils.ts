@@ -1,4 +1,8 @@
-import { PatchResult, TelegramOperations } from '../types/webhook.types';
+import {
+  HandlePendingHashResult,
+  PatchResult,
+  TelegramOperations,
+} from '../types/webhook.types';
 import { getTxStatus } from '../utils/patchwallet';
 import { getXMinBeforeDate } from '../utils/time';
 import { IsolatedRewardTelegram } from './isolated-reward';
@@ -205,4 +209,52 @@ export async function getStatus(
         { isError: true })) || { isError: false }
     );
   }
+}
+
+/**
+ * Handles the pending hash status for a Telegram operation.
+ * @param telegram_operation - The Telegram operation object.
+ * @returns A promise resolving to a HandlePendingHashResult.
+ */
+export async function handlePendingHash(
+  telegram_operation: TelegramOperations,
+): Promise<HandlePendingHashResult> {
+  // Check if the operation status indicates a pending transaction hash
+  if (isPendingTransactionHash(telegram_operation.status)) {
+    // Check if treatment duration has exceeded
+    if (await isTreatmentDurationExceeded(telegram_operation)) {
+      // If duration exceeded, return outputPendingHash as true and no transaction
+      return { tx: undefined, outputPendingHash: true };
+    }
+
+    // If userOpHash is absent, update the operation in the database and return outputPendingHash as true
+    if (!telegram_operation.userOpHash) {
+      await telegram_operation.updateInDatabase(
+        TransactionStatus.SUCCESS,
+        new Date(),
+      );
+      return { tx: undefined, outputPendingHash: true };
+    }
+
+    // Get the status of the operation
+    const tx = await getStatus(telegram_operation);
+
+    if (isRewardClass(telegram_operation)) {
+      // If the operation is of the reward class, handle the transaction status accordingly
+      return tx.isError ? { tx, outputPendingHash: false } : { tx };
+    } else {
+      // If the operation is not of the reward class, perform additional checks
+      // Return outputPendingHash as true if there's an error in the transaction status
+      if (tx.isError) return { tx, outputPendingHash: true };
+
+      // Return outputPendingHash as false if both txHash and userOpHash are absent
+      if (!tx.txHash && !tx.userOpHash) return { tx, outputPendingHash: false };
+
+      // Return only the transaction object if none of the above conditions are met
+      return { tx };
+    }
+  }
+
+  // If the status does not indicate a pending hash, return undefined for tx
+  return { tx: undefined };
 }
