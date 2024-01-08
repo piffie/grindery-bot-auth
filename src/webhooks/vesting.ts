@@ -72,25 +72,6 @@ export async function handleNewVesting(
   )
     return true;
 
-  // let tx: PatchResult | undefined;
-
-  // // Handle pending hash status
-  // if (isPendingTransactionHash(vesting.status)) {
-  //   if (await isTreatmentDurationExceeded(vesting)) return true;
-
-  //   // Check userOpHash and updateInDatabase for success
-  //   if (!vesting.userOpHash)
-  //     return (
-  //       await vesting.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
-  //       true
-  //     );
-
-  //   // Check status for userOpHash and return the status if it's retrieved successfully or false if failed
-  //   tx = await getStatus(vesting);
-  //   if (tx.isError) return true;
-  //   if (!tx.txHash && !tx.userOpHash) return false;
-  // }
-
   // eslint-disable-next-line prefer-const
   let { tx, outputPendingHash } = await handlePendingHash(vesting);
 
