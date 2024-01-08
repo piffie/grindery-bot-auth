@@ -1,6 +1,7 @@
 import { body } from 'express-validator';
 import Web3 from 'web3';
 import { CHAIN_MAPPING } from '../utils/chains';
+import { validateUserTelegramID } from './utils';
 
 /**
  * Validates parameters for a new reward event.
@@ -13,22 +14,10 @@ export const newRewardValidator = [
   body('params').isObject().withMessage('Params must be an object'),
 
   // Validates userTelegramID as a string
-  body('params.userTelegramID').custom((value) => {
-    if (typeof value !== 'string') {
-      throw new Error('userTelegramID must be a string');
-    }
-    return true;
-  }),
+  validateUserTelegramID('params.userTelegramID', false),
 
   // Validates referentUserTelegramID as an optional string
-  body('params.referentUserTelegramID')
-    .optional()
-    .custom((value) => {
-      if (typeof value !== 'string') {
-        throw new Error('referentUserTelegramID must be a string');
-      }
-      return true;
-    }),
+  validateUserTelegramID('params.referentUserTelegramID', true),
 
   // Validates responsePath as a string
   body('params.responsePath')
@@ -95,20 +84,10 @@ export const newTransactionValidator = [
   body('params').isObject().withMessage('Params must be an object'),
 
   // Validates senderTgId as a string
-  body('params.senderTgId').custom((value) => {
-    if (typeof value !== 'string') {
-      throw new Error('senderTgId must be a string');
-    }
-    return true;
-  }),
+  validateUserTelegramID('params.senderTgId', false),
 
   // Validates recipientTgId as a string
-  body('params.recipientTgId').custom((value) => {
-    if (typeof value !== 'string') {
-      throw new Error('recipientTgId must be a string');
-    }
-    return true;
-  }),
+  validateUserTelegramID('params.recipientTgId', false),
 
   // Validates amount as a numeric string greater than 0
   body('params.amount').custom((value) => {
@@ -180,12 +159,7 @@ export const newTransactionBatchValidator = [
   body('params.*').isObject().withMessage('Each param must be an object'),
 
   // Validates senderTgId within each param as a string
-  body('params.*.senderTgId').custom((value) => {
-    if (typeof value !== 'string') {
-      throw new Error('senderTgId must be a string');
-    }
-    return true;
-  }),
+  validateUserTelegramID('params.*.senderTgId', false),
 
   // Validates recipientTgId within each param as a string
   body('params.*.recipientTgId').custom((value) => {
@@ -263,9 +237,12 @@ export const swapValidator = [
   body('params.value').isString().withMessage('value must be a string'),
 
   // Validates userTelegramID within params as a string
-  body('params.userTelegramID')
-    .isString()
-    .withMessage('userTelegramID must be a string'),
+  // body('params.userTelegramID')
+  //   .isString()
+  //   .withMessage('userTelegramID must be a string'),
+
+  // Validates userTelegramID within params as a string
+  validateUserTelegramID('params.userTelegramID', false),
 
   // Validates to within params as an optional valid address
   body('params.to')
@@ -375,10 +352,7 @@ export const swapValidator = [
     }),
 
   // Validates senderTgId within params as an optional string
-  body('params.senderTgId')
-    .optional()
-    .isString()
-    .withMessage('senderTgId must be a string'),
+  validateUserTelegramID('params.senderTgId', true),
 
   // Validates delegatecall within params as an optional number in the set [0, 1]
   body('params.delegatecall')
@@ -398,15 +372,14 @@ export const isolatedRewardValidator = [
   body('params').isObject().withMessage('Params must be an object'),
 
   // Validates userTelegramID within params as a string
-  body('params.userTelegramID')
-    .isString()
-    .withMessage('userTelegramID must be a string'),
+  validateUserTelegramID('params.userTelegramID', false),
 
   // Validates responsePath within params as an optional string
   body('params.responsePath')
     .optional()
     .isString()
     .withMessage('responsePath must be a string'),
+
   // Validates userHandle within params as an optional string
   body('params.userHandle')
     .optional()
@@ -461,10 +434,7 @@ export const isolatedRewardValidator = [
     .withMessage('chainName must be a string'),
 
   // Validates referentUserTelegramID within params as an optional string
-  body('params.referentUserTelegramID')
-    .optional()
-    .isString()
-    .withMessage('referentUserTelegramID must be a string'),
+  validateUserTelegramID('params.referentUserTelegramID', false),
 
   // Validates isSignupReward within params as an optional boolean
   body('params.isSignupReward')
@@ -507,10 +477,19 @@ const validators = {
   isolated_reward: isolatedRewardValidator,
 };
 
+/**
+ * Validates incoming webhook events based on event type using corresponding validators.
+ *
+ * @param {Express.Request} req - The Express request object.
+ * @param {Express.Response} res - The Express response object.
+ * @param {Function} next - The next function in the middleware chain.
+ * @returns {Promise<void>} - Promise resolving to void after validation or sending error responses.
+ */
 export const webhookValidator = async (req, res, next) => {
   const { event } = req.body;
   const validator = validators[event];
 
+  // If validator for the specified event is not found, returns a 400 error response
   if (!validator) {
     return res
       .status(400)
@@ -527,12 +506,14 @@ export const webhookValidator = async (req, res, next) => {
       });
     }
 
+    // If there are validation errors, sends a 400 error response with collected errors
     if (errors.length) {
       return res.status(400).json({ errors });
     }
 
-    next();
+    next(); // Proceeds to the next middleware in the chain if validation succeeds
   } catch (error) {
+    // Catches any unexpected errors and sends a 400 error response
     return res.status(400).json({ error: error.message });
   }
 };

@@ -3,5 +3,5 @@ module.exports = {
   exit: true,
   require: ['ts-node/register', './src/test/hooks.ts'],
   'async-only': true,
-  retries: 4,
+  retries: 0,
 };

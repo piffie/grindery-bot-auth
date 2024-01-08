@@ -81,14 +81,14 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: 12345,
-          msg: 'userTelegramID must be a string',
+          msg: 'params.userTelegramID must be a string representing a 64-bit little-endian number',
           path: 'params.userTelegramID',
           location: 'body',
         },
         {
           type: 'field',
           value: 12345,
-          msg: 'referentUserTelegramID must be a string',
+          msg: 'params.referentUserTelegramID must be a string representing a 64-bit little-endian number',
           path: 'params.referentUserTelegramID',
           location: 'body',
         },
@@ -223,14 +223,14 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: 12345,
-          msg: 'senderTgId must be a string',
+          msg: 'params.senderTgId must be a string representing a 64-bit little-endian number',
           path: 'params.senderTgId',
           location: 'body',
         },
         {
           type: 'field',
           value: 67890,
-          msg: 'recipientTgId must be a string',
+          msg: 'params.recipientTgId must be a string representing a 64-bit little-endian number',
           path: 'params.recipientTgId',
           location: 'body',
         },
@@ -355,7 +355,7 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: 12345,
-          msg: 'senderTgId must be a string',
+          msg: 'params.*.senderTgId must be a string representing a 64-bit little-endian number',
           path: 'params[0].senderTgId',
           location: 'body',
         },
@@ -530,6 +530,13 @@ describe('Webhook validators', function () {
         },
         {
           type: 'field',
+          value: 12345,
+          msg: 'params.userTelegramID must be a string representing a 64-bit little-endian number',
+          path: 'params.userTelegramID',
+          location: 'body',
+        },
+        {
+          type: 'field',
           value: '0x105E9152e3d4F5486f2953eF6578f7e25c27C3501',
           msg: 'to must be a valid address',
           path: 'params.to',
@@ -579,6 +586,13 @@ describe('Webhook validators', function () {
         },
         {
           type: 'field',
+          value: true,
+          msg: 'params.senderTgId must be a string representing a 64-bit little-endian number',
+          path: 'params.senderTgId',
+          location: 'body',
+        },
+        {
+          type: 'field',
           value: 2,
           msg: 'delegatecall must be either 0 or 1',
           path: 'params.delegatecall',
@@ -589,13 +603,6 @@ describe('Webhook validators', function () {
           value: 100,
           msg: 'value must be a string',
           path: 'params.value',
-          location: 'body',
-        },
-        {
-          type: 'field',
-          value: 12345,
-          msg: 'userTelegramID must be a string',
-          path: 'params.userTelegramID',
           location: 'body',
         },
         {
@@ -659,13 +666,6 @@ describe('Webhook validators', function () {
           value: 123,
           msg: 'chainName must be a string',
           path: 'params.chainName',
-          location: 'body',
-        },
-        {
-          type: 'field',
-          value: true,
-          msg: 'senderTgId must be a string',
-          path: 'params.senderTgId',
           location: 'body',
         },
       ]);
@@ -747,6 +747,13 @@ describe('Webhook validators', function () {
         },
         {
           type: 'field',
+          value: 12345,
+          msg: 'params.userTelegramID must be a string representing a 64-bit little-endian number',
+          path: 'params.userTelegramID',
+          location: 'body',
+        },
+        {
+          type: 'field',
           value: '0x105E9152e3d4F5486f2953eF6578f7e25c27C3501',
           msg: 'patchwallet must be a valid address',
           path: 'params.patchwallet',
@@ -764,6 +771,13 @@ describe('Webhook validators', function () {
           value: '0x105E9152e3d4F5486f2953eF6578f7e25c27C3501',
           msg: 'tokenAddress must be a valid address',
           path: 'params.tokenAddress',
+          location: 'body',
+        },
+        {
+          type: 'field',
+          value: 67890,
+          msg: 'params.referentUserTelegramID must be a string representing a 64-bit little-endian number',
+          path: 'params.referentUserTelegramID',
           location: 'body',
         },
         {
@@ -792,13 +806,6 @@ describe('Webhook validators', function () {
           value: 2,
           msg: 'delegatecall must be either 0 or 1',
           path: 'params.delegatecall',
-          location: 'body',
-        },
-        {
-          type: 'field',
-          value: 12345,
-          msg: 'userTelegramID must be a string',
-          path: 'params.userTelegramID',
           location: 'body',
         },
         {
@@ -841,13 +848,6 @@ describe('Webhook validators', function () {
           value: 123,
           msg: 'chainName must be a string',
           path: 'params.chainName',
-          location: 'body',
-        },
-        {
-          type: 'field',
-          value: 67890,
-          msg: 'referentUserTelegramID must be a string',
-          path: 'params.referentUserTelegramID',
           location: 'body',
         },
       ]);
