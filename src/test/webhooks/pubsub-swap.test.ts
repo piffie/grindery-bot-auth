@@ -1,4 +1,4 @@
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import {
   mockResponsePath,
   mockUserName,
@@ -143,7 +143,7 @@ describe('handleSwap function', async function () {
     });
 
     it('Should return true', async function () {
-      chai.expect(
+      expect(
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
@@ -185,8 +185,7 @@ describe('handleSwap function', async function () {
 
       const swaps = await collectionSwapsMock.find({}).toArray();
 
-      chai
-        .expect(swaps)
+      expect(swaps)
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
@@ -212,7 +211,7 @@ describe('handleSwap function', async function () {
             chainOut: mockChainId,
           },
         ]);
-      chai.expect(swaps[0].dateAdded).to.be.a('date');
+      expect(swaps[0].dateAdded).to.be.a('date');
     });
 
     it('Should populate the segment swap properly', async function () {
@@ -239,8 +238,7 @@ describe('handleSwap function', async function () {
         .getCalls()
         .filter((e) => e.firstArg === SEGMENT_TRACK_URL);
 
-      chai
-        .expect(segmentIdentityCall[0].args[1])
+      expect(segmentIdentityCall[0].args[1])
         .excluding(['timestamp'])
         .to.deep.equal({
           userId: mockUserTelegramID,
@@ -289,8 +287,7 @@ describe('handleSwap function', async function () {
         .getCalls()
         .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK).args[1];
 
-      chai
-        .expect(FlowXOCallArgs)
+      expect(FlowXOCallArgs)
         .excluding(['dateAdded'])
         .to.deep.equal({
           userResponsePath: mockResponsePath,
@@ -340,22 +337,20 @@ describe('handleSwap function', async function () {
         data: '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${mockUserTelegramID}`,
-          chain: 'linea',
-          to: [mockToSwap],
-          value: [mockValue],
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-          ],
-          delegatecall: 0,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${mockUserTelegramID}`,
+        chain: 'linea',
+        to: [mockToSwap],
+        value: [mockValue],
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
+        ],
+        delegatecall: 0,
+        auth: '',
+      });
     });
 
     it('Should call the swapTokens function with delegate call if specified', async function () {
@@ -378,22 +373,20 @@ describe('handleSwap function', async function () {
         delegatecall: 1,
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${mockUserTelegramID}`,
-          chain: 'linea',
-          to: [mockToSwap],
-          value: [mockValue],
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-          ],
-          delegatecall: 1,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${mockUserTelegramID}`,
+        chain: 'linea',
+        to: [mockToSwap],
+        value: [mockValue],
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
+        ],
+        delegatecall: 1,
+        auth: '',
+      });
     });
   });
 
@@ -413,7 +406,7 @@ describe('handleSwap function', async function () {
     });
 
     it('Should return true if swap is already a success', async function () {
-      chai.expect(
+      expect(
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
@@ -449,7 +442,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -471,8 +464,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai
-        .expect(await collectionSwapsMock.find({}).toArray())
+      expect(await collectionSwapsMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -499,7 +491,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -523,9 +515,8 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -545,7 +536,7 @@ describe('handleSwap function', async function () {
     });
 
     it('Should return true if swap is already a failure', async function () {
-      chai.expect(
+      expect(
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
@@ -581,7 +572,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -603,8 +594,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai
-        .expect(await collectionSwapsMock.find({}).toArray())
+      expect(await collectionSwapsMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -631,7 +621,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -655,9 +645,8 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -677,7 +666,7 @@ describe('handleSwap function', async function () {
     });
 
     it('Should return true if swap is already a failure', async function () {
-      chai.expect(
+      expect(
         await handleSwap({
           value: mockAmountIn,
           eventId: swapId,
@@ -713,7 +702,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -735,8 +724,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai
-        .expect(await collectionSwapsMock.find({}).toArray())
+      expect(await collectionSwapsMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -763,7 +751,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -787,9 +775,8 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -826,7 +813,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(result).to.be.false;
+      expect(result).to.be.false;
     });
 
     it('Should not modify transaction status in the database if there is an error in the swap tokens request', async function () {
@@ -849,8 +836,7 @@ describe('handleSwap function', async function () {
         chainOut: mockChainId,
       });
 
-      chai
-        .expect(await collectionSwapsMock.find({}).toArray())
+      expect(await collectionSwapsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -895,7 +881,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -918,9 +904,8 @@ describe('handleSwap function', async function () {
         tokenInSymbol: mockTokenInSymbol,
         tokenOutSymbol: mockTokenOutSymbol,
       });
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -958,9 +943,9 @@ describe('handleSwap function', async function () {
       tokenOutSymbol: mockTokenOutSymbol,
     });
 
-    chai
-      .expect((await collectionSwapsMock.find({}).toArray())[0]._id.toString())
-      .to.equal(objectId);
+    expect(
+      (await collectionSwapsMock.find({}).toArray())[0]._id.toString(),
+    ).to.equal(objectId);
   });
 
   describe('Sender is not a user', async function () {
@@ -981,7 +966,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should not save swap in database if sender is not a user', async function () {
@@ -1001,8 +986,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai
-        .expect(await collectionSwapsMock.find({}).toArray())
+      expect(await collectionSwapsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([]);
     });
@@ -1024,7 +1008,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -1046,7 +1030,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -1069,9 +1053,8 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -1107,7 +1090,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(result).to.be.false;
+      expect(result).to.be.false;
     });
 
     it('Should not modify database if error in PatchWallet transaction', async function () {
@@ -1130,8 +1113,7 @@ describe('handleSwap function', async function () {
         chainOut: mockChainId,
       });
 
-      chai
-        .expect(await collectionSwapsMock.find({}).toArray())
+      expect(await collectionSwapsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -1176,7 +1158,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -1200,9 +1182,8 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -1240,7 +1221,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should complete db status to failure in database if error 470 in PatchWallet transaction', async function () {
@@ -1262,8 +1243,7 @@ describe('handleSwap function', async function () {
         chainOut: mockChainId,
       });
 
-      chai
-        .expect(await collectionSwapsMock.find({}).toArray())
+      expect(await collectionSwapsMock.find({}).toArray())
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
@@ -1307,7 +1287,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -1330,9 +1310,8 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -1370,7 +1349,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should complete db status to failure in database if error 503 in PatchWallet transaction', async function () {
@@ -1392,8 +1371,7 @@ describe('handleSwap function', async function () {
         chainOut: mockChainId,
       });
 
-      chai
-        .expect(await collectionSwapsMock.find({}).toArray())
+      expect(await collectionSwapsMock.find({}).toArray())
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
@@ -1437,7 +1415,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -1460,9 +1438,8 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -1499,7 +1476,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should complete db status to failure in database if error 400 in PatchWallet transaction', async function () {
@@ -1521,8 +1498,7 @@ describe('handleSwap function', async function () {
         chainOut: mockChainId,
       });
 
-      chai
-        .expect(await collectionSwapsMock.find({}).toArray())
+      expect(await collectionSwapsMock.find({}).toArray())
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
@@ -1566,7 +1542,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -1589,9 +1565,8 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -1628,7 +1603,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(result).to.be.false;
+      expect(result).to.be.false;
     });
 
     it('Should do no swap status modification in database if no hash in PatchWallet transaction', async function () {
@@ -1650,8 +1625,7 @@ describe('handleSwap function', async function () {
         chainOut: mockChainId,
       });
 
-      chai
-        .expect(await collectionSwapsMock.find({}).toArray())
+      expect(await collectionSwapsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -1695,7 +1669,7 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -1718,9 +1692,8 @@ describe('handleSwap function', async function () {
         tokenOutSymbol: mockTokenOutSymbol,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -1760,7 +1733,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should update reward database with a pending_hash status and userOpHash if transaction hash is empty in tx PatchWallet endpoint', async function () {
@@ -1783,8 +1756,7 @@ describe('handleSwap function', async function () {
           chainOut: mockChainId,
         });
 
-        chai
-          .expect(await collectionSwapsMock.find({}).toArray())
+        expect(await collectionSwapsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1828,7 +1800,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -1896,7 +1868,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if transaction hash is present in PatchWallet status endpoint', async function () {
@@ -1915,7 +1887,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1939,8 +1911,7 @@ describe('handleSwap function', async function () {
           chainOut: mockChainId,
         });
 
-        chai
-          .expect(await collectionSwapsMock.find({}).toArray())
+        expect(await collectionSwapsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1991,8 +1962,7 @@ describe('handleSwap function', async function () {
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK).args[1];
 
-        chai
-          .expect(FlowXOCallArgs)
+        expect(FlowXOCallArgs)
           .excluding(['dateAdded'])
           .to.deep.equal({
             userResponsePath: mockResponsePath,
@@ -2022,10 +1992,10 @@ describe('handleSwap function', async function () {
               CHAIN_MAPPING[mockChainId].explorer + mockTransactionHash,
           });
 
-        chai
-          .expect(FlowXOCallArgs.dateAdded)
-          .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-        chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+        expect(FlowXOCallArgs.dateAdded).to.be.greaterThanOrEqual(
+          new Date(Date.now() - 20000),
+        ); // 20 seconds
+        expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
       });
     });
 
@@ -2081,7 +2051,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should not swap tokens if transaction hash is not present in PatchWallet status endpoint', async function () {
@@ -2101,7 +2071,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -2126,8 +2096,7 @@ describe('handleSwap function', async function () {
           chainOut: mockChainId,
         });
 
-        chai
-          .expect(await collectionSwapsMock.find({}).toArray())
+        expect(await collectionSwapsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -2172,7 +2141,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -2229,7 +2198,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
@@ -2249,7 +2218,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -2272,8 +2241,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai
-          .expect(await collectionSwapsMock.find({}).toArray())
+        expect(await collectionSwapsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -2312,7 +2280,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -2371,7 +2339,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if Error 470 in PatchWallet get status endpoint', async function () {
@@ -2391,7 +2359,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -2416,8 +2384,7 @@ describe('handleSwap function', async function () {
           chainOut: mockChainId,
         });
 
-        chai
-          .expect(await collectionSwapsMock.find({}).toArray())
+        expect(await collectionSwapsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -2462,7 +2429,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -2514,7 +2481,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if transaction hash is pending_hash without userOpHash', async function () {
@@ -2534,7 +2501,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -2557,8 +2524,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai
-          .expect(await collectionSwapsMock.find({}).toArray())
+        expect(await collectionSwapsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -2603,7 +2569,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),
@@ -2663,7 +2629,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens after 10 min of trying to get status', async function () {
@@ -2683,7 +2649,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -2708,8 +2674,7 @@ describe('handleSwap function', async function () {
           chainOut: mockChainId,
         });
 
-        chai
-          .expect(await collectionSwapsMock.find({}).toArray())
+        expect(await collectionSwapsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -2754,7 +2719,7 @@ describe('handleSwap function', async function () {
           tokenOutSymbol: mockTokenOutSymbol,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_SWAP_WEBHOOK),

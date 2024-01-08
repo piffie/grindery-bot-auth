@@ -1,4 +1,4 @@
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import {
   mockResponsePath,
   mockUserHandle,
@@ -124,7 +124,7 @@ describe('handleLinkReward function', async function () {
 
   describe('Referent is not a user', async function () {
     it('Should return true if referent is not a user', async function () {
-      chai.expect(
+      expect(
         await handleLinkReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -140,7 +140,7 @@ describe('handleLinkReward function', async function () {
         referentUserTelegramID: mockUserTelegramID1,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -152,7 +152,7 @@ describe('handleLinkReward function', async function () {
         referentUserTelegramID: mockUserTelegramID1,
       });
 
-      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+      expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
     });
 
     it('Should not call FlowXO if referent is not a user', async function () {
@@ -162,7 +162,7 @@ describe('handleLinkReward function', async function () {
         referentUserTelegramID: mockUserTelegramID1,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_LINK_REWARD_WEBHOOK),
@@ -191,7 +191,7 @@ describe('handleLinkReward function', async function () {
     });
 
     it('Should return true if user already sponsored someone else in another reward process without eventId', async function () {
-      chai.expect(
+      expect(
         await handleLinkReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -207,7 +207,7 @@ describe('handleLinkReward function', async function () {
         referentUserTelegramID: mockUserTelegramID1,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -218,8 +218,7 @@ describe('handleLinkReward function', async function () {
         userTelegramID: mockUserTelegramID,
         referentUserTelegramID: mockUserTelegramID1,
       });
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -244,7 +243,7 @@ describe('handleLinkReward function', async function () {
         referentUserTelegramID: mockUserTelegramID1,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_LINK_REWARD_WEBHOOK),
@@ -274,7 +273,7 @@ describe('handleLinkReward function', async function () {
     });
 
     it('Should return true if user already sponsored someone else in another reward process with another eventId', async function () {
-      chai.expect(
+      expect(
         await handleLinkReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -290,7 +289,7 @@ describe('handleLinkReward function', async function () {
         referentUserTelegramID: mockUserTelegramID1,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -301,8 +300,7 @@ describe('handleLinkReward function', async function () {
         userTelegramID: mockUserTelegramID,
         referentUserTelegramID: mockUserTelegramID1,
       });
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -328,7 +326,7 @@ describe('handleLinkReward function', async function () {
         referentUserTelegramID: mockUserTelegramID1,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_LINK_REWARD_WEBHOOK),
@@ -359,7 +357,7 @@ describe('handleLinkReward function', async function () {
     });
 
     it('Should return true if This eventId link reward is already a success', async function () {
-      chai.expect(
+      expect(
         await handleLinkReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -375,7 +373,7 @@ describe('handleLinkReward function', async function () {
         referentUserTelegramID: mockUserTelegramID1,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -386,8 +384,7 @@ describe('handleLinkReward function', async function () {
         userTelegramID: mockUserTelegramID,
         referentUserTelegramID: mockUserTelegramID1,
       });
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -414,7 +411,7 @@ describe('handleLinkReward function', async function () {
         referentUserTelegramID: mockUserTelegramID1,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_LINK_REWARD_WEBHOOK),
@@ -442,22 +439,20 @@ describe('handleLinkReward function', async function () {
         chainId: mockChainId,
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${SOURCE_TG_ID}`,
-          chain: mockChainName,
-          to: [mockTokenAddress],
-          value: ['0x00'],
-          delegatecall: 0,
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000008ac7230489e80000',
-          ],
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${SOURCE_TG_ID}`,
+        chain: mockChainName,
+        to: [mockTokenAddress],
+        value: ['0x00'],
+        delegatecall: 0,
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000008ac7230489e80000',
+        ],
+        auth: '',
+      });
     });
 
     it('Should call the sendTokens function properly if the user is new with delegate call', async function () {
@@ -470,22 +465,20 @@ describe('handleLinkReward function', async function () {
         delegatecall: 1,
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${SOURCE_TG_ID}`,
-          chain: mockChainName,
-          to: [mockTokenAddress],
-          value: ['0x00'],
-          delegatecall: 1,
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000008ac7230489e80000',
-          ],
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${SOURCE_TG_ID}`,
+        chain: mockChainName,
+        to: [mockTokenAddress],
+        value: ['0x00'],
+        delegatecall: 1,
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000008ac7230489e80000',
+        ],
+        auth: '',
+      });
     });
 
     it('Should insert a new element in the reward collection of the database if the user is new', async function () {
@@ -497,8 +490,8 @@ describe('handleLinkReward function', async function () {
 
       const rewards = await collectionRewardsMock.find({}).toArray();
 
-      chai.expect(rewards.length).to.equal(1);
-      chai.expect(rewards[0]).excluding(['_id', 'dateAdded']).to.deep.equal({
+      expect(rewards.length).to.equal(1);
+      expect(rewards[0]).excluding(['_id', 'dateAdded']).to.deep.equal({
         eventId: rewardId,
         sponsoredUserTelegramID: mockUserTelegramID,
         userTelegramID: mockUserTelegramID1,
@@ -513,17 +506,17 @@ describe('handleLinkReward function', async function () {
         status: TransactionStatus.SUCCESS,
         userOpHash: null,
       });
-      chai
-        .expect(rewards[0].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(rewards[0].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
     });
 
     it('Should return true if the user is new', async function () {
       await collectionUsersMock.insertOne({
         userTelegramID: mockUserTelegramID1,
       });
-      chai.expect(
+      expect(
         await handleLinkReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -543,7 +536,7 @@ describe('handleLinkReward function', async function () {
         .getCalls()
         .find((e) => e.firstArg === FLOWXO_NEW_LINK_REWARD_WEBHOOK).args[1];
 
-      chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+      expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
         sponsoredUserTelegramID: mockUserTelegramID,
         userTelegramID: mockUserTelegramID1,
         responsePath: mockResponsePath,
@@ -557,10 +550,10 @@ describe('handleLinkReward function', async function () {
         apiKey: FLOWXO_WEBHOOK_API_KEY,
       });
 
-      chai
-        .expect(FlowXOCallArgs.dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(FlowXOCallArgs.dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
     });
   });
 
@@ -573,7 +566,7 @@ describe('handleLinkReward function', async function () {
       userTelegramID: mockUserTelegramID1,
     });
 
-    chai.expect(
+    expect(
       await handleLinkReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
@@ -592,7 +585,7 @@ describe('handleLinkReward function', async function () {
         userTelegramID: mockUserTelegramID1,
       });
 
-      chai.expect(
+      expect(
         await handleLinkReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -618,8 +611,7 @@ describe('handleLinkReward function', async function () {
         userTelegramID: mockUserTelegramID,
         referentUserTelegramID: mockUserTelegramID1,
       });
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -655,7 +647,7 @@ describe('handleLinkReward function', async function () {
         referentUserTelegramID: mockUserTelegramID1,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_LINK_REWARD_WEBHOOK),
@@ -678,7 +670,7 @@ describe('handleLinkReward function', async function () {
         userName: mockUserName,
       });
 
-      chai.expect(
+      expect(
         await handleLinkReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -706,8 +698,7 @@ describe('handleLinkReward function', async function () {
         userTelegramID: mockUserTelegramID,
         referentUserTelegramID: mockUserTelegramID1,
       });
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -745,7 +736,7 @@ describe('handleLinkReward function', async function () {
         referentUserTelegramID: mockUserTelegramID1,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_LINK_REWARD_WEBHOOK),
@@ -779,7 +770,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should update reward database with a pending_hash status and userOpHash if transaction hash is empty in tx PatchWallet endpoint', async function () {
@@ -789,8 +780,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -818,7 +808,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_LINK_REWARD_WEBHOOK),
@@ -859,7 +849,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if transaction hash is present in PatchWallet status endpoint', async function () {
@@ -869,7 +859,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -881,8 +871,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -914,7 +903,7 @@ describe('handleLinkReward function', async function () {
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_LINK_REWARD_WEBHOOK).args[1];
 
-        chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+        expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
           sponsoredUserTelegramID: mockUserTelegramID,
           userTelegramID: mockUserTelegramID1,
           responsePath: mockResponsePath,
@@ -928,10 +917,10 @@ describe('handleLinkReward function', async function () {
           apiKey: FLOWXO_WEBHOOK_API_KEY,
         });
 
-        chai
-          .expect(FlowXOCallArgs.dateAdded)
-          .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-        chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+        expect(FlowXOCallArgs.dateAdded).to.be.greaterThanOrEqual(
+          new Date(Date.now() - 20000),
+        ); // 20 seconds
+        expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
       });
     });
 
@@ -975,7 +964,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should not send tokens if transaction hash is not present in PatchWallet status endpoint', async function () {
@@ -985,7 +974,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -997,8 +986,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1026,7 +1014,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_LINK_REWARD_WEBHOOK),
@@ -1071,7 +1059,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
@@ -1081,7 +1069,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1093,8 +1081,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1121,7 +1108,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_LINK_REWARD_WEBHOOK),
@@ -1161,7 +1148,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if transaction hash is pending_hash without userOpHash', async function () {
@@ -1171,7 +1158,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1183,8 +1170,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1212,7 +1198,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_LINK_REWARD_WEBHOOK),
@@ -1260,7 +1246,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens after 10 min of trying to get status', async function () {
@@ -1270,7 +1256,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1282,8 +1268,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1311,7 +1296,7 @@ describe('handleLinkReward function', async function () {
           referentUserTelegramID: mockUserTelegramID1,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_LINK_REWARD_WEBHOOK),

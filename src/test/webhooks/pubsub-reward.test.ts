@@ -1,4 +1,4 @@
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import {
   mockResponsePath,
   mockUserHandle,
@@ -114,7 +114,7 @@ describe('handleReferralReward function', function () {
       userName: mockUserName,
     });
 
-    chai.expect(signUpRewardStub.getCalls()).to.be.empty;
+    expect(signUpRewardStub.getCalls()).to.be.empty;
   });
 
   it('Should not call handleReferralReward if isReferralReward is false', async function () {
@@ -129,7 +129,7 @@ describe('handleReferralReward function', function () {
       userName: mockUserName,
     });
 
-    chai.expect(referralRewardStub.getCalls()).to.be.empty;
+    expect(referralRewardStub.getCalls()).to.be.empty;
   });
 
   it('Should not call handleLinkReward if isLinkReward is false', async function () {
@@ -144,7 +144,7 @@ describe('handleReferralReward function', function () {
       userName: mockUserName,
     });
 
-    chai.expect(linkRewardStub.getCalls()).to.be.empty;
+    expect(linkRewardStub.getCalls()).to.be.empty;
   });
 
   it('Should return true with no new user if user is not new', async function () {
@@ -163,9 +163,8 @@ describe('handleReferralReward function', function () {
       userName: mockUserName,
     });
 
-    chai.expect(result).to.be.true;
-    chai
-      .expect(await collectionUsersMock.find({}).toArray())
+    expect(result).to.be.true;
+    expect(await collectionUsersMock.find({}).toArray())
       .excluding(['_id'])
       .to.deep.equal([
         {
@@ -186,7 +185,7 @@ describe('handleReferralReward function', function () {
       userName: mockUserName,
     });
 
-    chai.expect(result).to.be.true;
+    expect(result).to.be.true;
   });
 
   it('Should return false with no new user if signup reward is false', async function () {
@@ -203,8 +202,8 @@ describe('handleReferralReward function', function () {
       userName: mockUserName,
     });
 
-    chai.expect(result).to.be.false;
-    chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
+    expect(result).to.be.false;
+    expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
   });
 
   it('Should return true and populate database properly after restart', async function () {
@@ -221,7 +220,7 @@ describe('handleReferralReward function', function () {
       userName: mockUserName,
     });
 
-    chai.expect(result).to.be.false;
+    expect(result).to.be.false;
 
     (signup_utils.handleSignUpReward as RewardStub).resolves(true);
 
@@ -239,9 +238,8 @@ describe('handleReferralReward function', function () {
 
     const users = await collectionUsersMock.find({}).toArray();
 
-    chai.expect(result).to.be.true;
-    chai
-      .expect(users)
+    expect(result).to.be.true;
+    expect(users)
       .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
@@ -257,7 +255,7 @@ describe('handleReferralReward function', function () {
   it('Should return false and no new user if referral reward is false', async function () {
     (referral_utils.handleReferralReward as RewardStub).resolves(false);
 
-    chai.expect(
+    expect(
       await handleNewReward({
         isSignupReward: true,
         isReferralReward: true,
@@ -269,7 +267,7 @@ describe('handleReferralReward function', function () {
         userName: mockUserName,
       }),
     ).to.be.false;
-    chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
+    expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
   });
 
   it('Should be able to restart, return true and populate the database properly after restart', async function () {
@@ -286,8 +284,8 @@ describe('handleReferralReward function', function () {
       userName: mockUserName,
     });
 
-    chai.expect(result).to.be.false;
-    chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
+    expect(result).to.be.false;
+    expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
 
     (referral_utils.handleReferralReward as RewardStub).resolves(true);
 
@@ -302,9 +300,8 @@ describe('handleReferralReward function', function () {
       userName: mockUserName,
     });
 
-    chai.expect(result).to.be.true;
-    chai
-      .expect(await collectionUsersMock.find({}).toArray())
+    expect(result).to.be.true;
+    expect(await collectionUsersMock.find({}).toArray())
       .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
@@ -330,9 +327,8 @@ describe('handleReferralReward function', function () {
       referentUserTelegramID: mockUserTelegramID1,
     });
 
-    chai.expect(result).to.be.true;
-    chai
-      .expect(await collectionUsersMock.find({}).toArray())
+    expect(result).to.be.true;
+    expect(await collectionUsersMock.find({}).toArray())
       .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
@@ -360,8 +356,8 @@ describe('handleReferralReward function', function () {
       referentUserTelegramID: mockUserTelegramID1,
     });
 
-    chai.expect(result).to.be.false;
-    chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
+    expect(result).to.be.false;
+    expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
 
     (link_reward_utils.handleLinkReward as RewardStub).resolves(true);
 
@@ -377,9 +373,8 @@ describe('handleReferralReward function', function () {
       referentUserTelegramID: mockUserTelegramID1,
     });
 
-    chai.expect(result).to.be.true;
-    chai
-      .expect(await collectionUsersMock.find({}).toArray())
+    expect(result).to.be.true;
+    expect(await collectionUsersMock.find({}).toArray())
       .excluding(['_id', 'dateAdded'])
       .to.deep.equal([
         {
@@ -408,8 +403,7 @@ describe('handleReferralReward function', function () {
       .getCalls()
       .filter((e) => e.firstArg === SEGMENT_IDENTITY_URL);
 
-    chai
-      .expect(segmentIdentityCall[0].args[1])
+    expect(segmentIdentityCall[0].args[1])
       .excluding(['timestamp'])
       .to.deep.equal({
         userId: 'newUserTgId',
@@ -420,12 +414,12 @@ describe('handleReferralReward function', function () {
           patchwallet: mockWallet,
         },
       });
-    chai
-      .expect(segmentIdentityCall[0].args[1].timestamp)
-      .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-    chai
-      .expect(segmentIdentityCall[0].args[1].timestamp)
-      .to.be.lessThanOrEqual(new Date());
+    expect(segmentIdentityCall[0].args[1].timestamp).to.be.greaterThanOrEqual(
+      new Date(Date.now() - 20000),
+    ); // 20 seconds
+    expect(segmentIdentityCall[0].args[1].timestamp).to.be.lessThanOrEqual(
+      new Date(),
+    );
   });
 
   it('Should return false with nothing in the database if PatchWallet address error', async function () {
@@ -445,8 +439,8 @@ describe('handleReferralReward function', function () {
       referentUserTelegramID: mockUserTelegramID1,
     });
 
-    chai.expect(result).to.be.false;
-    chai.expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
+    expect(result).to.be.false;
+    expect(await collectionUsersMock.find({}).toArray()).to.be.empty;
   });
 
   it('Should return true if error in Segment', async function () {
@@ -466,6 +460,6 @@ describe('handleReferralReward function', function () {
       referentUserTelegramID: mockUserTelegramID1,
     });
 
-    chai.expect(result).to.be.true;
+    expect(result).to.be.true;
   });
 });

@@ -1,4 +1,4 @@
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import {
   mockResponsePath,
   mockUserHandle,
@@ -192,7 +192,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should not send tokens if No transactions are eligible for a reward', async function () {
@@ -205,7 +205,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -220,7 +220,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+      expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
     });
 
     it('Should not call FlowXO if No transactions are eligible for a reward', async function () {
@@ -233,7 +233,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK),
@@ -301,7 +301,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should not send tokens if The transaction is already rewarded with the same eventId', async function () {
@@ -314,7 +314,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -329,8 +329,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -360,7 +359,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK),
@@ -428,7 +427,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should not send tokens if The transaction is already rewarded with another eventId', async function () {
@@ -441,7 +440,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -456,8 +455,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -487,7 +485,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK),
@@ -553,7 +551,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should not send tokens if The transaction is already rewarded with no eventId', async function () {
@@ -566,7 +564,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -581,8 +579,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -610,7 +607,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK),
@@ -698,7 +695,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should call the sendTokens function only one time properly if Reward status are pending at the beginning', async function () {
@@ -717,8 +714,8 @@ describe('handleReferralReward function', function () {
         .getCalls()
         .filter((e) => e.firstArg === PATCHWALLET_TX_URL);
 
-      chai.expect(sendTokensCalls.length).to.equal(1);
-      chai.expect(sendTokensCalls[0].args[1]).to.deep.equal({
+      expect(sendTokensCalls.length).to.equal(1);
+      expect(sendTokensCalls[0].args[1]).to.deep.equal({
         userId: `grindery:${SOURCE_TG_ID}`,
         chain: mockChainName,
         to: [mockTokenAddress],
@@ -742,9 +739,8 @@ describe('handleReferralReward function', function () {
       });
 
       const rewards = await collectionRewardsMock.find({}).toArray();
-      chai.expect(rewards.length).to.equal(3);
-      chai
-        .expect(rewards)
+      expect(rewards.length).to.equal(3);
+      expect(rewards)
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -778,10 +774,10 @@ describe('handleReferralReward function', function () {
             status: TransactionStatus.PENDING,
           },
         ]);
-      chai
-        .expect(rewards[0].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(rewards[0].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
     });
 
     it('Should call FlowXO properly if Reward status are pending at the beginning', async function () {
@@ -797,35 +793,32 @@ describe('handleReferralReward function', function () {
       const flowXOCalls = axiosStub
         .getCalls()
         .filter((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK);
-      chai.expect(flowXOCalls.length).to.equal(1);
+      expect(flowXOCalls.length).to.equal(1);
 
-      chai
-        .expect(flowXOCalls[0].args[1])
-        .excluding(['dateAdded'])
-        .to.deep.equal({
-          newUserTgId: mockUserTelegramID,
-          newUserResponsePath: mockResponsePath,
-          newUserUserHandle: mockUserHandle,
-          newUserUserName: mockUserName,
-          newUserPatchwallet: mockWallet,
-          userTelegramID: mockUserTelegramID1,
-          responsePath: mockResponsePath1,
-          walletAddress: mockWallet1,
-          reason: '2x_reward',
-          userHandle: mockUserHandle1,
-          userName: mockUserName1,
-          amount: '50',
-          message: 'Referral reward',
-          transactionHash: mockTransactionHash,
-          parentTransactionHash: mockTransactionHash,
-          apiKey: FLOWXO_WEBHOOK_API_KEY,
-        });
-      chai
-        .expect(flowXOCalls[0].args[1].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai
-        .expect(flowXOCalls[0].args[1].dateAdded)
-        .to.be.lessThanOrEqual(new Date());
+      expect(flowXOCalls[0].args[1]).excluding(['dateAdded']).to.deep.equal({
+        newUserTgId: mockUserTelegramID,
+        newUserResponsePath: mockResponsePath,
+        newUserUserHandle: mockUserHandle,
+        newUserUserName: mockUserName,
+        newUserPatchwallet: mockWallet,
+        userTelegramID: mockUserTelegramID1,
+        responsePath: mockResponsePath1,
+        walletAddress: mockWallet1,
+        reason: '2x_reward',
+        userHandle: mockUserHandle1,
+        userName: mockUserName1,
+        amount: '50',
+        message: 'Referral reward',
+        transactionHash: mockTransactionHash,
+        parentTransactionHash: mockTransactionHash,
+        apiKey: FLOWXO_WEBHOOK_API_KEY,
+      });
+      expect(flowXOCalls[0].args[1].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(flowXOCalls[0].args[1].dateAdded).to.be.lessThanOrEqual(
+        new Date(),
+      );
     });
   });
 
@@ -905,7 +898,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should call the sendTokens function properly if Reward status are failure at the beginning', async function () {
@@ -922,8 +915,8 @@ describe('handleReferralReward function', function () {
         .getCalls()
         .filter((e) => e.firstArg === PATCHWALLET_TX_URL);
 
-      chai.expect(sendTokensCalls.length).to.equal(1);
-      chai.expect(sendTokensCalls[0].args[1]).to.deep.equal({
+      expect(sendTokensCalls.length).to.equal(1);
+      expect(sendTokensCalls[0].args[1]).to.deep.equal({
         userId: `grindery:${SOURCE_TG_ID}`,
         chain: DEFAULT_CHAIN_NAME,
         to: [G1_POLYGON_ADDRESS],
@@ -947,9 +940,8 @@ describe('handleReferralReward function', function () {
       });
 
       const rewards = await collectionRewardsMock.find({}).toArray();
-      chai.expect(rewards.length).to.equal(3);
-      chai
-        .expect(rewards)
+      expect(rewards.length).to.equal(3);
+      expect(rewards)
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -984,10 +976,10 @@ describe('handleReferralReward function', function () {
             status: TransactionStatus.FAILURE,
           },
         ]);
-      chai
-        .expect(rewards[0].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(rewards[0].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
     });
 
     it('Should call FlowXO properly if Reward status are failure at the beginning', async function () {
@@ -1003,35 +995,32 @@ describe('handleReferralReward function', function () {
       const flowXOCalls = axiosStub
         .getCalls()
         .filter((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK);
-      chai.expect(flowXOCalls.length).to.equal(1);
+      expect(flowXOCalls.length).to.equal(1);
 
-      chai
-        .expect(flowXOCalls[0].args[1])
-        .excluding(['dateAdded'])
-        .to.deep.equal({
-          newUserTgId: mockUserTelegramID,
-          newUserResponsePath: mockResponsePath,
-          newUserUserHandle: mockUserHandle,
-          newUserUserName: mockUserName,
-          newUserPatchwallet: mockWallet,
-          userTelegramID: mockUserTelegramID1,
-          responsePath: mockResponsePath1,
-          walletAddress: mockWallet1,
-          reason: '2x_reward',
-          userHandle: mockUserHandle1,
-          userName: mockUserName1,
-          amount: '50',
-          message: 'Referral reward',
-          transactionHash: mockTransactionHash,
-          parentTransactionHash: mockTransactionHash,
-          apiKey: FLOWXO_WEBHOOK_API_KEY,
-        });
-      chai
-        .expect(flowXOCalls[0].args[1].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai
-        .expect(flowXOCalls[0].args[1].dateAdded)
-        .to.be.lessThanOrEqual(new Date());
+      expect(flowXOCalls[0].args[1]).excluding(['dateAdded']).to.deep.equal({
+        newUserTgId: mockUserTelegramID,
+        newUserResponsePath: mockResponsePath,
+        newUserUserHandle: mockUserHandle,
+        newUserUserName: mockUserName,
+        newUserPatchwallet: mockWallet,
+        userTelegramID: mockUserTelegramID1,
+        responsePath: mockResponsePath1,
+        walletAddress: mockWallet1,
+        reason: '2x_reward',
+        userHandle: mockUserHandle1,
+        userName: mockUserName1,
+        amount: '50',
+        message: 'Referral reward',
+        transactionHash: mockTransactionHash,
+        parentTransactionHash: mockTransactionHash,
+        apiKey: FLOWXO_WEBHOOK_API_KEY,
+      });
+      expect(flowXOCalls[0].args[1].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(flowXOCalls[0].args[1].dateAdded).to.be.lessThanOrEqual(
+        new Date(),
+      );
     });
   });
 
@@ -1092,7 +1081,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should call the sendTokens function only once properly if transactions to be rewarded', async function () {
@@ -1109,8 +1098,8 @@ describe('handleReferralReward function', function () {
         .getCalls()
         .filter((e) => e.firstArg === PATCHWALLET_TX_URL);
 
-      chai.expect(sendTokensCalls.length).to.equal(1);
-      chai.expect(sendTokensCalls[0].args[1]).to.deep.equal({
+      expect(sendTokensCalls.length).to.equal(1);
+      expect(sendTokensCalls[0].args[1]).to.deep.equal({
         userId: `grindery:${SOURCE_TG_ID}`,
         chain: DEFAULT_CHAIN_NAME,
         to: [G1_POLYGON_ADDRESS],
@@ -1138,8 +1127,8 @@ describe('handleReferralReward function', function () {
         .getCalls()
         .filter((e) => e.firstArg === PATCHWALLET_TX_URL);
 
-      chai.expect(sendTokensCalls.length).to.equal(1);
-      chai.expect(sendTokensCalls[0].args[1]).to.deep.equal({
+      expect(sendTokensCalls.length).to.equal(1);
+      expect(sendTokensCalls[0].args[1]).to.deep.equal({
         userId: `grindery:${SOURCE_TG_ID}`,
         chain: DEFAULT_CHAIN_NAME,
         to: [G1_POLYGON_ADDRESS],
@@ -1163,9 +1152,8 @@ describe('handleReferralReward function', function () {
       });
 
       const rewards = await collectionRewardsMock.find({}).toArray();
-      chai.expect(rewards.length).to.equal(1);
-      chai
-        .expect(rewards)
+      expect(rewards.length).to.equal(1);
+      expect(rewards)
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -1185,10 +1173,10 @@ describe('handleReferralReward function', function () {
             userOpHash: null,
           },
         ]);
-      chai
-        .expect(rewards[0].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(rewards[0].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
     });
 
     it('Should call FlowXO properly if transactions to be rewarded', async function () {
@@ -1204,35 +1192,32 @@ describe('handleReferralReward function', function () {
       const flowXOCalls = axiosStub
         .getCalls()
         .filter((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK);
-      chai.expect(flowXOCalls.length).to.equal(1);
+      expect(flowXOCalls.length).to.equal(1);
 
-      chai
-        .expect(flowXOCalls[0].args[1])
-        .excluding(['dateAdded'])
-        .to.deep.equal({
-          newUserTgId: mockUserTelegramID,
-          newUserResponsePath: mockResponsePath,
-          newUserUserHandle: mockUserHandle,
-          newUserUserName: mockUserName,
-          newUserPatchwallet: mockWallet,
-          userTelegramID: mockUserTelegramID1,
-          responsePath: mockResponsePath1,
-          walletAddress: mockWallet1,
-          reason: '2x_reward',
-          userHandle: mockUserHandle1,
-          userName: mockUserName1,
-          amount: '50',
-          message: 'Referral reward',
-          transactionHash: mockTransactionHash,
-          parentTransactionHash: mockTransactionHash,
-          apiKey: FLOWXO_WEBHOOK_API_KEY,
-        });
-      chai
-        .expect(flowXOCalls[0].args[1].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai
-        .expect(flowXOCalls[0].args[1].dateAdded)
-        .to.be.lessThanOrEqual(new Date());
+      expect(flowXOCalls[0].args[1]).excluding(['dateAdded']).to.deep.equal({
+        newUserTgId: mockUserTelegramID,
+        newUserResponsePath: mockResponsePath,
+        newUserUserHandle: mockUserHandle,
+        newUserUserName: mockUserName,
+        newUserPatchwallet: mockWallet,
+        userTelegramID: mockUserTelegramID1,
+        responsePath: mockResponsePath1,
+        walletAddress: mockWallet1,
+        reason: '2x_reward',
+        userHandle: mockUserHandle1,
+        userName: mockUserName1,
+        amount: '50',
+        message: 'Referral reward',
+        transactionHash: mockTransactionHash,
+        parentTransactionHash: mockTransactionHash,
+        apiKey: FLOWXO_WEBHOOK_API_KEY,
+      });
+      expect(flowXOCalls[0].args[1].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(flowXOCalls[0].args[1].dateAdded).to.be.lessThanOrEqual(
+        new Date(),
+      );
     });
   });
 
@@ -1293,9 +1278,8 @@ describe('handleReferralReward function', function () {
       });
 
       const rewards = await collectionRewardsMock.find({}).toArray();
-      chai.expect(rewards.length).to.equal(1);
-      chai
-        .expect(rewards)
+      expect(rewards.length).to.equal(1);
+      expect(rewards)
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -1315,10 +1299,10 @@ describe('handleReferralReward function', function () {
             userOpHash: null,
           },
         ]);
-      chai
-        .expect(rewards[0].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(rewards[0].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
     });
   });
 
@@ -1373,7 +1357,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should call the sendTokens function only once properly if transactions to be rewarded with same hash', async function () {
@@ -1390,8 +1374,8 @@ describe('handleReferralReward function', function () {
         .getCalls()
         .filter((e) => e.firstArg === PATCHWALLET_TX_URL);
 
-      chai.expect(sendTokensCalls.length).to.equal(1);
-      chai.expect(sendTokensCalls[0].args[1]).to.deep.equal({
+      expect(sendTokensCalls.length).to.equal(1);
+      expect(sendTokensCalls[0].args[1]).to.deep.equal({
         userId: `grindery:${SOURCE_TG_ID}`,
         chain: DEFAULT_CHAIN_NAME,
         to: [G1_POLYGON_ADDRESS],
@@ -1415,9 +1399,8 @@ describe('handleReferralReward function', function () {
       });
 
       const rewards = await collectionRewardsMock.find({}).toArray();
-      chai.expect(rewards.length).to.equal(1);
-      chai
-        .expect(rewards)
+      expect(rewards.length).to.equal(1);
+      expect(rewards)
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -1437,10 +1420,10 @@ describe('handleReferralReward function', function () {
             userOpHash: null,
           },
         ]);
-      chai
-        .expect(rewards[0].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(rewards[0].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
     });
 
     it('Should call FlowXO properly if transactions to be rewarded with same hash', async function () {
@@ -1456,35 +1439,32 @@ describe('handleReferralReward function', function () {
       const flowXOCalls = axiosStub
         .getCalls()
         .filter((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK);
-      chai.expect(flowXOCalls.length).to.equal(1);
+      expect(flowXOCalls.length).to.equal(1);
 
-      chai
-        .expect(flowXOCalls[0].args[1])
-        .excluding(['dateAdded'])
-        .to.deep.equal({
-          newUserTgId: mockUserTelegramID,
-          newUserResponsePath: mockResponsePath,
-          newUserUserHandle: mockUserHandle,
-          newUserUserName: mockUserName,
-          newUserPatchwallet: mockWallet,
-          userTelegramID: mockUserTelegramID1,
-          responsePath: mockResponsePath1,
-          walletAddress: mockWallet1,
-          reason: '2x_reward',
-          userHandle: mockUserHandle1,
-          userName: mockUserName1,
-          amount: '50',
-          message: 'Referral reward',
-          transactionHash: mockTransactionHash,
-          parentTransactionHash: mockTransactionHash,
-          apiKey: FLOWXO_WEBHOOK_API_KEY,
-        });
-      chai
-        .expect(flowXOCalls[0].args[1].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai
-        .expect(flowXOCalls[0].args[1].dateAdded)
-        .to.be.lessThanOrEqual(new Date());
+      expect(flowXOCalls[0].args[1]).excluding(['dateAdded']).to.deep.equal({
+        newUserTgId: mockUserTelegramID,
+        newUserResponsePath: mockResponsePath,
+        newUserUserHandle: mockUserHandle,
+        newUserUserName: mockUserName,
+        newUserPatchwallet: mockWallet,
+        userTelegramID: mockUserTelegramID1,
+        responsePath: mockResponsePath1,
+        walletAddress: mockWallet1,
+        reason: '2x_reward',
+        userHandle: mockUserHandle1,
+        userName: mockUserName1,
+        amount: '50',
+        message: 'Referral reward',
+        transactionHash: mockTransactionHash,
+        parentTransactionHash: mockTransactionHash,
+        apiKey: FLOWXO_WEBHOOK_API_KEY,
+      });
+      expect(flowXOCalls[0].args[1].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(flowXOCalls[0].args[1].dateAdded).to.be.lessThanOrEqual(
+        new Date(),
+      );
     });
   });
 
@@ -1539,7 +1519,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should call the sendTokens function properly only once if duplicate user in transactions to be rewarded', async function () {
@@ -1556,8 +1536,8 @@ describe('handleReferralReward function', function () {
         .getCalls()
         .filter((e) => e.firstArg === PATCHWALLET_TX_URL);
 
-      chai.expect(sendTokensCalls.length).to.equal(1);
-      chai.expect(sendTokensCalls[0].args[1]).to.deep.equal({
+      expect(sendTokensCalls.length).to.equal(1);
+      expect(sendTokensCalls[0].args[1]).to.deep.equal({
         userId: `grindery:${SOURCE_TG_ID}`,
         chain: DEFAULT_CHAIN_NAME,
         to: [G1_POLYGON_ADDRESS],
@@ -1581,9 +1561,8 @@ describe('handleReferralReward function', function () {
       });
 
       const rewards = await collectionRewardsMock.find({}).toArray();
-      chai.expect(rewards.length).to.equal(1);
-      chai
-        .expect(rewards)
+      expect(rewards.length).to.equal(1);
+      expect(rewards)
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -1603,10 +1582,10 @@ describe('handleReferralReward function', function () {
             userOpHash: null,
           },
         ]);
-      chai
-        .expect(rewards[0].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(rewards[0].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
     });
 
     it('Should call FlowXO properly only one time if duplicate user in transactions to be rewarded', async function () {
@@ -1622,35 +1601,32 @@ describe('handleReferralReward function', function () {
       const flowXOCalls = axiosStub
         .getCalls()
         .filter((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK);
-      chai.expect(flowXOCalls.length).to.equal(1);
+      expect(flowXOCalls.length).to.equal(1);
 
-      chai
-        .expect(flowXOCalls[0].args[1])
-        .excluding(['dateAdded'])
-        .to.deep.equal({
-          newUserTgId: mockUserTelegramID,
-          newUserResponsePath: mockResponsePath,
-          newUserUserHandle: mockUserHandle,
-          newUserUserName: mockUserName,
-          newUserPatchwallet: mockWallet,
-          userTelegramID: mockUserTelegramID1,
-          responsePath: mockResponsePath1,
-          walletAddress: mockWallet1,
-          reason: '2x_reward',
-          userHandle: mockUserHandle1,
-          userName: mockUserName1,
-          amount: '50',
-          message: 'Referral reward',
-          transactionHash: mockTransactionHash,
-          parentTransactionHash: mockTransactionHash,
-          apiKey: FLOWXO_WEBHOOK_API_KEY,
-        });
-      chai
-        .expect(flowXOCalls[0].args[1].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai
-        .expect(flowXOCalls[0].args[1].dateAdded)
-        .to.be.lessThanOrEqual(new Date());
+      expect(flowXOCalls[0].args[1]).excluding(['dateAdded']).to.deep.equal({
+        newUserTgId: mockUserTelegramID,
+        newUserResponsePath: mockResponsePath,
+        newUserUserHandle: mockUserHandle,
+        newUserUserName: mockUserName,
+        newUserPatchwallet: mockWallet,
+        userTelegramID: mockUserTelegramID1,
+        responsePath: mockResponsePath1,
+        walletAddress: mockWallet1,
+        reason: '2x_reward',
+        userHandle: mockUserHandle1,
+        userName: mockUserName1,
+        amount: '50',
+        message: 'Referral reward',
+        transactionHash: mockTransactionHash,
+        parentTransactionHash: mockTransactionHash,
+        apiKey: FLOWXO_WEBHOOK_API_KEY,
+      });
+      expect(flowXOCalls[0].args[1].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(flowXOCalls[0].args[1].dateAdded).to.be.lessThanOrEqual(
+        new Date(),
+      );
     });
   });
 
@@ -1688,7 +1664,7 @@ describe('handleReferralReward function', function () {
       },
     ]);
 
-    chai.expect(
+    expect(
       await handleReferralReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
@@ -1746,7 +1722,7 @@ describe('handleReferralReward function', function () {
         .withArgs(PATCHWALLET_TX_URL)
         .rejects(new Error('Service not available'));
 
-      chai.expect(
+      expect(
         await handleReferralReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -1772,8 +1748,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -1809,7 +1784,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .filter((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK),
@@ -1865,7 +1840,7 @@ describe('handleReferralReward function', function () {
         },
       });
 
-      chai.expect(
+      expect(
         await handleReferralReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -1893,8 +1868,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -1932,7 +1906,7 @@ describe('handleReferralReward function', function () {
         patchwallet: mockWallet,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .filter((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK),
@@ -2007,7 +1981,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
       it('Should update reward database with a pending_hash status and userOpHash if transaction hash is empty in tx PatchWallet endpoint', async function () {
         await handleReferralReward({
@@ -2018,8 +1992,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -2049,7 +2022,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK),
@@ -2139,7 +2112,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
       it('Should not send tokens if transaction hash is present in PatchWallet status endpoint', async function () {
         await handleReferralReward({
@@ -2150,7 +2123,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -2163,8 +2136,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -2197,9 +2169,8 @@ describe('handleReferralReward function', function () {
         const flowXOCalls = axiosStub
           .getCalls()
           .filter((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK);
-        chai.expect(flowXOCalls.length).to.equal(1);
-        chai
-          .expect(flowXOCalls[0].args[1])
+        expect(flowXOCalls.length).to.equal(1);
+        expect(flowXOCalls[0].args[1])
           .excluding(['dateAdded'])
           .to.deep.equal({
             newUserTgId: mockUserTelegramID,
@@ -2219,11 +2190,9 @@ describe('handleReferralReward function', function () {
             parentTransactionHash: mockTransactionHash,
             apiKey: FLOWXO_WEBHOOK_API_KEY,
           });
-        chai
-          .expect(flowXOCalls[0].args[1].dateAdded)
+        expect(flowXOCalls[0].args[1].dateAdded)
           .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-        chai
-          .expect(flowXOCalls[0].args[1].dateAdded)
+        expect(flowXOCalls[0].args[1].dateAdded)
           .to.be.lessThanOrEqual(new Date());
       });
     });
@@ -2317,7 +2286,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
       it('Should not send tokens if transaction hash is not present in PatchWallet status endpoint', async function () {
         await handleReferralReward({
@@ -2328,7 +2297,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -2341,8 +2310,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -2372,7 +2340,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK),
@@ -2466,7 +2434,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
       it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
         await handleReferralReward({
@@ -2477,7 +2445,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -2490,8 +2458,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -2519,7 +2486,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK),
@@ -2609,7 +2576,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
       it('Should not send tokens if transaction hash is pending_hash without userOpHash', async function () {
         await handleReferralReward({
@@ -2620,7 +2587,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -2633,8 +2600,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -2664,7 +2630,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK),
@@ -2762,7 +2728,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
       it('Should not send tokens after 10 min of trying to get status', async function () {
         await handleReferralReward({
@@ -2773,7 +2739,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -2786,8 +2752,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -2817,7 +2782,7 @@ describe('handleReferralReward function', function () {
           userName: mockUserName,
           patchwallet: mockWallet,
         });
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK),

@@ -1,4 +1,4 @@
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import {
   mockResponsePath,
   mockUserName,
@@ -142,7 +142,7 @@ describe('handleNewTransaction function', async function () {
     });
 
     it('Should return true', async function () {
-      chai.expect(
+      expect(
         await handleNewTransaction({
           senderTgId: mockUserTelegramID,
           amount: '100',
@@ -164,8 +164,7 @@ describe('handleNewTransaction function', async function () {
 
       const transfers = await collectionTransfersMock.find({}).toArray();
 
-      chai
-        .expect(transfers)
+      expect(transfers)
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
@@ -185,7 +184,7 @@ describe('handleNewTransaction function', async function () {
             userOpHash: null,
           },
         ]);
-      chai.expect(transfers[0].dateAdded).to.be.a('date');
+      expect(transfers[0].dateAdded).to.be.a('date');
     });
 
     it('Should call the sendTokens function properly for ERC20 token transfer', async function () {
@@ -196,22 +195,20 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${mockUserTelegramID}`,
-          chain: mockChainName,
-          to: [G1_POLYGON_ADDRESS],
-          value: ['0x00'],
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-          ],
-          delegatecall: 0,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${mockUserTelegramID}`,
+        chain: mockChainName,
+        to: [G1_POLYGON_ADDRESS],
+        value: ['0x00'],
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
+        ],
+        delegatecall: 0,
+        auth: '',
+      });
     });
 
     it('Should call the sendTokens function properly for ERC20 token transfer with delegate call', async function () {
@@ -223,22 +220,20 @@ describe('handleNewTransaction function', async function () {
         delegatecall: 1,
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${mockUserTelegramID}`,
-          chain: mockChainName,
-          to: [G1_POLYGON_ADDRESS],
-          value: ['0x00'],
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-          ],
-          delegatecall: 1,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${mockUserTelegramID}`,
+        chain: mockChainName,
+        to: [G1_POLYGON_ADDRESS],
+        value: ['0x00'],
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
+        ],
+        delegatecall: 1,
+        auth: '',
+      });
     });
 
     it('Should call the sendTokens function properly for Native token transfer', async function () {
@@ -250,20 +245,18 @@ describe('handleNewTransaction function', async function () {
         tokenAddress: nativeTokenAddresses[0],
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${mockUserTelegramID}`,
-          chain: mockChainName,
-          to: [mockWallet],
-          value: [web3.scaleDecimals('100', 18)],
-          data: ['0x'],
-          delegatecall: 0,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${mockUserTelegramID}`,
+        chain: mockChainName,
+        to: [mockWallet],
+        value: [web3.scaleDecimals('100', 18)],
+        data: ['0x'],
+        delegatecall: 0,
+        auth: '',
+      });
     });
 
     it('Should call the sendTokens function properly for Native token transfer with delegate call', async function () {
@@ -276,20 +269,18 @@ describe('handleNewTransaction function', async function () {
         delegatecall: 1,
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${mockUserTelegramID}`,
-          chain: mockChainName,
-          to: [mockWallet],
-          value: [web3.scaleDecimals('100', 18)],
-          data: ['0x'],
-          delegatecall: 1,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${mockUserTelegramID}`,
+        chain: mockChainName,
+        to: [mockWallet],
+        value: [web3.scaleDecimals('100', 18)],
+        data: ['0x'],
+        delegatecall: 1,
+        auth: '',
+      });
     });
 
     it('Should populate the segment transfer properly', async function () {
@@ -307,8 +298,7 @@ describe('handleNewTransaction function', async function () {
         .getCalls()
         .filter((e) => e.firstArg === SEGMENT_TRACK_URL);
 
-      chai
-        .expect(segmentIdentityCall[0].args[1])
+      expect(segmentIdentityCall[0].args[1])
         .excluding(['timestamp'])
         .to.deep.equal({
           userId: mockUserTelegramID,
@@ -342,7 +332,7 @@ describe('handleNewTransaction function', async function () {
         .getCalls()
         .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK).args[1];
 
-      chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+      expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
         senderResponsePath: mockResponsePath,
         chainId: mockChainId,
         tokenSymbol: G1_TOKEN_SYMBOL,
@@ -383,8 +373,7 @@ describe('handleNewTransaction function', async function () {
 
       const transfers = await collectionTransfersMock.find({}).toArray();
 
-      chai
-        .expect(transfers)
+      expect(transfers)
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
@@ -404,7 +393,7 @@ describe('handleNewTransaction function', async function () {
             userOpHash: null,
           },
         ]);
-      chai.expect(transfers[0].dateAdded).to.be.a('date');
+      expect(transfers[0].dateAdded).to.be.a('date');
     });
 
     it('Should call the sendTokens function properly for ERC20 token transfer', async function () {
@@ -415,22 +404,20 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${mockUserTelegramID}`,
-          chain: mockChainName,
-          to: [G1_POLYGON_ADDRESS],
-          value: ['0x00'],
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-          ],
-          delegatecall: 0,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${mockUserTelegramID}`,
+        chain: mockChainName,
+        to: [G1_POLYGON_ADDRESS],
+        value: ['0x00'],
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
+        ],
+        delegatecall: 0,
+        auth: '',
+      });
     });
 
     it('Should call the sendTokens function properly for Native token transfer', async function () {
@@ -442,20 +429,18 @@ describe('handleNewTransaction function', async function () {
         tokenAddress: nativeTokenAddresses[0],
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${mockUserTelegramID}`,
-          chain: mockChainName,
-          to: [mockWallet],
-          value: ['10300000000000000000'],
-          data: ['0x'],
-          delegatecall: 0,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${mockUserTelegramID}`,
+        chain: mockChainName,
+        to: [mockWallet],
+        value: ['10300000000000000000'],
+        data: ['0x'],
+        delegatecall: 0,
+        auth: '',
+      });
     });
   });
 
@@ -475,7 +460,7 @@ describe('handleNewTransaction function', async function () {
     });
 
     it('Should return true and no token sending if transaction is already a success', async function () {
-      chai.expect(
+      expect(
         await handleNewTransaction({
           senderTgId: mockUserTelegramID,
           amount: '100',
@@ -493,7 +478,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -506,8 +491,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionTransfersMock.find({}).toArray())
+      expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -525,7 +509,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -540,9 +524,8 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -562,7 +545,7 @@ describe('handleNewTransaction function', async function () {
     });
 
     it('Should return true and no token sending if transaction if is already a failure', async function () {
-      chai.expect(
+      expect(
         await handleNewTransaction({
           senderTgId: mockUserTelegramID,
           amount: '100',
@@ -580,7 +563,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -593,8 +576,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionTransfersMock.find({}).toArray())
+      expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -612,7 +594,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -627,9 +609,8 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -649,7 +630,7 @@ describe('handleNewTransaction function', async function () {
     });
 
     it('Should return true and no token sending if transaction if is already a failure', async function () {
-      chai.expect(
+      expect(
         await handleNewTransaction({
           senderTgId: mockUserTelegramID,
           amount: '100',
@@ -667,7 +648,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -680,8 +661,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionTransfersMock.find({}).toArray())
+      expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -699,7 +679,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -714,9 +694,8 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -744,7 +723,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(result).to.be.false;
+      expect(result).to.be.false;
     });
 
     it('Should not modify transaction status in the database if there is an error in the send tokens request', async function () {
@@ -755,8 +734,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionTransfersMock.find({}).toArray())
+      expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -786,7 +764,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -801,9 +779,8 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -832,11 +809,9 @@ describe('handleNewTransaction function', async function () {
       eventId: txId,
     });
 
-    chai
-      .expect(
-        (await collectionTransfersMock.find({}).toArray())[0]._id.toString(),
-      )
-      .to.equal(objectId);
+    expect(
+      (await collectionTransfersMock.find({}).toArray())[0]._id.toString(),
+    ).to.equal(objectId);
   });
 
   describe('Sender is not a user', async function () {
@@ -848,7 +823,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should not add anything in database if sender is not a user', async function () {
@@ -859,7 +834,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
+      expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
     });
 
     it('Should not send tokens if sender is not a user', async function () {
@@ -870,7 +845,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -883,7 +858,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -898,9 +873,8 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -927,7 +901,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(result).to.be.false;
+      expect(result).to.be.false;
     });
 
     it('Should not add anything in the database if error in PatchWallet get address', async function () {
@@ -938,7 +912,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
+      expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
     });
 
     it('Should not send tokens if error in PatchWallet get address', async function () {
@@ -949,7 +923,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -962,7 +936,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -977,9 +951,8 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -1003,7 +976,7 @@ describe('handleNewTransaction function', async function () {
       eventId: txId,
     });
 
-    chai.expect(result).to.be.true;
+    expect(result).to.be.true;
   });
 
   it('Should return true if error in FlowXO Webhook', async function () {
@@ -1026,7 +999,7 @@ describe('handleNewTransaction function', async function () {
       eventId: txId,
     });
 
-    chai.expect(result).to.be.true;
+    expect(result).to.be.true;
   });
 
   describe('Error in PatchWallet transaction', async function () {
@@ -1052,7 +1025,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(result).to.be.false;
+      expect(result).to.be.false;
     });
 
     it('Should not modify database if error in PatchWallet transaction', async function () {
@@ -1063,8 +1036,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionTransfersMock.find({}).toArray())
+      expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -1094,7 +1066,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -1109,9 +1081,8 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -1140,7 +1111,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should complete db status to failure in database if error 470 in PatchWallet transaction', async function () {
@@ -1151,8 +1122,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionTransfersMock.find({}).toArray())
+      expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
@@ -1182,7 +1152,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -1197,9 +1167,8 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -1228,7 +1197,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should complete db status to failure 503 in database if error 503 in PatchWallet transaction', async function () {
@@ -1239,8 +1208,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionTransfersMock.find({}).toArray())
+      expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
@@ -1270,7 +1238,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -1285,9 +1253,8 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -1316,7 +1283,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(result).to.be.false;
+      expect(result).to.be.false;
     });
 
     it('Should do no transaction status modification in database if no hash in PatchWallet transaction', async function () {
@@ -1327,8 +1294,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai
-        .expect(await collectionTransfersMock.find({}).toArray())
+      expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -1358,7 +1324,7 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -1373,9 +1339,8 @@ describe('handleNewTransaction function', async function () {
         eventId: txId,
       });
 
-      chai.expect(
-        axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL),
-      ).to.be.undefined;
+      expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
+        .to.be.undefined;
     });
   });
 
@@ -1406,7 +1371,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should update reward database with a pending_hash status and userOpHash if transaction hash is empty in tx PatchWallet endpoint', async function () {
@@ -1417,8 +1382,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai
-          .expect(await collectionTransfersMock.find({}).toArray())
+        expect(await collectionTransfersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1448,7 +1412,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -1491,7 +1455,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if transaction hash is present in PatchWallet status endpoint', async function () {
@@ -1502,7 +1466,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1515,8 +1479,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai
-          .expect(await collectionTransfersMock.find({}).toArray())
+        expect(await collectionTransfersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1550,7 +1513,7 @@ describe('handleNewTransaction function', async function () {
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK).args[1];
 
-        chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+        expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
           senderResponsePath: mockResponsePath,
           chainId: mockChainId,
           tokenSymbol: G1_TOKEN_SYMBOL,
@@ -1566,10 +1529,10 @@ describe('handleNewTransaction function', async function () {
           apiKey: FLOWXO_WEBHOOK_API_KEY,
         });
 
-        chai
-          .expect(FlowXOCallArgs.dateAdded)
-          .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-        chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+        expect(FlowXOCallArgs.dateAdded).to.be.greaterThanOrEqual(
+          new Date(Date.now() - 20000),
+        ); // 20 seconds
+        expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
       });
     });
 
@@ -1615,7 +1578,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should not send tokens if transaction hash is not present in PatchWallet status endpoint', async function () {
@@ -1626,7 +1589,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1639,8 +1602,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai
-          .expect(await collectionTransfersMock.find({}).toArray())
+        expect(await collectionTransfersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1670,7 +1632,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -1717,7 +1679,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
@@ -1728,7 +1690,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1741,8 +1703,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai
-          .expect(await collectionTransfersMock.find({}).toArray())
+        expect(await collectionTransfersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1771,7 +1732,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -1820,7 +1781,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if Error 470 in PatchWallet get status endpoint', async function () {
@@ -1831,7 +1792,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1844,8 +1805,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai
-          .expect(await collectionTransfersMock.find({}).toArray())
+        expect(await collectionTransfersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1875,7 +1835,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -1917,7 +1877,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if transaction hash is pending_hash without userOpHash', async function () {
@@ -1928,7 +1888,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1941,8 +1901,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai
-          .expect(await collectionTransfersMock.find({}).toArray())
+        expect(await collectionTransfersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1972,7 +1931,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
@@ -2022,7 +1981,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens after 10 min of trying to get status', async function () {
@@ -2033,7 +1992,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -2046,8 +2005,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai
-          .expect(await collectionTransfersMock.find({}).toArray())
+        expect(await collectionTransfersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -2077,7 +2035,7 @@ describe('handleNewTransaction function', async function () {
           eventId: txId,
         });
 
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),

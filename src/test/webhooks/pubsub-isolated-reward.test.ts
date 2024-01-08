@@ -1,4 +1,4 @@
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import {
   mockResponsePath,
   mockUserHandle,
@@ -17,7 +17,6 @@ import {
 } from '../utils';
 import Sinon from 'sinon';
 import axios from 'axios';
-
 import chaiExclude from 'chai-exclude';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -136,13 +135,13 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
 
-      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
-      chai.expect(
+      expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK),
@@ -162,13 +161,13 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
 
-      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
-      chai.expect(
+      expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK),
@@ -188,13 +187,13 @@ describe('handleIsolatedReward function', async function () {
         amount: '',
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
 
-      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
-      chai.expect(
+      expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK),
@@ -214,13 +213,13 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
 
-      chai.expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
-      chai.expect(
+      expect(await collectionRewardsMock.find({}).toArray()).to.be.empty;
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK),
@@ -247,22 +246,20 @@ describe('handleIsolatedReward function', async function () {
         amount: '100',
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${SOURCE_TG_ID}`,
-          chain: DEFAULT_CHAIN_NAME,
-          to: [G1_POLYGON_ADDRESS],
-          value: ['0x00'],
-          delegatecall: 0,
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
-          ],
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${SOURCE_TG_ID}`,
+        chain: DEFAULT_CHAIN_NAME,
+        to: [G1_POLYGON_ADDRESS],
+        value: ['0x00'],
+        delegatecall: 0,
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+        ],
+        auth: '',
+      });
     });
 
     it('Should call the sendTokens function properly if patchwallet is not in the arguments and the user doesnt exist in database yet', async function () {
@@ -277,22 +274,20 @@ describe('handleIsolatedReward function', async function () {
         amount: '100',
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${SOURCE_TG_ID}`,
-          chain: DEFAULT_CHAIN_NAME,
-          to: [G1_POLYGON_ADDRESS],
-          value: ['0x00'],
-          delegatecall: 0,
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
-          ],
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${SOURCE_TG_ID}`,
+        chain: DEFAULT_CHAIN_NAME,
+        to: [G1_POLYGON_ADDRESS],
+        value: ['0x00'],
+        delegatecall: 0,
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+        ],
+        auth: '',
+      });
     });
   });
 
@@ -319,7 +314,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should not send tokens if Isolated reward already exists with same eventId and is a success', async function () {
@@ -335,7 +330,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -353,8 +348,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -379,7 +373,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK),
@@ -410,7 +404,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should not send tokens if Isolated reward already exists with another eventId', async function () {
@@ -426,7 +420,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -444,8 +438,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -470,7 +463,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK),
@@ -500,7 +493,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should not send tokens if Isolated reward already exists with no eventId', async function () {
@@ -516,7 +509,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai.expect(
+      expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
       ).to.be.undefined;
     });
@@ -534,8 +527,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
@@ -559,7 +551,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK),
@@ -590,7 +582,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '100',
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should call the sendTokens function properly if Isolated reward status pending at the beginning with same eventID', async function () {
@@ -606,22 +598,20 @@ describe('handleIsolatedReward function', async function () {
         amount: '100',
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${SOURCE_TG_ID}`,
-          chain: DEFAULT_CHAIN_NAME,
-          to: [G1_POLYGON_ADDRESS],
-          value: ['0x00'],
-          delegatecall: 0,
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
-          ],
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${SOURCE_TG_ID}`,
+        chain: DEFAULT_CHAIN_NAME,
+        to: [G1_POLYGON_ADDRESS],
+        value: ['0x00'],
+        delegatecall: 0,
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+        ],
+        auth: '',
+      });
     });
 
     it('Should update the database with a success if Isolated reward status pending at the beginning with same eventID', async function () {
@@ -637,8 +627,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '100',
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -675,7 +664,7 @@ describe('handleIsolatedReward function', async function () {
         .getCalls()
         .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK).args[1];
 
-      chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+      expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
@@ -688,10 +677,10 @@ describe('handleIsolatedReward function', async function () {
         apiKey: FLOWXO_WEBHOOK_API_KEY,
       });
 
-      chai
-        .expect(FlowXOCallArgs.dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(FlowXOCallArgs.dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
     });
   });
 
@@ -718,7 +707,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '100',
       });
 
-      chai.expect(result).to.be.true;
+      expect(result).to.be.true;
     });
 
     it('Should call the sendTokens function properly if Isolated reward status is failure at beginning with same eventID', async function () {
@@ -734,22 +723,20 @@ describe('handleIsolatedReward function', async function () {
         amount: '100',
       });
 
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${SOURCE_TG_ID}`,
-          chain: DEFAULT_CHAIN_NAME,
-          to: [G1_POLYGON_ADDRESS],
-          value: ['0x00'],
-          delegatecall: 0,
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
-          ],
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${SOURCE_TG_ID}`,
+        chain: DEFAULT_CHAIN_NAME,
+        to: [G1_POLYGON_ADDRESS],
+        value: ['0x00'],
+        delegatecall: 0,
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+        ],
+        auth: '',
+      });
     });
 
     it('Should update reward status if Isolated reward status is failure at beginning with same eventID', async function () {
@@ -767,8 +754,7 @@ describe('handleIsolatedReward function', async function () {
 
       const rewards = await collectionRewardsMock.find({}).toArray();
 
-      chai
-        .expect(rewards)
+      expect(rewards)
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -787,10 +773,10 @@ describe('handleIsolatedReward function', async function () {
           },
         ]);
 
-      chai
-        .expect(rewards[0].dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(rewards[0].dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(rewards[0].dateAdded).to.be.lessThanOrEqual(new Date());
     });
 
     it('Should call FlowXO properly if Isolated reward status is failure at beginning with same eventID', async function () {
@@ -810,7 +796,7 @@ describe('handleIsolatedReward function', async function () {
         .getCalls()
         .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK).args[1];
 
-      chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+      expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
@@ -823,10 +809,10 @@ describe('handleIsolatedReward function', async function () {
         apiKey: FLOWXO_WEBHOOK_API_KEY,
       });
 
-      chai
-        .expect(FlowXOCallArgs.dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(FlowXOCallArgs.dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
     });
   });
 
@@ -862,22 +848,20 @@ describe('handleIsolatedReward function', async function () {
         tokenAddress: mockTokenAddress,
         chainId: mockChainId,
       });
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${SOURCE_TG_ID}`,
-          chain: mockChainName,
-          to: [mockTokenAddress],
-          value: ['0x00'],
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
-          ],
-          delegatecall: 0,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${SOURCE_TG_ID}`,
+        chain: mockChainName,
+        to: [mockTokenAddress],
+        value: ['0x00'],
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+        ],
+        delegatecall: 0,
+        auth: '',
+      });
     });
 
     it('Should call the sendTokens function properly if the reason is new for this user with delegate call', async function () {
@@ -895,22 +879,20 @@ describe('handleIsolatedReward function', async function () {
         chainId: mockChainId,
         delegatecall: 1,
       });
-      chai
-        .expect(
-          axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
-            .args[1],
-        )
-        .to.deep.equal({
-          userId: `grindery:${SOURCE_TG_ID}`,
-          chain: mockChainName,
-          to: [mockTokenAddress],
-          value: ['0x00'],
-          data: [
-            '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
-          ],
-          delegatecall: 1,
-          auth: '',
-        });
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${SOURCE_TG_ID}`,
+        chain: mockChainName,
+        to: [mockTokenAddress],
+        value: ['0x00'],
+        data: [
+          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000056bc75e2d63100000',
+        ],
+        delegatecall: 1,
+        auth: '',
+      });
     });
 
     it('Should insert a new element in the reward collection of the database if the reason is new for this user', async function () {
@@ -926,8 +908,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '100',
       });
       const rewards = await collectionRewardsMock.find({}).toArray();
-      chai
-        .expect(rewards)
+      expect(rewards)
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -974,7 +955,7 @@ describe('handleIsolatedReward function', async function () {
       const FlowXOCallArgs = axiosStub
         .getCalls()
         .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK).args[1];
-      chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+      expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
@@ -986,14 +967,14 @@ describe('handleIsolatedReward function', async function () {
         transactionHash: mockTransactionHash,
         apiKey: FLOWXO_WEBHOOK_API_KEY,
       });
-      chai
-        .expect(FlowXOCallArgs.dateAdded)
-        .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-      chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+      expect(FlowXOCallArgs.dateAdded).to.be.greaterThanOrEqual(
+        new Date(Date.now() - 20000),
+      ); // 20 seconds
+      expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
     });
 
     it('Should return true if the reason is new for this user', async function () {
-      chai.expect(
+      expect(
         await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -1014,7 +995,7 @@ describe('handleIsolatedReward function', async function () {
       .withArgs(FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK)
       .rejects(new Error('Service not available'));
 
-    chai.expect(
+    expect(
       await handleIsolatedReward({
         eventId: rewardId,
         userTelegramID: mockUserTelegramID,
@@ -1034,7 +1015,7 @@ describe('handleIsolatedReward function', async function () {
       axiosStub
         .withArgs(PATCHWALLET_TX_URL)
         .rejects(new Error('Service not available'));
-      chai.expect(
+      expect(
         await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -1064,8 +1045,7 @@ describe('handleIsolatedReward function', async function () {
         message: 'isolated message 1',
         amount: '34',
       });
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -1101,7 +1081,7 @@ describe('handleIsolatedReward function', async function () {
         message: 'isolated message 1',
         amount: '34',
       });
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK),
@@ -1119,7 +1099,7 @@ describe('handleIsolatedReward function', async function () {
     });
 
     it('Should return false if there is no hash in PatchWallet response', async function () {
-      chai.expect(
+      expect(
         await handleIsolatedReward({
           eventId: rewardId,
           userTelegramID: mockUserTelegramID,
@@ -1147,8 +1127,7 @@ describe('handleIsolatedReward function', async function () {
         amount: '34',
       });
 
-      chai
-        .expect(await collectionRewardsMock.find({}).toArray())
+      expect(await collectionRewardsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
@@ -1180,7 +1159,7 @@ describe('handleIsolatedReward function', async function () {
         message: 'isolated message 1',
         amount: '34',
       });
-      chai.expect(
+      expect(
         axiosStub
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK),
@@ -1210,7 +1189,7 @@ describe('handleIsolatedReward function', async function () {
           message: 'isolated message 1',
           amount: '34',
         });
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should update reward database with a pending_hash status and userOpHash if transaction hash is empty in tx PatchWallet endpoint', async function () {
@@ -1225,8 +1204,7 @@ describe('handleIsolatedReward function', async function () {
           message: 'isolated message 1',
           amount: '34',
         });
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1258,7 +1236,7 @@ describe('handleIsolatedReward function', async function () {
           message: 'isolated message 1',
           amount: '34',
         });
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK),
@@ -1295,7 +1273,7 @@ describe('handleIsolatedReward function', async function () {
           message: 'isolated message 1',
           amount: '34',
         });
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if transaction hash is present in PatchWallet status endpoint', async function () {
@@ -1310,7 +1288,7 @@ describe('handleIsolatedReward function', async function () {
           message: 'isolated message 1',
           amount: '34',
         });
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1327,8 +1305,7 @@ describe('handleIsolatedReward function', async function () {
           message: 'isolated message 1',
           amount: '34',
         });
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1364,7 +1341,7 @@ describe('handleIsolatedReward function', async function () {
           .getCalls()
           .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK)
           .args[1];
-        chai.expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
+        expect(FlowXOCallArgs).excluding(['dateAdded']).to.deep.equal({
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
@@ -1376,10 +1353,10 @@ describe('handleIsolatedReward function', async function () {
           transactionHash: mockTransactionHash,
           apiKey: FLOWXO_WEBHOOK_API_KEY,
         });
-        chai
-          .expect(FlowXOCallArgs.dateAdded)
-          .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-        chai.expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
+        expect(FlowXOCallArgs.dateAdded).to.be.greaterThanOrEqual(
+          new Date(Date.now() - 20000),
+        ); // 20 seconds
+        expect(FlowXOCallArgs.dateAdded).to.be.lessThanOrEqual(new Date());
       });
     });
 
@@ -1418,7 +1395,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should not send tokens if transaction hash is not present in PatchWallet status endpoint', async function () {
@@ -1433,7 +1410,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1450,8 +1427,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1483,7 +1459,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK),
@@ -1522,7 +1498,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai.expect(result).to.be.false;
+        expect(result).to.be.false;
       });
 
       it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
@@ -1537,7 +1513,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1554,8 +1530,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1585,7 +1560,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK),
@@ -1621,7 +1596,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens if transaction hash is pending_hash without userOpHash', async function () {
@@ -1636,7 +1611,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1653,8 +1628,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1686,7 +1660,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK),
@@ -1729,7 +1703,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai.expect(result).to.be.true;
+        expect(result).to.be.true;
       });
 
       it('Should not send tokens after 10 min of trying to get status', async function () {
@@ -1744,7 +1718,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai.expect(
+        expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
@@ -1761,8 +1735,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai
-          .expect(await collectionRewardsMock.find({}).toArray())
+        expect(await collectionRewardsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
@@ -1794,7 +1767,7 @@ describe('handleIsolatedReward function', async function () {
           amount: '34',
           message: 'isolated message 1',
         });
-        chai.expect(
+        expect(
           axiosStub
             .getCalls()
             .find((e) => e.firstArg === FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK),
