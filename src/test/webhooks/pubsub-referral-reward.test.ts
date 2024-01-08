@@ -2170,30 +2170,30 @@ describe('handleReferralReward function', function () {
           .getCalls()
           .filter((e) => e.firstArg === FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK);
         expect(flowXOCalls.length).to.equal(1);
-        expect(flowXOCalls[0].args[1])
-          .excluding(['dateAdded'])
-          .to.deep.equal({
-            newUserTgId: mockUserTelegramID,
-            newUserResponsePath: mockResponsePath,
-            newUserUserHandle: mockUserHandle,
-            newUserUserName: mockUserName,
-            newUserPatchwallet: mockWallet,
-            userTelegramID: mockUserTelegramID1,
-            responsePath: mockResponsePath1,
-            walletAddress: mockWallet1,
-            reason: '2x_reward',
-            userHandle: mockUserHandle1,
-            userName: mockUserName1,
-            amount: '50',
-            message: 'Referral reward',
-            transactionHash: mockTransactionHash,
-            parentTransactionHash: mockTransactionHash,
-            apiKey: FLOWXO_WEBHOOK_API_KEY,
-          });
-        expect(flowXOCalls[0].args[1].dateAdded)
-          .to.be.greaterThanOrEqual(new Date(Date.now() - 20000)); // 20 seconds
-        expect(flowXOCalls[0].args[1].dateAdded)
-          .to.be.lessThanOrEqual(new Date());
+        expect(flowXOCalls[0].args[1]).excluding(['dateAdded']).to.deep.equal({
+          newUserTgId: mockUserTelegramID,
+          newUserResponsePath: mockResponsePath,
+          newUserUserHandle: mockUserHandle,
+          newUserUserName: mockUserName,
+          newUserPatchwallet: mockWallet,
+          userTelegramID: mockUserTelegramID1,
+          responsePath: mockResponsePath1,
+          walletAddress: mockWallet1,
+          reason: '2x_reward',
+          userHandle: mockUserHandle1,
+          userName: mockUserName1,
+          amount: '50',
+          message: 'Referral reward',
+          transactionHash: mockTransactionHash,
+          parentTransactionHash: mockTransactionHash,
+          apiKey: FLOWXO_WEBHOOK_API_KEY,
+        });
+        expect(flowXOCalls[0].args[1].dateAdded).to.be.greaterThanOrEqual(
+          new Date(Date.now() - 20000),
+        ); // 20 seconds
+        expect(flowXOCalls[0].args[1].dateAdded).to.be.lessThanOrEqual(
+          new Date(),
+        );
       });
     });
     describe('Transaction hash is not present in PatchWallet status endpoint', async function () {
