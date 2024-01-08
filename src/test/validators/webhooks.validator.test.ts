@@ -258,7 +258,7 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: 'eip155:59143',
-          msg: 'chainId must be a valid and supported chain ID',
+          msg: 'params.chainId must be a valid and supported EIP155 chain ID',
           path: 'params.chainId',
           location: 'body',
         },
