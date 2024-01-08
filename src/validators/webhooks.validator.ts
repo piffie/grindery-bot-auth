@@ -321,11 +321,11 @@ export const swapValidator = [
   // Validates chainId as an optional string against a predefined mapping
   validateChainID('params.chainId', true),
 
-  // Validates chainIn within params as a string
-  body('params.chainIn').isString().withMessage('chainIn must be a string'),
+  // Validates chainIn  as an optional string against a predefined mapping
+  validateChainID('params.chainIn', true),
 
-  // Validates chainOut within params as a string
-  body('params.chainOut').isString().withMessage('chainOut must be a string'),
+  // Validates chainOut  as an optional string against a predefined mapping
+  validateChainID('params.chainOut', true),
 
   // Validates chainName within params as an optional string
   body('params.chainName')
