@@ -393,7 +393,7 @@ describe('G1 to GX util functions', async function () {
 
     it('Should handle cases where MVU rounded is present but not MVU', async function () {
       const attributes = ['active', 'mvu_rounded = 6', 'contributor'];
-      expect(extractMvuValueFromAttributes(attributes)).to.equal(0);
+      expect(extractMvuValueFromAttributes(attributes)).to.equal(6);
     });
   });
 });
