@@ -71,7 +71,7 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
             ?.collection(USERS_COLLECTION)
             .findOne({ userTelegramID: req.query.userTelegramID })
         )?.attributes,
-      ) || 0,
+      ),
     );
 
     const id = uuidv4();

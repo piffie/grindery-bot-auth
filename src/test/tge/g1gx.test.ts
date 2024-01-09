@@ -353,17 +353,17 @@ describe('G1 to GX util functions', async function () {
 
     it('Should return null if no MVU attribute is present', async function () {
       const attributes = ['active', 'contributor'];
-      expect(extractMvuValueFromAttributes(attributes)).to.be.null;
+      expect(extractMvuValueFromAttributes(attributes)).to.equal(0);
     });
 
     it('Should return null if attribute list is empty', async function () {
       const attributes = [];
-      expect(extractMvuValueFromAttributes(attributes)).to.be.null;
+      expect(extractMvuValueFromAttributes(attributes)).to.equal(0);
     });
 
     it('Should return null if MVU value is not a number', async function () {
       const attributes = ['active', 'mvu = abc', 'contributor'];
-      expect(extractMvuValueFromAttributes(attributes)).to.be.null;
+      expect(extractMvuValueFromAttributes(attributes)).to.equal(0);
     });
 
     it('Should handle different spacing in MVU attribute', async function () {
@@ -393,7 +393,7 @@ describe('G1 to GX util functions', async function () {
 
     it('Should handle cases where MVU rounded is present but not MVU', async function () {
       const attributes = ['active', 'mvu_rounded = 6', 'contributor'];
-      expect(extractMvuValueFromAttributes(attributes)).to.be.null;
+      expect(extractMvuValueFromAttributes(attributes)).to.equal(0);
     });
   });
 });

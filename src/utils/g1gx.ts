@@ -287,9 +287,7 @@ export function computeG1ToGxConversion(
  * @param attributes - Array of string attributes to search for MVU.
  * @returns The extracted MVU value as a number or null if not found.
  */
-export function extractMvuValueFromAttributes(
-  attributes: string[],
-): number | null {
+export function extractMvuValueFromAttributes(attributes: string[]): number {
   // Regular expression to match 'mvu = <number>' pattern case-insensitively.
   const mvuRegex = /mvu\s*=\s*([0-9.]+)/i;
 
@@ -302,9 +300,9 @@ export function extractMvuValueFromAttributes(
     const mvuMatch = mvuAttr.match(mvuRegex);
 
     // Check if a valid MVU value is extracted, parse and return it.
-    return mvuMatch ? parseFloat(mvuMatch[1]) : null;
+    return mvuMatch ? parseFloat(mvuMatch[1]) : 0;
   }
 
   // Return null when no MVU attribute is found in the given attributes.
-  return null;
+  return 0;
 }
