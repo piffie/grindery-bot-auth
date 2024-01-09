@@ -224,20 +224,15 @@ describe('Webhook validator utils', async function () {
   });
 
   describe('validateChainID function', async function () {
-    let validChainIds: any, mockRequest: any;
-
-    beforeEach(async function () {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mockRequest = (value: any) => ({
-        body: {
-          params: {
-            chainId: value,
-          },
+    const mockRequest = (value: any) => ({
+      body: {
+        params: {
+          chainId: value,
         },
-      });
-
-      validChainIds = Object.keys(CHAIN_MAPPING);
+      },
     });
+
+    const validChainIds = Object.keys(CHAIN_MAPPING);
 
     it('should validate chainId correctly when it is a valid chain ID', async function () {
       const validateFunction = validateChainID('params.chainId', false);
