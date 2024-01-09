@@ -6,6 +6,8 @@ import {
 } from '../../validators/utils';
 import { CHAIN_MAPPING } from '../../utils/chains';
 
+const validChainIds = Object.keys(CHAIN_MAPPING);
+
 describe('Webhook validator utils', async function () {
   describe('validateUserTelegramID function', async function () {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -224,6 +226,7 @@ describe('Webhook validator utils', async function () {
   });
 
   describe('validateChainID function', async function () {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mockRequest = (value: any) => ({
       body: {
         params: {
@@ -231,8 +234,6 @@ describe('Webhook validator utils', async function () {
         },
       },
     });
-
-    const validChainIds = Object.keys(CHAIN_MAPPING);
 
     it('should validate chainId correctly when it is a valid chain ID', async function () {
       const validateFunction = validateChainID('params.chainId', false);
