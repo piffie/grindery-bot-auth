@@ -1,4 +1,4 @@
-import { minutesUntilJanFirst2024 } from './time';
+import { minutesUntilTgeEnd } from './time';
 
 /**
  * Coefficient A used in a mathematical function.
@@ -186,7 +186,7 @@ export function getGxAfterMVUWithTimeEffect(
 ): number {
   // Calculate the time difference between the target date and the provided time
   const maxDifference = Math.max(
-    TIME_EFFECT_MINUTE_TO_DEADLINE - minutesUntilJanFirst2024(),
+    TIME_EFFECT_MINUTE_TO_DEADLINE - minutesUntilTgeEnd(),
     0,
   );
 
@@ -280,4 +280,35 @@ export function computeG1ToGxConversion(
     ).toFixed(2),
     gxReceived: (equivalentUsdInvested * GxUsdExchangeRate).toFixed(2),
   };
+}
+
+/**
+ * Extracts the MVU (Most Valuable User) value from a list of attributes.
+ * @param attributes - Array of string attributes to search for MVU.
+ * @returns The extracted MVU value as a number or 0 if not found.
+ */
+export function extractMvuValueFromAttributes(attributes: string[]): number {
+  // Regular expression to match 'mvu = <number>' pattern case-insensitively.
+  const mvuRegex = /mvu\s*=\s*([0-9.]+)/i;
+  const mvuRoundedRegex = /mvu_rounded\s*=\s*([0-9.]+)/i;
+
+  // Find the attribute containing the MVU value using regex test.
+  const mvuAttr = attributes.find((attr) => mvuRegex.test(attr));
+  const mvuRoundedAttr = attributes.find((attr) => mvuRoundedRegex.test(attr));
+
+  // Extract the MVU value if 'mvu' attribute is found, otherwise try 'mvu_rounded'.
+  if (mvuAttr) {
+    // Retrieve the MVU value from the matched attribute using regex.
+    const mvuMatch = mvuAttr.match(mvuRegex);
+    // Check if a valid MVU value is extracted, parse and return it.
+    return mvuMatch ? parseFloat(mvuMatch[1]) : 0;
+  } else if (mvuRoundedAttr) {
+    // Retrieve the MVU rounded value from the matched attribute using regex.
+    const mvuRoundedMatch = mvuRoundedAttr.match(mvuRoundedRegex);
+    // Check if a valid MVU rounded value is extracted, parse and return it.
+    return mvuRoundedMatch ? parseFloat(mvuRoundedMatch[1]) : 0;
+  }
+
+  // Return 0 when no MVU or MVU rounded attribute is found in the given attributes.
+  return 0;
 }

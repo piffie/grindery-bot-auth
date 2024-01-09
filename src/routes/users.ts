@@ -3,9 +3,18 @@ import { Database } from '../db/conn';
 import { authenticateApiKey } from '../utils/auth';
 import { ANKR_MULTICHAIN_API_URL, USERS_COLLECTION } from '../utils/constants';
 import axios from 'axios';
+import { extractMvuValueFromAttributes } from '../utils/g1gx';
 
 const router = express.Router();
 
+/**
+ * POST /attributes
+ * @summary Update user attributes in the database
+ * @description Accepts an array of objects containing user Telegram IDs and their corresponding attribute names, updates or creates user entries with provided attributes.
+ * @security Requires API key authentication.
+ * @param {object[]} req.body - Array of attribute objects containing "userTelegramID" as a string and "attributeNames" as an array for each object.
+ * @return {object} 200 - Success response with a message and bulk write operation result on successful updates. Returns an error if encountered.
+ */
 router.post('/attributes', authenticateApiKey, async (req, res) => {
   try {
     const db = await Database.getInstance();
@@ -51,6 +60,14 @@ router.post('/attributes', authenticateApiKey, async (req, res) => {
   }
 });
 
+/**
+ * GET /attributes
+ * @summary Retrieve user attributes from the database
+ * @description Retrieves the attributes associated with a specific user identified by their Telegram ID.
+ * @security Requires API key authentication.
+ * @param {string} req.query.userTelegramID - Valid user Telegram ID.
+ * @return {object} 200 - Returns the user Telegram ID and associated attributes if found. Otherwise, returns an error message.
+ */
 router.get('/attributes', authenticateApiKey, async (req, res) => {
   try {
     const { userTelegramID } = req.query;
@@ -76,6 +93,48 @@ router.get('/attributes', authenticateApiKey, async (req, res) => {
   }
 });
 
+/**
+ * GET /mvu
+ * @summary Get MVU (Most Valuable User) value for a user
+ * @description Retrieves the MVU value associated with a specific user identified by their Telegram ID from the database.
+ * @security Requires API key authentication.
+ * @param {string} req.query.userTelegramID - Valid user Telegram ID.
+ * @return {object} 200 - Returns the user Telegram ID and the extracted MVU value. If not found, returns an error message.
+ */
+router.get('/mvu', authenticateApiKey, async (req, res) => {
+  try {
+    const { userTelegramID } = req.query;
+
+    if (!userTelegramID) {
+      return res.status(400).send({
+        msg: 'User Telegram ID is required.',
+      });
+    }
+
+    const db = await Database.getInstance();
+
+    return res.status(200).send({
+      userTelegramID,
+      mvu: extractMvuValueFromAttributes(
+        (await db?.collection(USERS_COLLECTION).findOne({ userTelegramID }))
+          ?.attributes,
+      ),
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ msg: 'An error occurred', error });
+  }
+});
+
+/**
+ * GET /balance
+ * @summary Retrieve user wallet balance
+ * @description Retrieves the wallet balance associated with a specific user's Patchwallet from the Ankr Multichain API.
+ * @security Requires API key authentication.
+ * @param {string} req.query.userTelegramID - Valid user Telegram ID.
+ * @param {string} req.query.chain - Optional chain ID.
+ * @return {object} 200 - Responds with the wallet balance details. Logs errors if encountered during the process.
+ */
 router.get('/balance', authenticateApiKey, async (req, res) => {
   console.log(`User [${req.query.userTelegramID}] requested balance`);
   try {

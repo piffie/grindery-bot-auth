@@ -7,7 +7,7 @@ import {
   getXDayBeforeDate,
   getXHourBeforeDate,
   getXMinBeforeDate,
-  minutesUntilJanFirst2024,
+  minutesUntilTgeEnd,
 } from '../../utils/time';
 
 describe('Time function', async function () {
@@ -132,15 +132,15 @@ describe('Time function', async function () {
     });
   });
 
-  describe('Minutes until Jan 1st, 2024 function', async function () {
-    it('Should return the correct number of minutes remaining until Jan 1st, 2024', async function () {
+  describe('Minutes until TGE end date function', async function () {
+    it('Should return the correct number of minutes remaining until Jan 15th, 2024', async function () {
       const currentTime = new Date();
-      const janFirst2024 = new Date('2024-01-01T00:00:00Z');
+      const janFirst2024 = new Date('2024-01-15T00:00:00Z');
       const expectedMinutesRemaining = Math.round(
         (janFirst2024.getTime() - currentTime.getTime()) / (1000 * 60),
       );
 
-      const result = minutesUntilJanFirst2024();
+      const result = minutesUntilTgeEnd();
       expect(result).to.equal(expectedMinutesRemaining);
     });
   });

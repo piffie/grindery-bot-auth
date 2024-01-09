@@ -8,6 +8,7 @@ import {
   avax_address_polygon,
   getCollectionGXOrderMock,
   getCollectionGXQuoteMock,
+  getCollectionUsersMock,
   isUUIDv4,
   mockAccessToken,
   mockChainName,
@@ -49,23 +50,33 @@ describe('G1 to GX util functions', async function () {
   beforeEach(async function () {
     collectionQuotesMock = await getCollectionGXQuoteMock();
     collectionOrdersMock = await getCollectionGXOrderMock();
+    const collectionUser = await getCollectionUsersMock();
+
+    await collectionUser?.insertOne({
+      userTelegramID: mockUserTelegramID,
+      attributes: ['active', 'contributor', 'mvu = 5.03', 'mvu_rounded = 6.0'],
+    });
 
     sandbox = Sinon.createSandbox();
-    sandbox.stub(g1gx, 'computeG1ToGxConversion').returns({
-      tokenAmountG1: '1000.00',
-      usdFromUsdInvestment: '1',
-      usdFromG1Investment: '1',
-      usdFromMvu: '1',
-      usdFromTime: '1',
-      equivalentUsdInvested: '1',
-      gxBeforeMvu: '1',
-      gxMvuEffect: '1',
-      gxTimeEffect: '1',
-      GxUsdExchangeRate: '1',
-      standardGxUsdExchangeRate: '1',
-      discountReceived: '1',
-      gxReceived: '1',
-    });
+    sandbox
+      .stub(g1gx, 'computeG1ToGxConversion')
+      .callsFake((_usdQuantity, _g1Quantity, mvu) => {
+        return {
+          tokenAmountG1: '1000.00',
+          usdFromUsdInvestment: '1',
+          usdFromG1Investment: '1',
+          usdFromMvu: '1',
+          usdFromTime: '1',
+          equivalentUsdInvested: '1',
+          gxBeforeMvu: '1',
+          gxMvuEffect: mvu.toString(),
+          gxTimeEffect: '1',
+          GxUsdExchangeRate: '1',
+          standardGxUsdExchangeRate: '1',
+          discountReceived: '1',
+          gxReceived: '1',
+        };
+      });
 
     axiosStub = sandbox.stub(axios, 'post').callsFake(async (url: string) => {
       if (url === PATCHWALLET_AUTH_URL) {
@@ -155,7 +166,7 @@ describe('G1 to GX util functions', async function () {
         usdFromTime: '1',
         equivalentUsdInvested: '1',
         gxBeforeMvu: '1',
-        gxMvuEffect: '1',
+        gxMvuEffect: '5.03',
         gxTimeEffect: '1',
         GxUsdExchangeRate: '1',
         standardGxUsdExchangeRate: '1',
@@ -188,7 +199,7 @@ describe('G1 to GX util functions', async function () {
             usdFromTime: '1',
             equivalentUsdInvested: '1',
             gxBeforeMvu: '1',
-            gxMvuEffect: '1',
+            gxMvuEffect: '5.03',
             gxTimeEffect: '1',
             GxUsdExchangeRate: '1',
             standardGxUsdExchangeRate: '1',
