@@ -1,4 +1,4 @@
-import { minutesUntilJanFirst2024 } from './time';
+import { minutesUntilTgeEnd } from './time';
 
 /**
  * Coefficient A used in a mathematical function.
@@ -186,7 +186,7 @@ export function getGxAfterMVUWithTimeEffect(
 ): number {
   // Calculate the time difference between the target date and the provided time
   const maxDifference = Math.max(
-    TIME_EFFECT_MINUTE_TO_DEADLINE - minutesUntilJanFirst2024(),
+    TIME_EFFECT_MINUTE_TO_DEADLINE - minutesUntilTgeEnd(),
     0,
   );
 
@@ -280,4 +280,31 @@ export function computeG1ToGxConversion(
     ).toFixed(2),
     gxReceived: (equivalentUsdInvested * GxUsdExchangeRate).toFixed(2),
   };
+}
+
+/**
+ * Extracts the MVU (Most Valuable User) value from a list of attributes.
+ * @param attributes - Array of string attributes to search for MVU.
+ * @returns The extracted MVU value as a number or null if not found.
+ */
+export function extractMvuValueFromAttributes(
+  attributes: string[],
+): number | null {
+  // Regular expression to match 'mvu = <number>' pattern case-insensitively.
+  const mvuRegex = /mvu\s*=\s*([0-9.]+)/i;
+
+  // Find the attribute containing the MVU value using regex test.
+  const mvuAttr = attributes.find((attr) => mvuRegex.test(attr));
+
+  // If an attribute with MVU is found, extract the MVU value.
+  if (mvuAttr) {
+    // Retrieve the MVU value from the matched attribute using regex.
+    const mvuMatch = mvuAttr.match(mvuRegex);
+
+    // Check if a valid MVU value is extracted, parse and return it.
+    return mvuMatch ? parseFloat(mvuMatch[1]) : null;
+  }
+
+  // Return null when no MVU attribute is found in the given attributes.
+  return null;
 }

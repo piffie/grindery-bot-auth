@@ -1,8 +1,15 @@
 import express from 'express';
 import { authenticateApiKey } from '../utils/auth';
-import { computeG1ToGxConversion } from '../utils/g1gx';
+import {
+  computeG1ToGxConversion,
+  extractMvuValueFromAttributes,
+} from '../utils/g1gx';
 import { Database } from '../db/conn';
-import { GX_ORDER_COLLECTION, GX_QUOTE_COLLECTION } from '../utils/constants';
+import {
+  GX_ORDER_COLLECTION,
+  GX_QUOTE_COLLECTION,
+  USERS_COLLECTION,
+} from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet';
 import { SOURCE_WALLET_ADDRESS } from '../../secrets';
@@ -53,12 +60,20 @@ const router = express.Router();
  */
 router.get('/quote', authenticateApiKey, async (req, res) => {
   try {
+    const db = await Database.getInstance();
+
     const result = computeG1ToGxConversion(
       Number(req.query.usdQuantity),
       Number(req.query.g1Quantity),
-      4,
+      extractMvuValueFromAttributes(
+        (
+          await db
+            ?.collection(USERS_COLLECTION)
+            .findOne({ userTelegramID: req.query.userTelegramID })
+        )?.attributes,
+      ) || 0,
     );
-    const db = await Database.getInstance();
+
     const id = uuidv4();
     const date = new Date();
 
