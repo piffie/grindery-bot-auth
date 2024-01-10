@@ -7,19 +7,6 @@ import { RewardParams } from '../types/webhook.types';
 import { MongoReward, MongoUser } from 'grindery-nexus-common-utils';
 
 /**
- * Creates a new instance of UserTelegram and initializes its database.
- * @param params - The parameters used to create the UserTelegram instance.
- * @returns A Promise that resolves to the created UserTelegram instance.
- */
-export async function createUserTelegram(
-  params: RewardParams,
-): Promise<UserTelegram> {
-  const user = new UserTelegram(params);
-  await user.initializeUserDatabase();
-  return user;
-}
-
-/**
  * Represents a UserTelegram.
  */
 export class UserTelegram {
@@ -46,25 +33,40 @@ export class UserTelegram {
     this.params = params;
     this.isInDatabase = false;
   }
-  /**
-   * Initializes the UserTelegram's database connection and retrieves user data if available.
-   */
-  async initializeUserDatabase(): Promise<void> {
-    this.db = await Database.getInstance();
-    const userDB = await this.getUserFromDatabase();
 
+  /**
+   * Builds a UserTelegram instance.
+   * @param params - The parameters used to build the UserTelegram instance.
+   * @returns A Promise that resolves with a UserTelegram instance.
+   */
+  static async build(params: RewardParams): Promise<UserTelegram> {
+    // Create a new UserTelegram instance
+    const user = new UserTelegram(params);
+
+    // Get the database instance
+    user.db = await Database.getInstance();
+
+    // Retrieve user data from the database
+    const userDB = await user.getUserFromDatabase();
+
+    // Check if user data exists in the database
     if (userDB) {
-      this.isInDatabase = true;
-      this.params.patchwallet = userDB.patchwallet;
+      user.isInDatabase = true;
+      user.params.patchwallet = userDB.patchwallet;
     } else {
+      // If user data doesn't exist in the database, attempt to get patchwallet address
       try {
-        this.params.patchwallet = await getPatchWalletAddressFromTgId(
-          this.params.userTelegramID,
+        user.params.patchwallet = await getPatchWalletAddressFromTgId(
+          user.params.userTelegramID,
         );
       } catch (error) {
+        // Handle error if fetching patchwallet address fails
         console.error('Error:', error);
       }
     }
+
+    // Return the built UserTelegram instance
+    return user;
   }
 
   /**
