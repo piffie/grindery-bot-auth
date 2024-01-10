@@ -18,13 +18,13 @@ import {
 } from '../utils/patchwallet';
 import { sendTelegramMessage } from '../utils/telegram';
 import {
-  handlePendingHash,
+  processPendingHashStatus,
   isFailedTransaction,
   isSuccessfulTransaction,
   sendTransaction,
   updateStatus,
   updateTxHash,
-  updateUserOpHash,
+  handleUserOpHash,
 } from './utils';
 import { FLOWXO_WEBHOOK_API_KEY } from '../../secrets';
 import { addTrackSegment } from '../utils/segment';
@@ -80,7 +80,9 @@ export async function handleNewTransaction(
     return true;
 
   // eslint-disable-next-line prefer-const
-  let { tx, outputPendingHash } = await handlePendingHash(transactionInstance);
+  let { tx, outputPendingHash } = await processPendingHashStatus(
+    transactionInstance,
+  );
 
   if (outputPendingHash !== undefined) return outputPendingHash;
 
@@ -92,7 +94,7 @@ export async function handleNewTransaction(
   }
 
   // Finalize transaction handling
-  if (tx && tx.txHash) {
+  if (tx.txHash) {
     updateTxHash(transactionInstance, tx.txHash);
     updateStatus(transactionInstance, TransactionStatus.SUCCESS);
     await Promise.all([
@@ -126,13 +128,7 @@ export async function handleNewTransaction(
   }
 
   // Handle pending hash for userOpHash
-  tx &&
-    tx.userOpHash &&
-    updateUserOpHash(transactionInstance, tx.userOpHash) &&
-    (await transactionInstance.updateInDatabase(
-      TransactionStatus.PENDING_HASH,
-      null,
-    ));
+  if (tx.userOpHash) await handleUserOpHash(transactionInstance, tx.userOpHash);
 
   return false;
 }

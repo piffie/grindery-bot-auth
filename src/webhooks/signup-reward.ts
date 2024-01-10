@@ -12,12 +12,12 @@ import {
 } from '../utils/constants';
 import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet';
 import {
-  handlePendingHash,
+  processPendingHashStatus,
   isSuccessfulTransaction,
   sendTransaction,
   updateStatus,
   updateTxHash,
-  updateUserOpHash,
+  handleUserOpHash,
 } from './utils';
 import { Db, WithId } from 'mongodb';
 import { Database } from '../db/conn';
@@ -43,7 +43,9 @@ export async function handleSignUpReward(
     if (!shouldBeIssued) return true;
 
     // eslint-disable-next-line prefer-const
-    let { tx, outputPendingHash } = await handlePendingHash(rewardInstance);
+    let { tx, outputPendingHash } = await processPendingHashStatus(
+      rewardInstance,
+    );
 
     if (outputPendingHash !== undefined) return outputPendingHash;
 
@@ -52,7 +54,7 @@ export async function handleSignUpReward(
       return false;
 
     // Update transaction hash and perform additional actions
-    if (tx && tx.txHash) {
+    if (tx.txHash) {
       updateTxHash(rewardInstance, tx.txHash);
       updateStatus(rewardInstance, TransactionStatus.SUCCESS);
       await Promise.all([
@@ -67,13 +69,8 @@ export async function handleSignUpReward(
     }
 
     // Update userOpHash if present in tx
-    if (tx && tx.userOpHash) {
-      updateUserOpHash(rewardInstance, tx.userOpHash);
-      await rewardInstance.updateInDatabase(
-        TransactionStatus.PENDING_HASH,
-        null,
-      );
-    }
+    if (tx.userOpHash) await handleUserOpHash(rewardInstance, tx.userOpHash);
+
     return false;
   } catch (error) {
     // Handle error
