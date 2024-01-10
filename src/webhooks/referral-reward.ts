@@ -1,15 +1,12 @@
 import axios, { AxiosError } from 'axios';
-import {
-  FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK,
-  FLOWXO_WEBHOOK_API_KEY,
-  SOURCE_TG_ID,
-} from '../../secrets';
+import { FLOWXO_WEBHOOK_API_KEY, SOURCE_TG_ID } from '../../secrets';
 import {
   PatchRawResult,
   RewardParams,
   createRewardParams,
 } from '../types/webhook.types';
 import {
+  FLOWXO_NEW_REFERRAL_REWARD_WEBHOOK,
   REWARDS_COLLECTION,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
@@ -23,6 +20,7 @@ import {
   handlePendingHash,
   isSuccessfulTransaction,
   sendTransaction,
+  updateStatus,
   updateTxHash,
   updateUserOpHash,
 } from './utils';
@@ -81,6 +79,7 @@ export async function handleReferralReward(
     // Update transaction hash and perform additional actions
     if (tx && tx.txHash) {
       updateTxHash(reward, tx.txHash);
+      updateStatus(reward, TransactionStatus.SUCCESS);
       await Promise.all([
         reward.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
         reward.saveToFlowXO(),

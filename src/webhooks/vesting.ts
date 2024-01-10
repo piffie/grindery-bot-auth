@@ -2,12 +2,17 @@ import axios, { AxiosError } from 'axios';
 import { Database } from '../db/conn';
 import { VestingParams, createVesting } from '../types/hedgey.types';
 import { PatchRawResult } from '../types/webhook.types';
-import { USERS_COLLECTION, VESTING_COLLECTION } from '../utils/constants';
+import {
+  FLOWXO_NEW_VESTING_WEBHOOK,
+  USERS_COLLECTION,
+  VESTING_COLLECTION,
+} from '../utils/constants';
 import {
   handlePendingHash,
   isFailedTransaction,
   isSuccessfulTransaction,
   sendTransaction,
+  updateStatus,
   updateTxHash,
   updateUserOpHash,
 } from './utils';
@@ -15,10 +20,7 @@ import {
   getPatchWalletAccessToken,
   hedgeyLockTokens,
 } from '../utils/patchwallet';
-import {
-  FLOWXO_NEW_VESTING_WEBHOOK,
-  FLOWXO_WEBHOOK_API_KEY,
-} from '../../secrets';
+import { FLOWXO_WEBHOOK_API_KEY } from '../../secrets';
 import { addVestingSegment } from '../utils/segment';
 import { Db, WithId } from 'mongodb';
 import {
@@ -87,6 +89,7 @@ export async function handleNewVesting(
   // Finalize transaction handling
   if (tx && tx.txHash) {
     updateTxHash(vesting, tx.txHash);
+    updateStatus(vesting, TransactionStatus.SUCCESS);
     await Promise.all([
       vesting.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
       vesting.saveToSegment(),
@@ -260,6 +263,7 @@ export class VestingTelegram {
       transactionHash: this.txHash,
       dateAdded: new Date(),
       apiKey: FLOWXO_WEBHOOK_API_KEY,
+      status: this.status,
     });
   }
 

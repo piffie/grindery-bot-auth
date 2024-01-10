@@ -1,16 +1,15 @@
 import axios, { AxiosError } from 'axios';
-import {
-  FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK,
-  FLOWXO_WEBHOOK_API_KEY,
-  SOURCE_TG_ID,
-} from '../../secrets';
+import { FLOWXO_WEBHOOK_API_KEY, SOURCE_TG_ID } from '../../secrets';
 import {
   PatchRawResult,
   RewardInit,
   RewardParams,
   createRewardParams,
 } from '../types/webhook.types';
-import { REWARDS_COLLECTION } from '../utils/constants';
+import {
+  FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK,
+  REWARDS_COLLECTION,
+} from '../utils/constants';
 import {
   getPatchWalletAccessToken,
   getPatchWalletAddressFromTgId,
@@ -20,6 +19,7 @@ import {
   handlePendingHash,
   isSuccessfulTransaction,
   sendTransaction,
+  updateStatus,
   updateTxHash,
   updateUserOpHash,
 } from './utils';
@@ -67,6 +67,7 @@ export async function handleIsolatedReward(
     // Update transaction hash and perform additional actions
     if (tx && tx.txHash) {
       updateTxHash(rewardInstance, tx.txHash);
+      updateStatus(rewardInstance, TransactionStatus.SUCCESS);
       await Promise.all([
         rewardInstance.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
         rewardInstance.saveToFlowXO(),
@@ -268,6 +269,7 @@ export class IsolatedRewardTelegram {
       transactionHash: this.txHash,
       dateAdded: new Date(),
       apiKey: FLOWXO_WEBHOOK_API_KEY,
+      status: this.status,
     });
   }
 

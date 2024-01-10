@@ -6,7 +6,11 @@ import {
   TransactionParams,
   createTransaction,
 } from '../types/webhook.types';
-import { TRANSFERS_COLLECTION, USERS_COLLECTION } from '../utils/constants';
+import {
+  FLOWXO_NEW_TRANSACTION_WEBHOOK,
+  TRANSFERS_COLLECTION,
+  USERS_COLLECTION,
+} from '../utils/constants';
 import {
   getPatchWalletAccessToken,
   getPatchWalletAddressFromTgId,
@@ -18,13 +22,11 @@ import {
   isFailedTransaction,
   isSuccessfulTransaction,
   sendTransaction,
+  updateStatus,
   updateTxHash,
   updateUserOpHash,
 } from './utils';
-import {
-  FLOWXO_NEW_TRANSACTION_WEBHOOK,
-  FLOWXO_WEBHOOK_API_KEY,
-} from '../../secrets';
+import { FLOWXO_WEBHOOK_API_KEY } from '../../secrets';
 import { addTrackSegment } from '../utils/segment';
 import { Db, WithId } from 'mongodb';
 import {
@@ -92,6 +94,7 @@ export async function handleNewTransaction(
   // Finalize transaction handling
   if (tx && tx.txHash) {
     updateTxHash(transactionInstance, tx.txHash);
+    updateStatus(transactionInstance, TransactionStatus.SUCCESS);
     await Promise.all([
       transactionInstance.updateInDatabase(
         TransactionStatus.SUCCESS,
@@ -301,6 +304,7 @@ export class TransferTelegram {
       transactionHash: this.txHash,
       dateAdded: new Date(),
       apiKey: FLOWXO_WEBHOOK_API_KEY,
+      status: this.status,
     });
   }
 

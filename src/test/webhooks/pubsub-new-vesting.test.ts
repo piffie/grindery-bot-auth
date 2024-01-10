@@ -19,6 +19,7 @@ import Sinon from 'sinon';
 import axios from 'axios';
 import chaiExclude from 'chai-exclude';
 import {
+  FLOWXO_NEW_VESTING_WEBHOOK,
   G1_TOKEN_SYMBOL,
   HEDGEY_BATCHPLANNER_ADDRESS,
   PATCHWALLET_AUTH_URL,
@@ -27,11 +28,7 @@ import {
   SEGMENT_TRACK_URL,
 } from '../../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  FLOWXO_NEW_VESTING_WEBHOOK,
-  FLOWXO_WEBHOOK_API_KEY,
-  G1_POLYGON_ADDRESS,
-} from '../../../secrets';
+import { FLOWXO_WEBHOOK_API_KEY, G1_POLYGON_ADDRESS } from '../../../secrets';
 import * as web3 from '../../utils/web3';
 import { handleNewVesting } from '../../webhooks/vesting';
 import { ContractStub } from '../../types/tests.types';
@@ -280,6 +277,7 @@ describe('handleNewVesting function', async function () {
           ],
           transactionHash: mockTransactionHash,
           apiKey: FLOWXO_WEBHOOK_API_KEY,
+          status: TransactionStatus.SUCCESS,
         });
     });
   });
@@ -1236,6 +1234,7 @@ describe('handleNewVesting function', async function () {
             ],
             transactionHash: mockTransactionHash,
             apiKey: FLOWXO_WEBHOOK_API_KEY,
+            status: TransactionStatus.SUCCESS,
           });
 
         expect(FlowXOCallArgs.dateAdded).to.be.greaterThanOrEqual(

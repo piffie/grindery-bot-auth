@@ -1,4 +1,5 @@
 import {
+  FLOWXO_NEW_SWAP_WEBHOOK,
   SWAPS_COLLECTION,
   USERS_COLLECTION,
   nativeTokenAddresses,
@@ -9,6 +10,7 @@ import {
   isFailedTransaction,
   isSuccessfulTransaction,
   sendTransaction,
+  updateStatus,
   updateTxHash,
   updateUserOpHash,
 } from './utils';
@@ -18,7 +20,7 @@ import {
   createSwapParams,
 } from '../types/webhook.types';
 import { addTrackSwapSegment } from '../utils/segment';
-import { FLOWXO_NEW_SWAP_WEBHOOK, FLOWXO_WEBHOOK_API_KEY } from '../../secrets';
+import { FLOWXO_WEBHOOK_API_KEY } from '../../secrets';
 import axios, { AxiosError } from 'axios';
 import { getContract, weiToEther } from '../utils/web3';
 import { CHAIN_MAPPING } from '../utils/chains';
@@ -77,6 +79,7 @@ export async function handleSwap(params: SwapParams): Promise<boolean> {
   if (tx && tx.txHash) {
     // Update transaction hash, update database, save to Segment and FlowXO
     updateTxHash(swap, tx.txHash);
+    updateStatus(swap, TransactionStatus.SUCCESS);
     await Promise.all([
       swap.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
       swap.saveToSegment(),

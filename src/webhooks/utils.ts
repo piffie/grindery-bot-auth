@@ -121,6 +121,13 @@ export function updateTxHash(
   return (telegram_operation.txHash = txHash);
 }
 
+export function updateStatus(
+  inst: TelegramOperations,
+  status: TransactionStatus,
+): string {
+  return (inst.status = status);
+}
+
 /**
  * Sends a transaction based on the TelegramOperations instance provided.
  * @param telegram_operation - Instance of TelegramOperations representing the transaction to be sent.
