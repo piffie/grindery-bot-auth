@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import {
   validateAddress,
+  validateAmount,
   validateChainID,
   validateResult,
   validateUserTelegramID,
@@ -346,6 +347,76 @@ describe('Webhook validator utils', async function () {
             value: address,
             msg: 'params.address must be a valid blockchain address',
             path: 'params.address',
+            location: 'body',
+          },
+        ]);
+      }
+    });
+  });
+
+  describe('validateAmount function', async function () {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockRequest = (value: any) => ({
+      body: {
+        params: {
+          amount: value,
+        },
+      },
+    });
+
+    it('should validate amount correctly when it is a positive float number', async function () {
+      const validateFunction = validateAmount('params.amount', false);
+
+      const validAmounts: string[] = [
+        '0.01',
+        '1.5',
+        '3.14',
+        '100.25',
+        '12345.67',
+        '500.00',
+        '9999.99',
+        '10',
+        '100000',
+        '34',
+      ];
+
+      for (const amount of validAmounts) {
+        const req = mockRequest(amount);
+        await validateFunction(req, {}, () => {});
+        expect(validateResult(req)).to.be.empty;
+      }
+    });
+
+    it('should throw an error when it is not a valid positive float amount', async function () {
+      const validateFunction = validateAmount('params.amount', false);
+
+      const invalidAmounts = [
+        '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+        '0x00000000219ab540356cBB839Cbe05303d7705Fe',
+        '0xc02aaa39b223fe8d1a0e5c4f27ead9083c756ccz',
+        '',
+        'not a number',
+        null,
+        '-1',
+        '-10.03',
+        '0',
+        true,
+        false,
+        undefined,
+        10,
+        10.65,
+      ];
+
+      for (const amount of invalidAmounts) {
+        const req = mockRequest(amount);
+        await validateFunction(req, {}, () => {});
+
+        expect(validateResult(req)).to.deep.equal([
+          {
+            type: 'field',
+            value: amount,
+            msg: 'params.amount must be a string representing a positive float value',
+            path: 'params.amount',
             location: 'body',
           },
         ]);

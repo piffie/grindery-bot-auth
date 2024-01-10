@@ -106,3 +106,44 @@ export const validateAddress = (
   // Returns a validation chain that is optional or regular based on the `isOptional` flag
   return isOptional ? validationChain.optional() : validationChain;
 };
+
+/**
+ * Validates whether the provided field represents a positive float value as a string.
+ *
+ * @param {string} fieldName - The name of the field to be validated.
+ * @param {boolean} isOptional - Indicates whether the field is optional for validation.
+ * @returns {ValidationChain} - A validation chain object to validate the `fieldName`.
+ *
+ * @example
+ * validateAmount('body.amount', false);
+ */
+export const validateAmount = (
+  fieldName: string,
+  isOptional: boolean,
+): ValidationChain => {
+  // Initiates the creation of a validation chain
+  const validationChain = body(fieldName).custom((value) => {
+    // Checks if the provided value is not a string
+    if (typeof value !== 'string') {
+      // Throws an error if the value is not a string
+      throw new Error(
+        `${fieldName} must be a string representing a positive float value`,
+      );
+    }
+    // Parses the string value to a float
+    const parsedAmount = parseFloat(value);
+
+    // Checks if the parsed value is NaN or <= 0
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      // Throws an error if the parsed value is not a positive float
+      throw new Error(
+        `${fieldName} must be a string representing a positive float value`,
+      );
+    }
+    // Returns true if the validation succeeds
+    return true;
+  });
+
+  // Returns an optional or regular validation chain
+  return isOptional ? validationChain.optional() : validationChain;
+};

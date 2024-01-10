@@ -207,6 +207,48 @@ describe('Webhook validators', function () {
       expect(validateResult(req)).to.be.empty;
     });
 
+    it('Should pass with real params', async function () {
+      const real_request = [
+        {
+          event: 'new_transaction',
+          params: {
+            senderTgId: '5550312359',
+            recipientTgId: '6365016737',
+            amount: '111',
+            eventId: 'dd5ec40e-8bbb-4251-8699-56d80205e9fa',
+          },
+        },
+        {
+          event: 'new_transaction',
+          params: {
+            senderTgId: '5640376268',
+            recipientTgId: '5840307366',
+            amount: '10',
+            eventId: '5bae3e25-a54d-4ace-92c2-1c9fcd6b2070',
+          },
+        },
+        {
+          event: 'new_transaction',
+          params: {
+            senderTgId: '5319920082',
+            recipientTgId: '6365016737',
+            amount: '45',
+            eventId: '3a2b5ef8-4dbc-4c30-833e-d9c4a7b0d00d',
+          },
+        },
+      ];
+
+      for (const request of real_request) {
+        const req = { body: request };
+        await Promise.all(
+          newTransactionValidator.map((middleware) =>
+            middleware(req, {}, () => {}),
+          ),
+        );
+        expect(validateResult(req)).to.be.empty;
+      }
+    });
+
     it('Should fail with invalid params', async function () {
       const req = { body: invalidParams };
       await Promise.all(
@@ -242,7 +284,7 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: '-10',
-          msg: 'Invalid amount',
+          msg: 'params.amount must be a string representing a positive float value',
           path: 'params.amount',
           location: 'body',
         },
@@ -374,7 +416,7 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: '-10',
-          msg: 'Invalid amount',
+          msg: 'params.*.amount must be a string representing a positive float value',
           path: 'params[0].amount',
           location: 'body',
         },
@@ -555,7 +597,7 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: '-10',
-          msg: 'Invalid amount',
+          msg: 'params.amountIn must be a string representing a positive float value',
           path: 'params.amountIn',
           location: 'body',
         },
@@ -569,7 +611,7 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: '-20',
-          msg: 'Invalid amount',
+          msg: 'params.amountOut must be a string representing a positive float value',
           path: 'params.amountOut',
           location: 'body',
         },
@@ -604,7 +646,7 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: '-50',
-          msg: 'Invalid amount',
+          msg: 'params.amount must be a string representing a positive float value',
           path: 'params.amount',
           location: 'body',
         },
@@ -767,7 +809,7 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: '-50',
-          msg: 'Invalid amount',
+          msg: 'params.amount must be a string representing a positive float value',
           path: 'params.amount',
           location: 'body',
         },
