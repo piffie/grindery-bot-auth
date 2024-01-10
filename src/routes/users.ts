@@ -9,11 +9,49 @@ const router = express.Router();
 
 /**
  * POST /attributes
+ *
  * @summary Update user attributes in the database
  * @description Accepts an array of objects containing user Telegram IDs and their corresponding attribute names, updates or creates user entries with provided attributes.
  * @security Requires API key authentication.
- * @param {object[]} req.body - Array of attribute objects containing "userTelegramID" as a string and "attributeNames" as an array for each object.
+ * @param {object[]} req.body - Array of attribute objects containing "userTelegramID" as a string and "attributes" as an array for each object.
  * @return {object} 200 - Success response with a message and bulk write operation result on successful updates. Returns an error if encountered.
+ * @example request - 200 - Example request body
+ * [
+ *   {
+ *     "userTelegramID": "123456789",
+ *     "attributes": ["attribute1", "attribute2"]
+ *   },
+ *   {
+ *     "userTelegramID": "987654321",
+ *     "attributes": ["attribute3", { mvu_score: '44' }]
+ *   }
+ * ]
+ * @example response - 200 - Success response example
+ * {
+ *   "msg": "Updates successful",
+ *   "result": {
+ *      "insertedCount": 0,
+ *      "matchedCount": 2,
+ *      "modifiedCount": 2,
+ *      "deletedCount": 0,
+ *      "upsertedCount": 0,
+ *      "upsertedIds": {},
+ *      "insertedIds": {}
+ *   }
+ * }
+ * @example response - 400 - Error response example when request body is not an array
+ * {
+ *   "msg": "Request body should contain an array of attribute objects."
+ * }
+ * @example response - 400 - Error response example when each array element is not correct
+ * {
+ *   "msg": "Each item in the array should have 'userTelegramID' as string, 'attributes' as an array."
+ * }
+ * @example response - 500 - Error response example when an error occurs during the update process
+ * {
+ *   "msg": "An error occurred",
+ *   "error": "Error details here"
+ * }
  */
 router.post('/attributes', authenticateApiKey, async (req, res) => {
   try {
@@ -26,22 +64,20 @@ router.post('/attributes', authenticateApiKey, async (req, res) => {
     }
 
     const isValid = req.body.every((update) => {
-      const { userTelegramID, attributeNames } = update;
-      return (
-        Array.isArray(attributeNames) && typeof userTelegramID === 'string'
-      );
+      const { userTelegramID, attributes } = update;
+      return Array.isArray(attributes) && typeof userTelegramID === 'string';
     });
 
     if (!isValid) {
       return res.status(400).send({
-        msg: 'Each item in the array should have "userTelegramID" as string, "attributeNames" as an array.',
+        msg: 'Each item in the array should have "userTelegramID" as string, "attributes" as an array.',
       });
     }
 
     const bulkOperations = req.body.map((update) => ({
       updateOne: {
         filter: { userTelegramID: update.userTelegramID },
-        update: { $set: { attributes: update.attributeNames } },
+        update: { $set: { attributes: update.attributes } },
         upsert: true,
       },
     }));
