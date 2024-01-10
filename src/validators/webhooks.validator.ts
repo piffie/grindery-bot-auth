@@ -429,7 +429,7 @@ export const webhookValidator = async (req, res, next) => {
   try {
     const errors: unknown[] = [];
     for (const validation of validator) {
-      await validation(req, res, (error) => {
+      await validation(req, res, (error: unknown) => {
         if (error) {
           errors.push(error); // Collecting errors
         }

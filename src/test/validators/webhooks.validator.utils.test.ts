@@ -320,6 +320,9 @@ describe('Webhook validator utils', async function () {
       const validateFunction = validateAddress('params.address', false);
 
       const invalidAddresses = [
+        ' 0x00000000219ab540356cBB839Cbe05303d7705Fa',
+        '0x00000000219ab540356cBB839Cbe05303d7705Fa ',
+        ' 0x00000000219ab540356cBB839Cbe05303d7705Fa ',
         '0x00000000219ab540356cBB839Cbe05303d7705Fe',
         '0xc02aaa39b223fe8d1a0e5c4f27ead9083c756ccz',
         '',
