@@ -67,7 +67,7 @@ export async function handleIsolatedReward(
       return false;
 
     // Update transaction hash and perform additional actions
-    if (tx && tx.txHash) {
+    if (tx.txHash) {
       updateTxHash(rewardInstance, tx.txHash);
       updateStatus(rewardInstance, TransactionStatus.SUCCESS);
       await Promise.all([

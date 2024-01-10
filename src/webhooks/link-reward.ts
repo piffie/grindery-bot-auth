@@ -58,7 +58,7 @@ export async function handleLinkReward(params: RewardParams): Promise<boolean> {
     if (!tx && (tx = await sendTransaction(rewardInstance)).isError)
       return false;
 
-    if (tx && tx.txHash) {
+    if (tx.txHash) {
       updateTxHash(rewardInstance, tx.txHash);
       updateStatus(rewardInstance, TransactionStatus.SUCCESS);
       await Promise.all([

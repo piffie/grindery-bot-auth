@@ -94,7 +94,7 @@ export async function handleNewTransaction(
   }
 
   // Finalize transaction handling
-  if (tx && tx.txHash) {
+  if (tx.txHash) {
     updateTxHash(transactionInstance, tx.txHash);
     updateStatus(transactionInstance, TransactionStatus.SUCCESS);
     await Promise.all([

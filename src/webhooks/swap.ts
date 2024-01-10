@@ -76,7 +76,7 @@ export async function handleSwap(params: SwapParams): Promise<boolean> {
   }
 
   // Finalize transaction handling if tx data's txHash exists
-  if (tx && tx.txHash) {
+  if (tx.txHash) {
     // Update transaction hash, update database, save to Segment and FlowXO
     updateTxHash(swap, tx.txHash);
     updateStatus(swap, TransactionStatus.SUCCESS);

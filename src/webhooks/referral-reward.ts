@@ -77,7 +77,7 @@ export async function handleReferralReward(
     if (!tx && (tx = await sendTransaction(reward)).isError) return false;
 
     // Update transaction hash and perform additional actions
-    if (tx && tx.txHash) {
+    if (tx.txHash) {
       updateTxHash(reward, tx.txHash);
       updateStatus(reward, TransactionStatus.SUCCESS);
       await Promise.all([
