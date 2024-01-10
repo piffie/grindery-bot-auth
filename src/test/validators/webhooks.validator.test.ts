@@ -123,7 +123,7 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: 'invalid_address',
-          msg: 'tokenAddress must be a valid address',
+          msg: 'params.tokenAddress must be a valid blockchain address',
           path: 'params.tokenAddress',
           location: 'body',
         },
@@ -256,7 +256,7 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: '0x105E9152e3d4F5486f2953eF6578f7e25c27C3505',
-          msg: 'tokenAddress must be a valid address',
+          msg: 'params.tokenAddress must be a valid blockchain address',
           path: 'params.tokenAddress',
           location: 'body',
         },
@@ -388,14 +388,14 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: '0x105E9152e3d4F5486f2953eF6578f7e25c27C3505',
-          msg: 'tokenAddress must be a valid address',
+          msg: 'params.*.tokenAddress must be a valid blockchain address',
           path: 'params[0].tokenAddress',
           location: 'body',
         },
         {
           type: 'field',
           value: 'eip155:9999',
-          msg: 'chainId must be a valid and supported chain ID',
+          msg: 'params.*.chainId must be a valid and supported EIP155 chain ID',
           path: 'params[0].chainId',
           location: 'body',
         },
@@ -541,14 +541,14 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: '0x105E9152e3d4F5486f2953eF6578f7e25c27C3501',
-          msg: 'to must be a valid address',
+          msg: 'params.to must be a valid blockchain address',
           path: 'params.to',
           location: 'body',
         },
         {
           type: 'field',
           value: '0x105E9152e3d4F5486f2953eF6578f7e25c27C3501',
-          msg: 'tokenIn must be a valid address',
+          msg: 'params.tokenIn must be a valid blockchain address',
           path: 'params.tokenIn',
           location: 'body',
         },
@@ -562,7 +562,7 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: '0x105E9152e3d4F5486f2953eF6578f7e25c27C3501',
-          msg: 'tokenOut must be a valid address',
+          msg: 'params.tokenOut must be a valid blockchain address',
           path: 'params.tokenOut',
           location: 'body',
         },
@@ -576,7 +576,7 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: '0x105E9152e3d4F5486f2953eF6578f7e25c27C3501',
-          msg: 'from must be a valid address',
+          msg: 'params.from must be a valid blockchain address',
           path: 'params.from',
           location: 'body',
         },
@@ -760,7 +760,7 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: '0x105E9152e3d4F5486f2953eF6578f7e25c27C3501',
-          msg: 'patchwallet must be a valid address',
+          msg: 'params.patchwallet must be a valid blockchain address',
           path: 'params.patchwallet',
           location: 'body',
         },
@@ -774,7 +774,7 @@ describe('Webhook validators', function () {
         {
           type: 'field',
           value: '0x105E9152e3d4F5486f2953eF6578f7e25c27C3501',
-          msg: 'tokenAddress must be a valid address',
+          msg: 'params.tokenAddress must be a valid blockchain address',
           path: 'params.tokenAddress',
           location: 'body',
         },
