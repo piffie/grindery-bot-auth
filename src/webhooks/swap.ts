@@ -6,13 +6,13 @@ import {
 } from '../utils/constants';
 import { Database } from '../db/conn';
 import {
-  handlePendingHash,
+  processPendingHashStatus,
   isFailedTransaction,
   isSuccessfulTransaction,
   sendTransaction,
   updateStatus,
   updateTxHash,
-  updateUserOpHash,
+  handleUserOpHash,
 } from './utils';
 import {
   PatchRawResult,
@@ -64,7 +64,7 @@ export async function handleSwap(params: SwapParams): Promise<boolean> {
     return true;
 
   // eslint-disable-next-line prefer-const
-  let { tx, outputPendingHash } = await handlePendingHash(swap);
+  let { tx, outputPendingHash } = await processPendingHashStatus(swap);
 
   if (outputPendingHash !== undefined) return outputPendingHash;
 
@@ -98,10 +98,7 @@ export async function handleSwap(params: SwapParams): Promise<boolean> {
   }
 
   // Handle pending hash for userOpHash, if available
-  tx &&
-    tx.userOpHash &&
-    updateUserOpHash(swap, tx.userOpHash) &&
-    (await swap.updateInDatabase(TransactionStatus.PENDING_HASH, null));
+  if (tx.userOpHash) await handleUserOpHash(swap, tx.userOpHash);
 
   // Return false indicating swap process is not fully handled
   return false;

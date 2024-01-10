@@ -17,12 +17,12 @@ import {
   sendTokens,
 } from '../utils/patchwallet';
 import {
-  handlePendingHash,
+  processPendingHashStatus,
   isSuccessfulTransaction,
   sendTransaction,
   updateStatus,
   updateTxHash,
-  updateUserOpHash,
+  handleUserOpHash,
 } from './utils';
 import { Db, FindCursor, WithId } from 'mongodb';
 import { Database } from '../db/conn';
@@ -69,7 +69,7 @@ export async function handleReferralReward(
       await reward.updateInDatabase(TransactionStatus.PENDING, new Date());
 
     // eslint-disable-next-line prefer-const
-    let { tx, outputPendingHash } = await handlePendingHash(reward);
+    let { tx, outputPendingHash } = await processPendingHashStatus(reward);
 
     if (outputPendingHash !== undefined) return outputPendingHash;
 
@@ -92,10 +92,8 @@ export async function handleReferralReward(
     }
 
     // Update userOpHash if present in tx
-    if (tx && tx.userOpHash) {
-      updateUserOpHash(reward, tx.userOpHash);
-      await reward.updateInDatabase(TransactionStatus.PENDING_HASH, null);
-    }
+    if (tx.userOpHash) await handleUserOpHash(reward, tx.userOpHash);
+
     return false;
   } catch (error) {
     console.error(

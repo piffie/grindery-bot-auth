@@ -8,13 +8,13 @@ import {
   VESTING_COLLECTION,
 } from '../utils/constants';
 import {
-  handlePendingHash,
+  processPendingHashStatus,
   isFailedTransaction,
   isSuccessfulTransaction,
   sendTransaction,
   updateStatus,
   updateTxHash,
-  updateUserOpHash,
+  handleUserOpHash,
 } from './utils';
 import {
   getPatchWalletAccessToken,
@@ -75,7 +75,7 @@ export async function handleNewVesting(
     return true;
 
   // eslint-disable-next-line prefer-const
-  let { tx, outputPendingHash } = await handlePendingHash(vesting);
+  let { tx, outputPendingHash } = await processPendingHashStatus(vesting);
 
   if (outputPendingHash !== undefined) return outputPendingHash;
 
@@ -107,10 +107,7 @@ export async function handleNewVesting(
   }
 
   // Handle pending hash for userOpHash
-  tx &&
-    tx.userOpHash &&
-    updateUserOpHash(vesting, tx.userOpHash) &&
-    (await vesting.updateInDatabase(TransactionStatus.PENDING_HASH, null));
+  if (tx.userOpHash) await handleUserOpHash(vesting, tx.userOpHash);
 
   return false;
 }

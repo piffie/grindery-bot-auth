@@ -101,11 +101,16 @@ export async function isTreatmentDurationExceeded(
  * @param userOpHash The user operation hash to update.
  * @returns The updated user operation hash.
  */
-export function updateUserOpHash(
+export async function handleUserOpHash(
   telegram_operation: TelegramOperations,
   userOpHash: string,
-): string {
-  return (telegram_operation.userOpHash = userOpHash);
+): Promise<void> {
+  telegram_operation.userOpHash = userOpHash;
+
+  await telegram_operation.updateInDatabase(
+    TransactionStatus.PENDING_HASH,
+    null,
+  );
 }
 
 /**
@@ -223,7 +228,7 @@ export async function getStatus(
  * @param telegram_operation - The Telegram operation object.
  * @returns A promise resolving to a HandlePendingHashResult.
  */
-export async function handlePendingHash(
+export async function processPendingHashStatus(
   telegram_operation: TelegramOperations,
 ): Promise<HandlePendingHashResult> {
   // Check if the operation status indicates a pending transaction hash
