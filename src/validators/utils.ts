@@ -2,6 +2,7 @@ import { ValidationChain, validationResult } from 'express-validator';
 import { Request } from 'express-validator/src/base';
 import { body } from 'express-validator';
 import { CHAIN_MAPPING } from '../utils/chains';
+import Web3 from 'web3';
 
 /**
  * This function validates the result of a request and returns an array of errors if any are found.
@@ -75,5 +76,33 @@ export const validateChainID = (
     return true;
   });
 
+  return isOptional ? validationChain.optional() : validationChain;
+};
+
+/**
+ * Validates whether the provided field represents a valid blockchain address.
+ *
+ * @param {string} fieldName - The name of the field to be validated.
+ * @param {boolean} isOptional - Indicates whether the field is optional for validation.
+ * @returns {ValidationChain} - A validation chain object to validate the `fieldName`.
+ *
+ * @example
+ * validateAddress('body.address', false);
+ */
+export const validateAddress = (
+  fieldName: string,
+  isOptional: boolean,
+): ValidationChain => {
+  // Creates a validation chain for the specified `fieldName`
+  const validationChain = body(fieldName).custom((value) => {
+    // Checks if the value is not a string or doesn't match the pattern of a valid blockchain address
+    if (typeof value !== 'string' || !Web3.utils.isAddress(value)) {
+      throw new Error(`${fieldName} must be a valid blockchain address`);
+    }
+    // Returns true if the validation succeeds
+    return true;
+  });
+
+  // Returns a validation chain that is optional or regular based on the `isOptional` flag
   return isOptional ? validationChain.optional() : validationChain;
 };

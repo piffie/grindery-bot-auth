@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import {
+  validateAddress,
   validateChainID,
   validateResult,
   validateUserTelegramID,
@@ -275,6 +276,77 @@ describe('Webhook validator utils', async function () {
           location: 'body',
         },
       ]);
+    });
+  });
+
+  describe('validateAddress function', async function () {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockRequest = (value: any) => ({
+      body: {
+        params: {
+          address: value,
+        },
+      },
+    });
+
+    it('should validate address correctly when it is a valid blockchain address', async function () {
+      const validateFunction = validateAddress('params.address', false);
+
+      const validAddresses: string[] = [
+        '0x00000000219ab540356cBB839Cbe05303d7705Fa',
+        '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+        '0xbe0eb53f46cd790cd13851d5eff43d12404d33e8',
+        '0xda9dfa130df4de4673b89022ee50ff26f6ea73cf',
+        '0x40b38765696e3d5d8d9d834d8aad4bb6e418e489',
+        '0x8315177ab297ba92a06054ce80a67ed4dbd7ed3a',
+        '0x47ac0fb4f2d84898e4d9e7b4dab3c24507a6d503',
+        '0x47ac0Fb4F2D84898e4D9E7b4DaB3C24507a6D503',
+        '0xf977814e90da44bfa03b6295a0616a897441acec',
+        '0xe92d1a43df510f82c66382592a047d288f85226f',
+        '0x61edcdf5bb737adffe5043706e7c5bb1f1a56eea',
+        '0x8ae880b5d35305da48b63ce3e52b22d17859f293',
+        '0xa463597d49f54fe6a811fb894cbd67c7f92852b0',
+        '0x5a710a3cdf2af218740384c52a10852d8870626a',
+      ];
+
+      for (const address of validAddresses) {
+        const req = mockRequest(address);
+        await validateFunction(req, {}, () => {});
+        expect(validateResult(req)).to.be.empty;
+      }
+    });
+
+    it('should throw an error when it is not a valid blockchain address', async function () {
+      const validateFunction = validateAddress('params.address', false);
+
+      const invalidAddresses = [
+        '0x00000000219ab540356cBB839Cbe05303d7705Fe',
+        '0xc02aaa39b223fe8d1a0e5c4f27ead9083c756ccz',
+        '',
+        null,
+        '1',
+        true,
+        false,
+        undefined,
+        10,
+        '5340720350',
+        '5441957203',
+      ];
+
+      for (const address of invalidAddresses) {
+        const req = mockRequest(address);
+        await validateFunction(req, {}, () => {});
+
+        expect(validateResult(req)).to.deep.equal([
+          {
+            type: 'field',
+            value: address,
+            msg: 'params.address must be a valid blockchain address',
+            path: 'params.address',
+            location: 'body',
+          },
+        ]);
+      }
     });
   });
 });

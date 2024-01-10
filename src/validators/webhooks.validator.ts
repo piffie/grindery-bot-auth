@@ -1,7 +1,9 @@
 import { body } from 'express-validator';
-import Web3 from 'web3';
-import { CHAIN_MAPPING } from '../utils/chains';
-import { validateChainID, validateUserTelegramID } from './utils';
+import {
+  validateAddress,
+  validateChainID,
+  validateUserTelegramID,
+} from './utils';
 
 /**
  * Validates parameters for a new reward event.
@@ -56,15 +58,8 @@ export const newRewardValidator = [
     .isIn([0, 1])
     .withMessage('delegatecall must be either 0 or 1'),
 
-  // Validates tokenAddress as an optional valid address using Web3
-  body('params.tokenAddress')
-    .optional()
-    .custom((value) => {
-      if (!Web3.utils.isAddress(value)) {
-        throw new Error('tokenAddress must be a valid address');
-      }
-      return true;
-    }),
+  // Validates tokenAddress within params as a valid address
+  validateAddress('params.tokenAddress', true),
 
   // Validates chainName as an optional string
   body('params.chainName')
@@ -107,15 +102,8 @@ export const newTransactionValidator = [
     .isIn([0, 1])
     .withMessage('delegatecall must be either 0 or 1'),
 
-  // Validates tokenAddress as an optional valid address using Web3
-  body('params.tokenAddress')
-    .optional()
-    .custom((value) => {
-      if (!Web3.utils.isAddress(value)) {
-        throw new Error('tokenAddress must be a valid address');
-      }
-      return true;
-    }),
+  // Validates tokenAddress within params as a valid address
+  validateAddress('params.tokenAddress', true),
 
   // Validates chainName as an optional string
   body('params.chainName')
@@ -180,15 +168,8 @@ export const newTransactionBatchValidator = [
     .isIn([0, 1])
     .withMessage('delegatecall must be either 0 or 1'),
 
-  // Validates tokenAddress within each param as an optional valid address using Web3
-  body('params.*.tokenAddress')
-    .optional()
-    .custom((value) => {
-      if (!Web3.utils.isAddress(value)) {
-        throw new Error('tokenAddress must be a valid address');
-      }
-      return true;
-    }),
+  // Validates tokenAddress within params as a valid address
+  validateAddress('params.*.tokenAddress', true),
 
   // Validates chainName within each param as an optional string
   body('params.*.chainName')
@@ -209,14 +190,7 @@ export const newTransactionBatchValidator = [
     .withMessage('tokenSymbol must be a string'),
 
   // Validates chainId within each param as an optional string against a predefined mapping
-  body('params.*.chainId')
-    .optional()
-    .custom((value) => {
-      if (!CHAIN_MAPPING[value]) {
-        throw new Error('chainId must be a valid and supported chain ID');
-      }
-      return true;
-    }),
+  validateChainID('params.*.chainId', true),
 ];
 
 /**
@@ -233,22 +207,10 @@ export const swapValidator = [
   body('params.value').isString().withMessage('value must be a string'),
 
   // Validates userTelegramID within params as a string
-  // body('params.userTelegramID')
-  //   .isString()
-  //   .withMessage('userTelegramID must be a string'),
-
-  // Validates userTelegramID within params as a string
   validateUserTelegramID('params.userTelegramID', false),
 
-  // Validates to within params as an optional valid address
-  body('params.to')
-    .optional()
-    .custom((value) => {
-      if (!Web3.utils.isAddress(value)) {
-        throw new Error('to must be a valid address');
-      }
-      return true;
-    }),
+  // Validates to within params as a valid address
+  validateAddress('params.to', true),
 
   // Validates data within params as an optional string
   body('params.data')
@@ -257,12 +219,7 @@ export const swapValidator = [
     .withMessage('data must be a string'),
 
   // Validates tokenIn within params as a valid address
-  body('params.tokenIn').custom((value) => {
-    if (!Web3.utils.isAddress(value)) {
-      throw new Error('tokenIn must be a valid address');
-    }
-    return true;
-  }),
+  validateAddress('params.tokenIn', false),
 
   // Validates amountIn within params as a numeric string greater than 0
   body('params.amountIn').custom((value) => {
@@ -274,12 +231,7 @@ export const swapValidator = [
   }),
 
   // Validates tokenOut within params as a valid address
-  body('params.tokenOut').custom((value) => {
-    if (!Web3.utils.isAddress(value)) {
-      throw new Error('tokenOut must be a valid address');
-    }
-    return true;
-  }),
+  validateAddress('params.tokenOut', false),
 
   // Validates amountOut within params as a numeric string greater than 0
   body('params.amountOut').custom((value) => {
@@ -299,14 +251,7 @@ export const swapValidator = [
   body('params.gas').isString().withMessage('gas must be a string'),
 
   // Validates from within params as a valid address
-  body('params.from')
-    .optional()
-    .custom((value) => {
-      if (!Web3.utils.isAddress(value)) {
-        throw new Error('from must be a valid address');
-      }
-      return true;
-    }),
+  validateAddress('params.from', true),
 
   // Validates tokenInSymbol within params as a string
   body('params.tokenInSymbol')
@@ -386,12 +331,7 @@ export const isolatedRewardValidator = [
     .withMessage('userName must be a string'),
 
   // Validates patchwallet within params as a valid address
-  body('params.patchwallet').custom((value) => {
-    if (!Web3.utils.isAddress(value)) {
-      throw new Error('patchwallet must be a valid address');
-    }
-    return true;
-  }),
+  validateAddress('params.patchwallet', false),
 
   // Validates reason within params as a string
   body('params.reason').isString().withMessage('reason must be a string'),
@@ -410,15 +350,9 @@ export const isolatedRewardValidator = [
     }
     return true;
   }),
-  // Validates tokenAddress within params as an optional valid address
-  body('params.tokenAddress')
-    .optional()
-    .custom((value) => {
-      if (!Web3.utils.isAddress(value)) {
-        throw new Error('tokenAddress must be a valid address');
-      }
-      return true;
-    }),
+
+  // Validates tokenAddress within params as a valid address
+  validateAddress('params.tokenAddress', true),
 
   // Validates chainName within params as an optional string
   body('params.chainName')
