@@ -1,6 +1,7 @@
 import { body } from 'express-validator';
 import {
   validateAddress,
+  validateAmount,
   validateChainID,
   validateUserTelegramID,
 } from './utils';
@@ -88,13 +89,7 @@ export const newTransactionValidator = [
   validateUserTelegramID('params.recipientTgId', false),
 
   // Validates amount as a numeric string greater than 0
-  body('params.amount').custom((value) => {
-    const parsedAmount = parseFloat(value);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      throw new Error('Invalid amount');
-    }
-    return true;
-  }),
+  validateAmount('params.amount', false),
 
   // Validates delegatecall as an optional string in the set ['0', '1']
   body('params.delegatecall')
@@ -153,14 +148,8 @@ export const newTransactionBatchValidator = [
     return true;
   }),
 
-  // Validates amount within each param as a numeric string greater than 0
-  body('params.*.amount').custom((value) => {
-    const parsedAmount = parseFloat(value);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      throw new Error('Invalid amount');
-    }
-    return true;
-  }),
+  // Validates amount as a numeric string greater than 0
+  validateAmount('params.*.amount', false),
 
   // Validates delegatecall within each param as an optional number in the set [0, 1]
   body('params.*.delegatecall')
@@ -221,26 +210,14 @@ export const swapValidator = [
   // Validates tokenIn within params as a valid address
   validateAddress('params.tokenIn', false),
 
-  // Validates amountIn within params as a numeric string greater than 0
-  body('params.amountIn').custom((value) => {
-    const parsedAmount = parseFloat(value);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      throw new Error('Invalid amount');
-    }
-    return true;
-  }),
+  // Validates amountIn as a numeric string greater than 0
+  validateAmount('params.amountIn', false),
 
   // Validates tokenOut within params as a valid address
   validateAddress('params.tokenOut', false),
 
-  // Validates amountOut within params as a numeric string greater than 0
-  body('params.amountOut').custom((value) => {
-    const parsedAmount = parseFloat(value);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      throw new Error('Invalid amount');
-    }
-    return true;
-  }),
+  // Validates amountOut as a numeric string greater than 0
+  validateAmount('params.amountOut', false),
 
   // Validates priceImpact within params as a string
   body('params.priceImpact')
@@ -278,16 +255,8 @@ export const swapValidator = [
     .isString()
     .withMessage('chainName must be a string'),
 
-  // Validates amount within params as an optional numeric string greater than 0
-  body('params.amount')
-    .optional()
-    .custom((value) => {
-      const parsedAmount = parseFloat(value);
-      if (isNaN(parsedAmount) || parsedAmount <= 0) {
-        throw new Error('Invalid amount');
-      }
-      return true;
-    }),
+  // Validates amount as a numeric string greater than 0
+  validateAmount('params.amount', true),
 
   // Validates senderTgId within params as an optional string
   validateUserTelegramID('params.senderTgId', true),
@@ -342,14 +311,8 @@ export const isolatedRewardValidator = [
     .isString()
     .withMessage('message must be a string'),
 
-  // Validates amount within params as a numeric string greater than 0
-  body('params.amount').custom((value) => {
-    const parsedAmount = parseFloat(value);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      throw new Error('Invalid amount');
-    }
-    return true;
-  }),
+  // Validates amount as a numeric string greater than 0
+  validateAmount('params.amount', false),
 
   // Validates tokenAddress within params as a valid address
   validateAddress('params.tokenAddress', true),
