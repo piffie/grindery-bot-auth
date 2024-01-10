@@ -96,17 +96,20 @@ export async function isTreatmentDurationExceeded(
 }
 
 /**
- * Updates the userOpHash property of a reward telegram instance.
- * @param telegram_operation The reward telegram instance.
- * @param userOpHash The user operation hash to update.
- * @returns The updated user operation hash.
+ * Updates the `userOpHash` property of a reward telegram instance and triggers a database update.
+ *
+ * @param telegram_operation The reward telegram instance to update.
+ * @param userOpHash The new user operation hash to assign.
+ * @returns A promise resolving once the operation hash is updated in the database.
  */
 export async function handleUserOpHash(
   telegram_operation: TelegramOperations,
   userOpHash: string,
 ): Promise<void> {
+  // Update the userOpHash property with the provided value
   telegram_operation.userOpHash = userOpHash;
 
+  // Trigger an update in the database for the transaction status to `PENDING_HASH`
   await telegram_operation.updateInDatabase(
     TransactionStatus.PENDING_HASH,
     null,
