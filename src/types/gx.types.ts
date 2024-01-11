@@ -69,7 +69,12 @@ export type OrderParams = {
   eventId: string;
   /** Optional GxQuote with MongoDB document structure. */
   quote?: WithId<MongoGxQuote>;
-
+  /**
+   * The type of order to be placed.
+   * @remarks
+   * - `Ordertype.G1` represents a G1 order type.
+   * - `Ordertype.USD` represents a USD order type.
+   */
   orderType: Ordertype;
 };
 
