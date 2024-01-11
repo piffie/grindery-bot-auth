@@ -12,7 +12,6 @@ import {
   computeFactor,
   computeG1ToGxConversion,
   computeUSDtoG1Ratio,
-  extractMvuValueFromAttributes,
   getGxAfterMVU,
   getGxAfterMVUWithTimeEffect,
   getGxBeforeMVU,
@@ -337,63 +336,6 @@ describe('G1 to GX util functions', async function () {
       );
 
       expect(result.discountReceived).to.equal(Number(17.81).toFixed(2));
-    });
-  });
-
-  describe('extractMvuValueFromAttributes function', async function () {
-    it('Should extract MVU properly from the attribute list when mvu value is an integer', async function () {
-      const attributes = ['active', 'mvu = 5', 'contributor'];
-      expect(extractMvuValueFromAttributes(attributes)).to.equal(5);
-    });
-
-    it('Should extract MVU properly from the attribute list when mvu value is a float', async function () {
-      const attributes = ['contributor', 'mvu = 4.5', 'active'];
-      expect(extractMvuValueFromAttributes(attributes)).to.equal(4.5);
-    });
-
-    it('Should return null if no MVU attribute is present', async function () {
-      const attributes = ['active', 'contributor'];
-      expect(extractMvuValueFromAttributes(attributes)).to.equal(0);
-    });
-
-    it('Should return null if attribute list is empty', async function () {
-      const attributes = [];
-      expect(extractMvuValueFromAttributes(attributes)).to.equal(0);
-    });
-
-    it('Should return null if MVU value is not a number', async function () {
-      const attributes = ['active', 'mvu = abc', 'contributor'];
-      expect(extractMvuValueFromAttributes(attributes)).to.equal(0);
-    });
-
-    it('Should handle different spacing in MVU attribute', async function () {
-      const attributes = ['active', '  mvu=3.5  ', 'contributor'];
-      expect(extractMvuValueFromAttributes(attributes)).to.equal(3.5);
-    });
-
-    it('Should handle uppercase MVU attribute', async function () {
-      const attributes = ['active', 'MVU = 7', 'contributor'];
-      expect(extractMvuValueFromAttributes(attributes)).to.equal(7);
-    });
-
-    it('Should return 0 if MVU value is 0', async function () {
-      const attributes = ['active', 'mvu = 0', 'contributor'];
-      expect(extractMvuValueFromAttributes(attributes)).to.equal(0);
-    });
-
-    it('Should prioritize MVU over MVU rounded', async function () {
-      const attributes = [
-        'active',
-        'mvu_rounded = 3',
-        'mvu = 2.5',
-        'contributor',
-      ];
-      expect(extractMvuValueFromAttributes(attributes)).to.equal(2.5);
-    });
-
-    it('Should handle cases where MVU rounded is present but not MVU', async function () {
-      const attributes = ['active', 'mvu_rounded = 6', 'contributor'];
-      expect(extractMvuValueFromAttributes(attributes)).to.equal(6);
     });
   });
 });

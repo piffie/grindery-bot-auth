@@ -3,7 +3,6 @@ import { Database } from '../db/conn';
 import { authenticateApiKey } from '../utils/auth';
 import { ANKR_MULTICHAIN_API_URL, USERS_COLLECTION } from '../utils/constants';
 import axios from 'axios';
-import { extractMvuValueFromAttributes } from '../utils/g1gx';
 
 const router = express.Router();
 
@@ -133,39 +132,6 @@ router.get('/attributes', authenticateApiKey, async (req, res) => {
     return res.status(200).send({
       userTelegramID,
       attributes: user?.attributes,
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).send({ msg: 'An error occurred', error });
-  }
-});
-
-/**
- * GET /mvu
- * @summary Get MVU (Most Valuable User) value for a user
- * @description Retrieves the MVU value associated with a specific user identified by their Telegram ID from the database.
- * @security Requires API key authentication.
- * @param {string} req.query.userTelegramID - Valid user Telegram ID.
- * @return {object} 200 - Returns the user Telegram ID and the extracted MVU value. If not found, returns an error message.
- */
-router.get('/mvu', authenticateApiKey, async (req, res) => {
-  try {
-    const { userTelegramID } = req.query;
-
-    if (!userTelegramID) {
-      return res.status(400).send({
-        msg: 'User Telegram ID is required.',
-      });
-    }
-
-    const db = await Database.getInstance();
-
-    return res.status(200).send({
-      userTelegramID,
-      mvu: extractMvuValueFromAttributes(
-        (await db?.collection(USERS_COLLECTION).findOne({ userTelegramID }))
-          ?.attributes,
-      ),
     });
   } catch (error) {
     console.log(error);
