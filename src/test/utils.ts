@@ -198,3 +198,8 @@ export const mockOrderID1: string = uuidv4();
  * @type {string}
  */
 export const mockOrderID2: string = uuidv4();
+
+export const mockEventId: string = uuidv4();
+export const mockEventId1: string = uuidv4();
+export const mockEventId2: string = uuidv4();
+export const mockEventId3: string = uuidv4();
