@@ -22,19 +22,16 @@ import Sinon from 'sinon';
 import axios from 'axios';
 import chaiExclude from 'chai-exclude';
 import {
-  FLOWXO_NEW_TRANSACTION_WEBHOOK,
   PATCHWALLET_AUTH_URL,
-  PATCHWALLET_RESOLVER_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
-  SEGMENT_TRACK_URL,
 } from '../../utils/constants';
 import { G1_POLYGON_ADDRESS } from '../../../secrets';
 import * as web3 from '../../utils/web3';
 import { ContractStub } from '../../types/tests.types';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
 import { handleNewG1Order } from '../../webhooks/g1-order';
-import { spuriousOrdersG1 } from './g1-orders-sample';
+import { spuriousOrdersG1 } from './samples/g1-orders-sample';
 
 chai.use(chaiExclude);
 
@@ -56,14 +53,6 @@ describe('handleNewG1Order function', async function () {
 
     sandbox = Sinon.createSandbox();
     axiosStub = sandbox.stub(axios, 'post').callsFake(async (url: string) => {
-      if (url === PATCHWALLET_RESOLVER_URL) {
-        return Promise.resolve({
-          data: {
-            users: [{ accountAddress: mockWallet }],
-          },
-        });
-      }
-
       if (url === PATCHWALLET_TX_URL) {
         return Promise.resolve({
           data: {
@@ -89,17 +78,6 @@ describe('handleNewG1Order function', async function () {
         });
       }
 
-      if (url == FLOWXO_NEW_TRANSACTION_WEBHOOK) {
-        return Promise.resolve({
-          result: 'success',
-        });
-      }
-
-      if (url == SEGMENT_TRACK_URL) {
-        return Promise.resolve({
-          result: 'success',
-        });
-      }
       throw new Error('Unexpected URL encountered');
     });
 

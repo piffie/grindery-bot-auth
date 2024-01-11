@@ -9,7 +9,7 @@ import {
   mockTransactionHash,
   mockUserTelegramID,
   mockUserTelegramID1,
-} from '../utils';
+} from '../../utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const spuriousOrdersUSD: any[] = [

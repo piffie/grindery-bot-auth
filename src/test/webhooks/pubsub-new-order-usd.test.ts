@@ -25,18 +25,15 @@ import axios from 'axios';
 import chaiExclude from 'chai-exclude';
 import {
   ANKR_MULTICHAIN_API_URL,
-  FLOWXO_NEW_TRANSACTION_WEBHOOK,
   PATCHWALLET_AUTH_URL,
-  PATCHWALLET_RESOLVER_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
-  SEGMENT_TRACK_URL,
 } from '../../utils/constants';
 import * as web3 from '../../utils/web3';
 import { ContractStub } from '../../types/tests.types';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
 import { handleNewUSDOrder } from '../../webhooks/usd-order';
-import { spuriousOrdersUSD } from './usd-orders-sample';
+import { spuriousOrdersUSD } from './samples/usd-orders-sample';
 
 chai.use(chaiExclude);
 
@@ -58,14 +55,6 @@ describe('handleNewUSDOrder function', async function () {
 
     sandbox = Sinon.createSandbox();
     axiosStub = sandbox.stub(axios, 'post').callsFake(async (url: string) => {
-      if (url === PATCHWALLET_RESOLVER_URL) {
-        return Promise.resolve({
-          data: {
-            users: [{ accountAddress: mockWallet }],
-          },
-        });
-      }
-
       if (url === PATCHWALLET_TX_URL) {
         return Promise.resolve({
           data: {
@@ -88,18 +77,6 @@ describe('handleNewUSDOrder function', async function () {
           data: {
             access_token: mockAccessToken,
           },
-        });
-      }
-
-      if (url == FLOWXO_NEW_TRANSACTION_WEBHOOK) {
-        return Promise.resolve({
-          result: 'success',
-        });
-      }
-
-      if (url == SEGMENT_TRACK_URL) {
-        return Promise.resolve({
-          result: 'success',
         });
       }
 
