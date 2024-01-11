@@ -361,9 +361,18 @@ export interface RewardInit {
   shouldBeIssued: boolean;
 }
 
+/**
+ * Represents the initialization result of a SignUpRewardTelegram instance.
+ */
 export interface OrderInit {
+  /**
+   * The initialized order instance.
+   */
   orderInstance: OrderG1Telegram;
 
+  /**
+   * Indicates if the order should proceed.
+   */
   shouldProceed: boolean;
 }
 

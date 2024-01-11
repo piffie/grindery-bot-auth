@@ -1285,6 +1285,93 @@ describe('handleNewG1Order function', async function () {
     });
   });
 
+  describe('USD investment is 0', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+        responsePath: mockResponsePath,
+      });
+
+      await collectionQuotesMock.insertMany([
+        {
+          quoteId: mockOrderID,
+          tokenAmountG1: '500.55',
+          usdFromUsdInvestment: '0',
+          usdFromG1Investment: '1',
+          usdFromMvu: '1',
+          usdFromTime: '1',
+          equivalentUsdInvested: '1',
+          gxBeforeMvu: '1',
+          gxMvuEffect: '1',
+          gxTimeEffect: '1',
+          GxUsdExchangeRate: '1',
+          standardGxUsdExchangeRate: '1',
+          discountReceived: '1',
+          gxReceived: '1',
+          userTelegramID: mockUserTelegramID,
+        },
+        {
+          quoteId: mockOrderID1,
+          tokenAmountG1: '1000.00',
+          usdFromUsdInvestment: '1',
+          usdFromG1Investment: '1',
+          usdFromMvu: '1',
+          usdFromTime: '1',
+          equivalentUsdInvested: '1',
+          gxBeforeMvu: '1',
+          gxMvuEffect: '1',
+          gxTimeEffect: '1',
+          GxUsdExchangeRate: '1',
+          standardGxUsdExchangeRate: '1',
+          discountReceived: '1',
+          gxReceived: '1',
+          userTelegramID: mockUserTelegramID,
+        },
+      ]);
+    });
+
+    it('Should return true if USD investment is zero', async function () {
+      const result = await handleNewUSDOrder({
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
+      });
+
+      expect(result).to.be.true;
+    });
+
+    it('Should not add anything in database if USD investment is zero', async function () {
+      await handleNewUSDOrder({
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
+      });
+
+      expect(await collectionOrdersMock.find({}).toArray()).to.be.empty;
+    });
+
+    it('Should not send tokens if USD investment is zero', async function () {
+      await handleNewUSDOrder({
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
+      });
+
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
+      ).to.be.undefined;
+    });
+  });
+
   describe('PatchWallet 470 error', async function () {
     beforeEach(async function () {
       await collectionUsersMock.insertOne({
