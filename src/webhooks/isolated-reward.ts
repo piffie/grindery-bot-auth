@@ -3,7 +3,7 @@ import { FLOWXO_WEBHOOK_API_KEY, SOURCE_TG_ID } from '../../secrets';
 import {
   PatchRawResult,
   RewardInit,
-  RewardParams,
+  NewUserParams,
   createRewardParams,
 } from '../types/webhook.types';
 import {
@@ -36,7 +36,7 @@ import { TransactionStatus } from 'grindery-nexus-common-utils';
  *          - Returns `false` if an error occurs during the rewardInstance processing.
  */
 export async function handleIsolatedReward(
-  params: RewardParams,
+  params: NewUserParams,
 ): Promise<boolean> {
   try {
     if (
@@ -99,7 +99,7 @@ export async function handleIsolatedReward(
  */
 export class IsolatedRewardTelegram {
   /** The parameters required for the reward. */
-  params: RewardParams;
+  params: NewUserParams;
 
   /** Indicates if the reward is present in the database. */
   isInDatabase: boolean = false;
@@ -129,7 +129,7 @@ export class IsolatedRewardTelegram {
    * Creates an instance of IsolatedRewardTelegram.
    * @param params - The parameters required for the reward.
    */
-  constructor(params: RewardParams) {
+  constructor(params: NewUserParams) {
     // Assigns the incoming 'params' to the class property 'params'
     this.params = params;
 
@@ -142,10 +142,10 @@ export class IsolatedRewardTelegram {
 
   /**
    * Asynchronously creates and initializes a reward instance of IsolatedRewardTelegram.
-   * @param {RewardParams} params - The parameters required for the reward.
+   * @param {NewUserParams} params - The parameters required for the reward.
    * @returns {Promise<RewardInit>} - Promise resolving to a RewardInit instance.
    */
-  static async build(params: RewardParams): Promise<RewardInit> {
+  static async build(params: NewUserParams): Promise<RewardInit> {
     // Create a new instance of IsolatedRewardTelegram with the provided 'params'
     const reward = new IsolatedRewardTelegram(params);
 

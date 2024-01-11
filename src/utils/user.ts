@@ -3,17 +3,17 @@ import { Database } from '../db/conn';
 import { REWARDS_COLLECTION, USERS_COLLECTION } from './constants';
 import { getPatchWalletAddressFromTgId } from './patchwallet';
 import { addIdentitySegment } from './segment';
-import { RewardParams } from '../types/webhook.types';
+import { NewUserParams } from '../types/webhook.types';
 import { MongoReward, MongoUser } from 'grindery-nexus-common-utils';
 
 /**
- * Represents a UserTelegram.
+ * Represents a NewUserTelegram.
  */
-export class UserTelegram {
+export class NewUserTelegram {
   /**
-   * The parameters used to create the UserTelegram instance.
+   * The parameters used to create the NewUserTelegram instance.
    */
-  params: RewardParams;
+  params: NewUserParams;
 
   /**
    * Indicates whether the user exists in the database.
@@ -26,22 +26,22 @@ export class UserTelegram {
   db: Db | null;
 
   /**
-   * Constructs a new UserTelegram instance.
-   * @param params - The parameters used to create the UserTelegram instance.
+   * Constructs a new NewUserTelegram instance.
+   * @param params - The parameters used to create the NewUserTelegram instance.
    */
-  constructor(params: RewardParams) {
+  constructor(params: NewUserParams) {
     this.params = params;
     this.isInDatabase = false;
   }
 
   /**
-   * Builds a UserTelegram instance.
-   * @param params - The parameters used to build the UserTelegram instance.
-   * @returns A Promise that resolves with a UserTelegram instance.
+   * Builds a NewUserTelegram instance.
+   * @param params - The parameters used to build the NewUserTelegram instance.
+   * @returns A Promise that resolves with a NewUserTelegram instance.
    */
-  static async build(params: RewardParams): Promise<UserTelegram> {
-    // Create a new UserTelegram instance
-    const user = new UserTelegram(params);
+  static async build(params: NewUserParams): Promise<NewUserTelegram> {
+    // Create a new NewUserTelegram instance
+    const user = new NewUserTelegram(params);
 
     // Get the database instance
     user.db = await Database.getInstance();
@@ -65,7 +65,7 @@ export class UserTelegram {
       }
     }
 
-    // Return the built UserTelegram instance
+    // Return the built NewUserTelegram instance
     return user;
   }
 
