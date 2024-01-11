@@ -57,23 +57,32 @@ router.post('/attributes', authenticateApiKey, async (req, res) => {
   try {
     const db = await Database.getInstance();
 
+    // Check if the request body is an array
     if (!Array.isArray(req.body)) {
       return res.status(400).send({
         msg: 'Request body should contain an array of attribute objects.',
       });
     }
 
+    // Validate each item in the request body
     const isValid = req.body.every((update) => {
       const { userTelegramID, attributes } = update;
-      return Array.isArray(attributes) && typeof userTelegramID === 'string';
+      // Check if attributes is an object (not an array) and userTelegramID is a string
+      return (
+        typeof userTelegramID === 'string' &&
+        typeof attributes === 'object' &&
+        !Array.isArray(attributes) // Ensure attributes is an object
+      );
     });
 
+    // If validation fails, return an error response
     if (!isValid) {
       return res.status(400).send({
-        msg: 'Each item in the array should have "userTelegramID" as string, "attributes" as an array.',
+        msg: 'Each item in the array should have "userTelegramID" as a string and "attributes" as an object.',
       });
     }
 
+    // Map the request body to bulk operations
     const bulkOperations = req.body.map((update) => ({
       updateOne: {
         filter: { userTelegramID: update.userTelegramID },
@@ -82,10 +91,12 @@ router.post('/attributes', authenticateApiKey, async (req, res) => {
       },
     }));
 
+    // Perform the bulk write operation
     const result = await db
       ?.collection(USERS_COLLECTION)
       .bulkWrite(bulkOperations);
 
+    // Send a success response
     return res.status(200).send({
       msg: 'Updates successful',
       result,
