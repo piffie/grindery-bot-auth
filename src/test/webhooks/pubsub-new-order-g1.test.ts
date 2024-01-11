@@ -16,6 +16,7 @@ import {
   getCollectionGXOrderMock,
   mockEventId1,
   mockEventId2,
+  mockEventId,
 } from '../utils';
 import Sinon from 'sinon';
 import axios from 'axios';
@@ -28,19 +29,18 @@ import {
   PATCHWALLET_TX_URL,
   SEGMENT_TRACK_URL,
 } from '../../utils/constants';
-import { v4 as uuidv4 } from 'uuid';
 import { G1_POLYGON_ADDRESS } from '../../../secrets';
 import * as web3 from '../../utils/web3';
 import { ContractStub } from '../../types/tests.types';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
 import { handleNewG1Order } from '../../webhooks/g1-order';
+import { spuriousOrdersG1 } from './g1-orders-sample';
 
 chai.use(chaiExclude);
 
 describe('handleNewG1Order function', async function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
-  let txId: string;
   let collectionUsersMock;
   let collectionQuotesMock;
   let collectionOrdersMock;
@@ -51,6 +51,8 @@ describe('handleNewG1Order function', async function () {
     collectionUsersMock = await getCollectionUsersMock();
     collectionQuotesMock = await getCollectionGXQuoteMock();
     collectionOrdersMock = await getCollectionGXOrderMock();
+
+    await collectionOrdersMock.insertMany(spuriousOrdersG1);
 
     sandbox = Sinon.createSandbox();
     axiosStub = sandbox.stub(axios, 'post').callsFake(async (url: string) => {
@@ -121,8 +123,6 @@ describe('handleNewG1Order function', async function () {
     };
 
     sandbox.stub(web3, 'getContract').callsFake(getContract);
-
-    txId = uuidv4();
   });
 
   afterEach(function () {
@@ -229,7 +229,7 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         }),
       ).to.be.true;
     });
@@ -238,88 +238,88 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       const orders = await collectionOrdersMock.find({}).toArray();
 
       expect(orders)
         .excluding(['dateAdded', '_id'])
-        .to.deep.equal([
-          {
-            orderType: 'g1',
-            tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
-            usdFromG1Investment: '1',
-            usdFromMvu: '1',
-            usdFromTime: '1',
-            equivalentUsdInvested: '1',
-            gxBeforeMvu: '1',
-            gxMvuEffect: '1',
-            gxTimeEffect: '1',
-            GxUsdExchangeRate: '1',
-            standardGxUsdExchangeRate: '1',
-            discountReceived: '1',
-            gxReceived: '1',
-            userTelegramID: mockUserTelegramID,
-            eventId: mockEventId1,
-            transactionHash: mockTransactionHash,
-            userOpHash: null,
-            status: TransactionStatus.FAILURE,
-          },
-          {
-            orderType: 'another_order_type',
-            tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
-            usdFromG1Investment: '1',
-            usdFromMvu: '1',
-            usdFromTime: '1',
-            equivalentUsdInvested: '1',
-            gxBeforeMvu: '1',
-            gxMvuEffect: '1',
-            gxTimeEffect: '1',
-            GxUsdExchangeRate: '1',
-            standardGxUsdExchangeRate: '1',
-            discountReceived: '1',
-            gxReceived: '1',
-            userTelegramID: mockUserTelegramID,
-            eventId: mockEventId2,
-            transactionHash: mockTransactionHash,
-            userOpHash: null,
-            status: TransactionStatus.SUCCESS,
-          },
-          {
-            quoteId: mockOrderID,
-            orderType: 'g1',
-            tokenAmountG1: '5',
-            usdFromUsdInvestment: '1',
-            usdFromG1Investment: '1',
-            usdFromMvu: '1',
-            usdFromTime: '1',
-            equivalentUsdInvested: '1',
-            gxBeforeMvu: '1',
-            gxMvuEffect: '1',
-            gxTimeEffect: '1',
-            GxUsdExchangeRate: '1',
-            standardGxUsdExchangeRate: '1',
-            discountReceived: '1',
-            gxReceived: '1',
-            userTelegramID: mockUserTelegramID,
-            eventId: txId,
-            transactionHash: mockTransactionHash,
-            userOpHash: null,
-            status: TransactionStatus.SUCCESS,
-          },
-        ]);
-      expect(orders[0].dateAdded).to.be.a('date');
-      expect(orders[1].dateAdded).to.be.a('date');
+        .to.deep.equal(
+          spuriousOrdersG1.concat([
+            {
+              orderType: 'g1',
+              tokenAmountG1: '500.55',
+              usdFromUsdInvestment: '1',
+              usdFromG1Investment: '1',
+              usdFromMvu: '1',
+              usdFromTime: '1',
+              equivalentUsdInvested: '1',
+              gxBeforeMvu: '1',
+              gxMvuEffect: '1',
+              gxTimeEffect: '1',
+              GxUsdExchangeRate: '1',
+              standardGxUsdExchangeRate: '1',
+              discountReceived: '1',
+              gxReceived: '1',
+              userTelegramID: mockUserTelegramID,
+              eventId: mockEventId1,
+              transactionHash: mockTransactionHash,
+              userOpHash: null,
+              status: TransactionStatus.FAILURE,
+            },
+            {
+              orderType: 'another_order_type',
+              tokenAmountG1: '500.55',
+              usdFromUsdInvestment: '1',
+              usdFromG1Investment: '1',
+              usdFromMvu: '1',
+              usdFromTime: '1',
+              equivalentUsdInvested: '1',
+              gxBeforeMvu: '1',
+              gxMvuEffect: '1',
+              gxTimeEffect: '1',
+              GxUsdExchangeRate: '1',
+              standardGxUsdExchangeRate: '1',
+              discountReceived: '1',
+              gxReceived: '1',
+              userTelegramID: mockUserTelegramID,
+              eventId: mockEventId2,
+              transactionHash: mockTransactionHash,
+              userOpHash: null,
+              status: TransactionStatus.SUCCESS,
+            },
+            {
+              quoteId: mockOrderID,
+              orderType: 'g1',
+              tokenAmountG1: '5',
+              usdFromUsdInvestment: '1',
+              usdFromG1Investment: '1',
+              usdFromMvu: '1',
+              usdFromTime: '1',
+              equivalentUsdInvested: '1',
+              gxBeforeMvu: '1',
+              gxMvuEffect: '1',
+              gxTimeEffect: '1',
+              GxUsdExchangeRate: '1',
+              standardGxUsdExchangeRate: '1',
+              discountReceived: '1',
+              gxReceived: '1',
+              userTelegramID: mockUserTelegramID,
+              eventId: mockEventId,
+              transactionHash: mockTransactionHash,
+              userOpHash: null,
+              status: TransactionStatus.SUCCESS,
+            },
+          ]),
+        );
     });
 
     it('Should call the sendTokens function properly as a G1 token transfer', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -391,37 +391,39 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       const orders = await collectionOrdersMock.find({}).toArray();
 
       expect(orders)
         .excluding(['dateAdded', '_id'])
-        .to.deep.equal([
-          {
-            quoteId: mockOrderID,
-            orderType: 'g1',
-            tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
-            usdFromG1Investment: '1',
-            usdFromMvu: '1',
-            usdFromTime: '1',
-            equivalentUsdInvested: '1',
-            gxBeforeMvu: '1',
-            gxMvuEffect: '1',
-            gxTimeEffect: '1',
-            GxUsdExchangeRate: '1',
-            standardGxUsdExchangeRate: '1',
-            discountReceived: '1',
-            gxReceived: '1',
-            userTelegramID: mockUserTelegramID,
-            eventId: txId,
-            transactionHash: mockTransactionHash,
-            userOpHash: null,
-            status: TransactionStatus.SUCCESS,
-          },
-        ]);
+        .to.deep.equal(
+          spuriousOrdersG1.concat([
+            {
+              quoteId: mockOrderID,
+              orderType: 'g1',
+              tokenAmountG1: '500.55',
+              usdFromUsdInvestment: '1',
+              usdFromG1Investment: '1',
+              usdFromMvu: '1',
+              usdFromTime: '1',
+              equivalentUsdInvested: '1',
+              gxBeforeMvu: '1',
+              gxMvuEffect: '1',
+              gxTimeEffect: '1',
+              GxUsdExchangeRate: '1',
+              standardGxUsdExchangeRate: '1',
+              discountReceived: '1',
+              gxReceived: '1',
+              userTelegramID: mockUserTelegramID,
+              eventId: mockEventId,
+              transactionHash: mockTransactionHash,
+              userOpHash: null,
+              status: TransactionStatus.SUCCESS,
+            },
+          ]),
+        );
       expect(orders[0].dateAdded).to.be.a('date');
     });
 
@@ -429,7 +431,7 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -513,7 +515,7 @@ describe('handleNewG1Order function', async function () {
         discountReceived: '1',
         gxReceived: '1',
         userTelegramID: mockUserTelegramID,
-        eventId: txId,
+        eventId: mockEventId,
         transactionHash: mockTransactionHash,
         userOpHash: null,
         status: TransactionStatus.SUCCESS,
@@ -525,7 +527,7 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         }),
       ).to.be.true;
     });
@@ -534,7 +536,7 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -546,35 +548,37 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['_id'])
-        .to.deep.equal([
-          {
-            quoteId: mockOrderID,
-            orderType: 'g1',
-            tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
-            usdFromG1Investment: '1',
-            usdFromMvu: '1',
-            usdFromTime: '1',
-            equivalentUsdInvested: '1',
-            gxBeforeMvu: '1',
-            gxMvuEffect: '1',
-            gxTimeEffect: '1',
-            GxUsdExchangeRate: '1',
-            standardGxUsdExchangeRate: '1',
-            discountReceived: '1',
-            gxReceived: '1',
-            userTelegramID: mockUserTelegramID,
-            eventId: txId,
-            transactionHash: mockTransactionHash,
-            userOpHash: null,
-            status: TransactionStatus.SUCCESS,
-          },
-        ]);
+        .to.deep.equal(
+          spuriousOrdersG1.concat([
+            {
+              quoteId: mockOrderID,
+              orderType: 'g1',
+              tokenAmountG1: '500.55',
+              usdFromUsdInvestment: '1',
+              usdFromG1Investment: '1',
+              usdFromMvu: '1',
+              usdFromTime: '1',
+              equivalentUsdInvested: '1',
+              gxBeforeMvu: '1',
+              gxMvuEffect: '1',
+              gxTimeEffect: '1',
+              GxUsdExchangeRate: '1',
+              standardGxUsdExchangeRate: '1',
+              discountReceived: '1',
+              gxReceived: '1',
+              userTelegramID: mockUserTelegramID,
+              eventId: mockEventId,
+              transactionHash: mockTransactionHash,
+              userOpHash: null,
+              status: TransactionStatus.SUCCESS,
+            },
+          ]),
+        );
     });
   });
 
@@ -642,7 +646,7 @@ describe('handleNewG1Order function', async function () {
         discountReceived: '1',
         gxReceived: '1',
         userTelegramID: mockUserTelegramID,
-        eventId: txId,
+        eventId: mockEventId,
         transactionHash: mockTransactionHash,
         userOpHash: null,
         status: TransactionStatus.FAILURE,
@@ -654,7 +658,7 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         }),
       ).to.be.true;
     });
@@ -663,7 +667,7 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -675,35 +679,37 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['_id'])
-        .to.deep.equal([
-          {
-            quoteId: mockOrderID,
-            orderType: 'g1',
-            tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
-            usdFromG1Investment: '1',
-            usdFromMvu: '1',
-            usdFromTime: '1',
-            equivalentUsdInvested: '1',
-            gxBeforeMvu: '1',
-            gxMvuEffect: '1',
-            gxTimeEffect: '1',
-            GxUsdExchangeRate: '1',
-            standardGxUsdExchangeRate: '1',
-            discountReceived: '1',
-            gxReceived: '1',
-            userTelegramID: mockUserTelegramID,
-            eventId: txId,
-            transactionHash: mockTransactionHash,
-            userOpHash: null,
-            status: TransactionStatus.FAILURE,
-          },
-        ]);
+        .to.deep.equal(
+          spuriousOrdersG1.concat([
+            {
+              quoteId: mockOrderID,
+              orderType: 'g1',
+              tokenAmountG1: '500.55',
+              usdFromUsdInvestment: '1',
+              usdFromG1Investment: '1',
+              usdFromMvu: '1',
+              usdFromTime: '1',
+              equivalentUsdInvested: '1',
+              gxBeforeMvu: '1',
+              gxMvuEffect: '1',
+              gxTimeEffect: '1',
+              GxUsdExchangeRate: '1',
+              standardGxUsdExchangeRate: '1',
+              discountReceived: '1',
+              gxReceived: '1',
+              userTelegramID: mockUserTelegramID,
+              eventId: mockEventId,
+              transactionHash: mockTransactionHash,
+              userOpHash: null,
+              status: TransactionStatus.FAILURE,
+            },
+          ]),
+        );
     });
   });
 
@@ -771,7 +777,7 @@ describe('handleNewG1Order function', async function () {
         discountReceived: '1',
         gxReceived: '1',
         userTelegramID: mockUserTelegramID,
-        eventId: txId,
+        eventId: mockEventId,
         transactionHash: mockTransactionHash,
         userOpHash: null,
         status: TransactionStatus.FAILURE_503,
@@ -783,7 +789,7 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         }),
       ).to.be.true;
     });
@@ -792,7 +798,7 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -804,35 +810,37 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['_id'])
-        .to.deep.equal([
-          {
-            quoteId: mockOrderID,
-            orderType: 'g1',
-            tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
-            usdFromG1Investment: '1',
-            usdFromMvu: '1',
-            usdFromTime: '1',
-            equivalentUsdInvested: '1',
-            gxBeforeMvu: '1',
-            gxMvuEffect: '1',
-            gxTimeEffect: '1',
-            GxUsdExchangeRate: '1',
-            standardGxUsdExchangeRate: '1',
-            discountReceived: '1',
-            gxReceived: '1',
-            userTelegramID: mockUserTelegramID,
-            eventId: txId,
-            transactionHash: mockTransactionHash,
-            userOpHash: null,
-            status: TransactionStatus.FAILURE_503,
-          },
-        ]);
+        .to.deep.equal(
+          spuriousOrdersG1.concat([
+            {
+              quoteId: mockOrderID,
+              orderType: 'g1',
+              tokenAmountG1: '500.55',
+              usdFromUsdInvestment: '1',
+              usdFromG1Investment: '1',
+              usdFromMvu: '1',
+              usdFromTime: '1',
+              equivalentUsdInvested: '1',
+              gxBeforeMvu: '1',
+              gxMvuEffect: '1',
+              gxTimeEffect: '1',
+              GxUsdExchangeRate: '1',
+              standardGxUsdExchangeRate: '1',
+              discountReceived: '1',
+              gxReceived: '1',
+              userTelegramID: mockUserTelegramID,
+              eventId: mockEventId,
+              transactionHash: mockTransactionHash,
+              userOpHash: null,
+              status: TransactionStatus.FAILURE_503,
+            },
+          ]),
+        );
     });
   });
 
@@ -912,7 +920,7 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         }),
       ).to.be.true;
     });
@@ -921,7 +929,7 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -933,35 +941,37 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['_id'])
-        .to.deep.equal([
-          {
-            quoteId: mockOrderID,
-            orderType: 'g1',
-            tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
-            usdFromG1Investment: '1',
-            usdFromMvu: '1',
-            usdFromTime: '1',
-            equivalentUsdInvested: '1',
-            gxBeforeMvu: '1',
-            gxMvuEffect: '1',
-            gxTimeEffect: '1',
-            GxUsdExchangeRate: '1',
-            standardGxUsdExchangeRate: '1',
-            discountReceived: '1',
-            gxReceived: '1',
-            userTelegramID: mockUserTelegramID,
-            eventId: mockEventId1,
-            transactionHash: mockTransactionHash,
-            userOpHash: null,
-            status: TransactionStatus.SUCCESS,
-          },
-        ]);
+        .to.deep.equal(
+          spuriousOrdersG1.concat([
+            {
+              quoteId: mockOrderID,
+              orderType: 'g1',
+              tokenAmountG1: '500.55',
+              usdFromUsdInvestment: '1',
+              usdFromG1Investment: '1',
+              usdFromMvu: '1',
+              usdFromTime: '1',
+              equivalentUsdInvested: '1',
+              gxBeforeMvu: '1',
+              gxMvuEffect: '1',
+              gxTimeEffect: '1',
+              GxUsdExchangeRate: '1',
+              standardGxUsdExchangeRate: '1',
+              discountReceived: '1',
+              gxReceived: '1',
+              userTelegramID: mockUserTelegramID,
+              eventId: mockEventId1,
+              transactionHash: mockTransactionHash,
+              userOpHash: null,
+              status: TransactionStatus.SUCCESS,
+            },
+          ]),
+        );
     });
   });
 
@@ -1022,7 +1032,7 @@ describe('handleNewG1Order function', async function () {
       const result = await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.false;
@@ -1032,35 +1042,37 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
-        .to.deep.equal([
-          {
-            quoteId: mockOrderID,
-            orderType: 'g1',
-            tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
-            usdFromG1Investment: '1',
-            usdFromMvu: '1',
-            usdFromTime: '1',
-            equivalentUsdInvested: '1',
-            gxBeforeMvu: '1',
-            gxMvuEffect: '1',
-            gxTimeEffect: '1',
-            GxUsdExchangeRate: '1',
-            standardGxUsdExchangeRate: '1',
-            discountReceived: '1',
-            gxReceived: '1',
-            userTelegramID: mockUserTelegramID,
-            eventId: txId,
-            transactionHash: null,
-            userOpHash: null,
-            status: TransactionStatus.PENDING,
-          },
-        ]);
+        .to.deep.equal(
+          spuriousOrdersG1.concat([
+            {
+              quoteId: mockOrderID,
+              orderType: 'g1',
+              tokenAmountG1: '500.55',
+              usdFromUsdInvestment: '1',
+              usdFromG1Investment: '1',
+              usdFromMvu: '1',
+              usdFromTime: '1',
+              equivalentUsdInvested: '1',
+              gxBeforeMvu: '1',
+              gxMvuEffect: '1',
+              gxTimeEffect: '1',
+              GxUsdExchangeRate: '1',
+              standardGxUsdExchangeRate: '1',
+              discountReceived: '1',
+              gxReceived: '1',
+              userTelegramID: mockUserTelegramID,
+              eventId: mockEventId,
+              transactionHash: null,
+              userOpHash: null,
+              status: TransactionStatus.PENDING,
+            },
+          ]),
+        );
     });
   });
 
@@ -1108,7 +1120,7 @@ describe('handleNewG1Order function', async function () {
       const result = await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.true;
@@ -1118,17 +1130,19 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
-      expect(await collectionOrdersMock.find({}).toArray()).to.be.empty;
+      expect(await collectionOrdersMock.find({}).toArray()).to.deep.equal(
+        spuriousOrdersG1,
+      );
     });
 
     it('Should not send tokens if sender is not a user', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -1152,7 +1166,7 @@ describe('handleNewG1Order function', async function () {
       const result = await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.true;
@@ -1162,17 +1176,19 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
-      expect(await collectionOrdersMock.find({}).toArray()).to.be.empty;
+      expect(await collectionOrdersMock.find({}).toArray()).to.deep.equal(
+        spuriousOrdersG1,
+      );
     });
 
     it('Should not send tokens if quote is not available', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -1238,7 +1254,7 @@ describe('handleNewG1Order function', async function () {
       const result = await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.true;
@@ -1248,35 +1264,37 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['dateAdded', '_id'])
-        .to.deep.equal([
-          {
-            quoteId: mockOrderID,
-            orderType: 'g1',
-            tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
-            usdFromG1Investment: '1',
-            usdFromMvu: '1',
-            usdFromTime: '1',
-            equivalentUsdInvested: '1',
-            gxBeforeMvu: '1',
-            gxMvuEffect: '1',
-            gxTimeEffect: '1',
-            GxUsdExchangeRate: '1',
-            standardGxUsdExchangeRate: '1',
-            discountReceived: '1',
-            gxReceived: '1',
-            userTelegramID: mockUserTelegramID,
-            eventId: txId,
-            transactionHash: null,
-            userOpHash: null,
-            status: TransactionStatus.FAILURE,
-          },
-        ]);
+        .to.deep.equal(
+          spuriousOrdersG1.concat([
+            {
+              quoteId: mockOrderID,
+              orderType: 'g1',
+              tokenAmountG1: '500.55',
+              usdFromUsdInvestment: '1',
+              usdFromG1Investment: '1',
+              usdFromMvu: '1',
+              usdFromTime: '1',
+              equivalentUsdInvested: '1',
+              gxBeforeMvu: '1',
+              gxMvuEffect: '1',
+              gxTimeEffect: '1',
+              GxUsdExchangeRate: '1',
+              standardGxUsdExchangeRate: '1',
+              discountReceived: '1',
+              gxReceived: '1',
+              userTelegramID: mockUserTelegramID,
+              eventId: mockEventId,
+              transactionHash: null,
+              userOpHash: null,
+              status: TransactionStatus.FAILURE,
+            },
+          ]),
+        );
     });
   });
 
@@ -1345,7 +1363,7 @@ describe('handleNewG1Order function', async function () {
       const result = await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.true;
@@ -1355,35 +1373,37 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['dateAdded', '_id'])
-        .to.deep.equal([
-          {
-            quoteId: mockOrderID,
-            orderType: 'g1',
-            tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
-            usdFromG1Investment: '1',
-            usdFromMvu: '1',
-            usdFromTime: '1',
-            equivalentUsdInvested: '1',
-            gxBeforeMvu: '1',
-            gxMvuEffect: '1',
-            gxTimeEffect: '1',
-            GxUsdExchangeRate: '1',
-            standardGxUsdExchangeRate: '1',
-            discountReceived: '1',
-            gxReceived: '1',
-            userTelegramID: mockUserTelegramID,
-            eventId: txId,
-            transactionHash: null,
-            userOpHash: null,
-            status: TransactionStatus.FAILURE_503,
-          },
-        ]);
+        .to.deep.equal(
+          spuriousOrdersG1.concat([
+            {
+              quoteId: mockOrderID,
+              orderType: 'g1',
+              tokenAmountG1: '500.55',
+              usdFromUsdInvestment: '1',
+              usdFromG1Investment: '1',
+              usdFromMvu: '1',
+              usdFromTime: '1',
+              equivalentUsdInvested: '1',
+              gxBeforeMvu: '1',
+              gxMvuEffect: '1',
+              gxTimeEffect: '1',
+              GxUsdExchangeRate: '1',
+              standardGxUsdExchangeRate: '1',
+              discountReceived: '1',
+              gxReceived: '1',
+              userTelegramID: mockUserTelegramID,
+              eventId: mockEventId,
+              transactionHash: null,
+              userOpHash: null,
+              status: TransactionStatus.FAILURE_503,
+            },
+          ]),
+        );
     });
   });
 
@@ -1452,7 +1472,7 @@ describe('handleNewG1Order function', async function () {
       const result = await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.false;
@@ -1462,35 +1482,37 @@ describe('handleNewG1Order function', async function () {
       await handleNewG1Order({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
-        .to.deep.equal([
-          {
-            quoteId: mockOrderID,
-            orderType: 'g1',
-            tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
-            usdFromG1Investment: '1',
-            usdFromMvu: '1',
-            usdFromTime: '1',
-            equivalentUsdInvested: '1',
-            gxBeforeMvu: '1',
-            gxMvuEffect: '1',
-            gxTimeEffect: '1',
-            GxUsdExchangeRate: '1',
-            standardGxUsdExchangeRate: '1',
-            discountReceived: '1',
-            gxReceived: '1',
-            userTelegramID: mockUserTelegramID,
-            eventId: txId,
-            transactionHash: null,
-            userOpHash: null,
-            status: TransactionStatus.PENDING,
-          },
-        ]);
+        .to.deep.equal(
+          spuriousOrdersG1.concat([
+            {
+              quoteId: mockOrderID,
+              orderType: 'g1',
+              tokenAmountG1: '500.55',
+              usdFromUsdInvestment: '1',
+              usdFromG1Investment: '1',
+              usdFromMvu: '1',
+              usdFromTime: '1',
+              equivalentUsdInvested: '1',
+              gxBeforeMvu: '1',
+              gxMvuEffect: '1',
+              gxTimeEffect: '1',
+              GxUsdExchangeRate: '1',
+              standardGxUsdExchangeRate: '1',
+              discountReceived: '1',
+              gxReceived: '1',
+              userTelegramID: mockUserTelegramID,
+              eventId: mockEventId,
+              transactionHash: null,
+              userOpHash: null,
+              status: TransactionStatus.PENDING,
+            },
+          ]),
+        );
     });
   });
 
@@ -1553,7 +1575,7 @@ describe('handleNewG1Order function', async function () {
         const result = await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.false;
@@ -1563,35 +1585,37 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
-          .to.deep.equal([
-            {
-              quoteId: mockOrderID,
-              orderType: 'g1',
-              tokenAmountG1: '500.55',
-              usdFromUsdInvestment: '1',
-              usdFromG1Investment: '1',
-              usdFromMvu: '1',
-              usdFromTime: '1',
-              equivalentUsdInvested: '1',
-              gxBeforeMvu: '1',
-              gxMvuEffect: '1',
-              gxTimeEffect: '1',
-              GxUsdExchangeRate: '1',
-              standardGxUsdExchangeRate: '1',
-              discountReceived: '1',
-              gxReceived: '1',
-              userTelegramID: mockUserTelegramID,
-              eventId: txId,
-              transactionHash: null,
-              userOpHash: mockUserOpHash,
-              status: TransactionStatus.PENDING_HASH,
-            },
-          ]);
+          .to.deep.equal(
+            spuriousOrdersG1.concat([
+              {
+                quoteId: mockOrderID,
+                orderType: 'g1',
+                tokenAmountG1: '500.55',
+                usdFromUsdInvestment: '1',
+                usdFromG1Investment: '1',
+                usdFromMvu: '1',
+                usdFromTime: '1',
+                equivalentUsdInvested: '1',
+                gxBeforeMvu: '1',
+                gxMvuEffect: '1',
+                gxTimeEffect: '1',
+                GxUsdExchangeRate: '1',
+                standardGxUsdExchangeRate: '1',
+                discountReceived: '1',
+                gxReceived: '1',
+                userTelegramID: mockUserTelegramID,
+                eventId: mockEventId,
+                transactionHash: null,
+                userOpHash: mockUserOpHash,
+                status: TransactionStatus.PENDING_HASH,
+              },
+            ]),
+          );
       });
     });
 
@@ -1658,7 +1682,7 @@ describe('handleNewG1Order function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
-            eventId: txId,
+            eventId: mockEventId,
             transactionHash: null,
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
@@ -1670,7 +1694,7 @@ describe('handleNewG1Order function', async function () {
         const result = await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.true;
@@ -1680,7 +1704,7 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1692,35 +1716,37 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
-          .to.deep.equal([
-            {
-              quoteId: mockOrderID,
-              orderType: 'g1',
-              tokenAmountG1: '500.55',
-              usdFromUsdInvestment: '1',
-              usdFromG1Investment: '1',
-              usdFromMvu: '1',
-              usdFromTime: '1',
-              equivalentUsdInvested: '1',
-              gxBeforeMvu: '1',
-              gxMvuEffect: '1',
-              gxTimeEffect: '1',
-              GxUsdExchangeRate: '1',
-              standardGxUsdExchangeRate: '1',
-              discountReceived: '1',
-              gxReceived: '1',
-              userTelegramID: mockUserTelegramID,
-              eventId: txId,
-              transactionHash: mockTransactionHash,
-              userOpHash: mockUserOpHash,
-              status: TransactionStatus.SUCCESS,
-            },
-          ]);
+          .to.deep.equal(
+            spuriousOrdersG1.concat([
+              {
+                quoteId: mockOrderID,
+                orderType: 'g1',
+                tokenAmountG1: '500.55',
+                usdFromUsdInvestment: '1',
+                usdFromG1Investment: '1',
+                usdFromMvu: '1',
+                usdFromTime: '1',
+                equivalentUsdInvested: '1',
+                gxBeforeMvu: '1',
+                gxMvuEffect: '1',
+                gxTimeEffect: '1',
+                GxUsdExchangeRate: '1',
+                standardGxUsdExchangeRate: '1',
+                discountReceived: '1',
+                gxReceived: '1',
+                userTelegramID: mockUserTelegramID,
+                eventId: mockEventId,
+                transactionHash: mockTransactionHash,
+                userOpHash: mockUserOpHash,
+                status: TransactionStatus.SUCCESS,
+              },
+            ]),
+          );
       });
     });
 
@@ -1787,7 +1813,7 @@ describe('handleNewG1Order function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
-            eventId: txId,
+            eventId: mockEventId,
             transactionHash: null,
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
@@ -1806,7 +1832,7 @@ describe('handleNewG1Order function', async function () {
         const result = await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.false;
@@ -1816,7 +1842,7 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1828,35 +1854,37 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
-          .to.deep.equal([
-            {
-              quoteId: mockOrderID,
-              orderType: 'g1',
-              tokenAmountG1: '500.55',
-              usdFromUsdInvestment: '1',
-              usdFromG1Investment: '1',
-              usdFromMvu: '1',
-              usdFromTime: '1',
-              equivalentUsdInvested: '1',
-              gxBeforeMvu: '1',
-              gxMvuEffect: '1',
-              gxTimeEffect: '1',
-              GxUsdExchangeRate: '1',
-              standardGxUsdExchangeRate: '1',
-              discountReceived: '1',
-              gxReceived: '1',
-              userTelegramID: mockUserTelegramID,
-              eventId: txId,
-              transactionHash: null,
-              userOpHash: mockUserOpHash,
-              status: TransactionStatus.PENDING_HASH,
-            },
-          ]);
+          .to.deep.equal(
+            spuriousOrdersG1.concat([
+              {
+                quoteId: mockOrderID,
+                orderType: 'g1',
+                tokenAmountG1: '500.55',
+                usdFromUsdInvestment: '1',
+                usdFromG1Investment: '1',
+                usdFromMvu: '1',
+                usdFromTime: '1',
+                equivalentUsdInvested: '1',
+                gxBeforeMvu: '1',
+                gxMvuEffect: '1',
+                gxTimeEffect: '1',
+                GxUsdExchangeRate: '1',
+                standardGxUsdExchangeRate: '1',
+                discountReceived: '1',
+                gxReceived: '1',
+                userTelegramID: mockUserTelegramID,
+                eventId: mockEventId,
+                transactionHash: null,
+                userOpHash: mockUserOpHash,
+                status: TransactionStatus.PENDING_HASH,
+              },
+            ]),
+          );
       });
     });
 
@@ -1924,7 +1952,7 @@ describe('handleNewG1Order function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
-            eventId: txId,
+            eventId: mockEventId,
             transactionHash: null,
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
@@ -1940,7 +1968,7 @@ describe('handleNewG1Order function', async function () {
         const result = await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.false;
@@ -1950,7 +1978,7 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1962,35 +1990,37 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
-          .to.deep.equal([
-            {
-              quoteId: mockOrderID,
-              orderType: 'g1',
-              tokenAmountG1: '500.55',
-              usdFromUsdInvestment: '1',
-              usdFromG1Investment: '1',
-              usdFromMvu: '1',
-              usdFromTime: '1',
-              equivalentUsdInvested: '1',
-              gxBeforeMvu: '1',
-              gxMvuEffect: '1',
-              gxTimeEffect: '1',
-              GxUsdExchangeRate: '1',
-              standardGxUsdExchangeRate: '1',
-              discountReceived: '1',
-              gxReceived: '1',
-              userTelegramID: mockUserTelegramID,
-              eventId: txId,
-              transactionHash: null,
-              userOpHash: mockUserOpHash,
-              status: TransactionStatus.PENDING_HASH,
-            },
-          ]);
+          .to.deep.equal(
+            spuriousOrdersG1.concat([
+              {
+                quoteId: mockOrderID,
+                orderType: 'g1',
+                tokenAmountG1: '500.55',
+                usdFromUsdInvestment: '1',
+                usdFromG1Investment: '1',
+                usdFromMvu: '1',
+                usdFromTime: '1',
+                equivalentUsdInvested: '1',
+                gxBeforeMvu: '1',
+                gxMvuEffect: '1',
+                gxTimeEffect: '1',
+                GxUsdExchangeRate: '1',
+                standardGxUsdExchangeRate: '1',
+                discountReceived: '1',
+                gxReceived: '1',
+                userTelegramID: mockUserTelegramID,
+                eventId: mockEventId,
+                transactionHash: null,
+                userOpHash: mockUserOpHash,
+                status: TransactionStatus.PENDING_HASH,
+              },
+            ]),
+          );
       });
     });
 
@@ -2057,7 +2087,7 @@ describe('handleNewG1Order function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
-            eventId: txId,
+            eventId: mockEventId,
             transactionHash: null,
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
@@ -2074,7 +2104,7 @@ describe('handleNewG1Order function', async function () {
         const result = await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.true;
@@ -2083,7 +2113,7 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -2094,35 +2124,37 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
-          .to.deep.equal([
-            {
-              quoteId: mockOrderID,
-              orderType: 'g1',
-              tokenAmountG1: '500.55',
-              usdFromUsdInvestment: '1',
-              usdFromG1Investment: '1',
-              usdFromMvu: '1',
-              usdFromTime: '1',
-              equivalentUsdInvested: '1',
-              gxBeforeMvu: '1',
-              gxMvuEffect: '1',
-              gxTimeEffect: '1',
-              GxUsdExchangeRate: '1',
-              standardGxUsdExchangeRate: '1',
-              discountReceived: '1',
-              gxReceived: '1',
-              userTelegramID: mockUserTelegramID,
-              eventId: txId,
-              transactionHash: null,
-              userOpHash: mockUserOpHash,
-              status: TransactionStatus.FAILURE,
-            },
-          ]);
+          .to.deep.equal(
+            spuriousOrdersG1.concat([
+              {
+                quoteId: mockOrderID,
+                orderType: 'g1',
+                tokenAmountG1: '500.55',
+                usdFromUsdInvestment: '1',
+                usdFromG1Investment: '1',
+                usdFromMvu: '1',
+                usdFromTime: '1',
+                equivalentUsdInvested: '1',
+                gxBeforeMvu: '1',
+                gxMvuEffect: '1',
+                gxTimeEffect: '1',
+                GxUsdExchangeRate: '1',
+                standardGxUsdExchangeRate: '1',
+                discountReceived: '1',
+                gxReceived: '1',
+                userTelegramID: mockUserTelegramID,
+                eventId: mockEventId,
+                transactionHash: null,
+                userOpHash: mockUserOpHash,
+                status: TransactionStatus.FAILURE,
+              },
+            ]),
+          );
       });
     });
 
@@ -2189,7 +2221,7 @@ describe('handleNewG1Order function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
-            eventId: txId,
+            eventId: mockEventId,
             transactionHash: null,
             status: TransactionStatus.PENDING_HASH,
           },
@@ -2200,7 +2232,7 @@ describe('handleNewG1Order function', async function () {
         const result = await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.true;
@@ -2210,7 +2242,7 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -2222,35 +2254,37 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
-          .to.deep.equal([
-            {
-              quoteId: mockOrderID,
-              orderType: 'g1',
-              tokenAmountG1: '500.55',
-              usdFromUsdInvestment: '1',
-              usdFromG1Investment: '1',
-              usdFromMvu: '1',
-              usdFromTime: '1',
-              equivalentUsdInvested: '1',
-              gxBeforeMvu: '1',
-              gxMvuEffect: '1',
-              gxTimeEffect: '1',
-              GxUsdExchangeRate: '1',
-              standardGxUsdExchangeRate: '1',
-              discountReceived: '1',
-              gxReceived: '1',
-              userTelegramID: mockUserTelegramID,
-              eventId: txId,
-              transactionHash: null,
-              userOpHash: null,
-              status: TransactionStatus.SUCCESS,
-            },
-          ]);
+          .to.deep.equal(
+            spuriousOrdersG1.concat([
+              {
+                quoteId: mockOrderID,
+                orderType: 'g1',
+                tokenAmountG1: '500.55',
+                usdFromUsdInvestment: '1',
+                usdFromG1Investment: '1',
+                usdFromMvu: '1',
+                usdFromTime: '1',
+                equivalentUsdInvested: '1',
+                gxBeforeMvu: '1',
+                gxMvuEffect: '1',
+                gxTimeEffect: '1',
+                GxUsdExchangeRate: '1',
+                standardGxUsdExchangeRate: '1',
+                discountReceived: '1',
+                gxReceived: '1',
+                userTelegramID: mockUserTelegramID,
+                eventId: mockEventId,
+                transactionHash: null,
+                userOpHash: null,
+                status: TransactionStatus.SUCCESS,
+              },
+            ]),
+          );
       });
     });
 
@@ -2317,7 +2351,7 @@ describe('handleNewG1Order function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
-            eventId: txId,
+            eventId: mockEventId,
             transactionHash: null,
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
@@ -2337,7 +2371,7 @@ describe('handleNewG1Order function', async function () {
         const result = await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.true;
@@ -2347,7 +2381,7 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -2358,35 +2392,37 @@ describe('handleNewG1Order function', async function () {
         await handleNewG1Order({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
-          .to.deep.equal([
-            {
-              quoteId: mockOrderID,
-              orderType: 'g1',
-              tokenAmountG1: '500.55',
-              usdFromUsdInvestment: '1',
-              usdFromG1Investment: '1',
-              usdFromMvu: '1',
-              usdFromTime: '1',
-              equivalentUsdInvested: '1',
-              gxBeforeMvu: '1',
-              gxMvuEffect: '1',
-              gxTimeEffect: '1',
-              GxUsdExchangeRate: '1',
-              standardGxUsdExchangeRate: '1',
-              discountReceived: '1',
-              gxReceived: '1',
-              userTelegramID: mockUserTelegramID,
-              eventId: txId,
-              transactionHash: null,
-              userOpHash: mockUserOpHash,
-              status: TransactionStatus.FAILURE,
-            },
-          ]);
+          .to.deep.equal(
+            spuriousOrdersG1.concat([
+              {
+                quoteId: mockOrderID,
+                orderType: 'g1',
+                tokenAmountG1: '500.55',
+                usdFromUsdInvestment: '1',
+                usdFromG1Investment: '1',
+                usdFromMvu: '1',
+                usdFromTime: '1',
+                equivalentUsdInvested: '1',
+                gxBeforeMvu: '1',
+                gxMvuEffect: '1',
+                gxTimeEffect: '1',
+                GxUsdExchangeRate: '1',
+                standardGxUsdExchangeRate: '1',
+                discountReceived: '1',
+                gxReceived: '1',
+                userTelegramID: mockUserTelegramID,
+                eventId: mockEventId,
+                transactionHash: null,
+                userOpHash: mockUserOpHash,
+                status: TransactionStatus.FAILURE,
+              },
+            ]),
+          );
       });
     });
   });

@@ -196,7 +196,6 @@ export class OrderUSDTelegram {
     if (this.db)
       return (await this.db.collection(GX_ORDER_COLLECTION).findOne({
         eventId: this.params.eventId,
-        userTelegramID: this.params.userTelegramID,
       })) as WithId<MongoOrderG1> | null;
     return null;
   }
