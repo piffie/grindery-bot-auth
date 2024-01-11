@@ -90,14 +90,7 @@ export async function handleNewOrder(params: OrderParams): Promise<boolean> {
   if (tx.txHash) {
     updateTxHash(orderInstance, tx.txHash);
     updateStatus(orderInstance, TransactionStatus.SUCCESS);
-    await Promise.all([
-      orderInstance.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
-    ]).catch((error) =>
-      console.error(
-        `[${params.eventId}] Error processing Segment or FlowXO webhook, or sending telegram message: ${error}`,
-      ),
-    );
-
+    await orderInstance.updateInDatabase(TransactionStatus.SUCCESS, new Date());
     console.log(
       `[${orderInstance.txHash}] order G1 from ${orderInstance.params.userTelegramID} for ${orderInstance.params.quote?.tokenAmountG1} with event ID ${orderInstance.params.eventId} finished.`,
     );
