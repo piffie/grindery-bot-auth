@@ -5,14 +5,13 @@ import {
 } from '../types/webhook.types';
 import { getTxStatus } from '../utils/patchwallet';
 import { getXMinBeforeDate } from '../utils/time';
-import { OrderG1Telegram } from './g1-order';
+import { OrderTelegram } from './order';
 import { IsolatedRewardTelegram } from './isolated-reward';
 import { LinkRewardTelegram } from './link-reward';
 import { ReferralRewardTelegram } from './referral-reward';
 import { SignUpRewardTelegram } from './signup-reward';
 import { SwapTelegram } from './swap';
 import { TransferTelegram } from './transaction';
-import { OrderUSDTelegram } from './usd-order';
 import { VestingTelegram } from './vesting';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
 
@@ -163,8 +162,7 @@ export async function sendTransaction(
       telegram_operation instanceof SwapTelegram ||
       telegram_operation instanceof TransferTelegram ||
       telegram_operation instanceof VestingTelegram ||
-      telegram_operation instanceof OrderG1Telegram ||
-      telegram_operation instanceof OrderUSDTelegram
+      telegram_operation instanceof OrderTelegram
     ) {
       // Retrieve the response status from the error object, if available.
       const status = error?.response?.status;

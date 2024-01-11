@@ -222,7 +222,14 @@ export const FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK: string =
 export const FLOWXO_NEW_SWAP_WEBHOOK: string =
   'https://flowxo.com/hooks/a/89ekwjdk';
 
+/**
+ * Enumeration representing order types.
+ * @readonly
+ * @enum {string}
+ */
 export const enum Ordertype {
+  /** Represents a G1 order type. */
   G1 = 'g1',
+  /** Represents a USD order type. */
   USD = 'usd',
 }

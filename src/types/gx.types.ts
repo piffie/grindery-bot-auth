@@ -69,6 +69,8 @@ export type OrderParams = {
   eventId: string;
   /** Optional GxQuote with MongoDB document structure. */
   quote?: WithId<MongoGxQuote>;
+
+  orderType: Ordertype;
 };
 
 /**

@@ -23,7 +23,7 @@ import { MongoUser, TransactionStatus } from 'grindery-nexus-common-utils';
 import { MongoGxQuote, MongoOrder, OrderParams } from '../types/gx.types';
 import { mockTransactionHash, mockUserOpHash } from '../test/utils';
 
-export async function handleNewG1Order(params: OrderParams): Promise<boolean> {
+export async function handleNewOrder(params: OrderParams): Promise<boolean> {
   // Establish a connection to the database
   const db = await Database.getInstance();
 
@@ -54,8 +54,14 @@ export async function handleNewG1Order(params: OrderParams): Promise<boolean> {
       true
     );
 
+  if (
+    params.orderType === Ordertype.USD &&
+    !(parseFloat(quote.usdFromUsdInvestment) > 0)
+  )
+    return true;
+
   // Create a orderInstance object
-  const { orderInstance, shouldProceed } = await OrderG1Telegram.build({
+  const { orderInstance, shouldProceed } = await OrderTelegram.build({
     ...params,
     quote,
   });
@@ -107,7 +113,7 @@ export async function handleNewG1Order(params: OrderParams): Promise<boolean> {
 /**
  * Represents a Telegram transfer.
  */
-export class OrderG1Telegram {
+export class OrderTelegram {
   /** The parameters required for the transaction. */
   params: OrderParams;
 
@@ -130,7 +136,7 @@ export class OrderG1Telegram {
   db: Db | null;
 
   /**
-   * Constructor for OrderG1Telegram class.
+   * Constructor for OrderTelegram class.
    * @param params - The parameters required for the transfer.
    */
   constructor(params: OrderParams) {
@@ -151,7 +157,7 @@ export class OrderG1Telegram {
    */
   static async build(params: OrderParams): Promise<OrderInit> {
     // Create a new SignUpRewardTelegram instance with provided params
-    const order = new OrderG1Telegram(params);
+    const order = new OrderTelegram(params);
 
     // Obtain the database instance and assign it to the order object
     order.db = await Database.getInstance();
@@ -195,7 +201,7 @@ export class OrderG1Telegram {
       const order = (await this.db.collection(GX_ORDER_COLLECTION).findOne({
         userTelegramID: this.params.userTelegramID,
         eventId: { $ne: this.params.eventId },
-        orderType: Ordertype.G1,
+        orderType: this.params.orderType,
       })) as WithId<MongoOrder> | null;
 
       if (order && order.status === TransactionStatus.SUCCESS) return true;
@@ -212,7 +218,7 @@ export class OrderG1Telegram {
       {
         $set: {
           quoteId: this.params.quote?.quoteId,
-          orderType: Ordertype.G1,
+          orderType: this.params.orderType,
           tokenAmountG1: this.params.quote?.tokenAmountG1,
           usdFromUsdInvestment: this.params.quote?.usdFromUsdInvestment,
           usdFromG1Investment: this.params.quote?.usdFromG1Investment,
@@ -233,12 +239,15 @@ export class OrderG1Telegram {
           transactionHash: this.txHash,
           userOpHash: this.userOpHash,
           userTelegramID: this.params.userTelegramID,
+          tokenAmount: this.params.quote?.tokenAmount,
+          chainId: this.params.quote?.chainId,
+          tokenAddress: this.params.quote?.tokenAddress,
         },
       },
       { upsert: true },
     );
     console.log(
-      `[${this.params.eventId}] G1 order from ${this.params.userTelegramID} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
+      `[${this.params.eventId}] ${this.params.orderType} order from ${this.params.userTelegramID} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
     );
   }
 
@@ -252,12 +261,23 @@ export class OrderG1Telegram {
       } as any;
     }
 
+    if (this.params.orderType === Ordertype.G1)
+      return await sendTokens(
+        this.params.userTelegramID || '',
+        SOURCE_WALLET_ADDRESS,
+        this.params.quote?.tokenAmountG1 || '',
+        await getPatchWalletAccessToken(),
+        0,
+      );
+
     return await sendTokens(
       this.params.userTelegramID || '',
       SOURCE_WALLET_ADDRESS,
-      this.params.quote?.tokenAmountG1 || '',
+      this.params.quote?.tokenAmount || '',
       await getPatchWalletAccessToken(),
       0,
+      this.params.quote?.tokenAddress,
+      this.params.quote?.chainId,
     );
   }
 }
