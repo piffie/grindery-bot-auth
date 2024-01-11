@@ -181,15 +181,15 @@ export class SignUpRewardTelegram {
 
   /**
    * Retrieves other reward information from the database for the same user but different event.
-   * @returns {Promise<object|null>} - The reward information or null if not found.
+   * @returns {Promise<WithId<MongoReward>|null>} - The reward information or null if not found.
    */
-  async getOtherRewardFromDatabase(): Promise<object | null> {
+  async getOtherRewardFromDatabase(): Promise<WithId<MongoReward> | null> {
     if (this.db)
-      return await this.db.collection(REWARDS_COLLECTION).findOne({
+      return (await this.db.collection(REWARDS_COLLECTION).findOne({
         userTelegramID: this.params.userTelegramID,
         eventId: { $ne: this.params.eventId },
         reason: this.params.reason,
-      });
+      })) as WithId<MongoReward> | null;
     return null;
   }
 
