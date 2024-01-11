@@ -11,6 +11,7 @@ import {
   getCollectionUsersMock,
   isUUIDv4,
   mockAccessToken,
+  mockChainId,
   mockChainName,
   mockOrderID,
   mockOrderID1,
@@ -147,7 +148,9 @@ describe('G1 to GX util functions', async function () {
         .get('/v1/tge/quote')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .query({
-          usdQuantity: '10',
+          tokenAmount: '10',
+          chainId: mockChainId,
+          tokenAddress: mockTokenAddress,
           g1Quantity: '4',
           userTelegramID: mockUserTelegramID,
         });
@@ -172,6 +175,9 @@ describe('G1 to GX util functions', async function () {
         standardGxUsdExchangeRate: '1',
         discountReceived: '1',
         gxReceived: '1',
+        tokenAmount: '10',
+        chainId: mockChainId,
+        tokenAddress: mockTokenAddress,
       });
     });
 
@@ -181,7 +187,9 @@ describe('G1 to GX util functions', async function () {
         .get('/v1/tge/quote')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .query({
-          usdQuantity: '10',
+          tokenAmount: '10',
+          chainId: mockChainId,
+          tokenAddress: mockTokenAddress,
           g1Quantity: '4',
           userTelegramID: mockUserTelegramID,
         });
@@ -206,6 +214,9 @@ describe('G1 to GX util functions', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '10',
+            chainId: mockChainId,
+            tokenAddress: mockTokenAddress,
           },
         ]);
 

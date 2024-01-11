@@ -62,8 +62,19 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
   try {
     const db = await Database.getInstance();
 
+    // Calculate token price based on chainId and token address
+    const token_price = await getTokenPrice(
+      req.query.chainId as string,
+      req.query.tokenAddress as string,
+    );
+
+    const usdQuantity = (
+      parseFloat(req.query.tokenAmount as string) *
+      parseFloat(token_price.data.result.usdPrice)
+    ).toFixed(2);
+
     const result = computeG1ToGxConversion(
-      Number(req.query.usdQuantity),
+      Number(usdQuantity),
       Number(req.query.g1Quantity),
       extractMvuValueFromAttributes(
         (
@@ -85,6 +96,9 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
           quoteId: id,
           date: date,
           userTelegramID: req.query.userTelegramID,
+          tokenAmount: req.query.tokenAmount,
+          chainId: req.query.chainId,
+          tokenAddress: req.query.tokenAddress,
         },
       },
       { upsert: true },
@@ -95,6 +109,9 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
       date,
       quoteId: id,
       userTelegramID: req.query.userTelegramID,
+      tokenAmount: req.query.tokenAmount,
+      chainId: req.query.chainId,
+      tokenAddress: req.query.tokenAddress,
     });
   } catch (error) {
     return res.status(500).json({ msg: 'An error occurred', error });
