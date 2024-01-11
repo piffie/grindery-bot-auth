@@ -25,13 +25,16 @@ const router = express.Router();
  * @description Calculates the conversion from G1 to Gx based on provided quantities of USD and G1.
  * @tags Conversion
  * @security BearerAuth
- * @param {number} usdQuantity.query - The quantity of USD.
  * @param {number} g1Quantity.query - The quantity of G1.
+ * @param {string} userTelegramID.query - The Telegram user ID.
+ * @param {string} tokenAmount.query - The amount of tokens.
+ * @param {string} chainId.query - The chain ID.
+ * @param {string} tokenAddress.query - The token address.
  * @return {object} 200 - Success response with the calculated conversion value
  * @return {object} 500 - Error response if an error occurs during the conversion
  *
  * @example request - 200 - Example request query parameters
- * /v1/tge/quote?usdQuantity=100&g1Quantity=50
+ * /v1/tge/quote?g1Quantity=50&userTelegramID=user-telegram-id&tokenAmount=10&chainId=1&tokenAddress=0x123456789ABCDEF
  *
  * @example response - 200 - Success response example
  * {
@@ -49,7 +52,10 @@ const router = express.Router();
  *   "discountReceived": "15.53",
  *   "date": "2023-12-31T12:00:00Z",
  *   "quoteId": "some-unique-id",
- *   "userTelegramID": "user-telegram-id"
+ *   "userTelegramID": "user-telegram-id",
+ *   "tokenAmount": "10",
+ *   "chainId": "1",
+ *   "tokenAddress": "0x123456789ABCDEF"
  * }
  *
  * @example response - 500 - Error response example
