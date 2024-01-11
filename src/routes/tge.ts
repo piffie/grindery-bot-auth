@@ -1,9 +1,6 @@
 import express from 'express';
 import { authenticateApiKey } from '../utils/auth';
-import {
-  computeG1ToGxConversion,
-  extractMvuValueFromAttributes,
-} from '../utils/g1gx';
+import { computeG1ToGxConversion } from '../utils/g1gx';
 import { Database } from '../db/conn';
 import {
   GX_ORDER_COLLECTION,
@@ -79,16 +76,22 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
       parseFloat(token_price.data.result.usdPrice)
     ).toFixed(2);
 
+    const user = await db
+      ?.collection(USERS_COLLECTION)
+      .findOne({ userTelegramID: req.query.userTelegramID });
+
+    let mvu_score: number = 0;
+
+    if (user && user.attributes && user.attributes.mvu_score) {
+      const parsedMvu = parseFloat(user.attributes.mvu_score);
+
+      if (!isNaN(parsedMvu) && parsedMvu > 0) mvu_score = parsedMvu;
+    }
+
     const result = computeG1ToGxConversion(
       Number(usdQuantity),
       Number(req.query.g1Quantity),
-      extractMvuValueFromAttributes(
-        (
-          await db
-            ?.collection(USERS_COLLECTION)
-            .findOne({ userTelegramID: req.query.userTelegramID })
-        )?.attributes,
-      ),
+      mvu_score,
     );
 
     const id = uuidv4();

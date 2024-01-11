@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { FLOWXO_WEBHOOK_API_KEY, SOURCE_TG_ID } from '../../secrets';
 import {
   PatchRawResult,
-  RewardParams,
+  NewUserParams,
   createRewardParams,
 } from '../types/webhook.types';
 import {
@@ -41,7 +41,7 @@ import {
  *          - Returns `false` if an error occurs during the referral reward processing.
  */
 export async function handleReferralReward(
-  params: RewardParams,
+  params: NewUserParams,
 ): Promise<boolean> {
   try {
     const reward = await ReferralRewardTelegram.build(
@@ -113,7 +113,7 @@ export const referral_utils = {
  */
 export class ReferralRewardTelegram {
   /** The parameters required for the reward. */
-  params: RewardParams;
+  params: NewUserParams;
 
   /** Transaction details of the parent. */
   parentTx?: WithId<MongoTransfer>;
@@ -143,7 +143,7 @@ export class ReferralRewardTelegram {
    * Creates an instance of ReferralRewardTelegram.
    * @param params - The parameters required for the reward.
    */
-  constructor(params: RewardParams) {
+  constructor(params: NewUserParams) {
     // Assigns the incoming 'params' to the class property 'params'
     this.params = params;
 
@@ -157,11 +157,11 @@ export class ReferralRewardTelegram {
   }
 
   /**
-   * Asynchronously builds a ReferralRewardTelegram instance based on provided RewardParams.
-   * @param {RewardParams} params - Parameters for the reward.
+   * Asynchronously builds a ReferralRewardTelegram instance based on provided NewUserParams.
+   * @param {NewUserParams} params - Parameters for the reward.
    * @returns {Promise<ReferralRewardTelegram>} - Promise resolving to a ReferralRewardTelegram instance.
    */
-  static async build(params: RewardParams): Promise<ReferralRewardTelegram> {
+  static async build(params: NewUserParams): Promise<ReferralRewardTelegram> {
     // Create a new ReferralRewardTelegram instance with provided params
     const reward = new ReferralRewardTelegram(params);
 

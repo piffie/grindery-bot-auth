@@ -3,7 +3,7 @@ import { FLOWXO_WEBHOOK_API_KEY, SOURCE_TG_ID } from '../../secrets';
 import {
   PatchRawResult,
   RewardInit,
-  RewardParams,
+  NewUserParams,
   createRewardParams,
 } from '../types/webhook.types';
 import {
@@ -31,7 +31,7 @@ import { MongoReward, TransactionStatus } from 'grindery-nexus-common-utils';
  *          - Returns `false` if an error occurs during the sign-up reward processing.
  */
 export async function handleSignUpReward(
-  params: RewardParams,
+  params: NewUserParams,
 ): Promise<boolean> {
   try {
     // Create a raw sign-up rewardInstance object
@@ -91,7 +91,7 @@ export const signup_utils = {
  */
 export class SignUpRewardTelegram {
   /** The parameters required for the reward. */
-  params: RewardParams;
+  params: NewUserParams;
 
   /** Indicates if the reward is present in the database. */
   isInDatabase: boolean = false;
@@ -115,7 +115,7 @@ export class SignUpRewardTelegram {
    * Creates an instance of SignUpRewardTelegram.
    * @param params - The parameters required for the reward.
    */
-  constructor(params: RewardParams) {
+  constructor(params: NewUserParams) {
     // Assigns the incoming 'params' to the class property 'params'
     this.params = params;
 
@@ -132,11 +132,11 @@ export class SignUpRewardTelegram {
   }
 
   /**
-   * Asynchronously initializes a SignUpRewardTelegram instance based on provided RewardParams.
-   * @param {RewardParams} params - Parameters for the reward.
+   * Asynchronously initializes a SignUpRewardTelegram instance based on provided NewUserParams.
+   * @param {NewUserParams} params - Parameters for the reward.
    * @returns {Promise<SignUpRewardInit>} - Promise resolving to a SignUpRewardInit instance.
    */
-  static async build(params: RewardParams): Promise<RewardInit> {
+  static async build(params: NewUserParams): Promise<RewardInit> {
     // Create a new SignUpRewardTelegram instance with provided params
     const reward = new SignUpRewardTelegram(params);
 
@@ -181,15 +181,15 @@ export class SignUpRewardTelegram {
 
   /**
    * Retrieves other reward information from the database for the same user but different event.
-   * @returns {Promise<object|null>} - The reward information or null if not found.
+   * @returns {Promise<WithId<MongoReward>|null>} - The reward information or null if not found.
    */
-  async getOtherRewardFromDatabase(): Promise<object | null> {
+  async getOtherRewardFromDatabase(): Promise<WithId<MongoReward> | null> {
     if (this.db)
-      return await this.db.collection(REWARDS_COLLECTION).findOne({
+      return (await this.db.collection(REWARDS_COLLECTION).findOne({
         userTelegramID: this.params.userTelegramID,
         eventId: { $ne: this.params.eventId },
         reason: this.params.reason,
-      });
+      })) as WithId<MongoReward> | null;
     return null;
   }
 

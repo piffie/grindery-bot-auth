@@ -18,7 +18,7 @@ import { signup_utils } from '../../webhooks/signup-reward';
 import { referral_utils } from '../../webhooks/referral-reward';
 import { link_reward_utils } from '../../webhooks/link-reward';
 import * as web3 from '../../utils/web3';
-import { RewardParams } from '../../types/webhook.types';
+import { NewUserParams } from '../../types/webhook.types';
 import {
   PATCHWALLET_RESOLVER_URL,
   SEGMENT_IDENTITY_URL,
@@ -31,14 +31,17 @@ describe('handleReferralReward function', function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
   let signUpRewardStub: Sinon.SinonStub<
-    [params: RewardParams],
+    [params: NewUserParams],
     Promise<boolean>
   >;
   let referralRewardStub: Sinon.SinonStub<
-    [params: RewardParams],
+    [params: NewUserParams],
     Promise<boolean>
   >;
-  let linkRewardStub: Sinon.SinonStub<[params: RewardParams], Promise<boolean>>;
+  let linkRewardStub: Sinon.SinonStub<
+    [params: NewUserParams],
+    Promise<boolean>
+  >;
   let eventId: string;
   let collectionUsersMock;
   let contractStub: ContractStub;

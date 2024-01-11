@@ -3,7 +3,7 @@ import { FLOWXO_WEBHOOK_API_KEY, SOURCE_TG_ID } from '../../secrets';
 import {
   PatchRawResult,
   RewardInit,
-  RewardParams,
+  NewUserParams,
   createRewardParams,
 } from '../types/webhook.types';
 import {
@@ -39,7 +39,9 @@ import {
  *          - Returns `true` if the link rewardInstance handling is completed or conditions are not met.
  *          - Returns `false` if an error occurs during the link rewardInstance processing.
  */
-export async function handleLinkReward(params: RewardParams): Promise<boolean> {
+export async function handleLinkReward(
+  params: NewUserParams,
+): Promise<boolean> {
   try {
     const { shouldBeIssued, rewardInstance } = await LinkRewardTelegram.build(
       createRewardParams(params, params.patchwallet || ''),
@@ -93,7 +95,7 @@ export const link_reward_utils = {
  */
 export class LinkRewardTelegram {
   /** The parameters required for the reward. */
-  params: RewardParams;
+  params: NewUserParams;
 
   /** Indicates if the reward is present in the database. */
   isInDatabase: boolean = false;
@@ -120,7 +122,7 @@ export class LinkRewardTelegram {
    * Constructor for LinkRewardTelegram class.
    * @param params - The parameters required for the reward.
    */
-  constructor(params: RewardParams) {
+  constructor(params: NewUserParams) {
     // Assigns the incoming 'params' to the class property 'params'
     this.params = params;
 
@@ -135,10 +137,10 @@ export class LinkRewardTelegram {
 
   /**
    * Asynchronously creates and initializes a reward instance of LinkRewardTelegram.
-   * @param {RewardParams} params - The parameters required for the reward.
+   * @param {NewUserParams} params - The parameters required for the reward.
    * @returns {Promise<RewardInit>} - Promise resolving to a RewardInit instance.
    */
-  static async build(params: RewardParams): Promise<RewardInit> {
+  static async build(params: NewUserParams): Promise<RewardInit> {
     // Create a new instance of LinkRewardTelegram with the provided 'params'
     const reward = new LinkRewardTelegram(params);
 

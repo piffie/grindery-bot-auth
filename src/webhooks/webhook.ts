@@ -1,17 +1,17 @@
-import { UserTelegram } from '../utils/user';
+import { NewUserTelegram } from '../utils/user';
 import { signup_utils } from './signup-reward';
 import { referral_utils } from './referral-reward';
 import { link_reward_utils } from './link-reward';
-import { RewardParams, createRewardParams } from '../types/webhook.types';
+import { NewUserParams, createRewardParams } from '../types/webhook.types';
 
 /**
  * Handles the processing of a new reward event.
  * @param params - Parameters required for the new reward event.
  * @returns A boolean indicating successful processing of the reward event.
  */
-export async function handleNewReward(params: RewardParams): Promise<boolean> {
+export async function handleNewReward(params: NewUserParams): Promise<boolean> {
   // Creates a new user based on the provided parameters.
-  const user = await UserTelegram.build(params);
+  const user = await NewUserTelegram.build(params);
 
   // Checks if the user is already in the database.
   if (user.isInDatabase) {

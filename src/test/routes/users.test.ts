@@ -24,14 +24,17 @@ describe('Users route', async function () {
       { userTelegramID: mockUserTelegramID },
       {
         userTelegramID: mockUserTelegramID1,
-        attributes: ['walking_dead', 'active'],
+        attributes: {
+          walking_dead: true,
+          active: true,
+        },
       },
       {
         userTelegramID: mockUserTelegramID2,
       },
       {
         userTelegramID: mockUserTelegramID3,
-        attributes: [{ mvu_score: '34' }],
+        attributes: { mvu_score: '34' },
       },
     ]);
   });
@@ -67,7 +70,7 @@ describe('Users route', async function () {
         ]);
 
       expect(res.body).to.deep.equal({
-        msg: 'Each item in the array should have "userTelegramID" as string, "attributes" as an array.',
+        msg: 'Each item in the array should have "userTelegramID" as a string and "attributes" as an object.',
       });
     });
 
@@ -79,16 +82,16 @@ describe('Users route', async function () {
         .send([
           {
             userTelegramID: mockUserTelegramID,
-            attributes: ['walking_dead', 'active'],
+            attributes: { walking_dead: true, active: true },
           },
           {
             userTelegramID: mockUserTelegramID2,
-            attributes: [
-              'walking_dead',
-              'active',
-              { mvu_score: '233' },
-              { virtual_balance: '2' },
-            ],
+            attributes: {
+              walking_dead: true,
+              active: true,
+              mvu_score: '233',
+              virtual_balance: '2',
+            },
           },
         ]);
 
@@ -97,24 +100,26 @@ describe('Users route', async function () {
         .to.deep.equal([
           {
             userTelegramID: mockUserTelegramID,
-            attributes: ['walking_dead', 'active'],
+            attributes: { walking_dead: true, active: true },
           },
           {
             userTelegramID: mockUserTelegramID1,
-            attributes: ['walking_dead', 'active'],
+            attributes: { walking_dead: true, active: true },
           },
           {
             userTelegramID: mockUserTelegramID2,
-            attributes: [
-              'walking_dead',
-              'active',
-              { mvu_score: '233' },
-              { virtual_balance: '2' },
-            ],
+            attributes: {
+              walking_dead: true,
+              active: true,
+              mvu_score: '233',
+              virtual_balance: '2',
+            },
           },
           {
             userTelegramID: mockUserTelegramID3,
-            attributes: [{ mvu_score: '34' }],
+            attributes: {
+              mvu_score: '34',
+            },
           },
         ]);
 
@@ -140,20 +145,20 @@ describe('Users route', async function () {
         .send([
           {
             userTelegramID: mockUserTelegramID,
-            attributes: ['walking_dead', 'active'],
+            attributes: { walking_dead: true, active: true },
           },
           {
             userTelegramID: mockUserTelegramID2,
-            attributes: [
-              'walking_dead',
-              'active',
-              { mvu_score: '233' },
-              { virtual_balance: '2' },
-            ],
+            attributes: {
+              walking_dead: true,
+              active: true,
+              mvu_score: '233',
+              virtual_balance: '2',
+            },
           },
           {
             userTelegramID: mockUserTelegramID3,
-            attributes: [{ mvu_score: '44' }],
+            attributes: { mvu_score: '44' },
           },
         ]);
 
@@ -162,24 +167,24 @@ describe('Users route', async function () {
         .to.deep.equal([
           {
             userTelegramID: mockUserTelegramID,
-            attributes: ['walking_dead', 'active'],
+            attributes: { walking_dead: true, active: true },
           },
           {
             userTelegramID: mockUserTelegramID1,
-            attributes: ['walking_dead', 'active'],
+            attributes: { walking_dead: true, active: true },
           },
           {
             userTelegramID: mockUserTelegramID2,
-            attributes: [
-              'walking_dead',
-              'active',
-              { mvu_score: '233' },
-              { virtual_balance: '2' },
-            ],
+            attributes: {
+              walking_dead: true,
+              active: true,
+              mvu_score: '233',
+              virtual_balance: '2',
+            },
           },
           {
             userTelegramID: mockUserTelegramID3,
-            attributes: [{ mvu_score: '44' }],
+            attributes: { mvu_score: '44' },
           },
         ]);
 

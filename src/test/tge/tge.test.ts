@@ -55,7 +55,24 @@ describe('G1 to GX util functions', async function () {
 
     await collectionUser?.insertOne({
       userTelegramID: mockUserTelegramID,
-      attributes: ['active', 'contributor', 'mvu = 5.03', 'mvu_rounded = 6.0'],
+      attributes: {
+        aff_score: null,
+        balance_100123: '500',
+        host_score: null,
+        isActiveUser: true,
+        isBlacklist: false,
+        isContributeUser: false,
+        isDead: false,
+        isDoubleSpent: false,
+        isDrone: false,
+        isDroneOwner: false,
+        isGamer: false,
+        isSlave: false,
+        isWalkingDead: false,
+        mvu_rounded: '5',
+        mvu_score: '5.03',
+        virtual_balance: '0',
+      },
     });
 
     sandbox = Sinon.createSandbox();
