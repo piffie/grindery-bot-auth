@@ -20,10 +20,11 @@ import {
 import { SOURCE_WALLET_ADDRESS } from '../../secrets';
 import { Db, WithId } from 'mongodb';
 import { MongoUser, TransactionStatus } from 'grindery-nexus-common-utils';
-import { MongoGxQuote, MongoOrderG1, OrderG1Params } from '../types/gx.types';
+import { MongoGxQuote, MongoOrderG1, OrderUSDParams } from '../types/gx.types';
+import { getTokenPrice } from '../utils/ankr';
 
-export async function handleNewG1Order(
-  params: OrderG1Params,
+export async function handleNewUSDOrder(
+  params: OrderUSDParams,
 ): Promise<boolean> {
   // Establish a connection to the database
   const db = await Database.getInstance();
@@ -55,8 +56,10 @@ export async function handleNewG1Order(
       true
     );
 
+  if (!(parseFloat(quote.usdFromUsdInvestment) > 0)) return true;
+
   // Create a orderInstance object
-  const { orderInstance, shouldProceed } = await OrderG1Telegram.build({
+  const { orderInstance, shouldProceed } = await OrderUSDTelegram.build({
     ...params,
     quote,
   });
@@ -85,17 +88,10 @@ export async function handleNewG1Order(
   if (tx.txHash) {
     updateTxHash(orderInstance, tx.txHash);
     updateStatus(orderInstance, TransactionStatus.SUCCESS);
-    await Promise.all([
-      orderInstance.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
-    ]).catch((error) =>
-      console.error(
-        `[${params.eventId}] Error processing Segment or FlowXO webhook, or sending telegram message: ${error}`,
-      ),
-    );
-
-    console.log(
-      `[${orderInstance.txHash}] order G1 from ${orderInstance.params.userTelegramID} for ${orderInstance.params.quote?.tokenAmountG1} with event ID ${orderInstance.params.eventId} finished.`,
-    );
+    await orderInstance.updateInDatabase(TransactionStatus.SUCCESS, new Date()),
+      console.log(
+        `[${orderInstance.txHash}] order USD from ${orderInstance.params.userTelegramID} for ${orderInstance.params.quote?.equivalentUsdInvested} with event ID ${orderInstance.params.eventId} finished.`,
+      );
     return true;
   }
 
@@ -108,9 +104,9 @@ export async function handleNewG1Order(
 /**
  * Represents a Telegram transfer.
  */
-export class OrderG1Telegram {
+export class OrderUSDTelegram {
   /** The parameters required for the transaction. */
-  params: OrderG1Params;
+  params: OrderUSDParams;
 
   /** Indicates if the transfer is present in the database. */
   isInDatabase: boolean = false;
@@ -127,14 +123,16 @@ export class OrderG1Telegram {
   /** User operation hash. */
   userOpHash?: string;
 
+  tokenAmount: string;
+
   /** Database reference. */
   db: Db | null;
 
   /**
-   * Constructor for OrderG1Telegram class.
+   * Constructor for OrderUSDTelegram class.
    * @param params - The parameters required for the transfer.
    */
-  constructor(params: OrderG1Params) {
+  constructor(params: OrderUSDParams) {
     // Assigns the incoming 'params' to the class property 'params'
     this.params = params;
 
@@ -146,13 +144,24 @@ export class OrderG1Telegram {
   }
 
   /**
-   * Asynchronously builds a TransactionInit instance based on provided OrderG1Params.
-   * @param {OrderG1Params} params - Parameters for the transaction.
+   * Asynchronously builds a TransactionInit instance based on provided OrderUSDParams.
+   * @param {OrderUSDParams} params - Parameters for the transaction.
    * @returns {Promise<OrderInit>} - Promise resolving to a TransactionInit instance.
    */
-  static async build(params: OrderG1Params): Promise<OrderInit> {
+  static async build(params: OrderUSDParams): Promise<OrderInit> {
     // Create a new SignUpRewardTelegram instance with provided params
-    const order = new OrderG1Telegram(params);
+    const order = new OrderUSDTelegram(params);
+
+    // Calculate token price based on chainId and token address
+    const token_price = await getTokenPrice(
+      order.params.chainId,
+      order.params.tokenAddress,
+    );
+
+    order.tokenAmount = (
+      parseFloat(order.params.quote?.usdFromUsdInvestment || '0') /
+      parseFloat(token_price.data.result.usdPrice)
+    ).toFixed(2);
 
     // Obtain the database instance and assign it to the order object
     order.db = await Database.getInstance();
@@ -196,7 +205,7 @@ export class OrderG1Telegram {
       const order = (await this.db.collection(GX_ORDER_COLLECTION).findOne({
         userTelegramID: this.params.userTelegramID,
         eventId: { $ne: this.params.eventId },
-        orderType: Ordertype.G1,
+        orderType: Ordertype.USD,
       })) as WithId<MongoOrderG1> | null;
 
       if (order && order.status === TransactionStatus.SUCCESS) return true;
@@ -213,7 +222,7 @@ export class OrderG1Telegram {
       {
         $set: {
           quoteId: this.params.quote?.quoteId,
-          orderType: Ordertype.G1,
+          orderType: Ordertype.USD,
           tokenAmountG1: this.params.quote?.tokenAmountG1,
           usdFromUsdInvestment: this.params.quote?.usdFromUsdInvestment,
           usdFromG1Investment: this.params.quote?.usdFromG1Investment,
@@ -234,12 +243,15 @@ export class OrderG1Telegram {
           transactionHash: this.txHash,
           userOpHash: this.userOpHash,
           userTelegramID: this.params.userTelegramID,
+          chainId: this.params.chainId,
+          tokenAddress: this.params.tokenAddress,
+          tokenAmount: this.tokenAmount,
         },
       },
       { upsert: true },
     );
     console.log(
-      `[${this.params.eventId}] G1 order from ${this.params.userTelegramID} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
+      `[${this.params.eventId}] USD order from ${this.params.userTelegramID} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
     );
   }
 
@@ -249,9 +261,11 @@ export class OrderG1Telegram {
     return await sendTokens(
       this.params.userTelegramID || '',
       SOURCE_WALLET_ADDRESS,
-      this.params.quote?.tokenAmountG1 || '',
+      this.tokenAmount,
       await getPatchWalletAccessToken(),
       0,
+      this.params.tokenAddress,
+      this.params.chainId,
     );
   }
 }

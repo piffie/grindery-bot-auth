@@ -16,11 +16,14 @@ import {
   getCollectionGXOrderMock,
   mockEventId1,
   mockEventId2,
+  mockTokenAddress,
+  mockChainId,
 } from '../utils';
 import Sinon from 'sinon';
 import axios from 'axios';
 import chaiExclude from 'chai-exclude';
 import {
+  ANKR_MULTICHAIN_API_URL,
   FLOWXO_NEW_TRANSACTION_WEBHOOK,
   PATCHWALLET_AUTH_URL,
   PATCHWALLET_RESOLVER_URL,
@@ -29,11 +32,10 @@ import {
   SEGMENT_TRACK_URL,
 } from '../../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
-import { G1_POLYGON_ADDRESS } from '../../../secrets';
 import * as web3 from '../../utils/web3';
 import { ContractStub } from '../../types/tests.types';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
-import { handleNewG1Order } from '../../webhooks/g1-order';
+import { handleNewUSDOrder } from '../../webhooks/usd-order';
 
 chai.use(chaiExclude);
 
@@ -98,6 +100,26 @@ describe('handleNewG1Order function', async function () {
           result: 'success',
         });
       }
+
+      if (url === ANKR_MULTICHAIN_API_URL) {
+        return Promise.resolve({
+          data: {
+            jsonrpc: '2.0',
+            id: 1,
+            result: {
+              usdPrice: '10',
+              blockchain: 'polygon',
+              contractAddress: '0x2c89bbc92bd86f8075d1decc58c7f4e0107f286b',
+              syncStatus: {
+                timestamp: 1704124545,
+                lag: '-6s',
+                status: 'synced',
+              },
+            },
+          },
+        });
+      }
+
       throw new Error('Unexpected URL encountered');
     });
 
@@ -129,7 +151,7 @@ describe('handleNewG1Order function', async function () {
     sandbox.restore();
   });
 
-  describe('Normal process to handle a G1 order', async function () {
+  describe('Normal process to handle a USD order', async function () {
     beforeEach(async function () {
       await collectionUsersMock.insertOne({
         userTelegramID: mockUserTelegramID,
@@ -143,7 +165,7 @@ describe('handleNewG1Order function', async function () {
         {
           quoteId: mockOrderID,
           tokenAmountG1: '5',
-          usdFromUsdInvestment: '1',
+          usdFromUsdInvestment: '1000',
           usdFromG1Investment: '1',
           usdFromMvu: '1',
           usdFromTime: '1',
@@ -178,7 +200,7 @@ describe('handleNewG1Order function', async function () {
 
       await collectionOrdersMock.insertMany([
         {
-          orderType: 'g1',
+          orderType: 'usd',
           tokenAmountG1: '500.55',
           usdFromUsdInvestment: '1',
           usdFromG1Investment: '1',
@@ -226,19 +248,23 @@ describe('handleNewG1Order function', async function () {
 
     it('Should return true', async function () {
       expect(
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         }),
       ).to.be.true;
     });
 
     it('Should populate order database', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       const orders = await collectionOrdersMock.find({}).toArray();
@@ -247,7 +273,7 @@ describe('handleNewG1Order function', async function () {
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
-            orderType: 'g1',
+            orderType: 'usd',
             tokenAmountG1: '500.55',
             usdFromUsdInvestment: '1',
             usdFromG1Investment: '1',
@@ -266,6 +292,7 @@ describe('handleNewG1Order function', async function () {
             transactionHash: mockTransactionHash,
             userOpHash: null,
             status: TransactionStatus.FAILURE,
+            dateAdded: new Date(),
           },
           {
             orderType: 'another_order_type',
@@ -287,12 +314,13 @@ describe('handleNewG1Order function', async function () {
             transactionHash: mockTransactionHash,
             userOpHash: null,
             status: TransactionStatus.SUCCESS,
+            dateAdded: new Date(),
           },
           {
+            orderType: 'usd',
             quoteId: mockOrderID,
-            orderType: 'g1',
             tokenAmountG1: '5',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1000',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -309,17 +337,23 @@ describe('handleNewG1Order function', async function () {
             transactionHash: mockTransactionHash,
             userOpHash: null,
             status: TransactionStatus.SUCCESS,
+            tokenAmount: '100.00',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
       expect(orders[0].dateAdded).to.be.a('date');
       expect(orders[1].dateAdded).to.be.a('date');
+      expect(orders[2].dateAdded).to.be.a('date');
     });
 
     it('Should call the sendTokens function properly as a G1 token transfer', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(
@@ -328,7 +362,7 @@ describe('handleNewG1Order function', async function () {
       ).to.deep.equal({
         userId: `grindery:${mockUserTelegramID}`,
         chain: mockChainName,
-        to: [G1_POLYGON_ADDRESS],
+        to: [mockTokenAddress],
         value: ['0x00'],
         data: [
           '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
@@ -353,7 +387,7 @@ describe('handleNewG1Order function', async function () {
         {
           quoteId: mockOrderID,
           tokenAmountG1: '500.55',
-          usdFromUsdInvestment: '1',
+          usdFromUsdInvestment: '1001.00',
           usdFromG1Investment: '1',
           usdFromMvu: '1',
           usdFromTime: '1',
@@ -388,10 +422,12 @@ describe('handleNewG1Order function', async function () {
     });
 
     it('Should populate orders database', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       const orders = await collectionOrdersMock.find({}).toArray();
@@ -400,10 +436,10 @@ describe('handleNewG1Order function', async function () {
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
+            orderType: 'usd',
             quoteId: mockOrderID,
-            orderType: 'g1',
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -420,16 +456,21 @@ describe('handleNewG1Order function', async function () {
             transactionHash: mockTransactionHash,
             userOpHash: null,
             status: TransactionStatus.SUCCESS,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
       expect(orders[0].dateAdded).to.be.a('date');
     });
 
-    it('Should call the sendTokens function properly for a G1 order', async function () {
-      await handleNewG1Order({
+    it('Should call the sendTokens function properly for a USD order', async function () {
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(
@@ -438,7 +479,7 @@ describe('handleNewG1Order function', async function () {
       ).to.deep.equal({
         userId: `grindery:${mockUserTelegramID}`,
         chain: mockChainName,
-        to: [G1_POLYGON_ADDRESS],
+        to: [mockTokenAddress],
         value: ['0x00'],
         data: [
           '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
@@ -462,7 +503,7 @@ describe('handleNewG1Order function', async function () {
         {
           quoteId: mockOrderID,
           tokenAmountG1: '500.55',
-          usdFromUsdInvestment: '1',
+          usdFromUsdInvestment: '1001.00',
           usdFromG1Investment: '1',
           usdFromMvu: '1',
           usdFromTime: '1',
@@ -496,11 +537,10 @@ describe('handleNewG1Order function', async function () {
       ]);
 
       await collectionOrdersMock.insertOne({
+        orderType: 'usd',
         quoteId: mockOrderID,
-
-        orderType: 'g1',
         tokenAmountG1: '500.55',
-        usdFromUsdInvestment: '1',
+        usdFromUsdInvestment: '1001.00',
         usdFromG1Investment: '1',
         usdFromMvu: '1',
         usdFromTime: '1',
@@ -517,24 +557,31 @@ describe('handleNewG1Order function', async function () {
         transactionHash: mockTransactionHash,
         userOpHash: null,
         status: TransactionStatus.SUCCESS,
+        tokenAmount: '100.10',
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
     });
 
     it('Should return true and no token sending if transaction is already a success', async function () {
       expect(
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         }),
       ).to.be.true;
     });
 
     it('Should not send tokens if transaction is already a success', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(
@@ -543,20 +590,22 @@ describe('handleNewG1Order function', async function () {
     });
 
     it('Should not modify database if transaction is already a success', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
+            orderType: 'usd',
             quoteId: mockOrderID,
-            orderType: 'g1',
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -573,6 +622,9 @@ describe('handleNewG1Order function', async function () {
             transactionHash: mockTransactionHash,
             userOpHash: null,
             status: TransactionStatus.SUCCESS,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
     });
@@ -625,11 +677,10 @@ describe('handleNewG1Order function', async function () {
       ]);
 
       await collectionOrdersMock.insertOne({
+        orderType: 'usd',
         quoteId: mockOrderID,
-
-        orderType: 'g1',
         tokenAmountG1: '500.55',
-        usdFromUsdInvestment: '1',
+        usdFromUsdInvestment: '1001.00',
         usdFromG1Investment: '1',
         usdFromMvu: '1',
         usdFromTime: '1',
@@ -646,24 +697,31 @@ describe('handleNewG1Order function', async function () {
         transactionHash: mockTransactionHash,
         userOpHash: null,
         status: TransactionStatus.FAILURE,
+        tokenAmount: '100.10',
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
     });
 
     it('Should return true and no token sending if order if is already a failure', async function () {
       expect(
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         }),
       ).to.be.true;
     });
 
     it('Should not send tokens if order if is already a failure', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(
@@ -672,20 +730,22 @@ describe('handleNewG1Order function', async function () {
     });
 
     it('Should not modify database if order if is already a failure', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
+            orderType: 'usd',
             quoteId: mockOrderID,
-            orderType: 'g1',
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -702,6 +762,9 @@ describe('handleNewG1Order function', async function () {
             transactionHash: mockTransactionHash,
             userOpHash: null,
             status: TransactionStatus.FAILURE,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
     });
@@ -754,11 +817,10 @@ describe('handleNewG1Order function', async function () {
       ]);
 
       await collectionOrdersMock.insertOne({
+        orderType: 'usd',
         quoteId: mockOrderID,
-
-        orderType: 'g1',
         tokenAmountG1: '500.55',
-        usdFromUsdInvestment: '1',
+        usdFromUsdInvestment: '1001.00',
         usdFromG1Investment: '1',
         usdFromMvu: '1',
         usdFromTime: '1',
@@ -775,24 +837,31 @@ describe('handleNewG1Order function', async function () {
         transactionHash: mockTransactionHash,
         userOpHash: null,
         status: TransactionStatus.FAILURE_503,
+        tokenAmount: '100.10',
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
     });
 
     it('Should return true and no token sending if order if is already a failure', async function () {
       expect(
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         }),
       ).to.be.true;
     });
 
     it('Should not send tokens if order if is already a failure', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(
@@ -801,20 +870,22 @@ describe('handleNewG1Order function', async function () {
     });
 
     it('Should not modify database if order if is already a failure', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
+            orderType: 'usd',
             quoteId: mockOrderID,
-            orderType: 'g1',
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -831,12 +902,15 @@ describe('handleNewG1Order function', async function () {
             transactionHash: mockTransactionHash,
             userOpHash: null,
             status: TransactionStatus.FAILURE_503,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
     });
   });
 
-  describe('Order if another G1 order exists with a success', async function () {
+  describe('Order if another USD order exists with a success', async function () {
     beforeEach(async function () {
       await collectionUsersMock.insertOne({
         userTelegramID: mockUserTelegramID,
@@ -883,11 +957,10 @@ describe('handleNewG1Order function', async function () {
       ]);
 
       await collectionOrdersMock.insertOne({
+        orderType: 'usd',
         quoteId: mockOrderID,
-
-        orderType: 'g1',
         tokenAmountG1: '500.55',
-        usdFromUsdInvestment: '1',
+        usdFromUsdInvestment: '1001.00',
         usdFromG1Investment: '1',
         usdFromMvu: '1',
         usdFromTime: '1',
@@ -904,24 +977,31 @@ describe('handleNewG1Order function', async function () {
         transactionHash: mockTransactionHash,
         userOpHash: null,
         status: TransactionStatus.SUCCESS,
+        tokenAmount: '100.10',
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
     });
 
-    it('Should return true and no token sending if another success G1 order exists for this user', async function () {
+    it('Should return true and no token sending if another success USD order exists for this user', async function () {
       expect(
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         }),
       ).to.be.true;
     });
 
-    it('Should not send tokens if another success G1 order exists for this user', async function () {
-      await handleNewG1Order({
+    it('Should not send tokens if another success USD order exists for this user', async function () {
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(
@@ -929,21 +1009,23 @@ describe('handleNewG1Order function', async function () {
       ).to.be.undefined;
     });
 
-    it('Should not modify database if another success G1 order exists for this user', async function () {
-      await handleNewG1Order({
+    it('Should not modify database if another success USD order exists for this user', async function () {
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
+            orderType: 'usd',
             quoteId: mockOrderID,
-            orderType: 'g1',
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -960,6 +1042,9 @@ describe('handleNewG1Order function', async function () {
             transactionHash: mockTransactionHash,
             userOpHash: null,
             status: TransactionStatus.SUCCESS,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
     });
@@ -978,7 +1063,7 @@ describe('handleNewG1Order function', async function () {
         {
           quoteId: mockOrderID,
           tokenAmountG1: '500.55',
-          usdFromUsdInvestment: '1',
+          usdFromUsdInvestment: '1001.00',
           usdFromG1Investment: '1',
           usdFromMvu: '1',
           usdFromTime: '1',
@@ -1019,30 +1104,34 @@ describe('handleNewG1Order function', async function () {
     });
 
     it('Should return false if there is an error in the send tokens request', async function () {
-      const result = await handleNewG1Order({
+      const result = await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(result).to.be.false;
     });
 
     it('Should not modify transaction status in the database if there is an error in the send tokens request', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
+            orderType: 'usd',
             quoteId: mockOrderID,
-            orderType: 'g1',
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -1059,6 +1148,9 @@ describe('handleNewG1Order function', async function () {
             transactionHash: null,
             userOpHash: null,
             status: TransactionStatus.PENDING,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
     });
@@ -1105,30 +1197,36 @@ describe('handleNewG1Order function', async function () {
     });
 
     it('Should return true if sender is not a user', async function () {
-      const result = await handleNewG1Order({
+      const result = await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(result).to.be.true;
     });
 
     it('Should not add anything in database if sender is not a user', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray()).to.be.empty;
     });
 
     it('Should not send tokens if sender is not a user', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(
@@ -1149,30 +1247,36 @@ describe('handleNewG1Order function', async function () {
     });
 
     it('Should return true if quote is not available', async function () {
-      const result = await handleNewG1Order({
+      const result = await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(result).to.be.true;
     });
 
     it('Should not add anything in database if quote is not available', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray()).to.be.empty;
     });
 
     it('Should not send tokens if quote is not available', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(
@@ -1194,7 +1298,7 @@ describe('handleNewG1Order function', async function () {
         {
           quoteId: mockOrderID,
           tokenAmountG1: '500.55',
-          usdFromUsdInvestment: '1',
+          usdFromUsdInvestment: '1001.00',
           usdFromG1Investment: '1',
           usdFromMvu: '1',
           usdFromTime: '1',
@@ -1235,30 +1339,34 @@ describe('handleNewG1Order function', async function () {
     });
 
     it('Should return true if error 470 in PatchWallet transaction', async function () {
-      const result = await handleNewG1Order({
+      const result = await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(result).to.be.true;
     });
 
     it('Should complete db status to failure in database if error 470 in PatchWallet transaction', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
+            orderType: 'usd',
             quoteId: mockOrderID,
-            orderType: 'g1',
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -1275,6 +1383,9 @@ describe('handleNewG1Order function', async function () {
             transactionHash: null,
             userOpHash: null,
             status: TransactionStatus.FAILURE,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
     });
@@ -1293,7 +1404,7 @@ describe('handleNewG1Order function', async function () {
         {
           quoteId: mockOrderID,
           tokenAmountG1: '500.55',
-          usdFromUsdInvestment: '1',
+          usdFromUsdInvestment: '1001.00',
           usdFromG1Investment: '1',
           usdFromMvu: '1',
           usdFromTime: '1',
@@ -1342,30 +1453,34 @@ describe('handleNewG1Order function', async function () {
     });
 
     it('Should return true if error 503 in PatchWallet transaction', async function () {
-      const result = await handleNewG1Order({
+      const result = await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(result).to.be.true;
     });
 
     it('Should complete db status to failure 503 in database if error 503 in PatchWallet transaction', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
+            orderType: 'usd',
             quoteId: mockOrderID,
-            orderType: 'g1',
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -1382,6 +1497,9 @@ describe('handleNewG1Order function', async function () {
             transactionHash: null,
             userOpHash: null,
             status: TransactionStatus.FAILURE_503,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
     });
@@ -1400,7 +1518,7 @@ describe('handleNewG1Order function', async function () {
         {
           quoteId: mockOrderID,
           tokenAmountG1: '500.55',
-          usdFromUsdInvestment: '1',
+          usdFromUsdInvestment: '1001.00',
           usdFromG1Investment: '1',
           usdFromMvu: '1',
           usdFromTime: '1',
@@ -1449,30 +1567,34 @@ describe('handleNewG1Order function', async function () {
     });
 
     it('Should return false if no hash in PatchWallet transaction', async function () {
-      const result = await handleNewG1Order({
+      const result = await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(result).to.be.false;
     });
 
     it('Should do no transaction status modification in database if no hash in PatchWallet transaction', async function () {
-      await handleNewG1Order({
+      await handleNewUSDOrder({
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: txId,
+        tokenAddress: mockTokenAddress,
+        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
+            orderType: 'usd',
             quoteId: mockOrderID,
-            orderType: 'g1',
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -1489,6 +1611,9 @@ describe('handleNewG1Order function', async function () {
             transactionHash: null,
             userOpHash: null,
             status: TransactionStatus.PENDING,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
     });
@@ -1503,12 +1628,11 @@ describe('handleNewG1Order function', async function () {
           userHandle: mockUserHandle,
           patchwallet: mockWallet,
         });
-
         await collectionQuotesMock.insertMany([
           {
             quoteId: mockOrderID,
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -1540,7 +1664,6 @@ describe('handleNewG1Order function', async function () {
             userTelegramID: mockUserTelegramID,
           },
         ]);
-
         axiosStub.withArgs(PATCHWALLET_TX_URL).resolves({
           data: {
             txHash: '',
@@ -1550,30 +1673,34 @@ describe('handleNewG1Order function', async function () {
       });
 
       it('Should return false if transaction hash is empty in tx PatchWallet endpoint', async function () {
-        const result = await handleNewG1Order({
+        const result = await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(result).to.be.false;
       });
 
       it('Should update reward database with a pending_hash status and userOpHash if transaction hash is empty in tx PatchWallet endpoint', async function () {
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
+              orderType: 'usd',
               quoteId: mockOrderID,
-              orderType: 'g1',
               tokenAmountG1: '500.55',
-              usdFromUsdInvestment: '1',
+              usdFromUsdInvestment: '1001.00',
               usdFromG1Investment: '1',
               usdFromMvu: '1',
               usdFromTime: '1',
@@ -1590,6 +1717,9 @@ describe('handleNewG1Order function', async function () {
               transactionHash: null,
               userOpHash: mockUserOpHash,
               status: TransactionStatus.PENDING_HASH,
+              tokenAmount: '100.10',
+              tokenAddress: mockTokenAddress,
+              chainId: mockChainId,
             },
           ]);
       });
@@ -1603,12 +1733,11 @@ describe('handleNewG1Order function', async function () {
           userHandle: mockUserHandle,
           patchwallet: mockWallet,
         });
-
         await collectionQuotesMock.insertMany([
           {
             quoteId: mockOrderID,
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -1643,9 +1772,10 @@ describe('handleNewG1Order function', async function () {
 
         await collectionOrdersMock.insertMany([
           {
-            orderType: 'g1',
+            orderType: 'usd',
+            quoteId: mockOrderID,
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -1662,25 +1792,32 @@ describe('handleNewG1Order function', async function () {
             transactionHash: null,
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
       });
 
       it('Should return true if transaction hash is present in PatchWallet status endpoint', async function () {
-        const result = await handleNewG1Order({
+        const result = await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(result).to.be.true;
       });
 
       it('Should not send tokens if transaction hash is present in PatchWallet status endpoint', async function () {
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(
@@ -1689,20 +1826,22 @@ describe('handleNewG1Order function', async function () {
       });
 
       it('Should update the database with a success status if transaction hash is present in PatchWallet status endpoint', async function () {
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
+              orderType: 'usd',
               quoteId: mockOrderID,
-              orderType: 'g1',
               tokenAmountG1: '500.55',
-              usdFromUsdInvestment: '1',
+              usdFromUsdInvestment: '1001.00',
               usdFromG1Investment: '1',
               usdFromMvu: '1',
               usdFromTime: '1',
@@ -1719,6 +1858,9 @@ describe('handleNewG1Order function', async function () {
               transactionHash: mockTransactionHash,
               userOpHash: mockUserOpHash,
               status: TransactionStatus.SUCCESS,
+              tokenAmount: '100.10',
+              tokenAddress: mockTokenAddress,
+              chainId: mockChainId,
             },
           ]);
       });
@@ -1737,7 +1879,7 @@ describe('handleNewG1Order function', async function () {
           {
             quoteId: mockOrderID,
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -1772,9 +1914,10 @@ describe('handleNewG1Order function', async function () {
 
         await collectionOrdersMock.insertMany([
           {
-            orderType: 'g1',
+            orderType: 'usd',
+            quoteId: mockOrderID,
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -1791,9 +1934,11 @@ describe('handleNewG1Order function', async function () {
             transactionHash: null,
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
-
         axiosStub.withArgs(PATCHWALLET_TX_STATUS_URL).resolves({
           data: {
             txHash: '',
@@ -1803,20 +1948,24 @@ describe('handleNewG1Order function', async function () {
       });
 
       it('Should return false if transaction hash is not present in PatchWallet status endpoint', async function () {
-        const result = await handleNewG1Order({
+        const result = await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(result).to.be.false;
       });
 
       it('Should not send tokens if transaction hash is not present in PatchWallet status endpoint', async function () {
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(
@@ -1825,20 +1974,22 @@ describe('handleNewG1Order function', async function () {
       });
 
       it('Should not update database if transaction hash is not present in PatchWallet status endpoint', async function () {
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
+              orderType: 'usd',
               quoteId: mockOrderID,
-              orderType: 'g1',
               tokenAmountG1: '500.55',
-              usdFromUsdInvestment: '1',
+              usdFromUsdInvestment: '1001.00',
               usdFromG1Investment: '1',
               usdFromMvu: '1',
               usdFromTime: '1',
@@ -1855,6 +2006,9 @@ describe('handleNewG1Order function', async function () {
               transactionHash: null,
               userOpHash: mockUserOpHash,
               status: TransactionStatus.PENDING_HASH,
+              tokenAmount: '100.10',
+              tokenAddress: mockTokenAddress,
+              chainId: mockChainId,
             },
           ]);
       });
@@ -1868,12 +2022,11 @@ describe('handleNewG1Order function', async function () {
           userHandle: mockUserHandle,
           patchwallet: mockWallet,
         });
-
         await collectionQuotesMock.insertMany([
           {
             quoteId: mockOrderID,
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -1905,13 +2058,12 @@ describe('handleNewG1Order function', async function () {
             userTelegramID: mockUserTelegramID,
           },
         ]);
-
         await collectionOrdersMock.insertMany([
           {
+            orderType: 'usd',
             quoteId: mockOrderID,
-            orderType: 'g1',
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -1928,29 +2080,35 @@ describe('handleNewG1Order function', async function () {
             transactionHash: null,
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
-
         axiosStub
           .withArgs(PATCHWALLET_TX_STATUS_URL)
           .rejects(new Error('Service not available'));
       });
 
       it('Should return false if Error in PatchWallet get status endpoint', async function () {
-        const result = await handleNewG1Order({
+        const result = await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(result).to.be.false;
       });
 
       it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(
@@ -1959,20 +2117,22 @@ describe('handleNewG1Order function', async function () {
       });
 
       it('Should not update database if Error in PatchWallet get status endpoint', async function () {
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
+              orderType: 'usd',
               quoteId: mockOrderID,
-              orderType: 'g1',
               tokenAmountG1: '500.55',
-              usdFromUsdInvestment: '1',
+              usdFromUsdInvestment: '1001.00',
               usdFromG1Investment: '1',
               usdFromMvu: '1',
               usdFromTime: '1',
@@ -1989,6 +2149,9 @@ describe('handleNewG1Order function', async function () {
               transactionHash: null,
               userOpHash: mockUserOpHash,
               status: TransactionStatus.PENDING_HASH,
+              tokenAmount: '100.10',
+              tokenAddress: mockTokenAddress,
+              chainId: mockChainId,
             },
           ]);
       });
@@ -2002,12 +2165,11 @@ describe('handleNewG1Order function', async function () {
           userHandle: mockUserHandle,
           patchwallet: mockWallet,
         });
-
         await collectionQuotesMock.insertMany([
           {
             quoteId: mockOrderID,
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -2039,12 +2201,12 @@ describe('handleNewG1Order function', async function () {
             userTelegramID: mockUserTelegramID,
           },
         ]);
-
         await collectionOrdersMock.insertMany([
           {
-            orderType: 'g1',
+            orderType: 'usd',
+            quoteId: mockOrderID,
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -2061,50 +2223,61 @@ describe('handleNewG1Order function', async function () {
             transactionHash: null,
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
-
         axiosStub.withArgs(PATCHWALLET_TX_STATUS_URL).rejects({
           response: {
             status: 470,
           },
         });
       });
+
       it('Should return true if Error 470 in PatchWallet get status endpoint', async function () {
-        const result = await handleNewG1Order({
+        const result = await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(result).to.be.true;
       });
+
       it('Should not send tokens if Error 470 in PatchWallet get status endpoint', async function () {
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
+
       it('Should update database with failure status if Error 470 in PatchWallet get status endpoint', async function () {
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
+              orderType: 'usd',
               quoteId: mockOrderID,
-              orderType: 'g1',
               tokenAmountG1: '500.55',
-              usdFromUsdInvestment: '1',
+              usdFromUsdInvestment: '1001.00',
               usdFromG1Investment: '1',
               usdFromMvu: '1',
               usdFromTime: '1',
@@ -2121,6 +2294,9 @@ describe('handleNewG1Order function', async function () {
               transactionHash: null,
               userOpHash: mockUserOpHash,
               status: TransactionStatus.FAILURE,
+              tokenAmount: '100.10',
+              tokenAddress: mockTokenAddress,
+              chainId: mockChainId,
             },
           ]);
       });
@@ -2139,7 +2315,7 @@ describe('handleNewG1Order function', async function () {
           {
             quoteId: mockOrderID,
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -2174,9 +2350,10 @@ describe('handleNewG1Order function', async function () {
 
         await collectionOrdersMock.insertMany([
           {
-            orderType: 'g1',
+            orderType: 'usd',
+            quoteId: mockOrderID,
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -2192,25 +2369,31 @@ describe('handleNewG1Order function', async function () {
             eventId: txId,
             transactionHash: null,
             status: TransactionStatus.PENDING_HASH,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
           },
         ]);
       });
 
       it('Should return true if transaction hash is pending_hash without userOpHash', async function () {
-        const result = await handleNewG1Order({
+        const result = await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(result).to.be.true;
       });
-
       it('Should not send tokens if transaction hash is pending_hash without userOpHash', async function () {
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(
@@ -2219,20 +2402,22 @@ describe('handleNewG1Order function', async function () {
       });
 
       it('Should update reward database with a success status if transaction hash is pending_hash without userOpHash', async function () {
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
+              orderType: 'usd',
               quoteId: mockOrderID,
-              orderType: 'g1',
               tokenAmountG1: '500.55',
-              usdFromUsdInvestment: '1',
+              usdFromUsdInvestment: '1001.00',
               usdFromG1Investment: '1',
               usdFromMvu: '1',
               usdFromTime: '1',
@@ -2249,6 +2434,9 @@ describe('handleNewG1Order function', async function () {
               transactionHash: null,
               userOpHash: null,
               status: TransactionStatus.SUCCESS,
+              tokenAmount: '100.10',
+              tokenAddress: mockTokenAddress,
+              chainId: mockChainId,
             },
           ]);
       });
@@ -2267,7 +2455,7 @@ describe('handleNewG1Order function', async function () {
           {
             quoteId: mockOrderID,
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -2302,9 +2490,10 @@ describe('handleNewG1Order function', async function () {
 
         await collectionOrdersMock.insertMany([
           {
-            orderType: 'g1',
+            orderType: 'usd',
+            quoteId: mockOrderID,
             tokenAmountG1: '500.55',
-            usdFromUsdInvestment: '1',
+            usdFromUsdInvestment: '1001.00',
             usdFromG1Investment: '1',
             usdFromMvu: '1',
             usdFromTime: '1',
@@ -2321,10 +2510,12 @@ describe('handleNewG1Order function', async function () {
             transactionHash: null,
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
+            tokenAmount: '100.10',
+            tokenAddress: mockTokenAddress,
+            chainId: mockChainId,
             dateAdded: new Date(Date.now() - 12 * 60 * 1000),
           },
         ]);
-
         axiosStub.withArgs(PATCHWALLET_TX_STATUS_URL).resolves({
           data: {
             txHash: '',
@@ -2332,22 +2523,24 @@ describe('handleNewG1Order function', async function () {
           },
         });
       });
-
       it('Should return true after 10 min of trying to get status', async function () {
-        const result = await handleNewG1Order({
+        const result = await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(result).to.be.true;
       });
-
       it('Should not send tokens after 10 min of trying to get status', async function () {
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(
@@ -2355,20 +2548,22 @@ describe('handleNewG1Order function', async function () {
         ).to.be.undefined;
       });
       it('Should update reward database with a failure status after 10 min of trying to get status', async function () {
-        await handleNewG1Order({
+        await handleNewUSDOrder({
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: txId,
+          tokenAddress: mockTokenAddress,
+          chainId: mockChainId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
+              orderType: 'usd',
               quoteId: mockOrderID,
-              orderType: 'g1',
               tokenAmountG1: '500.55',
-              usdFromUsdInvestment: '1',
+              usdFromUsdInvestment: '1001.00',
               usdFromG1Investment: '1',
               usdFromMvu: '1',
               usdFromTime: '1',
@@ -2385,6 +2580,9 @@ describe('handleNewG1Order function', async function () {
               transactionHash: null,
               userOpHash: mockUserOpHash,
               status: TransactionStatus.FAILURE,
+              tokenAmount: '100.10',
+              tokenAddress: mockTokenAddress,
+              chainId: mockChainId,
             },
           ]);
       });

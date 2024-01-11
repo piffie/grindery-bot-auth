@@ -45,35 +45,6 @@ export type OrderUSDParams = {
   quote?: WithId<MongoGxQuote>;
 };
 
-export type MongoOrder = {
-  tokenAmountG1: string;
-  usdFromUsdInvestment: string;
-  usdFromG1Investment: string;
-  usdFromMvu: string;
-  usdFromTime: string;
-  equivalentUsdInvested: string;
-  gxBeforeMvu: string;
-  gxMvuEffect: string;
-  gxTimeEffect: string;
-  GxUsdExchangeRate: string;
-  standardGxUsdExchangeRate: string;
-  discountReceived: string;
-  gxReceived: string;
-
-  eventId: string;
-  chainId: ChainId;
-  tokenAddress: TokenAddress;
-  senderTgId: TelegramUserId;
-  statusG1: TransactionStatus;
-  statusUSD: TransactionStatus;
-  dateG1: Date;
-  dateUSD: Date;
-  transactionHashG1: string;
-  userOpHashG1: string;
-  transactionHashUSD: string;
-  userOpHashUSD: string;
-};
-
 export type MongoOrderG1 = MongoGxQuote & {
   eventId: string;
   status: TransactionStatus;
