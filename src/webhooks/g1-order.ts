@@ -20,12 +20,10 @@ import {
 import { PRODUCTION_ENV, SOURCE_WALLET_ADDRESS } from '../../secrets';
 import { Db, WithId } from 'mongodb';
 import { MongoUser, TransactionStatus } from 'grindery-nexus-common-utils';
-import { MongoGxQuote, MongoOrderG1, OrderG1Params } from '../types/gx.types';
+import { MongoGxQuote, MongoOrder, OrderParams } from '../types/gx.types';
 import { mockTransactionHash, mockUserOpHash } from '../test/utils';
 
-export async function handleNewG1Order(
-  params: OrderG1Params,
-): Promise<boolean> {
+export async function handleNewG1Order(params: OrderParams): Promise<boolean> {
   // Establish a connection to the database
   const db = await Database.getInstance();
 
@@ -111,13 +109,13 @@ export async function handleNewG1Order(
  */
 export class OrderG1Telegram {
   /** The parameters required for the transaction. */
-  params: OrderG1Params;
+  params: OrderParams;
 
   /** Indicates if the transfer is present in the database. */
   isInDatabase: boolean = false;
 
   /** Transaction details of the transfer. */
-  tx: WithId<MongoOrderG1> | null;
+  tx: WithId<MongoOrder> | null;
 
   /** Current status of the transfer. */
   status: TransactionStatus;
@@ -135,7 +133,7 @@ export class OrderG1Telegram {
    * Constructor for OrderG1Telegram class.
    * @param params - The parameters required for the transfer.
    */
-  constructor(params: OrderG1Params) {
+  constructor(params: OrderParams) {
     // Assigns the incoming 'params' to the class property 'params'
     this.params = params;
 
@@ -147,11 +145,11 @@ export class OrderG1Telegram {
   }
 
   /**
-   * Asynchronously builds a TransactionInit instance based on provided OrderG1Params.
-   * @param {OrderG1Params} params - Parameters for the transaction.
+   * Asynchronously builds a TransactionInit instance based on provided OrderParams.
+   * @param {OrderParams} params - Parameters for the transaction.
    * @returns {Promise<OrderInit>} - Promise resolving to a TransactionInit instance.
    */
-  static async build(params: OrderG1Params): Promise<OrderInit> {
+  static async build(params: OrderParams): Promise<OrderInit> {
     // Create a new SignUpRewardTelegram instance with provided params
     const order = new OrderG1Telegram(params);
 
@@ -182,13 +180,13 @@ export class OrderG1Telegram {
 
   /**
    * Retrieves the transfer information from the database.
-   * @returns {Promise<WithId<MongoOrderG1>>} - The transfer information or null if not found.
+   * @returns {Promise<WithId<MongoOrder>>} - The transfer information or null if not found.
    */
-  async getOrderFromDatabase(): Promise<WithId<MongoOrderG1> | null> {
+  async getOrderFromDatabase(): Promise<WithId<MongoOrder> | null> {
     if (this.db)
       return (await this.db.collection(GX_ORDER_COLLECTION).findOne({
         eventId: this.params.eventId,
-      })) as WithId<MongoOrderG1> | null;
+      })) as WithId<MongoOrder> | null;
     return null;
   }
 
@@ -198,7 +196,7 @@ export class OrderG1Telegram {
         userTelegramID: this.params.userTelegramID,
         eventId: { $ne: this.params.eventId },
         orderType: Ordertype.G1,
-      })) as WithId<MongoOrderG1> | null;
+      })) as WithId<MongoOrder> | null;
 
       if (order && order.status === TransactionStatus.SUCCESS) return true;
     }

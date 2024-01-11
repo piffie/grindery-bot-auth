@@ -20,13 +20,10 @@ import {
 import { PRODUCTION_ENV, SOURCE_WALLET_ADDRESS } from '../../secrets';
 import { Db, WithId } from 'mongodb';
 import { MongoUser, TransactionStatus } from 'grindery-nexus-common-utils';
-import { MongoGxQuote, MongoOrderG1, OrderUSDParams } from '../types/gx.types';
-import { getTokenPrice } from '../utils/ankr';
+import { MongoGxQuote, MongoOrder, OrderParams } from '../types/gx.types';
 import { mockTransactionHash, mockUserOpHash } from '../test/utils';
 
-export async function handleNewUSDOrder(
-  params: OrderUSDParams,
-): Promise<boolean> {
+export async function handleNewUSDOrder(params: OrderParams): Promise<boolean> {
   // Establish a connection to the database
   const db = await Database.getInstance();
 
@@ -107,13 +104,13 @@ export async function handleNewUSDOrder(
  */
 export class OrderUSDTelegram {
   /** The parameters required for the transaction. */
-  params: OrderUSDParams;
+  params: OrderParams;
 
   /** Indicates if the transfer is present in the database. */
   isInDatabase: boolean = false;
 
   /** Transaction details of the transfer. */
-  tx: WithId<MongoOrderG1> | null;
+  tx: WithId<MongoOrder> | null;
 
   /** Current status of the transfer. */
   status: TransactionStatus;
@@ -124,8 +121,6 @@ export class OrderUSDTelegram {
   /** User operation hash. */
   userOpHash?: string;
 
-  tokenAmount: string;
-
   /** Database reference. */
   db: Db | null;
 
@@ -133,7 +128,7 @@ export class OrderUSDTelegram {
    * Constructor for OrderUSDTelegram class.
    * @param params - The parameters required for the transfer.
    */
-  constructor(params: OrderUSDParams) {
+  constructor(params: OrderParams) {
     // Assigns the incoming 'params' to the class property 'params'
     this.params = params;
 
@@ -145,24 +140,13 @@ export class OrderUSDTelegram {
   }
 
   /**
-   * Asynchronously builds a TransactionInit instance based on provided OrderUSDParams.
-   * @param {OrderUSDParams} params - Parameters for the transaction.
+   * Asynchronously builds a TransactionInit instance based on provided OrderParams.
+   * @param {OrderParams} params - Parameters for the transaction.
    * @returns {Promise<OrderInit>} - Promise resolving to a TransactionInit instance.
    */
-  static async build(params: OrderUSDParams): Promise<OrderInit> {
+  static async build(params: OrderParams): Promise<OrderInit> {
     // Create a new SignUpRewardTelegram instance with provided params
     const order = new OrderUSDTelegram(params);
-
-    // Calculate token price based on chainId and token address
-    const token_price = await getTokenPrice(
-      order.params.chainId,
-      order.params.tokenAddress,
-    );
-
-    order.tokenAmount = (
-      parseFloat(order.params.quote?.usdFromUsdInvestment || '0') /
-      parseFloat(token_price.data.result.usdPrice)
-    ).toFixed(2);
 
     // Obtain the database instance and assign it to the order object
     order.db = await Database.getInstance();
@@ -191,13 +175,13 @@ export class OrderUSDTelegram {
 
   /**
    * Retrieves the transfer information from the database.
-   * @returns {Promise<WithId<MongoOrderG1>>} - The transfer information or null if not found.
+   * @returns {Promise<WithId<MongoOrder>>} - The transfer information or null if not found.
    */
-  async getOrderFromDatabase(): Promise<WithId<MongoOrderG1> | null> {
+  async getOrderFromDatabase(): Promise<WithId<MongoOrder> | null> {
     if (this.db)
       return (await this.db.collection(GX_ORDER_COLLECTION).findOne({
         eventId: this.params.eventId,
-      })) as WithId<MongoOrderG1> | null;
+      })) as WithId<MongoOrder> | null;
     return null;
   }
 
@@ -207,7 +191,7 @@ export class OrderUSDTelegram {
         userTelegramID: this.params.userTelegramID,
         eventId: { $ne: this.params.eventId },
         orderType: Ordertype.USD,
-      })) as WithId<MongoOrderG1> | null;
+      })) as WithId<MongoOrder> | null;
 
       if (order && order.status === TransactionStatus.SUCCESS) return true;
     }
@@ -244,9 +228,9 @@ export class OrderUSDTelegram {
           transactionHash: this.txHash,
           userOpHash: this.userOpHash,
           userTelegramID: this.params.userTelegramID,
-          chainId: this.params.chainId,
-          tokenAddress: this.params.tokenAddress,
-          tokenAmount: this.tokenAmount,
+          chainId: this.params.quote?.chainId,
+          tokenAddress: this.params.quote?.tokenAddress,
+          tokenAmount: this.params.quote?.tokenAmount,
         },
       },
       { upsert: true },
@@ -269,11 +253,11 @@ export class OrderUSDTelegram {
     return await sendTokens(
       this.params.userTelegramID || '',
       SOURCE_WALLET_ADDRESS,
-      this.tokenAmount,
+      this.params.quote?.tokenAmount || '',
       await getPatchWalletAccessToken(),
       0,
-      this.params.tokenAddress,
-      this.params.chainId,
+      this.params.quote?.tokenAddress,
+      this.params.quote?.chainId,
     );
   }
 }

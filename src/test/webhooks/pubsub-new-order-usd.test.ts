@@ -8,7 +8,7 @@ import {
   mockTransactionHash,
   mockUserHandle,
   mockUserOpHash,
-  mockChainName,
+  mockChainName1,
   getCollectionUsersMock,
   getCollectionGXQuoteMock,
   mockOrderID,
@@ -16,15 +16,14 @@ import {
   getCollectionGXOrderMock,
   mockEventId1,
   mockEventId2,
-  mockTokenAddress,
-  mockChainId,
+  mockTokenAddress1,
+  mockChainId1,
   mockEventId,
 } from '../utils';
 import Sinon from 'sinon';
 import axios from 'axios';
 import chaiExclude from 'chai-exclude';
 import {
-  ANKR_MULTICHAIN_API_URL,
   PATCHWALLET_AUTH_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
@@ -76,25 +75,6 @@ describe('handleNewUSDOrder function', async function () {
         return Promise.resolve({
           data: {
             access_token: mockAccessToken,
-          },
-        });
-      }
-
-      if (url === ANKR_MULTICHAIN_API_URL) {
-        return Promise.resolve({
-          data: {
-            jsonrpc: '2.0',
-            id: 1,
-            result: {
-              usdPrice: '10',
-              blockchain: 'polygon',
-              contractAddress: '0x2c89bbc92bd86f8075d1decc58c7f4e0107f286b',
-              syncStatus: {
-                timestamp: 1704124545,
-                lag: '-6s',
-                status: 'synced',
-              },
-            },
           },
         });
       }
@@ -155,6 +135,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.00',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
         {
           quoteId: mockOrderID1,
@@ -172,6 +155,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
       ]);
 
@@ -229,8 +215,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         }),
       ).to.be.true;
     });
@@ -240,8 +224,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       const orders = await collectionOrdersMock.find({}).toArray();
@@ -316,8 +298,8 @@ describe('handleNewUSDOrder function', async function () {
               userOpHash: null,
               status: TransactionStatus.SUCCESS,
               tokenAmount: '100.00',
-              tokenAddress: mockTokenAddress,
-              chainId: mockChainId,
+              tokenAddress: mockTokenAddress1,
+              chainId: mockChainId1,
             },
           ]),
         );
@@ -328,8 +310,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(
@@ -337,8 +317,8 @@ describe('handleNewUSDOrder function', async function () {
           .args[1],
       ).to.deep.equal({
         userId: `grindery:${mockUserTelegramID}`,
-        chain: mockChainName,
-        to: [mockTokenAddress],
+        chain: mockChainName1,
+        to: [mockTokenAddress1],
         value: ['0x00'],
         data: [
           '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
@@ -376,6 +356,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
         {
           quoteId: mockOrderID1,
@@ -393,6 +376,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
       ]);
     });
@@ -402,8 +388,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       const orders = await collectionOrdersMock.find({}).toArray();
@@ -434,8 +418,8 @@ describe('handleNewUSDOrder function', async function () {
               userOpHash: null,
               status: TransactionStatus.SUCCESS,
               tokenAmount: '100.10',
-              tokenAddress: mockTokenAddress,
-              chainId: mockChainId,
+              tokenAddress: mockTokenAddress1,
+              chainId: mockChainId1,
             },
           ]),
         );
@@ -447,8 +431,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(
@@ -456,8 +438,8 @@ describe('handleNewUSDOrder function', async function () {
           .args[1],
       ).to.deep.equal({
         userId: `grindery:${mockUserTelegramID}`,
-        chain: mockChainName,
-        to: [mockTokenAddress],
+        chain: mockChainName1,
+        to: [mockTokenAddress1],
         value: ['0x00'],
         data: [
           '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
@@ -494,6 +476,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
         {
           quoteId: mockOrderID1,
@@ -511,6 +496,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
       ]);
 
@@ -536,8 +524,8 @@ describe('handleNewUSDOrder function', async function () {
         userOpHash: null,
         status: TransactionStatus.SUCCESS,
         tokenAmount: '100.10',
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
+        tokenAddress: mockTokenAddress1,
+        chainId: mockChainId1,
       });
     });
 
@@ -547,8 +535,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         }),
       ).to.be.true;
     });
@@ -558,8 +544,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(
@@ -572,8 +556,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
@@ -602,8 +584,8 @@ describe('handleNewUSDOrder function', async function () {
               userOpHash: null,
               status: TransactionStatus.SUCCESS,
               tokenAmount: '100.10',
-              tokenAddress: mockTokenAddress,
-              chainId: mockChainId,
+              tokenAddress: mockTokenAddress1,
+              chainId: mockChainId1,
             },
           ]),
         );
@@ -636,6 +618,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
         {
           quoteId: mockOrderID1,
@@ -653,6 +638,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
       ]);
 
@@ -678,8 +666,8 @@ describe('handleNewUSDOrder function', async function () {
         userOpHash: null,
         status: TransactionStatus.FAILURE,
         tokenAmount: '100.10',
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
+        tokenAddress: mockTokenAddress1,
+        chainId: mockChainId1,
       });
     });
 
@@ -689,8 +677,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         }),
       ).to.be.true;
     });
@@ -700,8 +686,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(
@@ -714,8 +698,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
@@ -744,8 +726,8 @@ describe('handleNewUSDOrder function', async function () {
               userOpHash: null,
               status: TransactionStatus.FAILURE,
               tokenAmount: '100.10',
-              tokenAddress: mockTokenAddress,
-              chainId: mockChainId,
+              tokenAddress: mockTokenAddress1,
+              chainId: mockChainId1,
             },
           ]),
         );
@@ -778,6 +760,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
         {
           quoteId: mockOrderID1,
@@ -795,6 +780,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
       ]);
 
@@ -820,8 +808,8 @@ describe('handleNewUSDOrder function', async function () {
         userOpHash: null,
         status: TransactionStatus.FAILURE_503,
         tokenAmount: '100.10',
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
+        tokenAddress: mockTokenAddress1,
+        chainId: mockChainId1,
       });
     });
 
@@ -831,8 +819,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         }),
       ).to.be.true;
     });
@@ -842,8 +828,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(
@@ -856,8 +840,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
@@ -886,8 +868,8 @@ describe('handleNewUSDOrder function', async function () {
               userOpHash: null,
               status: TransactionStatus.FAILURE_503,
               tokenAmount: '100.10',
-              tokenAddress: mockTokenAddress,
-              chainId: mockChainId,
+              tokenAddress: mockTokenAddress1,
+              chainId: mockChainId1,
             },
           ]),
         );
@@ -920,6 +902,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
         {
           quoteId: mockOrderID1,
@@ -937,6 +922,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
       ]);
 
@@ -962,8 +950,8 @@ describe('handleNewUSDOrder function', async function () {
         userOpHash: null,
         status: TransactionStatus.SUCCESS,
         tokenAmount: '100.10',
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
+        tokenAddress: mockTokenAddress1,
+        chainId: mockChainId1,
       });
     });
 
@@ -973,8 +961,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         }),
       ).to.be.true;
     });
@@ -984,8 +970,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(
@@ -998,8 +982,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
@@ -1028,8 +1010,8 @@ describe('handleNewUSDOrder function', async function () {
               userOpHash: null,
               status: TransactionStatus.SUCCESS,
               tokenAmount: '100.10',
-              tokenAddress: mockTokenAddress,
-              chainId: mockChainId,
+              tokenAddress: mockTokenAddress1,
+              chainId: mockChainId1,
             },
           ]),
         );
@@ -1062,6 +1044,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
         {
           quoteId: mockOrderID1,
@@ -1079,6 +1064,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
       ]);
 
@@ -1094,8 +1082,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(result).to.be.false;
@@ -1106,8 +1092,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
@@ -1136,8 +1120,8 @@ describe('handleNewUSDOrder function', async function () {
               userOpHash: null,
               status: TransactionStatus.PENDING,
               tokenAmount: '100.10',
-              tokenAddress: mockTokenAddress,
-              chainId: mockChainId,
+              tokenAddress: mockTokenAddress1,
+              chainId: mockChainId1,
             },
           ]),
         );
@@ -1163,6 +1147,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
         {
           quoteId: mockOrderID1,
@@ -1180,6 +1167,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
       ]);
     });
@@ -1189,8 +1179,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(result).to.be.true;
@@ -1201,8 +1189,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray()).to.deep.equal(
@@ -1215,8 +1201,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(
@@ -1241,8 +1225,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(result).to.be.true;
@@ -1253,8 +1235,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray()).to.deep.equal(
@@ -1267,8 +1247,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(
@@ -1304,6 +1282,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
         {
           quoteId: mockOrderID1,
@@ -1321,6 +1302,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
       ]);
     });
@@ -1330,8 +1314,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(result).to.be.true;
@@ -1342,8 +1324,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray()).to.deep.equal(
@@ -1356,8 +1336,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(
@@ -1392,6 +1370,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
         {
           quoteId: mockOrderID1,
@@ -1409,6 +1390,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
       ]);
 
@@ -1424,8 +1408,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(result).to.be.true;
@@ -1436,8 +1418,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
@@ -1466,8 +1446,8 @@ describe('handleNewUSDOrder function', async function () {
               userOpHash: null,
               status: TransactionStatus.FAILURE,
               tokenAmount: '100.10',
-              tokenAddress: mockTokenAddress,
-              chainId: mockChainId,
+              tokenAddress: mockTokenAddress1,
+              chainId: mockChainId1,
             },
           ]),
         );
@@ -1500,6 +1480,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
         {
           quoteId: mockOrderID1,
@@ -1517,6 +1500,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
       ]);
 
@@ -1540,8 +1526,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(result).to.be.true;
@@ -1552,8 +1536,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
@@ -1582,8 +1564,8 @@ describe('handleNewUSDOrder function', async function () {
               userOpHash: null,
               status: TransactionStatus.FAILURE_503,
               tokenAmount: '100.10',
-              tokenAddress: mockTokenAddress,
-              chainId: mockChainId,
+              tokenAddress: mockTokenAddress1,
+              chainId: mockChainId1,
             },
           ]),
         );
@@ -1616,6 +1598,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
         {
           quoteId: mockOrderID1,
@@ -1633,6 +1618,9 @@ describe('handleNewUSDOrder function', async function () {
           discountReceived: '1',
           gxReceived: '1',
           userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
         },
       ]);
 
@@ -1656,8 +1644,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(result).to.be.false;
@@ -1668,8 +1654,6 @@ describe('handleNewUSDOrder function', async function () {
         userTelegramID: mockUserTelegramID,
         quoteId: mockOrderID,
         eventId: mockEventId,
-        tokenAddress: mockTokenAddress,
-        chainId: mockChainId,
       });
 
       expect(await collectionOrdersMock.find({}).toArray())
@@ -1698,8 +1682,8 @@ describe('handleNewUSDOrder function', async function () {
               userOpHash: null,
               status: TransactionStatus.PENDING,
               tokenAmount: '100.10',
-              tokenAddress: mockTokenAddress,
-              chainId: mockChainId,
+              tokenAddress: mockTokenAddress1,
+              chainId: mockChainId1,
             },
           ]),
         );
@@ -1732,6 +1716,9 @@ describe('handleNewUSDOrder function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '100.10',
+            chainId: mockChainId1,
+            tokenAddress: mockTokenAddress1,
           },
           {
             quoteId: mockOrderID1,
@@ -1749,6 +1736,9 @@ describe('handleNewUSDOrder function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '100.10',
+            chainId: mockChainId1,
+            tokenAddress: mockTokenAddress1,
           },
         ]);
         axiosStub.withArgs(PATCHWALLET_TX_URL).resolves({
@@ -1764,8 +1754,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(result).to.be.false;
@@ -1776,8 +1764,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
@@ -1806,8 +1792,8 @@ describe('handleNewUSDOrder function', async function () {
                 userOpHash: mockUserOpHash,
                 status: TransactionStatus.PENDING_HASH,
                 tokenAmount: '100.10',
-                tokenAddress: mockTokenAddress,
-                chainId: mockChainId,
+                tokenAddress: mockTokenAddress1,
+                chainId: mockChainId1,
               },
             ]),
           );
@@ -1839,6 +1825,9 @@ describe('handleNewUSDOrder function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '100.10',
+            chainId: mockChainId1,
+            tokenAddress: mockTokenAddress1,
           },
           {
             quoteId: mockOrderID1,
@@ -1856,6 +1845,9 @@ describe('handleNewUSDOrder function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '100.10',
+            chainId: mockChainId1,
+            tokenAddress: mockTokenAddress1,
           },
         ]);
 
@@ -1882,8 +1874,8 @@ describe('handleNewUSDOrder function', async function () {
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
             tokenAmount: '100.10',
-            tokenAddress: mockTokenAddress,
-            chainId: mockChainId,
+            tokenAddress: mockTokenAddress1,
+            chainId: mockChainId1,
           },
         ]);
       });
@@ -1893,8 +1885,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(result).to.be.true;
@@ -1905,8 +1895,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(
@@ -1919,8 +1907,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
@@ -1949,8 +1935,8 @@ describe('handleNewUSDOrder function', async function () {
                 userOpHash: mockUserOpHash,
                 status: TransactionStatus.SUCCESS,
                 tokenAmount: '100.10',
-                tokenAddress: mockTokenAddress,
-                chainId: mockChainId,
+                tokenAddress: mockTokenAddress1,
+                chainId: mockChainId1,
               },
             ]),
           );
@@ -1983,6 +1969,9 @@ describe('handleNewUSDOrder function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '100.10',
+            chainId: mockChainId1,
+            tokenAddress: mockTokenAddress1,
           },
           {
             quoteId: mockOrderID1,
@@ -2000,6 +1989,9 @@ describe('handleNewUSDOrder function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '100.10',
+            chainId: mockChainId1,
+            tokenAddress: mockTokenAddress1,
           },
         ]);
 
@@ -2026,8 +2018,8 @@ describe('handleNewUSDOrder function', async function () {
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
             tokenAmount: '100.10',
-            tokenAddress: mockTokenAddress,
-            chainId: mockChainId,
+            tokenAddress: mockTokenAddress1,
+            chainId: mockChainId1,
           },
         ]);
         axiosStub.withArgs(PATCHWALLET_TX_STATUS_URL).resolves({
@@ -2043,8 +2035,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(result).to.be.false;
@@ -2055,8 +2045,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(
@@ -2069,8 +2057,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
@@ -2099,8 +2085,8 @@ describe('handleNewUSDOrder function', async function () {
                 userOpHash: mockUserOpHash,
                 status: TransactionStatus.PENDING_HASH,
                 tokenAmount: '100.10',
-                tokenAddress: mockTokenAddress,
-                chainId: mockChainId,
+                tokenAddress: mockTokenAddress1,
+                chainId: mockChainId1,
               },
             ]),
           );
@@ -2132,6 +2118,9 @@ describe('handleNewUSDOrder function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '100.10',
+            chainId: mockChainId1,
+            tokenAddress: mockTokenAddress1,
           },
           {
             quoteId: mockOrderID1,
@@ -2149,8 +2138,12 @@ describe('handleNewUSDOrder function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '100.10',
+            chainId: mockChainId1,
+            tokenAddress: mockTokenAddress1,
           },
         ]);
+
         await collectionOrdersMock.insertMany([
           {
             orderType: 'usd',
@@ -2174,8 +2167,8 @@ describe('handleNewUSDOrder function', async function () {
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
             tokenAmount: '100.10',
-            tokenAddress: mockTokenAddress,
-            chainId: mockChainId,
+            tokenAddress: mockTokenAddress1,
+            chainId: mockChainId1,
           },
         ]);
         axiosStub
@@ -2188,8 +2181,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(result).to.be.false;
@@ -2200,8 +2191,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(
@@ -2214,8 +2203,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
@@ -2244,8 +2231,8 @@ describe('handleNewUSDOrder function', async function () {
                 userOpHash: mockUserOpHash,
                 status: TransactionStatus.PENDING_HASH,
                 tokenAmount: '100.10',
-                tokenAddress: mockTokenAddress,
-                chainId: mockChainId,
+                tokenAddress: mockTokenAddress1,
+                chainId: mockChainId1,
               },
             ]),
           );
@@ -2277,6 +2264,9 @@ describe('handleNewUSDOrder function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '100.10',
+            chainId: mockChainId1,
+            tokenAddress: mockTokenAddress1,
           },
           {
             quoteId: mockOrderID1,
@@ -2294,6 +2284,9 @@ describe('handleNewUSDOrder function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '100.10',
+            chainId: mockChainId1,
+            tokenAddress: mockTokenAddress1,
           },
         ]);
         await collectionOrdersMock.insertMany([
@@ -2319,8 +2312,8 @@ describe('handleNewUSDOrder function', async function () {
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
             tokenAmount: '100.10',
-            tokenAddress: mockTokenAddress,
-            chainId: mockChainId,
+            tokenAddress: mockTokenAddress1,
+            chainId: mockChainId1,
           },
         ]);
         axiosStub.withArgs(PATCHWALLET_TX_STATUS_URL).rejects({
@@ -2335,8 +2328,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(result).to.be.true;
@@ -2347,8 +2338,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(
@@ -2361,8 +2350,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
@@ -2391,8 +2378,8 @@ describe('handleNewUSDOrder function', async function () {
                 userOpHash: mockUserOpHash,
                 status: TransactionStatus.FAILURE,
                 tokenAmount: '100.10',
-                tokenAddress: mockTokenAddress,
-                chainId: mockChainId,
+                tokenAddress: mockTokenAddress1,
+                chainId: mockChainId1,
               },
             ]),
           );
@@ -2425,6 +2412,9 @@ describe('handleNewUSDOrder function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '100.10',
+            chainId: mockChainId1,
+            tokenAddress: mockTokenAddress1,
           },
           {
             quoteId: mockOrderID1,
@@ -2442,6 +2432,9 @@ describe('handleNewUSDOrder function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '100.10',
+            chainId: mockChainId1,
+            tokenAddress: mockTokenAddress1,
           },
         ]);
 
@@ -2467,8 +2460,8 @@ describe('handleNewUSDOrder function', async function () {
             transactionHash: null,
             status: TransactionStatus.PENDING_HASH,
             tokenAmount: '100.10',
-            tokenAddress: mockTokenAddress,
-            chainId: mockChainId,
+            tokenAddress: mockTokenAddress1,
+            chainId: mockChainId1,
           },
         ]);
       });
@@ -2478,8 +2471,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(result).to.be.true;
@@ -2489,8 +2480,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(
@@ -2503,8 +2492,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
@@ -2533,8 +2520,8 @@ describe('handleNewUSDOrder function', async function () {
                 userOpHash: null,
                 status: TransactionStatus.SUCCESS,
                 tokenAmount: '100.10',
-                tokenAddress: mockTokenAddress,
-                chainId: mockChainId,
+                tokenAddress: mockTokenAddress1,
+                chainId: mockChainId1,
               },
             ]),
           );
@@ -2567,6 +2554,9 @@ describe('handleNewUSDOrder function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '100.10',
+            chainId: mockChainId1,
+            tokenAddress: mockTokenAddress1,
           },
           {
             quoteId: mockOrderID1,
@@ -2584,6 +2574,9 @@ describe('handleNewUSDOrder function', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '100.10',
+            chainId: mockChainId1,
+            tokenAddress: mockTokenAddress1,
           },
         ]);
 
@@ -2610,8 +2603,8 @@ describe('handleNewUSDOrder function', async function () {
             userOpHash: mockUserOpHash,
             status: TransactionStatus.PENDING_HASH,
             tokenAmount: '100.10',
-            tokenAddress: mockTokenAddress,
-            chainId: mockChainId,
+            tokenAddress: mockTokenAddress1,
+            chainId: mockChainId1,
             dateAdded: new Date(Date.now() - 12 * 60 * 1000),
           },
         ]);
@@ -2627,8 +2620,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(result).to.be.true;
@@ -2638,8 +2629,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(
@@ -2651,8 +2640,6 @@ describe('handleNewUSDOrder function', async function () {
           userTelegramID: mockUserTelegramID,
           quoteId: mockOrderID,
           eventId: mockEventId,
-          tokenAddress: mockTokenAddress,
-          chainId: mockChainId,
         });
 
         expect(await collectionOrdersMock.find({}).toArray())
@@ -2681,8 +2668,8 @@ describe('handleNewUSDOrder function', async function () {
                 userOpHash: mockUserOpHash,
                 status: TransactionStatus.FAILURE,
                 tokenAmount: '100.10',
-                tokenAddress: mockTokenAddress,
-                chainId: mockChainId,
+                tokenAddress: mockTokenAddress1,
+                chainId: mockChainId1,
               },
             ]),
           );

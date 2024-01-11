@@ -49,34 +49,22 @@ export type MongoGxQuote = GxQuote & {
   date: Date;
   /** Telegram User ID associated with the GxQuote. */
   userTelegramID: TelegramUserId;
+  /** The amount of tokens. */
+  tokenAmount: string;
+  /** The chain ID. */
+  chainId: ChainId;
+  /** The token address. */
+  tokenAddress: TokenAddress;
 };
 
 /**
  * Represents parameters for creating an OrderG1, including user and quote information.
  */
-export type OrderG1Params = {
+export type OrderParams = {
   /** Telegram User ID placing the order. */
   userTelegramID: string;
   /** Identifier for the associated GxQuote. */
   quoteId: string;
-  /** Identifier for the event. */
-  eventId: string;
-  /** Optional GxQuote with MongoDB document structure. */
-  quote?: WithId<MongoGxQuote>;
-};
-
-/**
- * Represents parameters for creating an OrderUSD, including user and quote information.
- */
-export type OrderUSDParams = {
-  /** Telegram User ID placing the order. */
-  userTelegramID: string;
-  /** Identifier for the associated GxQuote. */
-  quoteId: string;
-  /** Token address for the order. */
-  tokenAddress: string;
-  /** Chain ID for the order. */
-  chainId: string;
   /** Identifier for the event. */
   eventId: string;
   /** Optional GxQuote with MongoDB document structure. */
@@ -86,7 +74,7 @@ export type OrderUSDParams = {
 /**
  * Represents a MongoDB document for an OrderG1 with additional fields for database storage.
  */
-export type MongoOrderG1 = MongoGxQuote & {
+export type MongoOrder = MongoGxQuote & {
   /** Identifier for the event. */
   eventId: string;
   /** Transaction status of the order. */
@@ -99,24 +87,4 @@ export type MongoOrderG1 = MongoGxQuote & {
   userOpHash: string;
   /** Type of the order (e.g., buy, sell). */
   orderType: Ordertype;
-};
-
-/**
- * Represents a MongoDB document for an OrderUSD with additional fields for database storage.
- */
-export type MongoOrderUSD = MongoGxQuote & {
-  /** Identifier for the event. */
-  eventId: string;
-  /** Chain ID for the order. */
-  chainId: ChainId;
-  /** Token address for the order. */
-  tokenAddress: TokenAddress;
-  /** Transaction status of the order. */
-  status: TransactionStatus;
-  /** Date when the order was added. */
-  dateAdded: Date;
-  /** Hash of the transaction associated with the order. */
-  transactionHash: string;
-  /** Hash of the user operation associated with the order. */
-  userOpHash: string;
 };
