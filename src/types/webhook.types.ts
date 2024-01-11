@@ -241,6 +241,9 @@ export type TransactionParams = {
    * - `1` for delegate call
    */
   delegatecall?: 0 | 1;
+
+  /** The flag pointing if this trx is top up. */
+  isTopUp?: false | true;
 };
 
 /**

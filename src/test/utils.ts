@@ -8,8 +8,13 @@ import {
   VESTING_COLLECTION,
   GX_QUOTE_COLLECTION,
   GX_ORDER_COLLECTION,
+  TOP_UP_COLLECTION,
 } from '../utils/constants';
-import { GRINDERY_NEXUS_REFRESH_TOKEN } from '../../secrets';
+import {
+  GRINDERY_NEXUS_REFRESH_TOKEN,
+  GX_POLYGON_ADDRESS,
+  SOURCE_WALLET_ADDRESS,
+} from '../../secrets';
 import { v4 as uuidv4, version, validate } from 'uuid';
 
 /**
@@ -83,6 +88,15 @@ export async function getCollectionSwapsMock() {
   return dbMock?.collection(SWAPS_COLLECTION);
 }
 
+/**
+ * Retrieves the collection for mock top ups.
+ * @returns A promise resolving to the collection of mock top ups.
+ */
+export async function getCollectionTopUpMock() {
+  const dbMock = await getDbMock();
+  return dbMock?.collection(TOP_UP_COLLECTION);
+}
+
 export const mockUserTelegramID = '2114356934';
 export const mockResponsePath = '64d170d6dc5a2a45328ad6f6/c/43320456';
 export const mockUserHandle = 'myUserHandle';
@@ -141,6 +155,12 @@ export const mockUserOpHash1 =
   '0xacdf0f6fa96a50ca250f759dcd9502c3a16c65b076d6114fc5c53a832897e0a0';
 export const mockUserOpHash2 =
   '0x072d67eb495c7be8d14f188043065e3c7054a1d12bb15101710c90fea11330cd';
+
+export const mockTopUpAmount0 = 0;
+export const mockTopUpAmount100 = 100;
+export const mockSourceWalletTelegramID = 'source123';
+export const mockSourceWallet = SOURCE_WALLET_ADDRESS;
+export const mockGXAddress = GX_POLYGON_ADDRESS;
 
 /**
  * Retrieves the access token.

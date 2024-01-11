@@ -40,6 +40,11 @@ export const SWAPS_COLLECTION = 'swaps';
 export const WALLET_USERS_COLLECTION = 'wallet-users';
 
 /**
+ * Collection name for storing top up deposits.
+ */
+export const TOP_UP_COLLECTION = 'top-up';
+
+/**
  * Collection name for transfers in testing environment.
  */
 export const TRANSFERS_TESTS_COLLECTION = 'transfers-test';
@@ -58,6 +63,11 @@ export const REWARDS_TESTS_COLLECTION = 'rewards-test';
  * Collection name for wallet users in testing environment.
  */
 export const WALLET_USERS_TESTS_COLLECTION = 'wallet-users-test';
+
+/**
+ * Collection name for storing top up deposits in testing environment.
+ */
+export const TOP_UP_TESTS_COLLECTION = 'top-up-test';
 
 /**
  * BigQuery Table ID for storing users.

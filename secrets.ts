@@ -143,6 +143,12 @@ export async function getAtlasUri(): Promise<string> {
 export const G1_POLYGON_ADDRESS = process.env.G1_POLYGON_ADDRESS || '';
 
 /**
+ * The GX Polygon address used for something.
+ * Fallback: an empty string if not defined in the environment.
+ */
+export const GX_POLYGON_ADDRESS = process.env.GX_POLYGON_ADDRESS || '';
+
+/**
  * The source Telegram ID used for something.
  * Fallback: an empty string if not defined in the environment.
  */

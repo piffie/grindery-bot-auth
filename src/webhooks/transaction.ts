@@ -34,6 +34,7 @@ import {
   MongoUser,
   TransactionStatus,
 } from 'grindery-nexus-common-utils';
+import { isTopUpTx } from '../utils/topUp';
 
 /**
  * Handles a new transaction based on the provided parameters.
@@ -97,6 +98,7 @@ export async function handleNewTransaction(
   if (tx.txHash) {
     updateTxHash(transactionInstance, tx.txHash);
     updateStatus(transactionInstance, TransactionStatus.SUCCESS);
+    await isTopUpTx(transactionInstance);
     await Promise.all([
       transactionInstance.updateInDatabase(
         TransactionStatus.SUCCESS,

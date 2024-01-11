@@ -14,6 +14,11 @@ import {
   mockChainId,
   getCollectionUsersMock,
   getCollectionTransfersMock,
+  getCollectionTopUpMock,
+  mockGXAddress,
+  mockSourceWallet,
+  mockTopUpAmount100,
+  mockSourceWalletTelegramID,
 } from '../utils';
 import Sinon from 'sinon';
 import axios from 'axios';
@@ -2040,6 +2045,133 @@ describe('handleNewTransaction function', async function () {
             .find((e) => e.firstArg === FLOWXO_NEW_TRANSACTION_WEBHOOK),
         ).to.be.undefined;
       });
+    });
+  });
+
+  describe('Top Up Transaction', async function () {
+    let collectionTopUpMock;
+
+    beforeEach(async function () {
+      collectionTopUpMock = await getCollectionTopUpMock();
+
+      // source wallet
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockSourceWalletTelegramID,
+        patchwallet: mockSourceWallet,
+      });
+
+      // telegram user 1
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+        responsePath: mockResponsePath,
+      });
+    });
+
+    it('Should add new Top Up for user', async function () {
+      expect(
+        await handleNewTransaction({
+          eventId: txId,
+          senderTgId: mockUserTelegramID,
+          recipientTgId: mockSourceWalletTelegramID,
+          tokenAddress: mockGXAddress,
+          amount: '100',
+          isTopUp: true,
+        }),
+      ).to.be.true;
+
+      const topUps = await collectionTopUpMock.find({}).toArray();
+
+      expect(topUps)
+        .excluding(['_id'])
+        .to.deep.equal([
+          {
+            userTelegramID: mockUserTelegramID,
+            gxBalance: 100,
+          },
+        ]);
+    });
+
+    it('Should sum Top Up for existing register', async function () {
+      await collectionTopUpMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        gxBalance: mockTopUpAmount100,
+      });
+
+      expect(
+        await handleNewTransaction({
+          eventId: txId,
+          senderTgId: mockUserTelegramID,
+          recipientTgId: mockSourceWalletTelegramID,
+          tokenAddress: mockGXAddress,
+          amount: '150',
+          isTopUp: true,
+        }),
+      ).to.be.true;
+
+      const topUps = await collectionTopUpMock.find({}).toArray();
+
+      expect(topUps)
+        .excluding(['_id'])
+        .to.deep.equal([
+          {
+            userTelegramID: mockUserTelegramID,
+            gxBalance: 250,
+          },
+        ]);
+    });
+
+    it('Should not add Top Up if isTopUp flag is false', async function () {
+      expect(
+        await handleNewTransaction({
+          eventId: txId,
+          senderTgId: mockUserTelegramID,
+          recipientTgId: mockSourceWalletTelegramID,
+          tokenAddress: mockGXAddress,
+          amount: '100',
+          isTopUp: false,
+        }),
+      ).to.be.true;
+
+      const topUps = await collectionTopUpMock.find({}).toArray();
+
+      expect(topUps).excluding(['_id']).to.deep.equal([]);
+    });
+
+    it('Should not add Top Up if tokenAddress is not GX token', async function () {
+      expect(
+        await handleNewTransaction({
+          eventId: txId,
+          senderTgId: mockUserTelegramID,
+          recipientTgId: mockSourceWalletTelegramID,
+          tokenAddress: '0x111111',
+          amount: '100',
+          isTopUp: true,
+        }),
+      ).to.be.true;
+
+      const topUps = await collectionTopUpMock.find({}).toArray();
+
+      expect(topUps).excluding(['_id']).to.deep.equal([]);
+    });
+
+    it('Should not add Top Up if receiver is not source wallet', async function () {
+      expect(
+        await handleNewTransaction({
+          eventId: txId,
+          senderTgId: mockUserTelegramID,
+          recipientTgId: mockUserTelegramID1,
+          tokenAddress: mockGXAddress,
+          amount: '100',
+          isTopUp: true,
+        }),
+      ).to.be.true;
+
+      const topUps = await collectionTopUpMock.find({}).toArray();
+
+      expect(topUps).excluding(['_id']).to.deep.equal([]);
     });
   });
 });
