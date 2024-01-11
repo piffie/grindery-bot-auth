@@ -17,11 +17,12 @@ import {
   updateTxHash,
   handleUserOpHash,
 } from './utils';
-import { SOURCE_WALLET_ADDRESS } from '../../secrets';
+import { PRODUCTION_ENV, SOURCE_WALLET_ADDRESS } from '../../secrets';
 import { Db, WithId } from 'mongodb';
 import { MongoUser, TransactionStatus } from 'grindery-nexus-common-utils';
 import { MongoGxQuote, MongoOrderG1, OrderUSDParams } from '../types/gx.types';
 import { getTokenPrice } from '../utils/ankr';
+import { mockTransactionHash, mockUserOpHash } from '../test/utils';
 
 export async function handleNewUSDOrder(
   params: OrderUSDParams,
@@ -258,6 +259,13 @@ export class OrderUSDTelegram {
   async sendTransactionAction(): Promise<
     axios.AxiosResponse<PatchRawResult, AxiosError>
   > {
+    if (PRODUCTION_ENV) {
+      return {
+        data: { userOpHash: mockUserOpHash, txHash: mockTransactionHash },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any;
+    }
+
     return await sendTokens(
       this.params.userTelegramID || '',
       SOURCE_WALLET_ADDRESS,
