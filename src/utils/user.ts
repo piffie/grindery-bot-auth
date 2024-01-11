@@ -4,7 +4,12 @@ import { REWARDS_COLLECTION, USERS_COLLECTION } from './constants';
 import { getPatchWalletAddressFromTgId } from './patchwallet';
 import { addIdentitySegment } from './segment';
 import { NewUserParams } from '../types/webhook.types';
-import { MongoReward, MongoUser } from 'grindery-nexus-common-utils';
+import {
+  MongoReward,
+  MongoUser,
+  TelegramUserId,
+} from 'grindery-nexus-common-utils';
+import { MongoUserWithAttributes, UserAttributes } from '../types/mongo.types';
 
 /**
  * Represents a NewUserTelegram.
@@ -162,7 +167,7 @@ export class NewUserTelegram {
    * Checks if the user has sign-up rewards.
    * @returns {Promise<boolean>} - `true` if the user has sign-up rewards, `false` otherwise.
    */
-  async HasSignUpReward(): Promise<boolean> {
+  async hasSignUpReward(): Promise<boolean> {
     return (await this.getSignUpReward()).length > 0;
   }
 
@@ -212,5 +217,233 @@ export class NewUserTelegram {
    */
   async getNbrLinkRewards(): Promise<number> {
     return (await this.getLinkRewards()).length;
+  }
+}
+
+/**
+ * Represents a user on the Telegram platform with associated attributes.
+ */
+export class UserTelegram {
+  /**
+   * The unique Telegram user ID.
+   */
+  userTelegramID: TelegramUserId;
+
+  /**
+   * Indicates whether the user exists in the database.
+   */
+  isInDatabase: boolean = false;
+
+  /**
+   * The database instance associated with the user.
+   */
+  db: Db | null;
+
+  /**
+   * The user parameters retrieved from the database.
+   */
+  params?: WithId<MongoUserWithAttributes>;
+
+  /**
+   * Constructs a new UserTelegram instance.
+   * @param userTelegramID - The unique Telegram user ID.
+   */
+  constructor(userTelegramID: TelegramUserId) {
+    this.userTelegramID = userTelegramID;
+    this.isInDatabase = false;
+  }
+
+  /**
+   * Creates a UserTelegram instance with the given user Telegram ID.
+   * @param {TelegramUserId} userTelegramID - The user Telegram ID.
+   * @returns {Promise<UserTelegram>} A Promise resolving to a UserTelegram instance.
+   * @throws {Error} Throws an error if there is an issue fetching user data from the database.
+   */
+  static async build(userTelegramID: TelegramUserId): Promise<UserTelegram> {
+    // Create a new UserTelegram instance with the provided user Telegram ID.
+    const user = new UserTelegram(userTelegramID);
+
+    // Get the database instance.
+    user.db = await Database.getInstance();
+
+    // Fetch user data from the database based on the user Telegram ID.
+    const userDB = await user.getUserFromDatabase();
+
+    // If user data is found in the database, update the instance properties.
+    if (userDB) {
+      user.isInDatabase = true;
+      user.params = userDB;
+    }
+
+    // Return the UserTelegram instance.
+    return user;
+  }
+
+  /**
+   * Retrieves user data from the database.
+   * @returns {Promise<WithId<MongoUserWithAttributes>>} - The user data from the database.
+   */
+  async getUserFromDatabase(): Promise<WithId<MongoUserWithAttributes> | null> {
+    if (this.db)
+      return (await this.db.collection(USERS_COLLECTION).findOne({
+        userTelegramID: this.userTelegramID,
+      })) as WithId<MongoUserWithAttributes> | null;
+    return null;
+  }
+
+  /**
+   * Checks if the user is in the database.
+   * @returns {Promise<boolean>} - `true` if the user is in the database, `false` otherwise.
+   */
+  async isUserInDatabase(): Promise<boolean> {
+    this.isInDatabase = !!(await this.getUserFromDatabase());
+    return this.isInDatabase;
+  }
+
+  /**
+   * Retrieves the sign-up rewards for the user.
+   * @returns {Promise<Array>} - An array of sign-up rewards.
+   */
+  async getSignUpReward(): Promise<WithId<MongoReward>[] | []> {
+    if (this.db)
+      return (await this.db
+        .collection(REWARDS_COLLECTION)
+        .find({
+          userTelegramID: this.userTelegramID,
+          reason: 'user_sign_up',
+        })
+        .toArray()) as WithId<MongoReward>[] | [];
+    return [];
+  }
+
+  /**
+   * Checks if the user has sign-up rewards.
+   * @returns {Promise<boolean>} - `true` if the user has sign-up rewards, `false` otherwise.
+   */
+  async hasSignUpReward(): Promise<boolean> {
+    return (await this.getSignUpReward()).length > 0;
+  }
+
+  /**
+   * Retrieves referral rewards for the user.
+   * @returns {Promise<Array>} - An array of referral rewards.
+   */
+  async getReferralRewards(): Promise<WithId<MongoReward>[] | []> {
+    if (this.db)
+      return (await this.db
+        .collection(REWARDS_COLLECTION)
+        .find({
+          userTelegramID: this.userTelegramID,
+          reason: '2x_reward',
+        })
+        .toArray()) as WithId<MongoReward>[] | [];
+    return [];
+  }
+
+  /**
+   * Retrieves the number of referral rewards for the user.
+   * @returns {Promise<number>} - The number of referral rewards.
+   */
+  async getNbrReferralRewards(): Promise<number> {
+    return (await this.getReferralRewards()).length;
+  }
+
+  /**
+   * Retrieves link rewards for the user.
+   * @returns {Promise<Array>} - An array of link rewards.
+   */
+  async getLinkRewards(): Promise<WithId<MongoReward>[] | []> {
+    if (this.db)
+      return (await this.db
+        .collection(REWARDS_COLLECTION)
+        .find({
+          userTelegramID: this.userTelegramID,
+          reason: 'referral_link',
+        })
+        .toArray()) as WithId<MongoReward>[] | [];
+    return [];
+  }
+
+  /**
+   * Retrieves the number of link rewards for the user.
+   * @returns {Promise<number>} - The number of link rewards.
+   */
+  async getNbrLinkRewards(): Promise<number> {
+    return (await this.getLinkRewards()).length;
+  }
+
+  /**
+   * Returns the user handle.
+   * @returns {string | undefined} The user handle, or undefined if not present.
+   */
+  userHandle(): string | undefined {
+    return this.params?.userHandle;
+  }
+
+  /**
+   * Returns the user name.
+   * @returns {string | undefined} The user name, or undefined if not present.
+   */
+  userName(): string | undefined {
+    return this.params?.userName;
+  }
+
+  /**
+   * Returns the patchwallet address.
+   * @returns {string | undefined} The patchwallet address, or undefined if not present.
+   */
+  patchwalletAddress(): string | undefined {
+    return this.params?.patchwallet;
+  }
+
+  /**
+   * Returns the response path.
+   * @returns {string | undefined} The response path, or undefined if not present.
+   */
+  responsePath(): string | undefined {
+    return this.params?.responsePath;
+  }
+
+  /**
+   * Returns the user Telegram ID.
+   * @returns {string} The user Telegram ID.
+   */
+  getUserTelegramID(): string {
+    return this.userTelegramID;
+  }
+
+  /**
+   * Returns the user attributes.
+   * @returns {UserAttributes | undefined} The user attributes, or undefined if not present.
+   */
+  attributes(): UserAttributes | undefined {
+    return this.params?.attributes;
+  }
+
+  /**
+   * Returns the MVU score as a number.
+   * @returns {number | undefined} The MVU score, or undefined if not present or invalid.
+   */
+  getMvu(): number | undefined {
+    if (this.params && this.params.attributes.mvu_score) {
+      const parsedMvu = parseFloat(this.params.attributes.mvu_score);
+      if (!(isNaN(parsedMvu) && parsedMvu <= 0)) return parsedMvu;
+    }
+    return undefined;
+  }
+
+  /**
+   * Returns the virtual balance as a number.
+   * @returns {number | undefined} The virtual balance, or undefined if not present or invalid.
+   */
+  getVirtualBalance(): number | undefined {
+    if (this.params && this.params.attributes.virtual_balance) {
+      const parsedVirtualBalance = parseFloat(
+        this.params.attributes.virtual_balance,
+      );
+      if (!(isNaN(parsedVirtualBalance) && parsedVirtualBalance <= 0))
+        return parsedVirtualBalance;
+    }
+    return undefined;
   }
 }
