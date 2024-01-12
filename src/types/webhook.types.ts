@@ -9,6 +9,7 @@ import { ReferralRewardTelegram } from '../webhooks/referral-reward';
 import { LinkRewardTelegram } from '../webhooks/link-reward';
 import { IsolatedRewardTelegram } from '../webhooks/isolated-reward';
 import { MongoUser, TransactionStatus } from 'grindery-nexus-common-utils';
+import { OrderTelegram } from '../webhooks/order';
 
 /**
  * Defines the structure for SwapParams.
@@ -115,9 +116,9 @@ export type TrackSwapSegmentParams = SwapParams & {
 };
 
 /**
- * Defines the structure for RewardParams.
+ * Defines the structure for NewUserParams.
  */
-export type RewardParams = {
+export type NewUserParams = {
   /** The event ID associated with the reward. */
   eventId: string;
 
@@ -177,9 +178,9 @@ export type RewardParams = {
  * @returns Reward parameters with default values for missing parameters.
  */
 export function createRewardParams(
-  params: RewardParams,
+  params: NewUserParams,
   patchwallet: string,
-): RewardParams {
+): NewUserParams {
   return {
     ...{
       tokenAddress: G1_POLYGON_ADDRESS,
@@ -195,9 +196,9 @@ export function createRewardParams(
 }
 
 /**
- * Represents parameters for an Identity Segment, extending RewardParams.
+ * Represents parameters for an Identity Segment, extending NewUserParams.
  */
-export type IdentitySegmentParams = RewardParams & {
+export type IdentitySegmentParams = NewUserParams & {
   /**
    * The date when the segment was added.
    */
@@ -306,7 +307,8 @@ export type TelegramOperations =
   | Reward
   | TransferTelegram
   | SwapTelegram
-  | VestingTelegram;
+  | VestingTelegram
+  | OrderTelegram;
 
 /**
  * Represents the result of a wallet patch operation.
@@ -360,6 +362,21 @@ export interface RewardInit {
    * Indicates if a reward should not be issued.
    */
   shouldBeIssued: boolean;
+}
+
+/**
+ * Represents the initialization result of a SignUpRewardTelegram instance.
+ */
+export interface OrderInit {
+  /**
+   * The initialized order instance.
+   */
+  orderInstance: OrderTelegram;
+
+  /**
+   * Indicates if the order should proceed.
+   */
+  shouldProceed: boolean;
 }
 
 /**

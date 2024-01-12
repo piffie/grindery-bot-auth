@@ -18,12 +18,10 @@ describe('Vesting functions', async function () {
     contractStub = {
       methods: {
         decimals: sandbox.stub().resolves('18'),
-        transfer: sandbox.stub().returns({
-          encodeABI: sandbox
-            .stub()
-            .returns(
-              '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-            ),
+        transfer: sandbox.stub().callsFake((recipient, amount) => {
+          return {
+            encodeABI: sandbox.stub().returns(`${recipient}+${amount}`),
+          };
         }),
       },
     };

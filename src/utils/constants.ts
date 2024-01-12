@@ -231,3 +231,24 @@ export const FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK: string =
  */
 export const FLOWXO_NEW_SWAP_WEBHOOK: string =
   'https://flowxo.com/hooks/a/89ekwjdk';
+
+/**
+ * Enumeration representing order types.
+ * @readonly
+ * @enum {string}
+ */
+export const enum Ordertype {
+  /** Represents a G1 order type. */
+  G1 = 'g1',
+  /** Represents a USD order type. */
+  USD = 'usd',
+}
+
+export const enum RewardReason {
+  /** Indicates a reward for user sign-up. */
+  SIGNUP = 'user_sign_up',
+  /** Indicates a reward for referral. */
+  REFERRAL = '2x_reward',
+  /** Indicates a reward for referral through a referral link. */
+  LINK = 'referral_link',
+}

@@ -1,5 +1,5 @@
 import { SinonStub } from 'sinon';
-import { RewardParams } from './webhook.types';
+import { NewUserParams } from './webhook.types';
 
 /**
  * Represents a smart contract stub with methods of any type.
@@ -18,7 +18,7 @@ export type ContractStub = {
 /**
  * Type definition for a SinonStub representing a stub of reward function.
  * This type captures the signature of the reward stub.
- * @template [RewardParams] - The type for the parameters expected by reward function.
+ * @template [NewUserParams] - The type for the parameters expected by reward function.
  * @returns Promise<boolean> - The resolved promise value of type boolean.
  */
-export type RewardStub = SinonStub<[RewardParams], Promise<boolean>>;
+export type RewardStub = SinonStub<[NewUserParams], Promise<boolean>>;

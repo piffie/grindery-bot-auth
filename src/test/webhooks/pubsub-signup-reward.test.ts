@@ -13,19 +13,20 @@ import {
   getCollectionUsersMock,
   getCollectionRewardsMock,
   mockChainId,
+  mockEventId,
 } from '../utils';
 import { handleSignUpReward } from '../../webhooks/signup-reward';
 import Sinon from 'sinon';
 import axios from 'axios';
 
 import chaiExclude from 'chai-exclude';
-import { v4 as uuidv4 } from 'uuid';
 import {
   DEFAULT_CHAIN_NAME,
   FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK,
   PATCHWALLET_AUTH_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
+  RewardReason,
 } from '../../utils/constants';
 import {
   FLOWXO_WEBHOOK_API_KEY,
@@ -41,7 +42,6 @@ chai.use(chaiExclude);
 describe('handleSignUpReward function', async function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
-  let rewardId: string;
   let collectionUsersMock;
   let collectionRewardsMock;
   let contractStub: ContractStub;
@@ -108,8 +108,6 @@ describe('handleSignUpReward function', async function () {
     };
 
     sandbox.stub(web3, 'getContract').callsFake(getContract);
-
-    rewardId = uuidv4();
   });
 
   afterEach(function () {
@@ -119,16 +117,16 @@ describe('handleSignUpReward function', async function () {
   describe('Sign up reward already exists with same eventId and is a success', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertOne({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         status: TransactionStatus.SUCCESS,
       });
     });
 
     it('Should return true if Sign up reward already exists with same eventId and is a success', async function () {
       const result = await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -141,7 +139,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should send tokens if Sign up reward already exists with same eventId and is a success', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -156,7 +154,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should not update the dabatase if Sign up reward already exists with same eventId and is a success', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -168,9 +166,9 @@ describe('handleSignUpReward function', async function () {
         .excluding(['_id'])
         .to.deep.equal([
           {
-            eventId: rewardId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
-            reason: 'user_sign_up',
+            reason: RewardReason.SIGNUP,
             status: TransactionStatus.SUCCESS,
           },
         ]);
@@ -178,7 +176,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should not call FlowXO if Sign up reward already exists with same eventId and is a success', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -199,14 +197,14 @@ describe('handleSignUpReward function', async function () {
       await collectionRewardsMock.insertOne({
         eventId: 'anotherEventId',
         userTelegramID: mockUserTelegramID,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         status: TransactionStatus.SUCCESS,
       });
     });
 
     it('Should return true if Sign up reward already exists with another eventId', async function () {
       const result = await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -219,7 +217,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should send tokens if Sign up reward already exists with another eventId', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -234,7 +232,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should not update the dabatase if Sign up reward already exists with another eventId', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -248,7 +246,7 @@ describe('handleSignUpReward function', async function () {
           {
             eventId: 'anotherEventId',
             userTelegramID: mockUserTelegramID,
-            reason: 'user_sign_up',
+            reason: RewardReason.SIGNUP,
             status: TransactionStatus.SUCCESS,
           },
         ]);
@@ -256,7 +254,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should not call FlowXO if Sign up reward already exists with another eventId', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -276,14 +274,14 @@ describe('handleSignUpReward function', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertOne({
         userTelegramID: mockUserTelegramID,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         status: TransactionStatus.SUCCESS,
       });
     });
 
     it('Should return true if Sign up reward already exists with no eventId', async function () {
       const result = await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -296,7 +294,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should send tokens if Sign up reward already exists with no eventId', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -311,7 +309,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should not update the dabatase if Sign up reward already exists with no eventId', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -324,7 +322,7 @@ describe('handleSignUpReward function', async function () {
         .to.deep.equal([
           {
             userTelegramID: mockUserTelegramID,
-            reason: 'user_sign_up',
+            reason: RewardReason.SIGNUP,
             status: TransactionStatus.SUCCESS,
           },
         ]);
@@ -332,7 +330,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should not call FlowXO if Sign up reward already exists with no eventId', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -352,15 +350,15 @@ describe('handleSignUpReward function', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertMany([
         {
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
-          reason: '2x_reward',
+          reason: RewardReason.REFERRAL,
           status: TransactionStatus.PENDING,
         },
         {
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
           status: TransactionStatus.PENDING,
         },
       ]);
@@ -368,7 +366,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should return true if Sign up reward status pending at the beginning with same eventID', async function () {
       const result = await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -381,7 +379,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should call the sendTokens function properly if Sign up reward status pending at the beginning with same eventID', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -407,7 +405,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should update the database with a success if Sign up reward status pending at the beginning with same eventID', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -419,17 +417,17 @@ describe('handleSignUpReward function', async function () {
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            eventId: rewardId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
-            reason: '2x_reward',
+            reason: RewardReason.REFERRAL,
             status: TransactionStatus.PENDING,
           },
           {
-            eventId: rewardId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
-            reason: 'user_sign_up',
+            reason: RewardReason.SIGNUP,
             userHandle: mockUserHandle,
             userName: mockUserName,
             amount: '100',
@@ -443,7 +441,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should call FlowXO properly if Sign up reward status pending at the beginning with same eventID', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -459,7 +457,7 @@ describe('handleSignUpReward function', async function () {
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         userHandle: mockUserHandle,
         userName: mockUserName,
         amount: '100',
@@ -479,16 +477,16 @@ describe('handleSignUpReward function', async function () {
   describe('Sign up reward status failure at the beginning with same eventID', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertOne({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         status: TransactionStatus.FAILURE,
       });
     });
 
     it('Should return true if Sign up reward status is failure at beginning with same eventID', async function () {
       const result = await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -501,7 +499,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should call the sendTokens function properly if Sign up reward status is failure at beginning with same eventID', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -527,7 +525,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should update reward status if Sign up reward status is failure at beginning with same eventID', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -541,11 +539,11 @@ describe('handleSignUpReward function', async function () {
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            eventId: rewardId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
-            reason: 'user_sign_up',
+            reason: RewardReason.SIGNUP,
             userHandle: mockUserHandle,
             userName: mockUserName,
             amount: '100',
@@ -564,7 +562,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should call FlowXO properly if Sign up reward status is failure at beginning with same eventID', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -580,7 +578,7 @@ describe('handleSignUpReward function', async function () {
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         userHandle: mockUserHandle,
         userName: mockUserName,
         amount: '100',
@@ -600,7 +598,7 @@ describe('handleSignUpReward function', async function () {
   describe('Normal process with a new user', async function () {
     it('Should call the sendTokens function properly if the user is new', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -628,7 +626,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should call the sendTokens function properly with delegate call if specified', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -657,7 +655,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should insert a new element in the reward collection of the database if the user is new', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -669,11 +667,11 @@ describe('handleSignUpReward function', async function () {
 
       expect(rewards.length).to.equal(1);
       expect(rewards[0]).excluding(['_id', 'dateAdded']).to.deep.equal({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         userHandle: mockUserHandle,
         userName: mockUserName,
         amount: '100',
@@ -690,7 +688,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should call FlowXO webhook properly if the user is new', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -706,7 +704,7 @@ describe('handleSignUpReward function', async function () {
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         userHandle: mockUserHandle,
         userName: mockUserName,
         amount: '100',
@@ -725,7 +723,7 @@ describe('handleSignUpReward function', async function () {
     it('Should return true if the user is new', async function () {
       expect(
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -737,7 +735,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should not add the user in the database (in handleSignUpReward) if the user is new', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -755,7 +753,7 @@ describe('handleSignUpReward function', async function () {
 
     expect(
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -773,7 +771,7 @@ describe('handleSignUpReward function', async function () {
 
       expect(
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -789,7 +787,7 @@ describe('handleSignUpReward function', async function () {
         .rejects(new Error('Service not available'));
 
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -800,11 +798,11 @@ describe('handleSignUpReward function', async function () {
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            eventId: rewardId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
-            reason: 'user_sign_up',
+            reason: RewardReason.SIGNUP,
             userHandle: mockUserHandle,
             userName: mockUserName,
             amount: '100',
@@ -823,7 +821,7 @@ describe('handleSignUpReward function', async function () {
         .rejects(new Error('Service not available'));
 
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -851,7 +849,7 @@ describe('handleSignUpReward function', async function () {
     it('Should return false if there is no hash in PatchWallet response', async function () {
       expect(
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -863,7 +861,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should set signup reward to pending in db if there is no hash in PatchWallet response', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -875,11 +873,11 @@ describe('handleSignUpReward function', async function () {
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            eventId: rewardId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
-            reason: 'user_sign_up',
+            reason: RewardReason.SIGNUP,
             userHandle: mockUserHandle,
             userName: mockUserName,
             amount: '100',
@@ -893,7 +891,7 @@ describe('handleSignUpReward function', async function () {
 
     it('Should not call FlowXO if there is no hash in PatchWallet response', async function () {
       await handleSignUpReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -921,7 +919,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should return false if transaction hash is empty in tx PatchWallet endpoint', async function () {
         const result = await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -934,7 +932,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should update reward database with a pending_hash status and userOpHash if transaction hash is empty in tx PatchWallet endpoint', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -946,11 +944,11 @@ describe('handleSignUpReward function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: rewardId,
+              eventId: mockEventId,
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: RewardReason.SIGNUP,
               userHandle: mockUserHandle,
               userName: mockUserName,
               amount: '100',
@@ -964,7 +962,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should not call FlowXO webhook if transaction hash is empty in tx PatchWallet endpoint', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -983,11 +981,11 @@ describe('handleSignUpReward function', async function () {
     describe('Transaction hash is present in PatchWallet status endpoint', async function () {
       beforeEach(async function () {
         await collectionRewardsMock.insertOne({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
           userHandle: mockUserHandle,
           userName: mockUserName,
           amount: '100',
@@ -999,7 +997,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should return true if transaction hash is present in PatchWallet status endpoint', async function () {
         const result = await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1012,7 +1010,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should not send tokens if transaction hash is present in PatchWallet status endpoint', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1027,7 +1025,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should update the database with a success status if transaction hash is present in PatchWallet status endpoint', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1039,11 +1037,11 @@ describe('handleSignUpReward function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: rewardId,
+              eventId: mockEventId,
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: RewardReason.SIGNUP,
               userHandle: mockUserHandle,
               userName: mockUserName,
               amount: '100',
@@ -1057,7 +1055,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should call FlowXO webhook properly if transaction hash is present in PatchWallet status endpoint', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1073,7 +1071,7 @@ describe('handleSignUpReward function', async function () {
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
           userHandle: mockUserHandle,
           userName: mockUserName,
           amount: '100',
@@ -1093,11 +1091,11 @@ describe('handleSignUpReward function', async function () {
     describe('Transaction hash is not present in PatchWallet status endpoint', async function () {
       beforeEach(async function () {
         await collectionRewardsMock.insertOne({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
           userHandle: mockUserHandle,
           userName: mockUserName,
           amount: '100',
@@ -1116,7 +1114,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should return false if transaction hash is not present in PatchWallet status endpoint', async function () {
         const result = await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1129,7 +1127,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should not send tokens if transaction hash is not present in PatchWallet status endpoint', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1144,7 +1142,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should not update database if transaction hash is not present in PatchWallet status endpoint', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1156,11 +1154,11 @@ describe('handleSignUpReward function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: rewardId,
+              eventId: mockEventId,
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: RewardReason.SIGNUP,
               userHandle: mockUserHandle,
               userName: mockUserName,
               amount: '100',
@@ -1174,7 +1172,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should not call FlowXO webhook if transaction hash is not present in PatchWallet status endpoint', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1193,11 +1191,11 @@ describe('handleSignUpReward function', async function () {
     describe('Error in PatchWallet get status endpoint', async function () {
       beforeEach(async function () {
         await collectionRewardsMock.insertOne({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
           userHandle: mockUserHandle,
           userName: mockUserName,
           amount: '100',
@@ -1213,7 +1211,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should return false if Error in PatchWallet get status endpoint', async function () {
         const result = await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1226,7 +1224,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1241,7 +1239,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should not update database if Error in PatchWallet get status endpoint', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1253,11 +1251,11 @@ describe('handleSignUpReward function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: rewardId,
+              eventId: mockEventId,
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: RewardReason.SIGNUP,
               userHandle: mockUserHandle,
               userName: mockUserName,
               amount: '100',
@@ -1270,7 +1268,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should not call FlowXO webhook if Error in PatchWallet get status endpoint', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1289,11 +1287,11 @@ describe('handleSignUpReward function', async function () {
     describe('Transaction is set to success without transaction hash if pending_hash without userOpHash', async function () {
       beforeEach(async function () {
         await collectionRewardsMock.insertOne({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
           userHandle: mockUserHandle,
           userName: mockUserName,
           amount: '100',
@@ -1304,7 +1302,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should return true if transaction hash is pending_hash without userOpHash', async function () {
         const result = await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1317,7 +1315,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should not send tokens if transaction hash is pending_hash without userOpHash', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1332,7 +1330,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should update reward database with a success status if transaction hash is pending_hash without userOpHash', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1344,11 +1342,11 @@ describe('handleSignUpReward function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: rewardId,
+              eventId: mockEventId,
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: RewardReason.SIGNUP,
               userHandle: mockUserHandle,
               userName: mockUserName,
               amount: '100',
@@ -1362,7 +1360,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should not call FlowXO webhook if transaction hash is empty in tx PatchWallet endpoint', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1381,11 +1379,11 @@ describe('handleSignUpReward function', async function () {
     describe('Transaction is considered as failure after 10 min of trying to get status', async function () {
       beforeEach(async function () {
         await collectionRewardsMock.insertOne({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
           userHandle: mockUserHandle,
           userName: mockUserName,
           amount: '100',
@@ -1405,7 +1403,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should return true after 10 min of trying to get status', async function () {
         const result = await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1418,7 +1416,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should not send tokens after 10 min of trying to get status', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1433,7 +1431,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should update reward database with a failure status after 10 min of trying to get status', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1445,11 +1443,11 @@ describe('handleSignUpReward function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: rewardId,
+              eventId: mockEventId,
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: RewardReason.SIGNUP,
               userHandle: mockUserHandle,
               userName: mockUserName,
               amount: '100',
@@ -1463,7 +1461,7 @@ describe('handleSignUpReward function', async function () {
 
       it('Should not call FlowXO webhook after 10 min of trying to get status', async function () {
         await handleSignUpReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,

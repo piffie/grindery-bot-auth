@@ -14,11 +14,11 @@ import {
   getCollectionUsersMock,
   getCollectionRewardsMock,
   mockChainId,
+  mockEventId,
 } from '../utils';
 import Sinon from 'sinon';
 import axios from 'axios';
 import chaiExclude from 'chai-exclude';
-import { v4 as uuidv4 } from 'uuid';
 import {
   DEFAULT_CHAIN_NAME,
   FLOWXO_NEW_ISOLATED_REWARD_WEBHOOK,
@@ -42,7 +42,6 @@ chai.use(chaiExclude);
 describe('handleIsolatedReward function', async function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
-  let rewardId: string;
   let collectionRewardsMock;
   let contractStub: ContractStub;
   let getContract;
@@ -113,8 +112,6 @@ describe('handleIsolatedReward function', async function () {
       return contractStub;
     };
     sandbox.stub(web3, 'getContract').callsFake(getContract);
-
-    rewardId = uuidv4();
   });
 
   afterEach(function () {
@@ -124,7 +121,7 @@ describe('handleIsolatedReward function', async function () {
   describe('Missing fields', async function () {
     it('Should not do anything if userTelegramID is missing', async function () {
       const result = await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: '',
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -176,7 +173,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should not do anything if amount is missing', async function () {
       const result = await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -202,7 +199,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should not do anything if reason is missing', async function () {
       const result = await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -236,7 +233,7 @@ describe('handleIsolatedReward function', async function () {
       });
 
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -264,7 +261,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should call the sendTokens function properly if patchwallet is not in the arguments and the user doesnt exist in database yet', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -294,7 +291,7 @@ describe('handleIsolatedReward function', async function () {
   describe('Isolated reward already exists with same eventId and is a success', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertOne({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         reason: 'isolated_reason_1',
         status: TransactionStatus.SUCCESS,
@@ -303,7 +300,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should return true if Isolated reward already exists with same eventId and is a success', async function () {
       const result = await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -319,7 +316,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should not send tokens if Isolated reward already exists with same eventId and is a success', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -337,7 +334,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should not update the dabatase if Isolated reward already exists with same eventId and is a success', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -352,7 +349,7 @@ describe('handleIsolatedReward function', async function () {
         .excluding(['_id'])
         .to.deep.equal([
           {
-            eventId: rewardId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
             reason: 'isolated_reason_1',
             status: TransactionStatus.SUCCESS,
@@ -362,7 +359,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should not call FlowXO if Isolated reward already exists with same eventId and is a success', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -393,7 +390,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should return true if Isolated reward already exists with another eventId', async function () {
       const result = await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -409,7 +406,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should not send tokens if Isolated reward already exists with another eventId', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -427,7 +424,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should not update the dabatase if Isolated reward already exists with another eventId', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -452,7 +449,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should not call FlowXO if Isolated reward already exists with another eventId', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -482,7 +479,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should return true if Isolated reward already exists with no eventId', async function () {
       const result = await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -498,7 +495,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should not send tokens if Isolated reward already exists with no eventId', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -516,7 +513,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should not update the dabatase if Isolated reward already exists with no eventId', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -540,7 +537,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should not call FlowXO if Isolated reward already exists with no eventId', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -562,7 +559,7 @@ describe('handleIsolatedReward function', async function () {
   describe('Isolated reward status pending at the beginning with same eventID', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertOne({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         reason: 'isolated_reason_1',
         status: TransactionStatus.PENDING,
@@ -571,7 +568,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should return true if Isolated reward status pending at the beginning with same eventID', async function () {
       const result = await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -587,7 +584,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should call the sendTokens function properly if Isolated reward status pending at the beginning with same eventID', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -616,7 +613,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should update the database with a success if Isolated reward status pending at the beginning with same eventID', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -631,7 +628,7 @@ describe('handleIsolatedReward function', async function () {
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            eventId: rewardId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
@@ -649,7 +646,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should call FlowXO properly if Isolated reward status pending at the beginning with same eventID', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -688,7 +685,7 @@ describe('handleIsolatedReward function', async function () {
   describe('Isolated reward status failure at the beginning with same eventID', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertOne({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         reason: 'isolated_reason_1',
         status: TransactionStatus.FAILURE,
@@ -697,7 +694,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should return true if Isolated reward status is failure at beginning with same eventID', async function () {
       const result = await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -713,7 +710,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should call the sendTokens function properly if Isolated reward status is failure at beginning with same eventID', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -742,7 +739,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should update reward status if Isolated reward status is failure at beginning with same eventID', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -759,7 +756,7 @@ describe('handleIsolatedReward function', async function () {
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            eventId: rewardId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
@@ -782,7 +779,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should call FlowXO properly if Isolated reward status is failure at beginning with same eventID', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -838,7 +835,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should call the sendTokens function properly if the reason is new for this user', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -868,7 +865,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should call the sendTokens function properly if the reason is new for this user with delegate call', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -899,7 +896,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should insert a new element in the reward collection of the database if the reason is new for this user', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -926,7 +923,7 @@ describe('handleIsolatedReward function', async function () {
             status: TransactionStatus.SUCCESS,
           },
           {
-            eventId: rewardId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
@@ -944,7 +941,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should call FlowXO webhook properly if the reason is new for this user', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -979,7 +976,7 @@ describe('handleIsolatedReward function', async function () {
     it('Should return true if the reason is new for this user', async function () {
       expect(
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1000,7 +997,7 @@ describe('handleIsolatedReward function', async function () {
 
     expect(
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -1020,7 +1017,7 @@ describe('handleIsolatedReward function', async function () {
         .rejects(new Error('Service not available'));
       expect(
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1038,7 +1035,7 @@ describe('handleIsolatedReward function', async function () {
         .withArgs(PATCHWALLET_TX_URL)
         .rejects(new Error('Service not available'));
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -1052,7 +1049,7 @@ describe('handleIsolatedReward function', async function () {
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            eventId: rewardId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
@@ -1074,7 +1071,7 @@ describe('handleIsolatedReward function', async function () {
         .withArgs(PATCHWALLET_TX_URL)
         .rejects(new Error('Service not available'));
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -1104,7 +1101,7 @@ describe('handleIsolatedReward function', async function () {
     it('Should return false if there is no hash in PatchWallet response', async function () {
       expect(
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1119,7 +1116,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should set isolated reward to pending in db if there is no hash in PatchWallet response', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -1134,7 +1131,7 @@ describe('handleIsolatedReward function', async function () {
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            eventId: rewardId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
@@ -1152,7 +1149,7 @@ describe('handleIsolatedReward function', async function () {
 
     it('Should not call FlowXO if there is no hash in PatchWallet response', async function () {
       await handleIsolatedReward({
-        eventId: rewardId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -1182,7 +1179,7 @@ describe('handleIsolatedReward function', async function () {
       });
       it('Should return false if transaction hash is empty in tx PatchWallet endpoint', async function () {
         const result = await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1197,7 +1194,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should update reward database with a pending_hash status and userOpHash if transaction hash is empty in tx PatchWallet endpoint', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1211,7 +1208,7 @@ describe('handleIsolatedReward function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: rewardId,
+              eventId: mockEventId,
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
@@ -1229,7 +1226,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should not call FlowXO webhook if transaction hash is empty in tx PatchWallet endpoint', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1250,7 +1247,7 @@ describe('handleIsolatedReward function', async function () {
     describe('Transaction hash is present in PatchWallet status endpoint', async function () {
       beforeEach(async function () {
         await collectionRewardsMock.insertOne({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
@@ -1266,7 +1263,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should return true if transaction hash is present in PatchWallet status endpoint', async function () {
         const result = await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1281,7 +1278,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should not send tokens if transaction hash is present in PatchWallet status endpoint', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1298,7 +1295,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should update the database with a success status if transaction hash is present in PatchWallet status endpoint', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1312,7 +1309,7 @@ describe('handleIsolatedReward function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: rewardId,
+              eventId: mockEventId,
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
@@ -1330,7 +1327,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should call FlowXO webhook properly if transaction hash is present in PatchWallet status endpoint', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1367,7 +1364,7 @@ describe('handleIsolatedReward function', async function () {
     describe('Transaction hash is not present in PatchWallet status endpoint', async function () {
       beforeEach(async function () {
         await collectionRewardsMock.insertOne({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
@@ -1389,7 +1386,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should return false if transaction hash is not present in PatchWallet status endpoint', async function () {
         const result = await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1404,7 +1401,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should not send tokens if transaction hash is not present in PatchWallet status endpoint', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1421,7 +1418,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should not update database if transaction hash is not present in PatchWallet status endpoint', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1435,7 +1432,7 @@ describe('handleIsolatedReward function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: rewardId,
+              eventId: mockEventId,
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
@@ -1453,7 +1450,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should not call FlowXO webhook if transaction hash is not present in PatchWallet status endpoint', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1473,7 +1470,7 @@ describe('handleIsolatedReward function', async function () {
     describe('Error in PatchWallet get status endpoint', async function () {
       beforeEach(async function () {
         await collectionRewardsMock.insertOne({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
@@ -1492,7 +1489,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should return false if Error in PatchWallet get status endpoint', async function () {
         const result = await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1507,7 +1504,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1524,7 +1521,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should not update database if Error in PatchWallet get status endpoint', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1538,7 +1535,7 @@ describe('handleIsolatedReward function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: rewardId,
+              eventId: mockEventId,
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
@@ -1554,7 +1551,7 @@ describe('handleIsolatedReward function', async function () {
       });
       it('Should not call FlowXO webhook if Error in PatchWallet get status endpoint', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1575,7 +1572,7 @@ describe('handleIsolatedReward function', async function () {
     describe('Transaction is set to success without transaction hash if pending_hash without userOpHash', async function () {
       beforeEach(async function () {
         await collectionRewardsMock.insertOne({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
@@ -1590,7 +1587,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should return true if transaction hash is pending_hash without userOpHash', async function () {
         const result = await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1605,7 +1602,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should not send tokens if transaction hash is pending_hash without userOpHash', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1622,7 +1619,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should update reward database with a success status if transaction hash is pending_hash without userOpHash', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1636,7 +1633,7 @@ describe('handleIsolatedReward function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: rewardId,
+              eventId: mockEventId,
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
@@ -1654,7 +1651,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should not call FlowXO webhook if transaction hash is empty in tx PatchWallet endpoint', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1675,7 +1672,7 @@ describe('handleIsolatedReward function', async function () {
     describe('Transaction is considered as failure after 10 min of trying to get status', async function () {
       beforeEach(async function () {
         await collectionRewardsMock.insertOne({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
@@ -1697,7 +1694,7 @@ describe('handleIsolatedReward function', async function () {
       });
       it('Should return true after 10 min of trying to get status', async function () {
         const result = await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1712,7 +1709,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should not send tokens after 10 min of trying to get status', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1729,7 +1726,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should update reward database with a failure status after 10 min of trying to get status', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,
@@ -1743,7 +1740,7 @@ describe('handleIsolatedReward function', async function () {
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: rewardId,
+              eventId: mockEventId,
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
@@ -1761,7 +1758,7 @@ describe('handleIsolatedReward function', async function () {
 
       it('Should not call FlowXO webhook after 10 min of trying to get status', async function () {
         await handleIsolatedReward({
-          eventId: rewardId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           userHandle: mockUserHandle,

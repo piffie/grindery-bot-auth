@@ -7,18 +7,18 @@ import {
   mockWallet,
   mockUserTelegramID1,
   getCollectionUsersMock,
+  mockEventId,
 } from '../utils';
 import { handleNewReward } from '../../webhooks/webhook';
 import Sinon from 'sinon';
 import axios from 'axios';
 
 import chaiExclude from 'chai-exclude';
-import { v4 as uuidv4 } from 'uuid';
 import { signup_utils } from '../../webhooks/signup-reward';
 import { referral_utils } from '../../webhooks/referral-reward';
 import { link_reward_utils } from '../../webhooks/link-reward';
 import * as web3 from '../../utils/web3';
-import { RewardParams } from '../../types/webhook.types';
+import { NewUserParams } from '../../types/webhook.types';
 import {
   PATCHWALLET_RESOLVER_URL,
   SEGMENT_IDENTITY_URL,
@@ -31,15 +31,17 @@ describe('handleReferralReward function', function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
   let signUpRewardStub: Sinon.SinonStub<
-    [params: RewardParams],
+    [params: NewUserParams],
     Promise<boolean>
   >;
   let referralRewardStub: Sinon.SinonStub<
-    [params: RewardParams],
+    [params: NewUserParams],
     Promise<boolean>
   >;
-  let linkRewardStub: Sinon.SinonStub<[params: RewardParams], Promise<boolean>>;
-  let eventId: string;
+  let linkRewardStub: Sinon.SinonStub<
+    [params: NewUserParams],
+    Promise<boolean>
+  >;
   let collectionUsersMock;
   let contractStub: ContractStub;
   let getContract;
@@ -78,12 +80,10 @@ describe('handleReferralReward function', function () {
     contractStub = {
       methods: {
         decimals: sandbox.stub().resolves('18'),
-        transfer: sandbox.stub().returns({
-          encodeABI: sandbox
-            .stub()
-            .returns(
-              '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-            ),
+        transfer: sandbox.stub().callsFake((recipient, amount) => {
+          return {
+            encodeABI: sandbox.stub().returns(`${recipient}+${amount}`),
+          };
         }),
       },
     };
@@ -94,8 +94,6 @@ describe('handleReferralReward function', function () {
       return contractStub;
     };
     sandbox.stub(web3, 'getContract').callsFake(getContract);
-
-    eventId = uuidv4();
   });
 
   afterEach(function () {
@@ -107,7 +105,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: false,
       isReferralReward: true,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -122,7 +120,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: false,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -137,7 +135,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: true,
       isLinkReward: false,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -156,7 +154,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: true,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -178,7 +176,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: true,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -195,7 +193,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: true,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -213,7 +211,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: true,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -229,7 +227,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: true,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -260,7 +258,7 @@ describe('handleReferralReward function', function () {
         isSignupReward: true,
         isReferralReward: true,
         isLinkReward: true,
-        eventId: eventId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         userHandle: mockUserHandle,
@@ -277,7 +275,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: true,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -293,7 +291,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: true,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -319,7 +317,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: true,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -348,7 +346,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: true,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -365,7 +363,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: true,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -392,7 +390,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: true,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: 'newUserTgId',
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -431,7 +429,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: true,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,
@@ -452,7 +450,7 @@ describe('handleReferralReward function', function () {
       isSignupReward: true,
       isReferralReward: true,
       isLinkReward: true,
-      eventId: eventId,
+      eventId: mockEventId,
       userTelegramID: mockUserTelegramID,
       responsePath: mockResponsePath,
       userHandle: mockUserHandle,

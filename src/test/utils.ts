@@ -122,10 +122,13 @@ export const mockUserName3 = 'myUserName3';
 export const mockWallet3 = '0x51a1449b3B6D635EddeC781cD47a99221712De97';
 
 export const mockTokenAddress = '0xe36BD65609c08Cd17b53520293523CF4560533d0';
+export const mockTokenAddress1 = '0xB8c77482e45F1F44dE1745F52C74426C631bDD52';
 export const avax_address_polygon =
   '0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b';
 export const mockChainId = 'eip155:137';
+export const mockChainId1 = 'eip155:59144';
 export const mockChainName = 'matic';
+export const mockChainName1 = 'linea';
 
 export const mockToSwap = '0x38147794FF247e5Fc179eDbAE6C37fff88f68C52';
 export const mockFromSwap = '0x699791A03Ac2B58E1B7cA29B601C69F223c78e9c';
@@ -218,3 +221,8 @@ export const mockOrderID1: string = uuidv4();
  * @type {string}
  */
 export const mockOrderID2: string = uuidv4();
+
+export const mockEventId: string = uuidv4();
+export const mockEventId1: string = uuidv4();
+export const mockEventId2: string = uuidv4();
+export const mockEventId3: string = uuidv4();

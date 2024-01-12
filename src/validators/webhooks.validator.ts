@@ -355,6 +355,40 @@ export const isolatedRewardValidator = [
 ];
 
 /**
+ * Validates parameters for gx order event.
+ */
+export const gxOrderG1Validator = [
+  // Validates the event as 'gx_order_g1'
+  body('event').equals('gx_order_g1').withMessage('Invalid event type'),
+
+  // Validates params as an object
+  body('params').isObject().withMessage('Params must be an object'),
+
+  // Validates userTelegramID within params as a string
+  validateUserTelegramID('params.userTelegramID', false),
+
+  // Validates quoteId within params as a required string
+  body('params.quoteId').isString().withMessage('quoteId must be a string'),
+];
+
+/**
+ * Validates parameters for gx order event.
+ */
+export const gxOrderUsdValidator = [
+  // Validates the event as 'gx_order_usd'
+  body('event').equals('gx_order_usd').withMessage('Invalid event type'),
+
+  // Validates params as an object
+  body('params').isObject().withMessage('Params must be an object'),
+
+  // Validates userTelegramID within params as a string
+  validateUserTelegramID('params.userTelegramID', false),
+
+  // Validates quoteId within params as a required string
+  body('params.quoteId').isString().withMessage('quoteId must be a string'),
+];
+
+/**
  * Object containing validators for various events.
  * @property {Array} new_reward - Validator for the 'new_reward' event.
  * @property {Array} new_transaction - Validator for the 'new_transaction' event.
@@ -368,6 +402,8 @@ const validators = {
   new_transaction_batch: newTransactionBatchValidator,
   swap: swapValidator,
   isolated_reward: isolatedRewardValidator,
+  gx_order_g1: gxOrderG1Validator,
+  gx_order_usd: gxOrderUsdValidator,
 };
 
 /**

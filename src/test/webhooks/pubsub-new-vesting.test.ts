@@ -14,6 +14,7 @@ import {
   getCollectionUsersMock,
   getCollectionVestingsMock,
   mockWallet1,
+  mockEventId,
 } from '../utils';
 import Sinon from 'sinon';
 import axios from 'axios';
@@ -27,7 +28,6 @@ import {
   PATCHWALLET_TX_URL,
   SEGMENT_TRACK_URL,
 } from '../../utils/constants';
-import { v4 as uuidv4 } from 'uuid';
 import { FLOWXO_WEBHOOK_API_KEY, G1_POLYGON_ADDRESS } from '../../../secrets';
 import * as web3 from '../../utils/web3';
 import { handleNewVesting } from '../../webhooks/vesting';
@@ -39,7 +39,6 @@ chai.use(chaiExclude);
 describe('handleNewVesting function', async function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
-  let txId: string;
   let collectionUsersMock;
   let collectionVestingsMock;
   let contractStub: ContractStub;
@@ -99,12 +98,10 @@ describe('handleNewVesting function', async function () {
     contractStub = {
       methods: {
         decimals: sandbox.stub().resolves('18'),
-        transfer: sandbox.stub().returns({
-          encodeABI: sandbox
-            .stub()
-            .returns(
-              '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-            ),
+        transfer: sandbox.stub().callsFake((recipient, amount) => {
+          return {
+            encodeABI: sandbox.stub().returns(`${recipient}+${amount}`),
+          };
         }),
       },
     };
@@ -116,8 +113,6 @@ describe('handleNewVesting function', async function () {
     };
 
     sandbox.stub(web3, 'getContract').callsFake(getContract);
-
-    txId = uuidv4();
   });
 
   afterEach(function () {
@@ -140,7 +135,7 @@ describe('handleNewVesting function', async function () {
         await handleNewVesting({
           senderTgId: mockUserTelegramID,
           recipients: [{ recipientAddress: mockWallet, amount: '100' }],
-          eventId: txId,
+          eventId: mockEventId,
         }),
       ).to.be.true;
     });
@@ -152,7 +147,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
         chainId: mockChainId,
         tokenAddress: mockTokenAddress,
       });
@@ -163,7 +158,7 @@ describe('handleNewVesting function', async function () {
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             chainId: mockChainId,
             tokenSymbol: G1_TOKEN_SYMBOL,
             tokenAddress: mockTokenAddress,
@@ -187,7 +182,7 @@ describe('handleNewVesting function', async function () {
       await handleNewVesting({
         senderTgId: mockUserTelegramID,
         recipients: [{ recipientAddress: mockWallet, amount: '100' }],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -213,7 +208,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
         tokenSymbol: 'USDC',
         tokenAddress: '0xe36BD65609c08Cd17b53520293523CF4560533d2',
         chainId: mockChainId,
@@ -241,7 +236,7 @@ describe('handleNewVesting function', async function () {
               { recipientAddress: mockWallet1, amount: '15' },
             ],
             transactionHash: mockTransactionHash,
-            eventId: txId,
+            eventId: mockEventId,
           },
         });
     });
@@ -253,7 +248,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       const FlowXOCallArgs = axiosStub
@@ -300,7 +295,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
         chainId: mockChainId,
         tokenAddress: mockTokenAddress,
       });
@@ -311,7 +306,7 @@ describe('handleNewVesting function', async function () {
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             chainId: mockChainId,
             tokenSymbol: G1_TOKEN_SYMBOL,
             tokenAddress: mockTokenAddress,
@@ -338,7 +333,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -368,7 +363,7 @@ describe('handleNewVesting function', async function () {
       });
 
       await collectionVestingsMock.insertOne({
-        eventId: txId,
+        eventId: mockEventId,
         status: TransactionStatus.SUCCESS,
       });
     });
@@ -381,7 +376,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         }),
       ).to.be.true;
     });
@@ -393,7 +388,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -408,14 +403,14 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionVestingsMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             status: TransactionStatus.SUCCESS,
           },
         ]);
@@ -428,7 +423,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -445,7 +440,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -463,7 +458,7 @@ describe('handleNewVesting function', async function () {
       });
 
       await collectionVestingsMock.insertOne({
-        eventId: txId,
+        eventId: mockEventId,
         status: TransactionStatus.FAILURE,
       });
     });
@@ -476,7 +471,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         }),
       ).to.be.true;
     });
@@ -488,7 +483,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -503,14 +498,14 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionVestingsMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             status: TransactionStatus.FAILURE,
           },
         ]);
@@ -523,7 +518,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -540,7 +535,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -571,7 +566,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.false;
@@ -584,14 +579,14 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionVestingsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             chainId: mockChainId,
             tokenSymbol: G1_TOKEN_SYMBOL,
             tokenAddress: G1_POLYGON_ADDRESS,
@@ -617,7 +612,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -634,7 +629,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -644,12 +639,12 @@ describe('handleNewVesting function', async function () {
 
   it('Should not add new vesting if one with the same eventId already exists', async function () {
     await collectionVestingsMock.insertOne({
-      eventId: txId,
+      eventId: mockEventId,
     });
 
     const objectId = (
       await collectionVestingsMock.findOne({
-        eventId: txId,
+        eventId: mockEventId,
       })
     )._id.toString();
 
@@ -666,7 +661,7 @@ describe('handleNewVesting function', async function () {
         { recipientAddress: mockWallet, amount: '100' },
         { recipientAddress: mockWallet1, amount: '15' },
       ],
-      eventId: txId,
+      eventId: mockEventId,
     });
 
     expect(
@@ -682,7 +677,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.true;
@@ -695,7 +690,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionVestingsMock.find({}).toArray()).to.be.empty;
@@ -708,7 +703,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -723,7 +718,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -740,7 +735,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -770,7 +765,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.false;
@@ -783,14 +778,14 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionVestingsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             chainId: mockChainId,
             tokenSymbol: G1_TOKEN_SYMBOL,
             tokenAddress: G1_POLYGON_ADDRESS,
@@ -816,7 +811,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -833,7 +828,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -865,7 +860,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.true;
@@ -878,14 +873,14 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionVestingsMock.find({}).toArray())
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             chainId: mockChainId,
             tokenSymbol: G1_TOKEN_SYMBOL,
             tokenAddress: G1_POLYGON_ADDRESS,
@@ -911,7 +906,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -928,7 +923,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -960,7 +955,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.false;
@@ -973,14 +968,14 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionVestingsMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             chainId: mockChainId,
             tokenSymbol: G1_TOKEN_SYMBOL,
             tokenAddress: G1_POLYGON_ADDRESS,
@@ -1006,7 +1001,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -1023,7 +1018,7 @@ describe('handleNewVesting function', async function () {
           { recipientAddress: mockWallet, amount: '100' },
           { recipientAddress: mockWallet1, amount: '15' },
         ],
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -1057,7 +1052,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.false;
@@ -1070,14 +1065,14 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionVestingsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: txId,
+              eventId: mockEventId,
               chainId: mockChainId,
               tokenSymbol: G1_TOKEN_SYMBOL,
               tokenAddress: G1_POLYGON_ADDRESS,
@@ -1103,7 +1098,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1125,7 +1120,7 @@ describe('handleNewVesting function', async function () {
         });
 
         await collectionVestingsMock.insertOne({
-          eventId: txId,
+          eventId: mockEventId,
           chainId: mockChainId,
           tokenSymbol: G1_TOKEN_SYMBOL,
           tokenAddress: G1_POLYGON_ADDRESS,
@@ -1149,7 +1144,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.true;
@@ -1162,7 +1157,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1177,14 +1172,14 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionVestingsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: txId,
+              eventId: mockEventId,
               chainId: mockChainId,
               tokenSymbol: G1_TOKEN_SYMBOL,
               tokenAddress: G1_POLYGON_ADDRESS,
@@ -1210,7 +1205,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         const FlowXOCallArgs = axiosStub
@@ -1255,7 +1250,7 @@ describe('handleNewVesting function', async function () {
         });
 
         await collectionVestingsMock.insertOne({
-          eventId: txId,
+          eventId: mockEventId,
           chainId: mockChainId,
           tokenSymbol: G1_TOKEN_SYMBOL,
           tokenAddress: G1_POLYGON_ADDRESS,
@@ -1286,7 +1281,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.false;
@@ -1299,7 +1294,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1314,14 +1309,14 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionVestingsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: txId,
+              eventId: mockEventId,
               chainId: mockChainId,
               tokenSymbol: G1_TOKEN_SYMBOL,
               tokenAddress: G1_POLYGON_ADDRESS,
@@ -1347,7 +1342,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1369,7 +1364,7 @@ describe('handleNewVesting function', async function () {
         });
 
         await collectionVestingsMock.insertOne({
-          eventId: txId,
+          eventId: mockEventId,
           chainId: mockChainId,
           tokenSymbol: G1_TOKEN_SYMBOL,
           tokenAddress: G1_POLYGON_ADDRESS,
@@ -1397,7 +1392,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.false;
@@ -1410,7 +1405,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1425,14 +1420,14 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionVestingsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: txId,
+              eventId: mockEventId,
               chainId: mockChainId,
               tokenSymbol: G1_TOKEN_SYMBOL,
               tokenAddress: G1_POLYGON_ADDRESS,
@@ -1457,7 +1452,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1479,7 +1474,7 @@ describe('handleNewVesting function', async function () {
         });
 
         await collectionVestingsMock.insertOne({
-          eventId: txId,
+          eventId: mockEventId,
           chainId: mockChainId,
           tokenSymbol: G1_TOKEN_SYMBOL,
           tokenAddress: G1_POLYGON_ADDRESS,
@@ -1509,7 +1504,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.true;
@@ -1522,7 +1517,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1537,14 +1532,14 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionVestingsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: txId,
+              eventId: mockEventId,
               chainId: mockChainId,
               tokenSymbol: G1_TOKEN_SYMBOL,
               tokenAddress: G1_POLYGON_ADDRESS,
@@ -1570,7 +1565,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1592,7 +1587,7 @@ describe('handleNewVesting function', async function () {
         });
 
         await collectionVestingsMock.insertOne({
-          eventId: txId,
+          eventId: mockEventId,
           chainId: mockChainId,
           tokenSymbol: G1_TOKEN_SYMBOL,
           tokenAddress: G1_POLYGON_ADDRESS,
@@ -1615,7 +1610,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.true;
@@ -1628,7 +1623,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1643,14 +1638,14 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionVestingsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: txId,
+              eventId: mockEventId,
               chainId: mockChainId,
               tokenSymbol: G1_TOKEN_SYMBOL,
               tokenAddress: G1_POLYGON_ADDRESS,
@@ -1676,7 +1671,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1698,7 +1693,7 @@ describe('handleNewVesting function', async function () {
         });
 
         await collectionVestingsMock.insertOne({
-          eventId: txId,
+          eventId: mockEventId,
           chainId: mockChainId,
           tokenSymbol: G1_TOKEN_SYMBOL,
           tokenAddress: G1_POLYGON_ADDRESS,
@@ -1729,7 +1724,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.true;
@@ -1742,7 +1737,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1757,14 +1752,14 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionVestingsMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: txId,
+              eventId: mockEventId,
               chainId: mockChainId,
               tokenSymbol: G1_TOKEN_SYMBOL,
               tokenAddress: G1_POLYGON_ADDRESS,
@@ -1790,7 +1785,7 @@ describe('handleNewVesting function', async function () {
             { recipientAddress: mockWallet, amount: '100' },
             { recipientAddress: mockWallet1, amount: '15' },
           ],
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(

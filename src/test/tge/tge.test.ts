@@ -11,6 +11,7 @@ import {
   getCollectionUsersMock,
   isUUIDv4,
   mockAccessToken,
+  mockChainId,
   mockChainName,
   mockOrderID,
   mockOrderID1,
@@ -54,7 +55,24 @@ describe('G1 to GX util functions', async function () {
 
     await collectionUser?.insertOne({
       userTelegramID: mockUserTelegramID,
-      attributes: ['active', 'contributor', 'mvu = 5.03', 'mvu_rounded = 6.0'],
+      attributes: {
+        aff_score: null,
+        balance_100123: '500',
+        host_score: null,
+        isActiveUser: true,
+        isBlacklist: false,
+        isContributeUser: false,
+        isDead: false,
+        isDoubleSpent: false,
+        isDrone: false,
+        isDroneOwner: false,
+        isGamer: false,
+        isSlave: false,
+        isWalkingDead: false,
+        mvu_rounded: '5',
+        mvu_score: '5.03',
+        virtual_balance: '0',
+      },
     });
 
     sandbox = Sinon.createSandbox();
@@ -147,7 +165,9 @@ describe('G1 to GX util functions', async function () {
         .get('/v1/tge/quote')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .query({
-          usdQuantity: '10',
+          tokenAmount: '10',
+          chainId: mockChainId,
+          tokenAddress: mockTokenAddress,
           g1Quantity: '4',
           userTelegramID: mockUserTelegramID,
         });
@@ -172,6 +192,9 @@ describe('G1 to GX util functions', async function () {
         standardGxUsdExchangeRate: '1',
         discountReceived: '1',
         gxReceived: '1',
+        tokenAmount: '10',
+        chainId: mockChainId,
+        tokenAddress: mockTokenAddress,
       });
     });
 
@@ -181,7 +204,9 @@ describe('G1 to GX util functions', async function () {
         .get('/v1/tge/quote')
         .set('Authorization', `Bearer ${await getApiKey()}`)
         .query({
-          usdQuantity: '10',
+          tokenAmount: '10',
+          chainId: mockChainId,
+          tokenAddress: mockTokenAddress,
           g1Quantity: '4',
           userTelegramID: mockUserTelegramID,
         });
@@ -206,6 +231,9 @@ describe('G1 to GX util functions', async function () {
             discountReceived: '1',
             gxReceived: '1',
             userTelegramID: mockUserTelegramID,
+            tokenAmount: '10',
+            chainId: mockChainId,
+            tokenAddress: mockTokenAddress,
           },
         ]);
 

@@ -19,6 +19,7 @@ import {
   mockSourceWallet,
   mockTopUpAmount100,
   mockSourceWalletTelegramID,
+  mockEventId,
 } from '../utils';
 import Sinon from 'sinon';
 import axios from 'axios';
@@ -33,7 +34,6 @@ import {
   SEGMENT_TRACK_URL,
   nativeTokenAddresses,
 } from '../../utils/constants';
-import { v4 as uuidv4 } from 'uuid';
 import { handleNewTransaction } from '../../webhooks/transaction';
 import { FLOWXO_WEBHOOK_API_KEY, G1_POLYGON_ADDRESS } from '../../../secrets';
 import * as web3 from '../../utils/web3';
@@ -45,7 +45,6 @@ chai.use(chaiExclude);
 describe('handleNewTransaction function', async function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
-  let txId: string;
   let collectionUsersMock;
   let collectionTransfersMock;
   let contractStub: ContractStub;
@@ -107,12 +106,10 @@ describe('handleNewTransaction function', async function () {
     contractStub = {
       methods: {
         decimals: sandbox.stub().resolves('18'),
-        transfer: sandbox.stub().returns({
-          encodeABI: sandbox
-            .stub()
-            .returns(
-              '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-            ),
+        transfer: sandbox.stub().callsFake((recipient, amount) => {
+          return {
+            encodeABI: sandbox.stub().returns(`${recipient}+${amount}`),
+          };
         }),
       },
     };
@@ -124,8 +121,6 @@ describe('handleNewTransaction function', async function () {
     };
 
     sandbox.stub(web3, 'getContract').callsFake(getContract);
-
-    txId = uuidv4();
   });
 
   afterEach(function () {
@@ -149,7 +144,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         }),
       ).to.be.true;
     });
@@ -159,7 +154,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
         chainId: mockChainId,
         tokenAddress: mockTokenAddress,
       });
@@ -170,7 +165,7 @@ describe('handleNewTransaction function', async function () {
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             chainId: mockChainId,
             tokenSymbol: G1_TOKEN_SYMBOL,
             tokenAddress: mockTokenAddress,
@@ -194,7 +189,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -205,9 +200,7 @@ describe('handleNewTransaction function', async function () {
         chain: mockChainName,
         to: [G1_POLYGON_ADDRESS],
         value: ['0x00'],
-        data: [
-          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-        ],
+        data: [`${mockWallet}+100000000000000000000`],
         delegatecall: 0,
         auth: '',
       });
@@ -218,7 +211,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
         delegatecall: 1,
       });
 
@@ -230,9 +223,7 @@ describe('handleNewTransaction function', async function () {
         chain: mockChainName,
         to: [G1_POLYGON_ADDRESS],
         value: ['0x00'],
-        data: [
-          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-        ],
+        data: [`${mockWallet}+100000000000000000000`],
         delegatecall: 1,
         auth: '',
       });
@@ -243,7 +234,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
         tokenAddress: nativeTokenAddresses[0],
       });
 
@@ -266,7 +257,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
         tokenAddress: nativeTokenAddresses[0],
         delegatecall: 1,
       });
@@ -290,7 +281,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
         tokenSymbol: 'USDC',
         tokenAddress: '0xe36BD65609c08Cd17b53520293523CF4560533d2',
         chainId: mockChainId,
@@ -317,7 +308,7 @@ describe('handleNewTransaction function', async function () {
             recipientWallet: mockWallet,
             tokenAmount: '100',
             transactionHash: mockTransactionHash,
-            eventId: txId,
+            eventId: mockEventId,
           },
         });
     });
@@ -327,7 +318,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       const FlowXOCallArgs = axiosStub
@@ -369,7 +360,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '10.002',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
         chainId: mockChainId,
         tokenAddress: mockTokenAddress,
       });
@@ -380,7 +371,7 @@ describe('handleNewTransaction function', async function () {
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             chainId: mockChainId,
             tokenSymbol: G1_TOKEN_SYMBOL,
             tokenAddress: mockTokenAddress,
@@ -404,7 +395,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '10.9',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -415,9 +406,7 @@ describe('handleNewTransaction function', async function () {
         chain: mockChainName,
         to: [G1_POLYGON_ADDRESS],
         value: ['0x00'],
-        data: [
-          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-        ],
+        data: [`${mockWallet}+10900000000000000000`],
         delegatecall: 0,
         auth: '',
       });
@@ -428,7 +417,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '10.3',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
         tokenAddress: nativeTokenAddresses[0],
       });
 
@@ -457,7 +446,7 @@ describe('handleNewTransaction function', async function () {
       });
 
       await collectionTransfersMock.insertOne({
-        eventId: txId,
+        eventId: mockEventId,
         status: TransactionStatus.SUCCESS,
       });
     });
@@ -468,7 +457,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         }),
       ).to.be.true;
     });
@@ -478,7 +467,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -491,14 +480,14 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             status: TransactionStatus.SUCCESS,
           },
         ]);
@@ -509,7 +498,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -524,7 +513,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -542,7 +531,7 @@ describe('handleNewTransaction function', async function () {
       });
 
       await collectionTransfersMock.insertOne({
-        eventId: txId,
+        eventId: mockEventId,
         status: TransactionStatus.FAILURE,
       });
     });
@@ -553,7 +542,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         }),
       ).to.be.true;
     });
@@ -563,7 +552,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -576,14 +565,14 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             status: TransactionStatus.FAILURE,
           },
         ]);
@@ -594,7 +583,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -609,7 +598,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -627,7 +616,7 @@ describe('handleNewTransaction function', async function () {
       });
 
       await collectionTransfersMock.insertOne({
-        eventId: txId,
+        eventId: mockEventId,
         status: TransactionStatus.FAILURE_503,
       });
     });
@@ -638,7 +627,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         }),
       ).to.be.true;
     });
@@ -648,7 +637,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -661,14 +650,14 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['_id'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             status: TransactionStatus.FAILURE_503,
           },
         ]);
@@ -679,7 +668,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -694,7 +683,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -723,7 +712,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.false;
@@ -734,14 +723,14 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             chainId: mockChainId,
             tokenSymbol: G1_TOKEN_SYMBOL,
             tokenAddress: G1_POLYGON_ADDRESS,
@@ -764,7 +753,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -779,7 +768,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -789,12 +778,12 @@ describe('handleNewTransaction function', async function () {
 
   it('Should not add new transaction if one with the same eventId already exists', async function () {
     await collectionTransfersMock.insertOne({
-      eventId: txId,
+      eventId: mockEventId,
     });
 
     const objectId = (
       await collectionTransfersMock.findOne({
-        eventId: txId,
+        eventId: mockEventId,
       })
     )._id.toString();
 
@@ -809,7 +798,7 @@ describe('handleNewTransaction function', async function () {
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
-      eventId: txId,
+      eventId: mockEventId,
     });
 
     expect(
@@ -823,7 +812,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.true;
@@ -834,7 +823,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
@@ -845,7 +834,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -858,7 +847,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -873,7 +862,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -901,7 +890,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.false;
@@ -912,7 +901,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionTransfersMock.find({}).toArray()).to.be.empty;
@@ -923,7 +912,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -936,7 +925,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -951,7 +940,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -976,7 +965,7 @@ describe('handleNewTransaction function', async function () {
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
-      eventId: txId,
+      eventId: mockEventId,
     });
 
     expect(result).to.be.true;
@@ -999,7 +988,7 @@ describe('handleNewTransaction function', async function () {
       senderTgId: mockUserTelegramID,
       amount: '100',
       recipientTgId: mockUserTelegramID1,
-      eventId: txId,
+      eventId: mockEventId,
     });
 
     expect(result).to.be.true;
@@ -1025,7 +1014,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.false;
@@ -1036,14 +1025,14 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             chainId: mockChainId,
             tokenSymbol: G1_TOKEN_SYMBOL,
             tokenAddress: G1_POLYGON_ADDRESS,
@@ -1066,7 +1055,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -1081,7 +1070,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -1111,7 +1100,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.true;
@@ -1122,14 +1111,14 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             chainId: mockChainId,
             tokenSymbol: G1_TOKEN_SYMBOL,
             tokenAddress: G1_POLYGON_ADDRESS,
@@ -1152,7 +1141,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -1167,7 +1156,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -1197,7 +1186,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.true;
@@ -1208,14 +1197,14 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             chainId: mockChainId,
             tokenSymbol: G1_TOKEN_SYMBOL,
             tokenAddress: G1_POLYGON_ADDRESS,
@@ -1238,7 +1227,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -1253,7 +1242,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -1283,7 +1272,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(result).to.be.false;
@@ -1294,14 +1283,14 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(await collectionTransfersMock.find({}).toArray())
         .excluding(['_id', 'dateAdded'])
         .to.deep.equal([
           {
-            eventId: txId,
+            eventId: mockEventId,
             chainId: mockChainId,
             tokenSymbol: G1_TOKEN_SYMBOL,
             tokenAddress: G1_POLYGON_ADDRESS,
@@ -1324,7 +1313,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(
@@ -1339,7 +1328,7 @@ describe('handleNewTransaction function', async function () {
         senderTgId: mockUserTelegramID,
         amount: '100',
         recipientTgId: mockUserTelegramID1,
-        eventId: txId,
+        eventId: mockEventId,
       });
 
       expect(axiosStub.getCalls().find((e) => e.firstArg === SEGMENT_TRACK_URL))
@@ -1371,7 +1360,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.false;
@@ -1382,14 +1371,14 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionTransfersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: txId,
+              eventId: mockEventId,
               chainId: mockChainId,
               tokenSymbol: G1_TOKEN_SYMBOL,
               tokenAddress: G1_POLYGON_ADDRESS,
@@ -1412,7 +1401,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1434,7 +1423,7 @@ describe('handleNewTransaction function', async function () {
         });
 
         await collectionTransfersMock.insertOne({
-          eventId: txId,
+          eventId: mockEventId,
           chainId: mockChainId,
           tokenSymbol: G1_TOKEN_SYMBOL,
           tokenAddress: G1_POLYGON_ADDRESS,
@@ -1455,7 +1444,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.true;
@@ -1466,7 +1455,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1479,14 +1468,14 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionTransfersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: txId,
+              eventId: mockEventId,
               chainId: mockChainId,
               tokenSymbol: G1_TOKEN_SYMBOL,
               tokenAddress: G1_POLYGON_ADDRESS,
@@ -1509,7 +1498,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         const FlowXOCallArgs = axiosStub
@@ -1551,7 +1540,7 @@ describe('handleNewTransaction function', async function () {
         });
 
         await collectionTransfersMock.insertOne({
-          eventId: txId,
+          eventId: mockEventId,
           chainId: mockChainId,
           tokenSymbol: G1_TOKEN_SYMBOL,
           tokenAddress: G1_POLYGON_ADDRESS,
@@ -1579,7 +1568,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.false;
@@ -1590,7 +1579,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1603,14 +1592,14 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionTransfersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: txId,
+              eventId: mockEventId,
               chainId: mockChainId,
               tokenSymbol: G1_TOKEN_SYMBOL,
               tokenAddress: G1_POLYGON_ADDRESS,
@@ -1633,7 +1622,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1655,7 +1644,7 @@ describe('handleNewTransaction function', async function () {
         });
 
         await collectionTransfersMock.insertOne({
-          eventId: txId,
+          eventId: mockEventId,
           chainId: mockChainId,
           tokenSymbol: G1_TOKEN_SYMBOL,
           tokenAddress: G1_POLYGON_ADDRESS,
@@ -1680,7 +1669,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.false;
@@ -1691,7 +1680,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1704,14 +1693,14 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionTransfersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: txId,
+              eventId: mockEventId,
               chainId: mockChainId,
               tokenSymbol: G1_TOKEN_SYMBOL,
               tokenAddress: G1_POLYGON_ADDRESS,
@@ -1733,7 +1722,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1755,7 +1744,7 @@ describe('handleNewTransaction function', async function () {
         });
 
         await collectionTransfersMock.insertOne({
-          eventId: txId,
+          eventId: mockEventId,
           chainId: mockChainId,
           tokenSymbol: G1_TOKEN_SYMBOL,
           tokenAddress: G1_POLYGON_ADDRESS,
@@ -1782,7 +1771,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.true;
@@ -1793,7 +1782,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1806,14 +1795,14 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionTransfersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: txId,
+              eventId: mockEventId,
               chainId: mockChainId,
               tokenSymbol: G1_TOKEN_SYMBOL,
               tokenAddress: G1_POLYGON_ADDRESS,
@@ -1836,7 +1825,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1858,7 +1847,7 @@ describe('handleNewTransaction function', async function () {
         });
 
         await collectionTransfersMock.insertOne({
-          eventId: txId,
+          eventId: mockEventId,
           chainId: mockChainId,
           tokenSymbol: G1_TOKEN_SYMBOL,
           tokenAddress: G1_POLYGON_ADDRESS,
@@ -1878,7 +1867,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.true;
@@ -1889,7 +1878,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1902,14 +1891,14 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionTransfersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: txId,
+              eventId: mockEventId,
               chainId: mockChainId,
               tokenSymbol: G1_TOKEN_SYMBOL,
               tokenAddress: G1_POLYGON_ADDRESS,
@@ -1932,7 +1921,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -1954,7 +1943,7 @@ describe('handleNewTransaction function', async function () {
         });
 
         await collectionTransfersMock.insertOne({
-          eventId: txId,
+          eventId: mockEventId,
           chainId: mockChainId,
           tokenSymbol: G1_TOKEN_SYMBOL,
           tokenAddress: G1_POLYGON_ADDRESS,
@@ -1982,7 +1971,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(result).to.be.true;
@@ -1993,7 +1982,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -2006,14 +1995,14 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(await collectionTransfersMock.find({}).toArray())
           .excluding(['_id', 'dateAdded'])
           .to.deep.equal([
             {
-              eventId: txId,
+              eventId: mockEventId,
               chainId: mockChainId,
               tokenSymbol: G1_TOKEN_SYMBOL,
               tokenAddress: G1_POLYGON_ADDRESS,
@@ -2036,7 +2025,7 @@ describe('handleNewTransaction function', async function () {
           senderTgId: mockUserTelegramID,
           amount: '100',
           recipientTgId: mockUserTelegramID1,
-          eventId: txId,
+          eventId: mockEventId,
         });
 
         expect(
@@ -2073,7 +2062,7 @@ describe('handleNewTransaction function', async function () {
     it('Should add new Top Up for user', async function () {
       expect(
         await handleNewTransaction({
-          eventId: txId,
+          eventId: mockEventId,
           senderTgId: mockUserTelegramID,
           recipientTgId: mockSourceWalletTelegramID,
           tokenAddress: mockGXAddress,
@@ -2102,7 +2091,7 @@ describe('handleNewTransaction function', async function () {
 
       expect(
         await handleNewTransaction({
-          eventId: txId,
+          eventId: mockEventId,
           senderTgId: mockUserTelegramID,
           recipientTgId: mockSourceWalletTelegramID,
           tokenAddress: mockGXAddress,
@@ -2126,7 +2115,7 @@ describe('handleNewTransaction function', async function () {
     it('Should not add Top Up if isTopUp flag is false', async function () {
       expect(
         await handleNewTransaction({
-          eventId: txId,
+          eventId: mockEventId,
           senderTgId: mockUserTelegramID,
           recipientTgId: mockSourceWalletTelegramID,
           tokenAddress: mockGXAddress,
@@ -2143,7 +2132,7 @@ describe('handleNewTransaction function', async function () {
     it('Should not add Top Up if tokenAddress is not GX token', async function () {
       expect(
         await handleNewTransaction({
-          eventId: txId,
+          eventId: mockEventId,
           senderTgId: mockUserTelegramID,
           recipientTgId: mockSourceWalletTelegramID,
           tokenAddress: '0x111111',
@@ -2160,7 +2149,7 @@ describe('handleNewTransaction function', async function () {
     it('Should not add Top Up if receiver is not source wallet', async function () {
       expect(
         await handleNewTransaction({
-          eventId: txId,
+          eventId: mockEventId,
           senderTgId: mockUserTelegramID,
           recipientTgId: mockUserTelegramID1,
           tokenAddress: mockGXAddress,

@@ -1,5 +1,7 @@
 import { expect } from 'chai';
 import {
+  gxOrderG1Validator,
+  gxOrderUsdValidator,
   isolatedRewardValidator,
   newRewardValidator,
   newTransactionBatchValidator,
@@ -7,7 +9,13 @@ import {
   swapValidator,
 } from '../../validators/webhooks.validator';
 import { validateResult } from '../../validators/utils';
-import { mockTokenAddress, mockWallet, mockWallet1 } from '../utils';
+import {
+  mockOrderID,
+  mockTokenAddress,
+  mockUserTelegramID,
+  mockWallet,
+  mockWallet1,
+} from '../utils';
 
 const NUMBER_PARAMETER_TEST_SWAP = swapValidator.length - 1;
 const NUMBER_PARAMETER_TEST_TX = newTransactionValidator.length - 1;
@@ -15,6 +23,7 @@ const NUMBER_PARAMETER_TEST_TX_BATCH = newTransactionBatchValidator.length - 2;
 const NUMBER_PARAMETER_TEST_REWARD = newRewardValidator.length - 1;
 const NUMBER_PARAMETER_TEST_ISOLATED_REWARD =
   isolatedRewardValidator.length - 1;
+const NUMBER_PARAMETER_TEST_ORDER = gxOrderG1Validator.length - 1;
 
 describe('Webhook validators', function () {
   describe('New Reward Validator', function () {
@@ -902,6 +911,124 @@ describe('Webhook validators', function () {
           value: 123,
           msg: 'chainName must be a string',
           path: 'params.chainName',
+          location: 'body',
+        },
+      ]);
+    });
+  });
+
+  describe('New order G1 Validator', function () {
+    const validParams = {
+      event: 'gx_order_g1',
+      params: {
+        quoteId: mockOrderID,
+        userTelegramID: mockUserTelegramID,
+      },
+    };
+
+    const invalidParams = {
+      event: 'another_event_type',
+      params: {
+        quoteId: 12323,
+        userTelegramID: 24,
+      },
+    };
+
+    it('Should pass with valid params', async function () {
+      const req = { body: validParams };
+      await Promise.all(
+        gxOrderG1Validator.map((middleware) => middleware(req, {}, () => {})),
+      );
+      expect(validateResult(req)).to.be.empty;
+    });
+
+    it('Should fail with invalid params', async function () {
+      const req = { body: invalidParams };
+      await Promise.all(
+        gxOrderG1Validator.map((middleware) => middleware(req, {}, () => {})),
+      );
+
+      expect(validateResult(req).length).to.equal(NUMBER_PARAMETER_TEST_ORDER);
+
+      expect(validateResult(req)).to.deep.equal([
+        {
+          type: 'field',
+          value: 'another_event_type',
+          msg: 'Invalid event type',
+          path: 'event',
+          location: 'body',
+        },
+        {
+          type: 'field',
+          value: 24,
+          msg: 'params.userTelegramID must be a string representing a 64-bit little-endian number',
+          path: 'params.userTelegramID',
+          location: 'body',
+        },
+        {
+          type: 'field',
+          value: 12323,
+          msg: 'quoteId must be a string',
+          path: 'params.quoteId',
+          location: 'body',
+        },
+      ]);
+    });
+  });
+
+  describe('New order USD Validator', function () {
+    const validParams = {
+      event: 'gx_order_usd',
+      params: {
+        quoteId: mockOrderID,
+        userTelegramID: mockUserTelegramID,
+      },
+    };
+
+    const invalidParams = {
+      event: 'another_event_type',
+      params: {
+        quoteId: 12323,
+        userTelegramID: 24,
+      },
+    };
+
+    it('Should pass with valid params', async function () {
+      const req = { body: validParams };
+      await Promise.all(
+        gxOrderUsdValidator.map((middleware) => middleware(req, {}, () => {})),
+      );
+      expect(validateResult(req)).to.be.empty;
+    });
+
+    it('Should fail with invalid params', async function () {
+      const req = { body: invalidParams };
+      await Promise.all(
+        gxOrderUsdValidator.map((middleware) => middleware(req, {}, () => {})),
+      );
+
+      expect(validateResult(req).length).to.equal(NUMBER_PARAMETER_TEST_ORDER);
+
+      expect(validateResult(req)).to.deep.equal([
+        {
+          type: 'field',
+          value: 'another_event_type',
+          msg: 'Invalid event type',
+          path: 'event',
+          location: 'body',
+        },
+        {
+          type: 'field',
+          value: 24,
+          msg: 'params.userTelegramID must be a string representing a 64-bit little-endian number',
+          path: 'params.userTelegramID',
+          location: 'body',
+        },
+        {
+          type: 'field',
+          value: 12323,
+          msg: 'quoteId must be a string',
+          path: 'params.quoteId',
           location: 'body',
         },
       ]);

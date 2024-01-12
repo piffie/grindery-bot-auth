@@ -1,5 +1,6 @@
 import {
   REWARDS_COLLECTION,
+  RewardReason,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
 } from './constants';
@@ -210,7 +211,7 @@ export async function getRewardLinkTxsUser(
     (
       await db
         .collection(REWARDS_COLLECTION)
-        .find({ userTelegramID: userId, reason: 'referral_link' })
+        .find({ userTelegramID: userId, reason: RewardReason.LINK })
         .sort({ dateAdded: -1 })
         .skip(start)
         .limit(limit)

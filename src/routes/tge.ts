@@ -1,9 +1,6 @@
 import express from 'express';
 import { authenticateApiKey } from '../utils/auth';
-import {
-  computeG1ToGxConversion,
-  extractMvuValueFromAttributes,
-} from '../utils/g1gx';
+import { computeG1ToGxConversion } from '../utils/g1gx';
 import { Database } from '../db/conn';
 import {
   GX_ORDER_COLLECTION,
@@ -25,13 +22,16 @@ const router = express.Router();
  * @description Calculates the conversion from G1 to Gx based on provided quantities of USD and G1.
  * @tags Conversion
  * @security BearerAuth
- * @param {number} usdQuantity.query - The quantity of USD.
  * @param {number} g1Quantity.query - The quantity of G1.
+ * @param {string} userTelegramID.query - The Telegram user ID.
+ * @param {string} tokenAmount.query - The amount of tokens.
+ * @param {string} chainId.query - The chain ID.
+ * @param {string} tokenAddress.query - The token address.
  * @return {object} 200 - Success response with the calculated conversion value
  * @return {object} 500 - Error response if an error occurs during the conversion
  *
  * @example request - 200 - Example request query parameters
- * /v1/tge/quote?usdQuantity=100&g1Quantity=50
+ * /v1/tge/quote?g1Quantity=50&userTelegramID=user-telegram-id&tokenAmount=10&chainId=1&tokenAddress=0x123456789ABCDEF
  *
  * @example response - 200 - Success response example
  * {
@@ -49,7 +49,10 @@ const router = express.Router();
  *   "discountReceived": "15.53",
  *   "date": "2023-12-31T12:00:00Z",
  *   "quoteId": "some-unique-id",
- *   "userTelegramID": "user-telegram-id"
+ *   "userTelegramID": "user-telegram-id",
+ *   "tokenAmount": "10",
+ *   "chainId": "1",
+ *   "tokenAddress": "0x123456789ABCDEF"
  * }
  *
  * @example response - 500 - Error response example
@@ -62,16 +65,33 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
   try {
     const db = await Database.getInstance();
 
+    // Calculate token price based on chainId and token address
+    const token_price = await getTokenPrice(
+      req.query.chainId as string,
+      req.query.tokenAddress as string,
+    );
+
+    const usdQuantity = (
+      parseFloat(req.query.tokenAmount as string) *
+      parseFloat(token_price.data.result.usdPrice)
+    ).toFixed(2);
+
+    const user = await db
+      ?.collection(USERS_COLLECTION)
+      .findOne({ userTelegramID: req.query.userTelegramID });
+
+    let mvu_score: number = 0;
+
+    if (user && user.attributes && user.attributes.mvu_score) {
+      const parsedMvu = parseFloat(user.attributes.mvu_score);
+
+      if (!isNaN(parsedMvu) && parsedMvu > 0) mvu_score = parsedMvu;
+    }
+
     const result = computeG1ToGxConversion(
-      Number(req.query.usdQuantity),
+      Number(usdQuantity),
       Number(req.query.g1Quantity),
-      extractMvuValueFromAttributes(
-        (
-          await db
-            ?.collection(USERS_COLLECTION)
-            .findOne({ userTelegramID: req.query.userTelegramID })
-        )?.attributes,
-      ),
+      mvu_score,
     );
 
     const id = uuidv4();
@@ -85,6 +105,9 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
           quoteId: id,
           date: date,
           userTelegramID: req.query.userTelegramID,
+          tokenAmount: req.query.tokenAmount,
+          chainId: req.query.chainId,
+          tokenAddress: req.query.tokenAddress,
         },
       },
       { upsert: true },
@@ -95,6 +118,9 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
       date,
       quoteId: id,
       userTelegramID: req.query.userTelegramID,
+      tokenAmount: req.query.tokenAmount,
+      chainId: req.query.chainId,
+      tokenAddress: req.query.tokenAddress,
     });
   } catch (error) {
     return res.status(500).json({ msg: 'An error occurred', error });
