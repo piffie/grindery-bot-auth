@@ -1,9 +1,8 @@
 import { TransferTelegram } from '../webhooks/transaction';
 import { GX_POLYGON_ADDRESS, SOURCE_WALLET_ADDRESS } from '../../secrets';
 import { Database } from '../db/conn';
-import { TOP_UP_COLLECTION, USERS_COLLECTION } from './constants';
-import { WithId } from 'mongodb';
-import { MongoUser } from 'grindery-nexus-common-utils';
+import { TOP_UP_COLLECTION } from './constants';
+import { UserTelegram } from './user';
 
 export async function isTopUpTx(
   transferTelegram: TransferTelegram,
@@ -13,15 +12,15 @@ export async function isTopUpTx(
   // Check if it's a top-up transaction
   if (!transferTelegram.params.isTopUp) return;
 
-  // Get source wallet details
-  const sourceUser = (await db?.collection(USERS_COLLECTION).findOne({
-    userTelegramID: transferTelegram.params.recipientTgId,
-  })) as WithId<MongoUser> | null;
+  // Get source user wallet details
+  const sourceUser = await UserTelegram.build(
+    transferTelegram.params.recipientTgId as string,
+  );
 
   // Check if it's a top-up transaction
   if (
     transferTelegram.params.tokenAddress != GX_POLYGON_ADDRESS ||
-    sourceUser?.patchwallet != SOURCE_WALLET_ADDRESS
+    sourceUser.params?.patchwallet != SOURCE_WALLET_ADDRESS
   )
     return;
 
