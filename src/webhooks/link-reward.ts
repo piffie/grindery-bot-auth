@@ -181,7 +181,7 @@ export class LinkRewardTelegram {
 
   /**
    * Retrieves the referent user information from the database.
-   * @returns {Promise<WithId<MongoUser>|null>} - The referent user information or null if not found.
+   * @returns {Promise<WithId<UserTelegram>|null>} - The referent user information or null if not found.
    */
   async getReferent(): Promise<UserTelegram> {
     this.referent = await UserTelegram.build(
