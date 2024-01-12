@@ -23,6 +23,7 @@ import {
   getCollectionUsersMock,
   getCollectionSwapsMock,
   mockValue,
+  mockEventId,
 } from '../utils';
 import Sinon from 'sinon';
 import axios from 'axios';
@@ -36,7 +37,6 @@ import {
   PATCHWALLET_TX_URL,
   SEGMENT_TRACK_URL,
 } from '../../utils/constants';
-import { v4 as uuidv4 } from 'uuid';
 import { handleSwap } from '../../webhooks/swap';
 import { FLOWXO_WEBHOOK_API_KEY } from '../../../secrets';
 import { CHAIN_MAPPING } from '../../utils/chains';
@@ -48,7 +48,6 @@ chai.use(chaiExclude);
 describe('handleSwap function', async function () {
   let sandbox: Sinon.SinonSandbox;
   let axiosStub;
-  let swapId: string;
   let collectionUsersMock;
   let collectionSwapsMock;
 
@@ -105,8 +104,6 @@ describe('handleSwap function', async function () {
 
       throw new Error('Unexpected URL encountered');
     });
-
-    swapId = uuidv4();
   });
 
   afterEach(function () {
@@ -144,7 +141,7 @@ describe('handleSwap function', async function () {
       expect(
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           to: mockToSwap,
           data: mockDataSwap,
@@ -164,7 +161,7 @@ describe('handleSwap function', async function () {
     it('Should populate swaps database', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         to: mockToSwap,
         data: mockDataSwap,
@@ -187,7 +184,7 @@ describe('handleSwap function', async function () {
         .excluding(['dateAdded', '_id'])
         .to.deep.equal([
           {
-            eventId: swapId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
             userWallet: mockWallet,
             userName: mockUserName,
@@ -215,7 +212,7 @@ describe('handleSwap function', async function () {
     it('Should populate the segment swap properly', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         to: mockToSwap,
         data: mockDataSwap,
@@ -242,7 +239,7 @@ describe('handleSwap function', async function () {
           userId: mockUserTelegramID,
           event: 'Swap',
           properties: {
-            eventId: swapId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
             tokenIn: mockTokenIn,
             amountIn: mockAmountIn,
@@ -265,7 +262,7 @@ describe('handleSwap function', async function () {
     it('Should call FlowXO webhook properly for new swaps', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: '1000000000000000000',
@@ -289,7 +286,7 @@ describe('handleSwap function', async function () {
         .excluding(['dateAdded'])
         .to.deep.equal({
           userResponsePath: mockResponsePath,
-          eventId: swapId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           userName: mockUserName,
           userHandle: mockUserHandle,
@@ -319,7 +316,7 @@ describe('handleSwap function', async function () {
     it('Should call the swapTokens function properly', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         chainIn: 'eip155:59144',
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -354,7 +351,7 @@ describe('handleSwap function', async function () {
     it('Should call the swapTokens function with delegate call if specified', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         chainIn: 'eip155:59144',
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -398,7 +395,7 @@ describe('handleSwap function', async function () {
       });
 
       await collectionSwapsMock.insertOne({
-        eventId: swapId,
+        eventId: mockEventId,
         status: TransactionStatus.SUCCESS,
       });
     });
@@ -407,7 +404,7 @@ describe('handleSwap function', async function () {
       expect(
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -426,7 +423,7 @@ describe('handleSwap function', async function () {
     it('Should not swap token if swap is already a success', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -448,7 +445,7 @@ describe('handleSwap function', async function () {
     it('Should not modify database if swap is already a success', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -466,7 +463,7 @@ describe('handleSwap function', async function () {
         .excluding(['_id'])
         .to.deep.equal([
           {
-            eventId: swapId,
+            eventId: mockEventId,
             status: TransactionStatus.SUCCESS,
           },
         ]);
@@ -475,7 +472,7 @@ describe('handleSwap function', async function () {
     it('Should not call FlowXO if swap is already a success', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -499,7 +496,7 @@ describe('handleSwap function', async function () {
     it('Should not call Segment if swap is already a success', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -528,7 +525,7 @@ describe('handleSwap function', async function () {
       });
 
       await collectionSwapsMock.insertOne({
-        eventId: swapId,
+        eventId: mockEventId,
         status: TransactionStatus.FAILURE,
       });
     });
@@ -537,7 +534,7 @@ describe('handleSwap function', async function () {
       expect(
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -556,7 +553,7 @@ describe('handleSwap function', async function () {
     it('Should not swap if swap if is already a failure', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -578,7 +575,7 @@ describe('handleSwap function', async function () {
     it('Should not modify database if swap is already a failure', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -596,7 +593,7 @@ describe('handleSwap function', async function () {
         .excluding(['_id'])
         .to.deep.equal([
           {
-            eventId: swapId,
+            eventId: mockEventId,
             status: TransactionStatus.FAILURE,
           },
         ]);
@@ -605,7 +602,7 @@ describe('handleSwap function', async function () {
     it('Should not call FlowXO if swap is already a failure', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -629,7 +626,7 @@ describe('handleSwap function', async function () {
     it('Should not call Segment if swap is already a failure', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -658,7 +655,7 @@ describe('handleSwap function', async function () {
       });
 
       await collectionSwapsMock.insertOne({
-        eventId: swapId,
+        eventId: mockEventId,
         status: TransactionStatus.FAILURE_503,
       });
     });
@@ -667,7 +664,7 @@ describe('handleSwap function', async function () {
       expect(
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -686,7 +683,7 @@ describe('handleSwap function', async function () {
     it('Should not swap if swap if is already a failure', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -708,7 +705,7 @@ describe('handleSwap function', async function () {
     it('Should not modify database if swap is already a failure', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -726,7 +723,7 @@ describe('handleSwap function', async function () {
         .excluding(['_id'])
         .to.deep.equal([
           {
-            eventId: swapId,
+            eventId: mockEventId,
             status: TransactionStatus.FAILURE_503,
           },
         ]);
@@ -735,7 +732,7 @@ describe('handleSwap function', async function () {
     it('Should not call FlowXO if swap is already a failure', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -759,7 +756,7 @@ describe('handleSwap function', async function () {
     it('Should not call Segment if swap is already a failure', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -797,7 +794,7 @@ describe('handleSwap function', async function () {
     it('Should return false if there is an error in the swap tokens request', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -817,7 +814,7 @@ describe('handleSwap function', async function () {
     it('Should not modify transaction status in the database if there is an error in the swap tokens request', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -849,7 +846,7 @@ describe('handleSwap function', async function () {
             from: mockFromSwap,
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
-            eventId: swapId,
+            eventId: mockEventId,
             status: TransactionStatus.PENDING,
             transactionHash: null,
             userHandle: mockUserHandle,
@@ -865,7 +862,7 @@ describe('handleSwap function', async function () {
     it('Should not call FlowXO if there is an error in the swap tokens request', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -889,7 +886,7 @@ describe('handleSwap function', async function () {
     it('Should not call Segment if there is an error in the swap tokens request', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -909,12 +906,12 @@ describe('handleSwap function', async function () {
 
   it('Should not add new swap if one with the same eventId already exists', async function () {
     await collectionSwapsMock.insertOne({
-      eventId: swapId,
+      eventId: mockEventId,
     });
 
     const objectId = (
       await collectionSwapsMock.findOne({
-        eventId: swapId,
+        eventId: mockEventId,
       })
     )._id.toString();
 
@@ -927,7 +924,7 @@ describe('handleSwap function', async function () {
 
     await handleSwap({
       value: mockAmountIn,
-      eventId: swapId,
+      eventId: mockEventId,
 
       userTelegramID: mockUserTelegramID,
       tokenIn: mockTokenIn,
@@ -950,7 +947,7 @@ describe('handleSwap function', async function () {
     it('Should return true if sender is not a user', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -970,7 +967,7 @@ describe('handleSwap function', async function () {
     it('Should not save swap in database if sender is not a user', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -992,7 +989,7 @@ describe('handleSwap function', async function () {
     it('Should not swap tokens if sender is not a user', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -1014,7 +1011,7 @@ describe('handleSwap function', async function () {
     it('Should not call FlowXO if sender is not a user', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -1038,7 +1035,7 @@ describe('handleSwap function', async function () {
     it('Should not call Segment if sender is not a user', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1074,7 +1071,7 @@ describe('handleSwap function', async function () {
     it('Should return false if error in PatchWallet transaction', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -1094,7 +1091,7 @@ describe('handleSwap function', async function () {
     it('Should not modify database if error in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -1126,7 +1123,7 @@ describe('handleSwap function', async function () {
             from: mockFromSwap,
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
-            eventId: swapId,
+            eventId: mockEventId,
             status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
@@ -1142,7 +1139,7 @@ describe('handleSwap function', async function () {
     it('Should not call FlowXO if error in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -1166,7 +1163,7 @@ describe('handleSwap function', async function () {
     it('Should not call Segment if error in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -1205,7 +1202,7 @@ describe('handleSwap function', async function () {
     it('Should return true if error 470 in PatchWallet transaction', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -1225,7 +1222,7 @@ describe('handleSwap function', async function () {
     it('Should complete db status to failure in database if error 470 in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1259,7 +1256,7 @@ describe('handleSwap function', async function () {
             from: mockFromSwap,
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
-            eventId: swapId,
+            eventId: mockEventId,
             status: TransactionStatus.FAILURE,
             transactionHash: null,
             userOpHash: null,
@@ -1272,7 +1269,7 @@ describe('handleSwap function', async function () {
     it('Should not call FlowXO if error 470 in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1295,7 +1292,7 @@ describe('handleSwap function', async function () {
     it('Should not call Segment if error 470 in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1333,7 +1330,7 @@ describe('handleSwap function', async function () {
     it('Should return true if error 503 in PatchWallet transaction', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
 
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
@@ -1353,7 +1350,7 @@ describe('handleSwap function', async function () {
     it('Should complete db status to failure in database if error 503 in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1387,7 +1384,7 @@ describe('handleSwap function', async function () {
             from: mockFromSwap,
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
-            eventId: swapId,
+            eventId: mockEventId,
             status: TransactionStatus.FAILURE_503,
             transactionHash: null,
             userOpHash: null,
@@ -1400,7 +1397,7 @@ describe('handleSwap function', async function () {
     it('Should not call FlowXO if error 503 in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1423,7 +1420,7 @@ describe('handleSwap function', async function () {
     it('Should not call Segment if error 503 in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1461,7 +1458,7 @@ describe('handleSwap function', async function () {
     it('Should return true if error 400 in PatchWallet transaction', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1480,7 +1477,7 @@ describe('handleSwap function', async function () {
     it('Should complete db status to failure in database if error 400 in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1514,7 +1511,7 @@ describe('handleSwap function', async function () {
             from: mockFromSwap,
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
-            eventId: swapId,
+            eventId: mockEventId,
             status: TransactionStatus.FAILURE,
             transactionHash: null,
             userOpHash: null,
@@ -1527,7 +1524,7 @@ describe('handleSwap function', async function () {
     it('Should not call FlowXO if error 400 in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1550,7 +1547,7 @@ describe('handleSwap function', async function () {
     it('Should not call Segment if error 400 in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1588,7 +1585,7 @@ describe('handleSwap function', async function () {
     it('Should return false if no hash in PatchWallet transaction', async function () {
       const result = await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1607,7 +1604,7 @@ describe('handleSwap function', async function () {
     it('Should do no swap status modification in database if no hash in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1638,7 +1635,7 @@ describe('handleSwap function', async function () {
             from: mockFromSwap,
             tokenInSymbol: mockTokenInSymbol,
             tokenOutSymbol: mockTokenOutSymbol,
-            eventId: swapId,
+            eventId: mockEventId,
             status: TransactionStatus.PENDING,
             transactionHash: null,
             userOpHash: null,
@@ -1654,7 +1651,7 @@ describe('handleSwap function', async function () {
     it('Should not call FlowXO if no hash in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1677,7 +1674,7 @@ describe('handleSwap function', async function () {
     it('Should not call Segment if no hash in PatchWallet transaction', async function () {
       await handleSwap({
         value: mockAmountIn,
-        eventId: swapId,
+        eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
         tokenIn: mockTokenIn,
         amountIn: mockAmountIn,
@@ -1717,7 +1714,7 @@ describe('handleSwap function', async function () {
       it('Should return false if transaction hash is empty in tx PatchWallet endpoint', async function () {
         const result = await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -1737,7 +1734,7 @@ describe('handleSwap function', async function () {
       it('Should update reward database with a pending_hash status and userOpHash if transaction hash is empty in tx PatchWallet endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -1772,7 +1769,7 @@ describe('handleSwap function', async function () {
               from: mockFromSwap,
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
-              eventId: swapId,
+              eventId: mockEventId,
               status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
@@ -1785,7 +1782,7 @@ describe('handleSwap function', async function () {
       it('Should not call FlowXO webhook if transaction hash is empty in tx PatchWallet endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1844,7 +1841,7 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
-          eventId: swapId,
+          eventId: mockEventId,
           status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
@@ -1853,7 +1850,7 @@ describe('handleSwap function', async function () {
       it('Should return true if transaction hash is present in PatchWallet status endpoint', async function () {
         const result = await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1872,7 +1869,7 @@ describe('handleSwap function', async function () {
       it('Should not send tokens if transaction hash is present in PatchWallet status endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1893,7 +1890,7 @@ describe('handleSwap function', async function () {
       it('Should update the database with a success status if transaction hash is present in PatchWallet status endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: mockAmountIn,
@@ -1929,7 +1926,7 @@ describe('handleSwap function', async function () {
               from: mockFromSwap,
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
-              eventId: swapId,
+              eventId: mockEventId,
               userOpHash: mockUserOpHash,
               status: TransactionStatus.SUCCESS,
               chainIn: mockChainId,
@@ -1941,7 +1938,7 @@ describe('handleSwap function', async function () {
       it('Should call FlowXO webhook properly if transaction hash is present in PatchWallet status endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
           amountIn: '1000000000000000000',
@@ -1964,7 +1961,7 @@ describe('handleSwap function', async function () {
           .excluding(['dateAdded'])
           .to.deep.equal({
             userResponsePath: mockResponsePath,
-            eventId: swapId,
+            eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
             userName: mockUserName,
             userHandle: mockUserHandle,
@@ -2019,7 +2016,7 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
-          eventId: swapId,
+          eventId: mockEventId,
           status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
@@ -2035,7 +2032,7 @@ describe('handleSwap function', async function () {
       it('Should return false if transaction hash is not present in PatchWallet status endpoint', async function () {
         const result = await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2055,7 +2052,7 @@ describe('handleSwap function', async function () {
       it('Should not swap tokens if transaction hash is not present in PatchWallet status endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2077,7 +2074,7 @@ describe('handleSwap function', async function () {
       it('Should not update database if transaction hash is not present in PatchWallet status endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2112,7 +2109,7 @@ describe('handleSwap function', async function () {
               from: mockFromSwap,
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
-              eventId: swapId,
+              eventId: mockEventId,
               status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
               transactionHash: null,
@@ -2125,7 +2122,7 @@ describe('handleSwap function', async function () {
       it('Should not call FlowXO webhook if transaction hash is not present in PatchWallet status endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2169,7 +2166,7 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
-          eventId: swapId,
+          eventId: mockEventId,
           status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
@@ -2182,7 +2179,7 @@ describe('handleSwap function', async function () {
       it('Should return false if Error in PatchWallet get status endpoint', async function () {
         const result = await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2202,7 +2199,7 @@ describe('handleSwap function', async function () {
       it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2224,7 +2221,7 @@ describe('handleSwap function', async function () {
       it('Should not update database if Error in PatchWallet get status endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2254,7 +2251,7 @@ describe('handleSwap function', async function () {
               from: mockFromSwap,
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
-              eventId: swapId,
+              eventId: mockEventId,
               status: TransactionStatus.PENDING_HASH,
               userOpHash: mockUserOpHash,
             },
@@ -2264,7 +2261,7 @@ describe('handleSwap function', async function () {
       it('Should not call FlowXO webhook if Error in PatchWallet get status endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2308,7 +2305,7 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
-          eventId: swapId,
+          eventId: mockEventId,
           status: TransactionStatus.PENDING_HASH,
           userOpHash: mockUserOpHash,
         });
@@ -2323,7 +2320,7 @@ describe('handleSwap function', async function () {
       it('Should return true if Error 470 in PatchWallet get status endpoint', async function () {
         const result = await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2343,7 +2340,7 @@ describe('handleSwap function', async function () {
       it('Should not send tokens if Error 470 in PatchWallet get status endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2365,7 +2362,7 @@ describe('handleSwap function', async function () {
       it('Should update database with failure status if Error 470 in PatchWallet get status endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2400,7 +2397,7 @@ describe('handleSwap function', async function () {
               from: mockFromSwap,
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
-              eventId: swapId,
+              eventId: mockEventId,
               status: TransactionStatus.FAILURE,
               userOpHash: mockUserOpHash,
               transactionHash: null,
@@ -2413,7 +2410,7 @@ describe('handleSwap function', async function () {
       it('Should not call FlowXO webhook if Error 470 in PatchWallet get status endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2457,7 +2454,7 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
-          eventId: swapId,
+          eventId: mockEventId,
           status: TransactionStatus.PENDING_HASH,
         });
       });
@@ -2465,7 +2462,7 @@ describe('handleSwap function', async function () {
       it('Should return true if transaction hash is pending_hash without userOpHash', async function () {
         const result = await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2485,7 +2482,7 @@ describe('handleSwap function', async function () {
       it('Should not send tokens if transaction hash is pending_hash without userOpHash', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2507,7 +2504,7 @@ describe('handleSwap function', async function () {
       it('Should update reward database with a success status if transaction hash is pending_hash without userOpHash', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2540,7 +2537,7 @@ describe('handleSwap function', async function () {
               from: mockFromSwap,
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
-              eventId: swapId,
+              eventId: mockEventId,
               status: TransactionStatus.SUCCESS,
               transactionHash: null,
               userOpHash: null,
@@ -2553,7 +2550,7 @@ describe('handleSwap function', async function () {
       it('Should not call FlowXO webhook if transaction hash is empty in tx PatchWallet endpoint', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2597,7 +2594,7 @@ describe('handleSwap function', async function () {
           from: mockFromSwap,
           tokenInSymbol: mockTokenInSymbol,
           tokenOutSymbol: mockTokenOutSymbol,
-          eventId: swapId,
+          eventId: mockEventId,
           status: TransactionStatus.PENDING_HASH,
           dateAdded: new Date(Date.now() - 12 * 60 * 1000),
         });
@@ -2613,7 +2610,7 @@ describe('handleSwap function', async function () {
       it('Should return true after 10 min of trying to get status', async function () {
         const result = await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2633,7 +2630,7 @@ describe('handleSwap function', async function () {
       it('Should not send tokens after 10 min of trying to get status', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2655,7 +2652,7 @@ describe('handleSwap function', async function () {
       it('Should update reward database with a failure status after 10 min of trying to get status', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,
@@ -2690,7 +2687,7 @@ describe('handleSwap function', async function () {
               from: mockFromSwap,
               tokenInSymbol: mockTokenInSymbol,
               tokenOutSymbol: mockTokenOutSymbol,
-              eventId: swapId,
+              eventId: mockEventId,
               status: TransactionStatus.FAILURE,
               transactionHash: null,
               userOpHash: null,
@@ -2703,7 +2700,7 @@ describe('handleSwap function', async function () {
       it('Should not call FlowXO webhook after 10 min of trying to get status', async function () {
         await handleSwap({
           value: mockAmountIn,
-          eventId: swapId,
+          eventId: mockEventId,
 
           userTelegramID: mockUserTelegramID,
           tokenIn: mockTokenIn,

@@ -27,7 +27,7 @@ import {
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
 } from '../../utils/constants';
-import { G1_POLYGON_ADDRESS } from '../../../secrets';
+import { G1_POLYGON_ADDRESS, SOURCE_WALLET_ADDRESS } from '../../../secrets';
 import * as web3 from '../../utils/web3';
 import { ContractStub } from '../../types/tests.types';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
@@ -85,12 +85,10 @@ describe('handleNewOrder function', async function () {
     contractStub = {
       methods: {
         decimals: sandbox.stub().resolves('18'),
-        transfer: sandbox.stub().returns({
-          encodeABI: sandbox
-            .stub()
-            .returns(
-              '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-            ),
+        transfer: sandbox.stub().callsFake((recipient, amount) => {
+          return {
+            encodeABI: sandbox.stub().returns(`${recipient}+${amount}`),
+          };
         }),
       },
     };
@@ -315,9 +313,7 @@ describe('handleNewOrder function', async function () {
         chain: mockChainName,
         to: [G1_POLYGON_ADDRESS],
         value: ['0x00'],
-        data: [
-          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-        ],
+        data: [`${SOURCE_WALLET_ADDRESS}+5000000000000000000`],
         delegatecall: 0,
         auth: '',
       });
@@ -432,9 +428,7 @@ describe('handleNewOrder function', async function () {
         chain: mockChainName,
         to: [G1_POLYGON_ADDRESS],
         value: ['0x00'],
-        data: [
-          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-        ],
+        data: [`${SOURCE_WALLET_ADDRESS}+500550000000000000000`],
         delegatecall: 0,
         auth: '',
       });

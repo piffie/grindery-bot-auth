@@ -34,6 +34,7 @@ import { ContractStub } from '../../types/tests.types';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
 import { spuriousOrdersUSD } from './samples/usd-orders-sample';
 import { handleNewOrder } from '../../webhooks/order';
+import { SOURCE_WALLET_ADDRESS } from '../../../secrets';
 
 chai.use(chaiExclude);
 
@@ -86,12 +87,10 @@ describe('handleNewUSDOrder function', async function () {
     contractStub = {
       methods: {
         decimals: sandbox.stub().resolves('18'),
-        transfer: sandbox.stub().returns({
-          encodeABI: sandbox
-            .stub()
-            .returns(
-              '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-            ),
+        transfer: sandbox.stub().callsFake((recipient, amount) => {
+          return {
+            encodeABI: sandbox.stub().returns(`${recipient}+${amount}`),
+          };
         }),
       },
     };
@@ -324,9 +323,7 @@ describe('handleNewUSDOrder function', async function () {
         chain: mockChainName1,
         to: [mockTokenAddress1],
         value: ['0x00'],
-        data: [
-          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-        ],
+        data: [`${SOURCE_WALLET_ADDRESS}+100000000000000000000`],
         delegatecall: 0,
         auth: '',
       });
@@ -447,9 +444,7 @@ describe('handleNewUSDOrder function', async function () {
         chain: mockChainName1,
         to: [mockTokenAddress1],
         value: ['0x00'],
-        data: [
-          '0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000000000000000064',
-        ],
+        data: [`${SOURCE_WALLET_ADDRESS}+100100000000000000000`],
         delegatecall: 0,
         auth: '',
       });
