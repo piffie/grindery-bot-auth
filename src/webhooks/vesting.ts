@@ -4,7 +4,6 @@ import { VestingParams, createVesting } from '../types/hedgey.types';
 import { PatchRawResult } from '../types/webhook.types';
 import {
   FLOWXO_NEW_VESTING_WEBHOOK,
-  USERS_COLLECTION,
   VESTING_COLLECTION,
 } from '../utils/constants';
 import {
@@ -23,11 +22,8 @@ import {
 import { FLOWXO_WEBHOOK_API_KEY } from '../../secrets';
 import { addVestingSegment } from '../utils/segment';
 import { Db, WithId } from 'mongodb';
-import {
-  MongoUser,
-  MongoVesting,
-  TransactionStatus,
-} from 'grindery-nexus-common-utils';
+import { MongoVesting, TransactionStatus } from 'grindery-nexus-common-utils';
+import { UserTelegram } from '../utils/user';
 
 /**
  * Handles a new transaction based on the provided parameters.
@@ -44,18 +40,10 @@ import {
 export async function handleNewVesting(
   params: VestingParams,
 ): Promise<boolean> {
-  // Establish a connection to the database
-  const db = await Database.getInstance();
+  // Generate a Telegram user instance for the sender
+  const sender = await UserTelegram.build(params.senderTgId);
 
-  // Retrieve sender information from the "users" collection
-  const senderInformation = (await db
-    ?.collection(USERS_COLLECTION)
-    .findOne({ userTelegramID: params.senderTgId })) as
-    | WithId<MongoUser>
-    | null
-    | undefined;
-
-  if (!senderInformation)
+  if (!sender.params)
     return (
       console.error(
         `[${params.eventId}] Sender ${params.senderTgId} is not a user`,
@@ -65,7 +53,7 @@ export async function handleNewVesting(
 
   // Create a vesting object
   const vesting = await VestingTelegram.build(
-    createVesting(params, senderInformation),
+    createVesting(params, sender.params),
   );
 
   if (

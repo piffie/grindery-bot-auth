@@ -10,7 +10,6 @@ import {
   FLOWXO_NEW_LINK_REWARD_WEBHOOK,
   REWARDS_COLLECTION,
   RewardReason,
-  USERS_COLLECTION,
 } from '../utils/constants';
 import {
   getPatchWalletAccessToken,
@@ -27,11 +26,8 @@ import {
 } from './utils';
 import { Db, WithId } from 'mongodb';
 import { Database } from '../db/conn';
-import {
-  MongoReward,
-  MongoUser,
-  TransactionStatus,
-} from 'grindery-nexus-common-utils';
+import { MongoReward, TransactionStatus } from 'grindery-nexus-common-utils';
+import { UserTelegram } from '../utils/user';
 
 /**
  * Handles the processing of a link rewardInstance based on specified parameters.
@@ -114,7 +110,7 @@ export class LinkRewardTelegram {
   userOpHash?: string;
 
   /** Transaction details of the referent. */
-  referent: WithId<MongoUser> | null;
+  referent: UserTelegram;
 
   /** Database reference. */
   db: Db | null;
@@ -149,7 +145,7 @@ export class LinkRewardTelegram {
     reward.db = await Database.getInstance();
 
     // Check if the referent user exists for the reward
-    if (!(await reward.getReferent())) {
+    if (!(await reward.getReferent()).isInDatabase) {
       console.log(
         `[${reward.params.eventId}] ${reward.params.referentUserTelegramID} referent user is not a user to process the link reward.`,
       );
@@ -187,15 +183,14 @@ export class LinkRewardTelegram {
    * Retrieves the referent user information from the database.
    * @returns {Promise<WithId<MongoUser>|null>} - The referent user information or null if not found.
    */
-  async getReferent(): Promise<WithId<MongoUser> | null> {
-    if (this.db)
-      this.referent = (await this.db.collection(USERS_COLLECTION).findOne({
-        userTelegramID: this.params.referentUserTelegramID,
-      })) as WithId<MongoUser> | null;
+  async getReferent(): Promise<UserTelegram> {
+    this.referent = await UserTelegram.build(
+      this.params.referentUserTelegramID || '',
+    );
 
-    if (this.referent) {
-      this.referent.patchwallet =
-        this.referent?.patchwallet ??
+    if (this.referent && this.referent.params) {
+      this.referent.params.patchwallet =
+        this.referent.patchwalletAddress() ??
         (await getPatchWalletAddressFromTgId(
           this.params.referentUserTelegramID || '',
         ));
@@ -248,11 +243,11 @@ export class LinkRewardTelegram {
         $set: {
           eventId: this.params.eventId,
           userTelegramID: this.params.referentUserTelegramID,
-          responsePath: this.referent?.responsePath,
-          userHandle: this.referent?.userHandle,
-          userName: this.referent?.userName,
+          responsePath: this.referent.responsePath(),
+          userHandle: this.referent.userHandle(),
+          userName: this.referent.userName(),
           reason: this.params.reason,
-          walletAddress: this.referent?.patchwallet,
+          walletAddress: this.referent.patchwalletAddress(),
           amount: this.params.amount,
           message: this.params.message,
           ...(date ? { dateAdded: date } : {}),
@@ -276,11 +271,11 @@ export class LinkRewardTelegram {
     // Send transaction information to FlowXO
     await axios.post(FLOWXO_NEW_LINK_REWARD_WEBHOOK, {
       userTelegramID: this.params.referentUserTelegramID,
-      responsePath: this.referent?.responsePath,
-      walletAddress: this.referent?.patchwallet,
+      responsePath: this.referent.responsePath(),
+      walletAddress: this.referent.patchwalletAddress(),
       reason: this.params.reason,
-      userHandle: this.referent?.userHandle,
-      userName: this.referent?.userName,
+      userHandle: this.referent.userHandle(),
+      userName: this.referent.userName(),
       amount: this.params.amount,
       message: this.params.message,
       transactionHash: this.txHash,
@@ -299,7 +294,7 @@ export class LinkRewardTelegram {
   > {
     return await sendTokens(
       SOURCE_TG_ID,
-      this.referent?.patchwallet || '',
+      this.referent.patchwalletAddress() || '',
       this.params.amount || '',
       await getPatchWalletAccessToken(),
       this.params.delegatecall || 0,

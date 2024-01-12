@@ -5,7 +5,6 @@ import {
   GX_ORDER_COLLECTION,
   GX_QUOTE_COLLECTION,
   Ordertype,
-  USERS_COLLECTION,
 } from '../utils/constants';
 import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet';
 import {
@@ -19,20 +18,19 @@ import {
 } from './utils';
 import { PRODUCTION_ENV, SOURCE_WALLET_ADDRESS } from '../../secrets';
 import { Db, WithId } from 'mongodb';
-import { MongoUser, TransactionStatus } from 'grindery-nexus-common-utils';
+import { TransactionStatus } from 'grindery-nexus-common-utils';
 import { MongoGxQuote, MongoOrder, OrderParams } from '../types/gx.types';
 import { mockTransactionHash, mockUserOpHash } from '../test/utils';
+import { UserTelegram } from '../utils/user';
 
 export async function handleNewOrder(params: OrderParams): Promise<boolean> {
   // Establish a connection to the database
   const db = await Database.getInstance();
 
-  // Retrieve sender information from the "users" collection
-  const senderInformation = (await db?.collection(USERS_COLLECTION).findOne({
-    userTelegramID: params.userTelegramID,
-  })) as WithId<MongoUser> | null;
+  // Generate a Telegram user instance for the sender
+  const sender = await UserTelegram.build(params.userTelegramID);
 
-  if (!senderInformation)
+  if (!sender.isInDatabase)
     return (
       console.error(
         `[${params.eventId}] Sender ${params.userTelegramID} is not a user`,

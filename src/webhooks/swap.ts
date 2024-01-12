@@ -1,7 +1,6 @@
 import {
   FLOWXO_NEW_SWAP_WEBHOOK,
   SWAPS_COLLECTION,
-  USERS_COLLECTION,
   nativeTokenAddresses,
 } from '../utils/constants';
 import { Database } from '../db/conn';
@@ -26,11 +25,8 @@ import { getContract, weiToEther } from '../utils/web3';
 import { CHAIN_MAPPING } from '../utils/chains';
 import { getPatchWalletAccessToken, swapTokens } from '../utils/patchwallet';
 import { Db, WithId } from 'mongodb';
-import {
-  MongoSwap,
-  MongoUser,
-  TransactionStatus,
-} from 'grindery-nexus-common-utils';
+import { MongoSwap, TransactionStatus } from 'grindery-nexus-common-utils';
+import { UserTelegram } from '../utils/user';
 
 /**
  * Handles the swap process based on provided parameters.
@@ -38,16 +34,11 @@ import {
  * @returns {Promise<boolean>} - Promise resolving to a boolean indicating success or failure of the swap process.
  */
 export async function handleSwap(params: SwapParams): Promise<boolean> {
-  // Get the database instance
-  const db = await Database.getInstance();
-
-  // Fetch user information from the database based on the provided Telegram ID
-  const userInformation = (await db?.collection(USERS_COLLECTION).findOne({
-    userTelegramID: params.userTelegramID,
-  })) as WithId<MongoUser> | null;
+  // Generate a Telegram user instance
+  const user = await UserTelegram.build(params.userTelegramID);
 
   // If user information is not found, log an error and return true indicating handled status
-  if (!userInformation) {
+  if (!user.params) {
     console.error(
       `[SWAP EVENT] Event ID [${params.eventId}] User Telegram ID [${params.userTelegramID}] does not exist in the database.`,
     );
@@ -55,9 +46,7 @@ export async function handleSwap(params: SwapParams): Promise<boolean> {
   }
 
   // Create a swap instance with provided parameters and user information
-  const swap = await SwapTelegram.build(
-    createSwapParams(params, userInformation),
-  );
+  const swap = await SwapTelegram.build(createSwapParams(params, user.params));
 
   // If the swap status indicates success or failure, return true indicating handled status
   if (isSuccessfulTransaction(swap.status) || isFailedTransaction(swap.status))
