@@ -185,6 +185,11 @@ export const HEDGEY_LOCKUP_LOCKER =
   '0x1961A23409CA59EEDCA6a99c97E4087DaD752486';
 
 /**
+ * The GX Polygon address.
+ */
+export const GX_POLYGON_ADDRESS = '';
+
+/**
  * Webhook for Flow XO: New Vesting.
  * @type {string}
  */

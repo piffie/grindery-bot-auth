@@ -1,7 +1,7 @@
 import { TransferTelegram } from '../webhooks/transaction';
-import { GX_POLYGON_ADDRESS, SOURCE_WALLET_ADDRESS } from '../../secrets';
+import { SOURCE_WALLET_ADDRESS } from '../../secrets';
 import { Database } from '../db/conn';
-import { TOP_UP_COLLECTION } from './constants';
+import { GX_POLYGON_ADDRESS, TOP_UP_COLLECTION } from './constants';
 import { UserTelegram } from './user';
 
 export async function isTopUpTx(
