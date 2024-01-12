@@ -797,7 +797,7 @@ router.get('/status', async (req, res) => {
       ?.collection(GX_QUOTE_COLLECTION)
       .findOne({ quoteId }, { projection: { _id: 0 } });
 
-    let consolidatedOrder = {
+    const consolidatedOrder = {
       quoteId: quoteId,
       status: GxOrderStatus.PENDING, // Default status
       ...quote,

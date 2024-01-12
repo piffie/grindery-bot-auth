@@ -1428,7 +1428,7 @@ describe('G1 to GX util functions', async function () {
       ]);
     });
 
-    it('Should return a 404 status if order is not found', async () => {
+    it('Should return a 404 status if order is not found', async function () {
       const res = await chai
         .request(app)
         .get('/v1/tge/status')
@@ -1441,7 +1441,7 @@ describe('G1 to GX util functions', async function () {
       expect(res.status).to.be.equal(404);
     });
 
-    it('Should global order status be SUCCESS when both G1 and USD orders are complete', async () => {
+    it('Should global order status be SUCCESS when both G1 and USD orders are complete', async function () {
       await collectionOrdersMock.insertMany([
         {
           orderId: mockOrderID,
@@ -1508,7 +1508,7 @@ describe('G1 to GX util functions', async function () {
       });
     });
 
-    it('Should global order status be SUCCESS when G1 is complete and USD is N/A', async () => {
+    it('Should global order status be SUCCESS when G1 is complete and USD is N/A', async function () {
       await collectionOrdersMock.insertMany([
         {
           orderId: mockOrderID,
@@ -1562,7 +1562,7 @@ describe('G1 to GX util functions', async function () {
       });
     });
 
-    it('Should global order status be FAILED when G1 is complete and USD is failed', async () => {
+    it('Should global order status be FAILED when G1 is complete and USD is failed', async function () {
       await collectionOrdersMock.insertMany([
         {
           orderId: mockOrderID,
@@ -1629,7 +1629,7 @@ describe('G1 to GX util functions', async function () {
       });
     });
 
-    it('Should global order status be FAILED when G1 is failed and USD is complete', async () => {
+    it('Should global order status be FAILED when G1 is failed and USD is complete', async function () {
       await collectionOrdersMock.insertMany([
         {
           orderId: mockOrderID,
@@ -1696,7 +1696,7 @@ describe('G1 to GX util functions', async function () {
       });
     });
 
-    it('Should global order status be FAILED when G1 is failed and USD is failed', async () => {
+    it('Should global order status be FAILED when G1 is failed and USD is failed', async function () {
       await collectionOrdersMock.insertMany([
         {
           orderId: mockOrderID,
@@ -1763,7 +1763,7 @@ describe('G1 to GX util functions', async function () {
       });
     });
 
-    it('Should global order status be PENDING when G1 is pending and USD is complete', async () => {
+    it('Should global order status be PENDING when G1 is pending and USD is complete', async function () {
       await collectionOrdersMock.insertMany([
         {
           orderId: mockOrderID,
@@ -1830,7 +1830,7 @@ describe('G1 to GX util functions', async function () {
       });
     });
 
-    it('Should global order status be PENDING when G1 is complete and USD is pending', async () => {
+    it('Should global order status be PENDING when G1 is complete and USD is pending', async function () {
       await collectionOrdersMock.insertMany([
         {
           orderId: mockOrderID,
@@ -1897,7 +1897,7 @@ describe('G1 to GX util functions', async function () {
       });
     });
 
-    it('Should global order status be PENDING when G1 is pending and USD is pending', async () => {
+    it('Should global order status be PENDING when G1 is pending and USD is pending', async function () {
       await collectionOrdersMock.insertMany([
         {
           orderId: mockOrderID,
@@ -1964,7 +1964,7 @@ describe('G1 to GX util functions', async function () {
       });
     });
 
-    it('Should global order status be PENDING when G1 is complete and USD is waiting usd', async () => {
+    it('Should global order status be PENDING when G1 is complete and USD is waiting usd', async function () {
       await collectionOrdersMock.insertMany([
         {
           orderId: mockOrderID,
