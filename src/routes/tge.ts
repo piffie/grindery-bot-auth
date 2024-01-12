@@ -2,7 +2,11 @@ import express from 'express';
 import { authenticateApiKey } from '../utils/auth';
 import { computeG1ToGxConversion } from '../utils/g1gx';
 import { Database } from '../db/conn';
-import { GX_ORDER_COLLECTION, GX_QUOTE_COLLECTION } from '../utils/constants';
+import {
+  GX_ORDER_COLLECTION,
+  GX_QUOTE_COLLECTION,
+  Ordertype,
+} from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet';
 import { SOURCE_WALLET_ADDRESS } from '../../secrets';
@@ -707,6 +711,161 @@ router.get('/order', authenticateApiKey, async (req, res) => {
     return res.status(200).json({ order });
   } catch (error) {
     // Returns a 500 status with a JSON response indicating an error occurred
+    return res.status(500).json({ msg: 'An error occurred', error });
+  }
+});
+
+/**
+ * GET /status
+ *
+ * @summary Get the status of orders and the associated quote
+ * @description Retrieves the status of all orders associated with a given quote ID, along with the quote details.
+ *              This endpoint is designed to fetch both G1 and USD order types and compile their information along with the quote data.
+ * @tags Order Status, Quote Status
+ * @security BearerAuth
+ * @param {string} req.query.quoteId - The quote ID to fetch associated orders and quote details.
+ * @return {object} 200 - Success response with the details of orders and the associated quote
+ * @return {object} 404 - Error response if either orders or quote not found for the given quote ID
+ * @return {object} 500 - Error response if an error occurs during data retrieval
+ *
+ * @example request - 200 - Example request query parameter
+ * /status?quoteId=mocked-quote-id
+ *
+ * @example response - 200 - Success response example with orders and quote details
+ * {
+ *   "quote": {
+ *     "quoteId": "mocked-quote-id",
+ *     "tokenAmountG1": "500.00",
+ *     "usdFromUsdInvestment": "1",
+ *     "usdFromG1Investment": "1",
+ *     "usdFromMvu": "1",
+ *     "usdFromTime": "1",
+ *     "equivalentUsdInvested": "1",
+ *     "gxBeforeMvu": "1",
+ *     "gxMvuEffect": "1",
+ *     "gxTimeEffect": "1",
+ *     "GxUsdExchangeRate": "1",
+ *     "standardGxUsdExchangeRate": "1",
+ *     "discountReceived": "1",
+ *     "gxReceived": "1",
+ *     "userTelegramID": "user-telegram-id"
+ *   },
+ *   "orders": [
+ *     {
+ *       "orderId": "mocked-order-id",
+ *       "status": "COMPLETE",
+ *       "orderType": "G1",
+ *       "quoteId": "mocked-quote-id",
+ *       "userTelegramID": "user-telegram-id"
+ *     },
+ *     {
+ *       "orderId": "mocked-order-id-2",
+ *       "status": "COMPLETE",
+ *       "orderType": "USD",
+ *       "quoteId": "mocked-quote-id",
+ *       "userTelegramID": "user-telegram-id"
+ *     }
+ *   ]
+ * }
+ *
+ * @example response - 404 - Error response example if no orders or quote found for the quote ID
+ * {
+ *   "msg": "Order or quote not found"
+ * }
+ *
+ * @example response - 500 - Error response example if an error occurs during data retrieval
+ * {
+ *   "msg": "An error occurred",
+ *   "error": "Error details here"
+ * }
+ */
+router.get('/status', authenticateApiKey, async (req, res) => {
+  try {
+    const db = await Database.getInstance();
+    const quoteId = req.query.quoteId;
+
+    const orders = await db
+      ?.collection(GX_ORDER_COLLECTION)
+      .find({ quoteId }, { projection: { _id: 0 } })
+      .toArray();
+
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ msg: 'Order not found' });
+    }
+
+    const quote = await db
+      ?.collection(GX_QUOTE_COLLECTION)
+      .findOne({ quoteId }, { projection: { _id: 0 } });
+
+    const consolidatedOrder = {
+      quoteId: quoteId,
+      status: GxOrderStatus.PENDING, // Default status
+      ...quote,
+      orderIdG1: null,
+      dateG1: null,
+      transactionHashG1: null,
+      userOpHashG1: null,
+      orderIdUSD: null,
+      dateUSD: null,
+      chainIdUSD: null,
+      tokenAddressUSD: null,
+      tokenAmountUSD: null,
+      transactionHashUSD: null,
+      userOpHashUSD: null,
+    };
+
+    const orderG1 = orders.find((order) => order.orderType === Ordertype.G1);
+    if (orderG1) {
+      consolidatedOrder.orderIdG1 = orderG1.orderId;
+      consolidatedOrder.dateG1 = orderG1.dateG1;
+      consolidatedOrder.transactionHashG1 = orderG1.transactionHashG1;
+      consolidatedOrder.userOpHashG1 = orderG1.userOpHashG1;
+    }
+
+    const orderUSD = orders.find((order) => order.orderType === Ordertype.USD);
+    if (orderUSD) {
+      consolidatedOrder.orderIdUSD = orderUSD.orderId;
+      consolidatedOrder.dateUSD = orderUSD.dateUSD;
+      consolidatedOrder.chainIdUSD = orderUSD.chainIdUSD;
+      consolidatedOrder.tokenAddressUSD = orderUSD.tokenAddressUSD;
+      consolidatedOrder.tokenAmountUSD = orderUSD.tokenAmountUSD;
+      consolidatedOrder.transactionHashUSD = orderUSD.transactionHashUSD;
+      consolidatedOrder.userOpHashUSD = orderUSD.userOpHashUSD;
+    }
+
+    // Calculate the final status based on the statuses of G1 and USD orders
+    const isG1Successful = orders.some(
+      (order) =>
+        order.orderType === Ordertype.G1 &&
+        order.status === GxOrderStatus.COMPLETE,
+    );
+    const isUSDSuccessful = orders.some(
+      (order) =>
+        order.orderType === Ordertype.USD &&
+        order.status === GxOrderStatus.COMPLETE,
+    );
+    const isAnyOrderPending = orders.some(
+      (order) =>
+        order.status === GxOrderStatus.PENDING ||
+        order.status === GxOrderStatus.WAITING_USD,
+    );
+
+    if (isAnyOrderPending) {
+      consolidatedOrder.status = GxOrderStatus.PENDING;
+    } else if (
+      isG1Successful &&
+      (isUSDSuccessful ||
+        !orders.some((order) => order.orderType === Ordertype.USD))
+    ) {
+      consolidatedOrder.status = GxOrderStatus.COMPLETE;
+    } else if (!isUSDSuccessful) {
+      consolidatedOrder.status = GxOrderStatus.FAILURE_USD;
+    } else if (!isG1Successful) {
+      consolidatedOrder.status = GxOrderStatus.FAILURE_G1;
+    }
+
+    return res.status(200).json(consolidatedOrder);
+  } catch (error) {
     return res.status(500).json({ msg: 'An error occurred', error });
   }
 });

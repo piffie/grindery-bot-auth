@@ -185,6 +185,12 @@ export function isUUIDv4(input: string): boolean {
 }
 
 /**
+ * Mock quote ID generated using uuidv4().
+ * @type {string}
+ */
+export const mockQuoteID: string = uuidv4();
+
+/**
  * Mock order ID generated using uuidv4().
  * @type {string}
  */
