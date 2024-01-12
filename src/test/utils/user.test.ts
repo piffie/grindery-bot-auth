@@ -7,6 +7,15 @@ import {
   mockUserName1,
   mockUserHandle2,
   mockUserName2,
+  getCollectionRewardsMock,
+  mockUserTelegramID,
+  mockTransactionHash,
+  mockResponsePath,
+  mockUserTelegramID1,
+  mockWallet,
+  mockWallet1,
+  mockResponsePath1,
+  mockTransactionHash1,
 } from '../utils';
 import chaiExclude from 'chai-exclude';
 import { UserTelegram } from '../../utils/user';
@@ -361,6 +370,222 @@ describe('User utils', async function () {
       it('Should return undefined for isWalkingDead when the attribute does not exist', async function () {
         const user = await UserTelegram.build('5958052954');
         expect(user.isWalkingDead()).to.be.undefined;
+      });
+    });
+
+    describe('Rewards', async function () {
+      beforeEach(async function () {
+        const collectionRewardsMock = await getCollectionRewardsMock();
+
+        await collectionRewardsMock?.insertMany([
+          {
+            userTelegramID: mockUserTelegramID,
+            responsePath: mockResponsePath,
+            walletAddress: mockWallet,
+            reason: 'user_sign_up',
+            userHandle: mockUserHandle,
+            userName: mockUserName,
+            amount: '100',
+            message: 'Sign up reward',
+            transactionHash: mockTransactionHash,
+            status: 'success',
+          },
+          {
+            userTelegramID: mockUserTelegramID1,
+            responsePath: mockResponsePath1,
+            walletAddress: mockWallet1,
+            reason: 'user_sign_up',
+            userHandle: mockUserHandle1,
+            userName: mockUserName1,
+            amount: '100',
+            message: 'Sign up reward',
+            transactionHash: mockTransactionHash1,
+            status: 'success',
+          },
+          {
+            userTelegramID: mockUserTelegramID,
+            responsePath: mockResponsePath,
+            walletAddress: mockWallet,
+            reason: '2x_reward',
+            userHandle: mockUserHandle,
+            userName: mockUserName,
+            amount: '50',
+            message: 'Referral reward',
+            transactionHash:
+              '0x33710bb0f77f18416efed68b6e8aea9914a63e04adc7e46f666b069cec775ad1',
+            parentTransactionHash:
+              '0xe89fdb28a0e562963c035db0bb6f65fc4b5efab30d6aad50b123e59675a0748c',
+            status: 'success',
+          },
+          {
+            userTelegramID: mockUserTelegramID,
+            responsePath: mockResponsePath,
+            walletAddress: mockWallet,
+            reason: '2x_reward',
+            userHandle: mockUserHandle,
+            userName: mockUserName,
+            amount: '50',
+            message: 'Referral reward',
+            transactionHash:
+              '0x33710bb0f77f1841ghtjtjefed68b6e8aea9914a63e04adc7e46f666b069cec775ad1',
+            parentTransactionHash:
+              '0xe89fdb28a0e562963c035db0bb6f65fc4b5efab30d6aad50b12gjthjt59675a0748c',
+            status: 'success',
+          },
+          {
+            userTelegramID: mockUserTelegramID,
+            responsePath: mockResponsePath,
+            walletAddress: mockWallet,
+            reason: '2x_reward',
+            userHandle: mockUserHandle,
+            userName: mockUserName,
+            amount: '50',
+            message: 'Referral reward',
+            transactionHash:
+              '0x33710bb0f77frt41ghtjtjefed68b6e8aea9914a63e04adc7e46f666b069cec775ad1',
+            parentTransactionHash:
+              '0xe89ffhgh28a0e562963c035db0bb6f65fc4b5efab30d6aad50b12gjthjt59675a0748c',
+            status: 'success',
+          },
+          {
+            userTelegramID: '11491856',
+            responsePath: '64d170d6f6/c/114946',
+            walletAddress: '0xcc69221713609dA5eF5CAa7',
+            reason: '2x_reward',
+            userHandle: 'Kadkjdjfg',
+            userName: 'gfgfg fjfjhc',
+            amount: '50',
+            message: 'Referral reward',
+            transactionHash:
+              '0xa527544742dc2a330bc7de7da2574241af7929acd687296ghghb1579bfed4d262a',
+            parentTransactionHash:
+              '0x0068dc7ad567fac23d74111a526bbeffc46a8867ghtyut41cb7e5b77187faf0ded1a0',
+            status: 'success',
+          },
+        ]);
+      });
+
+      it('getSignUpReward should return an array of sign up rewards', async function () {
+        const user = await UserTelegram.build(mockUserTelegramID);
+        expect(await user.getSignUpReward())
+          .excluding(['_id'])
+          .to.deep.equal([
+            {
+              userTelegramID: mockUserTelegramID,
+              responsePath: mockResponsePath,
+              walletAddress: mockWallet,
+              reason: 'user_sign_up',
+              userHandle: mockUserHandle,
+              userName: mockUserName,
+              amount: '100',
+              message: 'Sign up reward',
+              transactionHash: mockTransactionHash,
+              status: 'success',
+            },
+          ]);
+      });
+
+      it('getSignUpReward should return an empty array if no sign up reward', async function () {
+        const user = await UserTelegram.build('11491856');
+        expect(await user.getSignUpReward()).to.be.empty;
+      });
+
+      it('getSignUpReward should return an empty array if user is not in database', async function () {
+        const user = await UserTelegram.build('not_in_db');
+        expect(await user.getSignUpReward()).to.be.empty;
+      });
+
+      it('hasSignUpReward should return true if user has a sign up reward', async function () {
+        const user = await UserTelegram.build(mockUserTelegramID);
+        expect(await user.hasSignUpReward()).to.be.true;
+      });
+
+      it('hasSignUpReward should return false if user has no sign up reward', async function () {
+        const user = await UserTelegram.build('11491856');
+        expect(await user.hasSignUpReward()).to.be.false;
+      });
+
+      it('hasSignUpReward should return false if user is not in database', async function () {
+        const user = await UserTelegram.build('not_in_db');
+        expect(await user.hasSignUpReward()).to.be.false;
+      });
+
+      it('getReferralRewards should return an array of referral rewards', async function () {
+        const user = await UserTelegram.build(mockUserTelegramID);
+        expect(await user.getReferralRewards())
+          .excluding(['_id'])
+          .to.deep.equal([
+            {
+              userTelegramID: mockUserTelegramID,
+              responsePath: mockResponsePath,
+              walletAddress: mockWallet,
+              reason: '2x_reward',
+              userHandle: mockUserHandle,
+              userName: mockUserName,
+              amount: '50',
+              message: 'Referral reward',
+              transactionHash:
+                '0x33710bb0f77f18416efed68b6e8aea9914a63e04adc7e46f666b069cec775ad1',
+              parentTransactionHash:
+                '0xe89fdb28a0e562963c035db0bb6f65fc4b5efab30d6aad50b123e59675a0748c',
+              status: 'success',
+            },
+            {
+              userTelegramID: mockUserTelegramID,
+              responsePath: mockResponsePath,
+              walletAddress: mockWallet,
+              reason: '2x_reward',
+              userHandle: mockUserHandle,
+              userName: mockUserName,
+              amount: '50',
+              message: 'Referral reward',
+              transactionHash:
+                '0x33710bb0f77f1841ghtjtjefed68b6e8aea9914a63e04adc7e46f666b069cec775ad1',
+              parentTransactionHash:
+                '0xe89fdb28a0e562963c035db0bb6f65fc4b5efab30d6aad50b12gjthjt59675a0748c',
+              status: 'success',
+            },
+            {
+              userTelegramID: mockUserTelegramID,
+              responsePath: mockResponsePath,
+              walletAddress: mockWallet,
+              reason: '2x_reward',
+              userHandle: mockUserHandle,
+              userName: mockUserName,
+              amount: '50',
+              message: 'Referral reward',
+              transactionHash:
+                '0x33710bb0f77frt41ghtjtjefed68b6e8aea9914a63e04adc7e46f666b069cec775ad1',
+              parentTransactionHash:
+                '0xe89ffhgh28a0e562963c035db0bb6f65fc4b5efab30d6aad50b12gjthjt59675a0748c',
+              status: 'success',
+            },
+          ]);
+      });
+
+      it('getReferralRewards should return an empty array if no referral reward', async function () {
+        const user = await UserTelegram.build(mockUserTelegramID1);
+        expect(await user.getReferralRewards()).to.be.empty;
+      });
+
+      it('getReferralRewards should return an empty array if user is not in database', async function () {
+        const user = await UserTelegram.build('not_in_db');
+        expect(await user.getReferralRewards()).to.be.empty;
+      });
+
+      it('getNbrReferralRewards should return the number of referral rewards', async function () {
+        const user = await UserTelegram.build(mockUserTelegramID);
+        expect(await user.getNbrReferralRewards()).to.equal(3);
+      });
+
+      it('getNbrReferralRewards should return 0 if no referral reward', async function () {
+        const user = await UserTelegram.build(mockUserTelegramID1);
+        expect(await user.getNbrReferralRewards()).to.equal(0);
+      });
+
+      it('getNbrReferralRewards should return 0 if user not in database', async function () {
+        const user = await UserTelegram.build('not_in_db');
+        expect(await user.getNbrReferralRewards()).to.equal(0);
       });
     });
   });
