@@ -421,12 +421,104 @@ export class UserTelegram {
   }
 
   /**
+   * Returns the status of whether the user is considered active.
+   * @returns A boolean indicating whether the user is active or undefined if the attribute is not available.
+   */
+  isActiveUser(): boolean | undefined {
+    return this.params?.attributes?.isActiveUser;
+  }
+
+  /**
+   * Returns the status of whether the user is blacklisted.
+   * @returns A boolean indicating whether the user is blacklisted or undefined if the attribute is not available.
+   */
+  isBlacklist(): boolean | undefined {
+    return this.params?.attributes?.isBlacklist;
+  }
+
+  /**
+   * Returns the status of whether the user is a contributing user.
+   * @returns A boolean indicating whether the user is a contributing user or undefined if the attribute is not available.
+   */
+  isContributeUser(): boolean | undefined {
+    return this.params?.attributes?.isContributeUser;
+  }
+
+  /**
+   * Returns the status of whether the user is considered dead.
+   * @returns A boolean indicating whether the user is dead or undefined if the attribute is not available.
+   */
+  isDead(): boolean | undefined {
+    return this.params?.attributes?.isDead;
+  }
+
+  /**
+   * Returns the status of whether the user has double-spent.
+   * @returns A boolean indicating whether the user has double-spent or undefined if the attribute is not available.
+   */
+  isDoubleSpent(): boolean | undefined {
+    return this.params?.attributes?.isDoubleSpent;
+  }
+
+  /**
+   * Returns the status of whether the user is a drone.
+   * @returns A boolean indicating whether the user is a drone or undefined if the attribute is not available.
+   */
+  isDrone(): boolean | undefined {
+    return this.params?.attributes?.isDrone;
+  }
+
+  /**
+   * Returns the status of whether the user is a drone owner.
+   * @returns A boolean indicating whether the user is a drone owner or undefined if the attribute is not available.
+   */
+  isDroneOwner(): boolean | undefined {
+    return this.params?.attributes?.isDroneOwner;
+  }
+
+  /**
+   * Returns the status of whether the user is a gamer.
+   * @returns A boolean indicating whether the user is a gamer or undefined if the attribute is not available.
+   */
+  isGamer(): boolean | undefined {
+    return this.params?.attributes?.isGamer;
+  }
+
+  /**
+   * Returns the status of whether the user is a slave.
+   * @returns A boolean indicating whether the user is a slave or undefined if the attribute is not available.
+   */
+  isSlave(): boolean | undefined {
+    return this.params?.attributes?.isSlave;
+  }
+
+  /**
+   * Returns the status of whether the user is walking dead.
+   * @returns A boolean indicating whether the user is walking dead or undefined if the attribute is not available.
+   */
+  isWalkingDead(): boolean | undefined {
+    return this.params?.attributes?.isWalkingDead;
+  }
+
+  /**
    * Returns the MVU score as a number.
    * @returns {number | undefined} The MVU score, or undefined if not present or invalid.
    */
   getMvu(): number | undefined {
     if (this.params && this.params.attributes.mvu_score) {
       const parsedMvu = parseFloat(this.params.attributes.mvu_score);
+      if (!(isNaN(parsedMvu) && parsedMvu <= 0)) return parsedMvu;
+    }
+    return undefined;
+  }
+
+  /**
+   * Returns the MVU score rounded as a number.
+   * @returns {number | undefined} The MVU score, or undefined if not present or invalid.
+   */
+  getMvuRounded(): number | undefined {
+    if (this.params && this.params.attributes.mvu_rounded) {
+      const parsedMvu = parseFloat(this.params.attributes.mvu_rounded);
       if (!(isNaN(parsedMvu) && parsedMvu <= 0)) return parsedMvu;
     }
     return undefined;
