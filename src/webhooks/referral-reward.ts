@@ -10,7 +10,6 @@ import {
   REWARDS_COLLECTION,
   RewardReason,
   TRANSFERS_COLLECTION,
-  USERS_COLLECTION,
 } from '../utils/constants';
 import {
   getPatchWalletAccessToken,
@@ -30,9 +29,9 @@ import { Database } from '../db/conn';
 import {
   MongoReward,
   MongoTransfer,
-  MongoUser,
   TransactionStatus,
 } from 'grindery-nexus-common-utils';
+import { UserTelegram } from '../utils/user';
 
 /**
  * Handles the processing of a referral reward based on specified parameters.
@@ -120,7 +119,7 @@ export class ReferralRewardTelegram {
   parentTx?: WithId<MongoTransfer>;
 
   /** Transaction details of the referent. */
-  referent: WithId<MongoUser> | null;
+  referent: UserTelegram;
 
   /** Transaction details of the reward. */
   tx: WithId<MongoReward> | null;
@@ -221,16 +220,14 @@ export class ReferralRewardTelegram {
    */
   async getReferent(): Promise<boolean> {
     try {
-      if (this.db)
-        this.referent = (await this.db.collection(USERS_COLLECTION).findOne({
-          userTelegramID: this.parentTx?.senderTgId,
-        })) as WithId<MongoUser> | null;
-      if (!this.referent) {
+      this.referent = await UserTelegram.build(this.parentTx?.senderTgId || '');
+
+      if (!this.referent.isInDatabase) {
         console.log(
           `[${this.params.eventId}] sender ${this.parentTx?.senderTgId} who is supposed to receive a referral reward is not a user.`,
         );
       }
-      return Boolean(this.referent);
+      return this.referent.isInDatabase;
     } catch (error) {
       console.error(
         `[${this.params.eventId}] Error trying to get referent information: ${error}`,
@@ -277,10 +274,10 @@ export class ReferralRewardTelegram {
    * Updates the PatchWallet address of the referent user for the referral reward.
    */
   async updateReferentWallet() {
-    if (this.referent)
-      this.referent.patchwallet =
-        this.referent?.patchwallet ??
-        (await getPatchWalletAddressFromTgId(this.referent?.userTelegramID));
+    if (this.referent && this.referent.params)
+      this.referent.params.patchwallet =
+        this.referent.patchwalletAddress() ??
+        (await getPatchWalletAddressFromTgId(this.referent.userTelegramID));
   }
 
   /**
@@ -297,12 +294,12 @@ export class ReferralRewardTelegram {
       {
         $set: {
           eventId: this.params.eventId,
-          userTelegramID: this.referent?.userTelegramID,
-          responsePath: this.referent?.responsePath,
-          userHandle: this.referent?.userHandle,
-          userName: this.referent?.userName,
+          userTelegramID: this.referent.userTelegramID,
+          responsePath: this.referent.responsePath(),
+          userHandle: this.referent.userHandle(),
+          userName: this.referent.userName(),
           reason: this.params.reason,
-          walletAddress: this.referent?.patchwallet,
+          walletAddress: this.referent.patchwalletAddress(),
           amount: this.params.amount,
           message: this.params.message,
           ...(date ? { dateAdded: date } : {}),
@@ -316,7 +313,13 @@ export class ReferralRewardTelegram {
       { upsert: true },
     );
     console.log(
-      `[${this.params.eventId}] referral reward for ${this.referent?.patchwallet} sending tokens to ${this.params.patchwallet} in ${this.parentTx?.transactionHash} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
+      `[${
+        this.params.eventId
+      }] referral reward for ${this.referent.patchwalletAddress()} sending tokens to ${
+        this.params.patchwallet
+      } in ${
+        this.parentTx?.transactionHash
+      } in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
     );
   }
 
@@ -330,12 +333,12 @@ export class ReferralRewardTelegram {
       newUserUserHandle: this.params.userHandle,
       newUserUserName: this.params.userName,
       newUserPatchwallet: this.params.patchwallet,
-      userTelegramID: this.referent?.userTelegramID,
-      responsePath: this.referent?.responsePath,
-      walletAddress: this.referent?.patchwallet,
+      userTelegramID: this.referent.userTelegramID,
+      responsePath: this.referent.responsePath(),
+      walletAddress: this.referent.patchwalletAddress(),
       reason: this.params.reason,
-      userHandle: this.referent?.userHandle,
-      userName: this.referent?.userName,
+      userHandle: this.referent.userHandle(),
+      userName: this.referent.userName(),
       amount: this.params.amount,
       message: this.params.message,
       transactionHash: this.txHash,
@@ -354,7 +357,7 @@ export class ReferralRewardTelegram {
   > {
     return await sendTokens(
       SOURCE_TG_ID,
-      this.referent?.patchwallet || '',
+      this.referent.patchwalletAddress() || '',
       this.params.amount || '',
       await getPatchWalletAccessToken(),
       this.params.delegatecall || 0,

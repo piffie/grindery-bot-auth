@@ -2,16 +2,13 @@ import express from 'express';
 import { authenticateApiKey } from '../utils/auth';
 import { computeG1ToGxConversion } from '../utils/g1gx';
 import { Database } from '../db/conn';
-import {
-  GX_ORDER_COLLECTION,
-  GX_QUOTE_COLLECTION,
-  USERS_COLLECTION,
-} from '../utils/constants';
+import { GX_ORDER_COLLECTION, GX_QUOTE_COLLECTION } from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet';
 import { SOURCE_WALLET_ADDRESS } from '../../secrets';
 import { getTokenPrice } from '../utils/ankr';
 import { GxOrderStatus } from 'grindery-nexus-common-utils';
+import { UserTelegram } from '../utils/user';
 
 const router = express.Router();
 
@@ -76,22 +73,12 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
       parseFloat(token_price.data.result.usdPrice)
     ).toFixed(2);
 
-    const user = await db
-      ?.collection(USERS_COLLECTION)
-      .findOne({ userTelegramID: req.query.userTelegramID });
-
-    let mvu_score: number = 0;
-
-    if (user && user.attributes && user.attributes.mvu_score) {
-      const parsedMvu = parseFloat(user.attributes.mvu_score);
-
-      if (!isNaN(parsedMvu) && parsedMvu > 0) mvu_score = parsedMvu;
-    }
+    const user = await UserTelegram.build(req.query.userTelegramID as string);
 
     const result = computeG1ToGxConversion(
       Number(usdQuantity),
       Number(req.query.g1Quantity),
-      mvu_score,
+      user.getMvu() || 0,
     );
 
     const id = uuidv4();
