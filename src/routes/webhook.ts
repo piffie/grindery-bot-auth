@@ -19,6 +19,8 @@ import {
   PUBSUB_TOPIC_NAME,
 } from '../../secrets';
 import { google } from '@google-cloud/monitoring/build/protos/protos';
+import { handleNewOrder } from '../webhooks/order';
+import { Ordertype } from '../utils/constants';
 
 /**
  * This is a generic and extendable implementation of a webhook endpoint and pub/sub messages queue.
@@ -194,6 +196,18 @@ const listenForMessages = () => {
 
       // Example events:
       switch (messageData.event) {
+        case 'gx_order_g1':
+          processed = await handleNewOrder({
+            ...messageData.params,
+            orderType: Ordertype.G1,
+          });
+          break;
+        case 'gx_order_usd':
+          processed = await handleNewOrder({
+            ...messageData.params,
+            orderType: Ordertype.USD,
+          });
+          break;
         // User initiated new transaction
         case 'new_transaction':
           processed = await handleNewTransaction(messageData.params);

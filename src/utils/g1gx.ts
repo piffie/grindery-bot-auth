@@ -1,3 +1,4 @@
+import { GxQuote } from '../types/gx.types';
 import { minutesUntilTgeEnd } from './time';
 
 /**
@@ -231,7 +232,7 @@ export function computeG1ToGxConversion(
   usdQuantity: number,
   g1Quantity: number,
   mvu: number,
-) {
+): GxQuote {
   // Calculate different quantities and effects
   const gxAfterMVU = getGxAfterMVU(usdQuantity, g1Quantity, mvu);
   const gxFromG1 = getGxFromG1(usdQuantity, g1Quantity);

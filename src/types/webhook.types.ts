@@ -9,6 +9,7 @@ import { ReferralRewardTelegram } from '../webhooks/referral-reward';
 import { LinkRewardTelegram } from '../webhooks/link-reward';
 import { IsolatedRewardTelegram } from '../webhooks/isolated-reward';
 import { MongoUser, TransactionStatus } from 'grindery-nexus-common-utils';
+import { OrderTelegram } from '../webhooks/order';
 
 /**
  * Defines the structure for SwapParams.
@@ -303,7 +304,8 @@ export type TelegramOperations =
   | Reward
   | TransferTelegram
   | SwapTelegram
-  | VestingTelegram;
+  | VestingTelegram
+  | OrderTelegram;
 
 /**
  * Represents the result of a wallet patch operation.
@@ -357,6 +359,21 @@ export interface RewardInit {
    * Indicates if a reward should not be issued.
    */
   shouldBeIssued: boolean;
+}
+
+/**
+ * Represents the initialization result of a SignUpRewardTelegram instance.
+ */
+export interface OrderInit {
+  /**
+   * The initialized order instance.
+   */
+  orderInstance: OrderTelegram;
+
+  /**
+   * Indicates if the order should proceed.
+   */
+  shouldProceed: boolean;
 }
 
 /**

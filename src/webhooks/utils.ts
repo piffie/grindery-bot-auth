@@ -5,6 +5,7 @@ import {
 } from '../types/webhook.types';
 import { getTxStatus } from '../utils/patchwallet';
 import { getXMinBeforeDate } from '../utils/time';
+import { OrderTelegram } from './order';
 import { IsolatedRewardTelegram } from './isolated-reward';
 import { LinkRewardTelegram } from './link-reward';
 import { ReferralRewardTelegram } from './referral-reward';
@@ -160,7 +161,8 @@ export async function sendTransaction(
     if (
       telegram_operation instanceof SwapTelegram ||
       telegram_operation instanceof TransferTelegram ||
-      telegram_operation instanceof VestingTelegram
+      telegram_operation instanceof VestingTelegram ||
+      telegram_operation instanceof OrderTelegram
     ) {
       // Retrieve the response status from the error object, if available.
       const status = error?.response?.status;
