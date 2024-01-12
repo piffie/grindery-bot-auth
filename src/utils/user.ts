@@ -513,6 +513,18 @@ export class UserTelegram {
   }
 
   /**
+   * Returns the MVU score rounded as a number.
+   * @returns {number | undefined} The MVU score, or undefined if not present or invalid.
+   */
+  getMvuRounded(): number | undefined {
+    if (this.params && this.params.attributes.mvu_rounded) {
+      const parsedMvu = parseFloat(this.params.attributes.mvu_rounded);
+      if (!(isNaN(parsedMvu) && parsedMvu <= 0)) return parsedMvu;
+    }
+    return undefined;
+  }
+
+  /**
    * Returns the virtual balance as a number.
    * @returns {number | undefined} The virtual balance, or undefined if not present or invalid.
    */

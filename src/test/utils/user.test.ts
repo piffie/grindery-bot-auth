@@ -101,6 +101,29 @@ describe('User utils', async function () {
             virtual_balance: '30000',
           },
         },
+        {
+          userTelegramID: '846343721',
+          patchwallet: '0x2329C9fD46648E0831b21E67dccE6B117664ec06',
+          responsePath: '64d170d6dc5a2a00578ad6f6/c/846343728',
+          userHandle: mockUserHandle2,
+          userName: mockUserName2,
+          attributes: {
+            aff_score: null,
+            balance_100123: '110581',
+            host_score: '3',
+            isActiveUser: true,
+            isBlacklist: false,
+            isContributeUser: true,
+            isDead: true,
+            isDoubleSpent: true,
+            isDrone: true,
+            isDroneOwner: true,
+            isGamer: true,
+            isSlave: true,
+            isWalkingDead: true,
+            virtual_balance: '30000',
+          },
+        },
       ]);
     });
 
@@ -218,6 +241,16 @@ describe('User utils', async function () {
       it('Should return the MVU score as a number available', async function () {
         const user = await UserTelegram.build('846343728');
         expect(user.getMvu()).to.equal(7.35);
+      });
+
+      it('Should return the MVU score rounded as undefined if not available', async function () {
+        const user = await UserTelegram.build('846343721');
+        expect(user.getMvuRounded()).to.be.undefined;
+      });
+
+      it('Should return the MVU score rounded as a number available', async function () {
+        const user = await UserTelegram.build('846343728');
+        expect(user.getMvuRounded()).to.equal(7);
       });
 
       it('Should return the virtual balance as a number', async function () {
