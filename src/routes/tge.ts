@@ -711,4 +711,33 @@ router.get('/order', authenticateApiKey, async (req, res) => {
   }
 });
 
+router.get('/status', async (req, res) => {
+  const db = await Database.getInstance();
+  const quoteId = req.query.quoteId;
+
+  const orders = await db
+    ?.collection(GX_ORDER_COLLECTION)
+    .find({ quoteId }, { projection: { _id: 0 } })
+    .toArray();
+
+  if (orders && orders.length === 0) {
+    return res.status(404).json({ msg: 'Order not found' });
+  }
+
+  const quote = await db
+    ?.collection(GX_QUOTE_COLLECTION)
+    .findOne({ quoteId }, { projection: { _id: 0 } });
+
+  if (!quote) {
+    return res.status(404).json({ msg: 'Quote not found' });
+  }
+
+  const payload = {
+    quote,
+    orders,
+  };
+
+  return res.status(200).json(payload);
+});
+
 export default router;

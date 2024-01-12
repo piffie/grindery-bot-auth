@@ -16,6 +16,7 @@ import {
   mockOrderID,
   mockOrderID1,
   mockOrderID2,
+  mockQuoteID,
   mockTokenAddress,
   mockTransactionHash,
   mockTransactionHash1,
@@ -35,6 +36,7 @@ import {
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
   ANKR_MULTICHAIN_API_URL,
+  Ordertype,
 } from '../../utils/constants';
 import axios from 'axios';
 import { GxOrderStatus } from 'grindery-nexus-common-utils';
@@ -1399,6 +1401,96 @@ describe('G1 to GX util functions', async function () {
         success: false,
         msg: 'An error occurred',
       });
+    });
+  });
+
+  describe('Endpoint to get quote and order for a user', async function () {
+    beforeEach(async function () {
+      await collectionQuotesMock.insertMany([
+        {
+          quoteId: mockQuoteID,
+          tokenAmountG1: '500.00',
+          usdFromUsdInvestment: '1',
+          usdFromG1Investment: '1',
+          usdFromMvu: '1',
+          usdFromTime: '1',
+          equivalentUsdInvested: '1',
+          gxBeforeMvu: '1',
+          gxMvuEffect: '1',
+          gxTimeEffect: '1',
+          GxUsdExchangeRate: '1',
+          standardGxUsdExchangeRate: '1',
+          discountReceived: '1',
+          gxReceived: '1',
+          userTelegramID: mockUserTelegramID,
+        },
+      ]);
+    });
+
+    it('Should return all orders associated with quote', async () => {
+      await collectionOrdersMock.insertMany([
+        {
+          orderId: mockOrderID,
+          status: GxOrderStatus.COMPLETE,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.G1,
+          quoteId: mockQuoteID,
+        },
+        {
+          orderId: mockOrderID1,
+          status: GxOrderStatus.COMPLETE,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.USD,
+          quoteId: mockQuoteID,
+        },
+      ]);
+
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/status')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          quoteId: mockQuoteID,
+        });
+
+      expect(res).to.have.status(200);
+      expect(res.body)
+        .excluding(['_id'])
+        .to.deep.equal({
+          quote: {
+            quoteId: mockQuoteID,
+            tokenAmountG1: '500.00',
+            usdFromUsdInvestment: '1',
+            usdFromG1Investment: '1',
+            usdFromMvu: '1',
+            usdFromTime: '1',
+            equivalentUsdInvested: '1',
+            gxBeforeMvu: '1',
+            gxMvuEffect: '1',
+            gxTimeEffect: '1',
+            GxUsdExchangeRate: '1',
+            standardGxUsdExchangeRate: '1',
+            discountReceived: '1',
+            gxReceived: '1',
+            userTelegramID: mockUserTelegramID,
+          },
+          orders: [
+            {
+              orderId: mockOrderID,
+              status: GxOrderStatus.COMPLETE,
+              userTelegramID: mockUserTelegramID,
+              orderType: Ordertype.G1,
+              quoteId: mockQuoteID,
+            },
+            {
+              orderId: mockOrderID1,
+              status: GxOrderStatus.COMPLETE,
+              userTelegramID: mockUserTelegramID,
+              orderType: Ordertype.USD,
+              quoteId: mockQuoteID,
+            },
+          ],
+        });
     });
   });
 });
