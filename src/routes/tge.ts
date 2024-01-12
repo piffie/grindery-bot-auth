@@ -2,12 +2,16 @@ import express from 'express';
 import { authenticateApiKey } from '../utils/auth';
 import { computeG1ToGxConversion } from '../utils/g1gx';
 import { Database } from '../db/conn';
-import { GX_ORDER_COLLECTION, GX_QUOTE_COLLECTION } from '../utils/constants';
+import {
+  GX_ORDER_COLLECTION,
+  GX_QUOTE_COLLECTION,
+  Ordertype,
+} from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet';
 import { SOURCE_WALLET_ADDRESS } from '../../secrets';
 import { getTokenPrice } from '../utils/ankr';
-import { GxOrderStatus } from 'grindery-nexus-common-utils';
+import { GxOrderStatus, TransactionStatus } from 'grindery-nexus-common-utils';
 import { UserTelegram } from '../utils/user';
 
 const router = express.Router();
@@ -785,7 +789,7 @@ router.get('/status', async (req, res) => {
       .find({ quoteId }, { projection: { _id: 0 } })
       .toArray();
 
-    if (orders && orders.length === 0) {
+    if (!orders || orders.length === 0) {
       return res.status(404).json({ msg: 'Order not found' });
     }
 
@@ -793,16 +797,43 @@ router.get('/status', async (req, res) => {
       ?.collection(GX_QUOTE_COLLECTION)
       .findOne({ quoteId }, { projection: { _id: 0 } });
 
-    if (!quote) {
-      return res.status(404).json({ msg: 'Quote not found' });
-    }
-
-    const payload = {
-      quote,
-      orders,
+    let consolidatedOrder = {
+      quoteId: quoteId,
+      ...quote,
+      orders: orders,
+      globalOrderStatus: TransactionStatus.PENDING, // Default status
     };
 
-    return res.status(200).json(payload);
+    // Calculate the final status based on the statuses of G1 and USD orders
+    const isG1Successful = orders.some(
+      (order) =>
+        order.orderType === Ordertype.G1 &&
+        order.status === GxOrderStatus.COMPLETE,
+    );
+    const isUSDSuccessful = orders.some(
+      (order) =>
+        order.orderType === Ordertype.USD &&
+        order.status === GxOrderStatus.COMPLETE,
+    );
+    const isAnyOrderPending = orders.some(
+      (order) =>
+        order.status === GxOrderStatus.PENDING ||
+        order.status === GxOrderStatus.WAITING_USD,
+    );
+
+    if (isAnyOrderPending) {
+      consolidatedOrder.globalOrderStatus = TransactionStatus.PENDING;
+    } else if (
+      isG1Successful &&
+      (isUSDSuccessful ||
+        !orders.some((order) => order.orderType === Ordertype.USD))
+    ) {
+      consolidatedOrder.globalOrderStatus = TransactionStatus.SUCCESS;
+    } else {
+      consolidatedOrder.globalOrderStatus = TransactionStatus.FAILURE;
+    }
+
+    return res.status(200).json(consolidatedOrder);
   } catch (error) {
     return res.status(500).json({ msg: 'An error occurred', error });
   }

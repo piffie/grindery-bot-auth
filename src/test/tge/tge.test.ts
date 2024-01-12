@@ -39,7 +39,7 @@ import {
   Ordertype,
 } from '../../utils/constants';
 import axios from 'axios';
-import { GxOrderStatus } from 'grindery-nexus-common-utils';
+import { GxOrderStatus, TransactionStatus } from 'grindery-nexus-common-utils';
 
 chai.use(chaiHttp);
 chai.use(chaiExclude);
@@ -1427,7 +1427,20 @@ describe('G1 to GX util functions', async function () {
       ]);
     });
 
-    it('Should return all orders associated with quote', async function () {
+    it('Should return a 404 status if order is not found', async () => {
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/status')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          quoteId: 'fake-quote-id',
+        });
+
+      expect(res.body).to.be.deep.equal({ msg: 'Order not found' });
+      expect(res.status).to.be.equal(404);
+    });
+
+    it('Should global order status be SUCCESS when both G1 and USD orders are complete', async () => {
       await collectionOrdersMock.insertMany([
         {
           orderId: mockOrderID,
@@ -1454,43 +1467,530 @@ describe('G1 to GX util functions', async function () {
         });
 
       expect(res).to.have.status(200);
-      expect(res.body)
-        .excluding(['_id'])
-        .to.deep.equal({
-          quote: {
-            quoteId: mockQuoteID,
-            tokenAmountG1: '500.00',
-            usdFromUsdInvestment: '1',
-            usdFromG1Investment: '1',
-            usdFromMvu: '1',
-            usdFromTime: '1',
-            equivalentUsdInvested: '1',
-            gxBeforeMvu: '1',
-            gxMvuEffect: '1',
-            gxTimeEffect: '1',
-            GxUsdExchangeRate: '1',
-            standardGxUsdExchangeRate: '1',
-            discountReceived: '1',
-            gxReceived: '1',
+      expect(res.body).to.deep.equal({
+        quoteId: mockQuoteID,
+        tokenAmountG1: '500.00',
+        usdFromUsdInvestment: '1',
+        usdFromG1Investment: '1',
+        usdFromMvu: '1',
+        usdFromTime: '1',
+        equivalentUsdInvested: '1',
+        gxBeforeMvu: '1',
+        gxMvuEffect: '1',
+        gxTimeEffect: '1',
+        GxUsdExchangeRate: '1',
+        standardGxUsdExchangeRate: '1',
+        discountReceived: '1',
+        gxReceived: '1',
+        userTelegramID: mockUserTelegramID,
+        orders: [
+          {
+            orderId: mockOrderID,
+            status: GxOrderStatus.COMPLETE,
             userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.G1,
+            quoteId: mockQuoteID,
           },
-          orders: [
-            {
-              orderId: mockOrderID,
-              status: GxOrderStatus.COMPLETE,
-              userTelegramID: mockUserTelegramID,
-              orderType: Ordertype.G1,
-              quoteId: mockQuoteID,
-            },
-            {
-              orderId: mockOrderID1,
-              status: GxOrderStatus.COMPLETE,
-              userTelegramID: mockUserTelegramID,
-              orderType: Ordertype.USD,
-              quoteId: mockQuoteID,
-            },
-          ],
+          {
+            orderId: mockOrderID1,
+            status: GxOrderStatus.COMPLETE,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.USD,
+            quoteId: mockQuoteID,
+          },
+        ],
+        globalOrderStatus: TransactionStatus.SUCCESS,
+      });
+    });
+
+    it('Should global order status be SUCCESS when G1 is complete and USD is N/A', async () => {
+      await collectionOrdersMock.insertMany([
+        {
+          orderId: mockOrderID,
+          status: GxOrderStatus.COMPLETE,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.G1,
+          quoteId: mockQuoteID,
+        },
+      ]);
+
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/status')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          quoteId: mockQuoteID,
         });
+
+      expect(res).to.have.status(200);
+      expect(res.body).to.deep.equal({
+        quoteId: mockQuoteID,
+        tokenAmountG1: '500.00',
+        usdFromUsdInvestment: '1',
+        usdFromG1Investment: '1',
+        usdFromMvu: '1',
+        usdFromTime: '1',
+        equivalentUsdInvested: '1',
+        gxBeforeMvu: '1',
+        gxMvuEffect: '1',
+        gxTimeEffect: '1',
+        GxUsdExchangeRate: '1',
+        standardGxUsdExchangeRate: '1',
+        discountReceived: '1',
+        gxReceived: '1',
+        userTelegramID: mockUserTelegramID,
+        orders: [
+          {
+            orderId: mockOrderID,
+            status: GxOrderStatus.COMPLETE,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.G1,
+            quoteId: mockQuoteID,
+          },
+        ],
+        globalOrderStatus: TransactionStatus.SUCCESS,
+      });
+    });
+
+    it('Should global order status be FAILED when G1 is complete and USD is failed', async () => {
+      await collectionOrdersMock.insertMany([
+        {
+          orderId: mockOrderID,
+          status: GxOrderStatus.COMPLETE,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.G1,
+          quoteId: mockQuoteID,
+        },
+        {
+          orderId: mockOrderID1,
+          status: GxOrderStatus.FAILURE_USD,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.USD,
+          quoteId: mockQuoteID,
+        },
+      ]);
+
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/status')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          quoteId: mockQuoteID,
+        });
+
+      expect(res).to.have.status(200);
+      expect(res.body).to.deep.equal({
+        quoteId: mockQuoteID,
+        tokenAmountG1: '500.00',
+        usdFromUsdInvestment: '1',
+        usdFromG1Investment: '1',
+        usdFromMvu: '1',
+        usdFromTime: '1',
+        equivalentUsdInvested: '1',
+        gxBeforeMvu: '1',
+        gxMvuEffect: '1',
+        gxTimeEffect: '1',
+        GxUsdExchangeRate: '1',
+        standardGxUsdExchangeRate: '1',
+        discountReceived: '1',
+        gxReceived: '1',
+        userTelegramID: mockUserTelegramID,
+        orders: [
+          {
+            orderId: mockOrderID,
+            status: GxOrderStatus.COMPLETE,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.G1,
+            quoteId: mockQuoteID,
+          },
+          {
+            orderId: mockOrderID1,
+            status: GxOrderStatus.FAILURE_USD,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.USD,
+            quoteId: mockQuoteID,
+          },
+        ],
+        globalOrderStatus: TransactionStatus.FAILURE,
+      });
+    });
+
+    it('Should global order status be FAILED when G1 is failed and USD is complete', async () => {
+      await collectionOrdersMock.insertMany([
+        {
+          orderId: mockOrderID,
+          status: GxOrderStatus.FAILURE_G1,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.G1,
+          quoteId: mockQuoteID,
+        },
+        {
+          orderId: mockOrderID1,
+          status: GxOrderStatus.COMPLETE,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.USD,
+          quoteId: mockQuoteID,
+        },
+      ]);
+
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/status')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          quoteId: mockQuoteID,
+        });
+
+      expect(res).to.have.status(200);
+      expect(res.body).to.deep.equal({
+        quoteId: mockQuoteID,
+        tokenAmountG1: '500.00',
+        usdFromUsdInvestment: '1',
+        usdFromG1Investment: '1',
+        usdFromMvu: '1',
+        usdFromTime: '1',
+        equivalentUsdInvested: '1',
+        gxBeforeMvu: '1',
+        gxMvuEffect: '1',
+        gxTimeEffect: '1',
+        GxUsdExchangeRate: '1',
+        standardGxUsdExchangeRate: '1',
+        discountReceived: '1',
+        gxReceived: '1',
+        userTelegramID: mockUserTelegramID,
+        orders: [
+          {
+            orderId: mockOrderID,
+            status: GxOrderStatus.FAILURE_G1,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.G1,
+            quoteId: mockQuoteID,
+          },
+          {
+            orderId: mockOrderID1,
+            status: GxOrderStatus.COMPLETE,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.USD,
+            quoteId: mockQuoteID,
+          },
+        ],
+        globalOrderStatus: TransactionStatus.FAILURE,
+      });
+    });
+
+    it('Should global order status be FAILED when G1 is failed and USD is failed', async () => {
+      await collectionOrdersMock.insertMany([
+        {
+          orderId: mockOrderID,
+          status: GxOrderStatus.FAILURE_G1,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.G1,
+          quoteId: mockQuoteID,
+        },
+        {
+          orderId: mockOrderID1,
+          status: GxOrderStatus.FAILURE_USD,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.USD,
+          quoteId: mockQuoteID,
+        },
+      ]);
+
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/status')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          quoteId: mockQuoteID,
+        });
+
+      expect(res).to.have.status(200);
+      expect(res.body).to.deep.equal({
+        quoteId: mockQuoteID,
+        tokenAmountG1: '500.00',
+        usdFromUsdInvestment: '1',
+        usdFromG1Investment: '1',
+        usdFromMvu: '1',
+        usdFromTime: '1',
+        equivalentUsdInvested: '1',
+        gxBeforeMvu: '1',
+        gxMvuEffect: '1',
+        gxTimeEffect: '1',
+        GxUsdExchangeRate: '1',
+        standardGxUsdExchangeRate: '1',
+        discountReceived: '1',
+        gxReceived: '1',
+        userTelegramID: mockUserTelegramID,
+        orders: [
+          {
+            orderId: mockOrderID,
+            status: GxOrderStatus.FAILURE_G1,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.G1,
+            quoteId: mockQuoteID,
+          },
+          {
+            orderId: mockOrderID1,
+            status: GxOrderStatus.FAILURE_USD,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.USD,
+            quoteId: mockQuoteID,
+          },
+        ],
+        globalOrderStatus: TransactionStatus.FAILURE,
+      });
+    });
+
+    it('Should global order status be PENDING when G1 is pending and USD is complete', async () => {
+      await collectionOrdersMock.insertMany([
+        {
+          orderId: mockOrderID,
+          status: GxOrderStatus.PENDING,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.G1,
+          quoteId: mockQuoteID,
+        },
+        {
+          orderId: mockOrderID1,
+          status: GxOrderStatus.COMPLETE,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.USD,
+          quoteId: mockQuoteID,
+        },
+      ]);
+
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/status')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          quoteId: mockQuoteID,
+        });
+
+      expect(res).to.have.status(200);
+      expect(res.body).to.deep.equal({
+        quoteId: mockQuoteID,
+        tokenAmountG1: '500.00',
+        usdFromUsdInvestment: '1',
+        usdFromG1Investment: '1',
+        usdFromMvu: '1',
+        usdFromTime: '1',
+        equivalentUsdInvested: '1',
+        gxBeforeMvu: '1',
+        gxMvuEffect: '1',
+        gxTimeEffect: '1',
+        GxUsdExchangeRate: '1',
+        standardGxUsdExchangeRate: '1',
+        discountReceived: '1',
+        gxReceived: '1',
+        userTelegramID: mockUserTelegramID,
+        orders: [
+          {
+            orderId: mockOrderID,
+            status: GxOrderStatus.PENDING,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.G1,
+            quoteId: mockQuoteID,
+          },
+          {
+            orderId: mockOrderID1,
+            status: GxOrderStatus.COMPLETE,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.USD,
+            quoteId: mockQuoteID,
+          },
+        ],
+        globalOrderStatus: TransactionStatus.PENDING,
+      });
+    });
+
+    it('Should global order status be PENDING when G1 is complete and USD is pending', async () => {
+      await collectionOrdersMock.insertMany([
+        {
+          orderId: mockOrderID,
+          status: GxOrderStatus.COMPLETE,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.G1,
+          quoteId: mockQuoteID,
+        },
+        {
+          orderId: mockOrderID1,
+          status: GxOrderStatus.PENDING,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.USD,
+          quoteId: mockQuoteID,
+        },
+      ]);
+
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/status')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          quoteId: mockQuoteID,
+        });
+
+      expect(res).to.have.status(200);
+      expect(res.body).to.deep.equal({
+        quoteId: mockQuoteID,
+        tokenAmountG1: '500.00',
+        usdFromUsdInvestment: '1',
+        usdFromG1Investment: '1',
+        usdFromMvu: '1',
+        usdFromTime: '1',
+        equivalentUsdInvested: '1',
+        gxBeforeMvu: '1',
+        gxMvuEffect: '1',
+        gxTimeEffect: '1',
+        GxUsdExchangeRate: '1',
+        standardGxUsdExchangeRate: '1',
+        discountReceived: '1',
+        gxReceived: '1',
+        userTelegramID: mockUserTelegramID,
+        orders: [
+          {
+            orderId: mockOrderID,
+            status: GxOrderStatus.COMPLETE,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.G1,
+            quoteId: mockQuoteID,
+          },
+          {
+            orderId: mockOrderID1,
+            status: GxOrderStatus.PENDING,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.USD,
+            quoteId: mockQuoteID,
+          },
+        ],
+        globalOrderStatus: TransactionStatus.PENDING,
+      });
+    });
+
+    it('Should global order status be PENDING when G1 is pending and USD is pending', async () => {
+      await collectionOrdersMock.insertMany([
+        {
+          orderId: mockOrderID,
+          status: GxOrderStatus.PENDING,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.G1,
+          quoteId: mockQuoteID,
+        },
+        {
+          orderId: mockOrderID1,
+          status: GxOrderStatus.PENDING,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.USD,
+          quoteId: mockQuoteID,
+        },
+      ]);
+
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/status')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          quoteId: mockQuoteID,
+        });
+
+      expect(res).to.have.status(200);
+      expect(res.body).to.deep.equal({
+        quoteId: mockQuoteID,
+        tokenAmountG1: '500.00',
+        usdFromUsdInvestment: '1',
+        usdFromG1Investment: '1',
+        usdFromMvu: '1',
+        usdFromTime: '1',
+        equivalentUsdInvested: '1',
+        gxBeforeMvu: '1',
+        gxMvuEffect: '1',
+        gxTimeEffect: '1',
+        GxUsdExchangeRate: '1',
+        standardGxUsdExchangeRate: '1',
+        discountReceived: '1',
+        gxReceived: '1',
+        userTelegramID: mockUserTelegramID,
+        orders: [
+          {
+            orderId: mockOrderID,
+            status: GxOrderStatus.PENDING,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.G1,
+            quoteId: mockQuoteID,
+          },
+          {
+            orderId: mockOrderID1,
+            status: GxOrderStatus.PENDING,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.USD,
+            quoteId: mockQuoteID,
+          },
+        ],
+        globalOrderStatus: TransactionStatus.PENDING,
+      });
+    });
+
+    it('Should global order status be PENDING when G1 is complete and USD is waiting usd', async () => {
+      await collectionOrdersMock.insertMany([
+        {
+          orderId: mockOrderID,
+          status: GxOrderStatus.COMPLETE,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.G1,
+          quoteId: mockQuoteID,
+        },
+        {
+          orderId: mockOrderID1,
+          status: GxOrderStatus.WAITING_USD,
+          userTelegramID: mockUserTelegramID,
+          orderType: Ordertype.USD,
+          quoteId: mockQuoteID,
+        },
+      ]);
+
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/status')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          quoteId: mockQuoteID,
+        });
+
+      expect(res).to.have.status(200);
+      expect(res.body).to.deep.equal({
+        quoteId: mockQuoteID,
+        tokenAmountG1: '500.00',
+        usdFromUsdInvestment: '1',
+        usdFromG1Investment: '1',
+        usdFromMvu: '1',
+        usdFromTime: '1',
+        equivalentUsdInvested: '1',
+        gxBeforeMvu: '1',
+        gxMvuEffect: '1',
+        gxTimeEffect: '1',
+        GxUsdExchangeRate: '1',
+        standardGxUsdExchangeRate: '1',
+        discountReceived: '1',
+        gxReceived: '1',
+        userTelegramID: mockUserTelegramID,
+        orders: [
+          {
+            orderId: mockOrderID,
+            status: GxOrderStatus.COMPLETE,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.G1,
+            quoteId: mockQuoteID,
+          },
+          {
+            orderId: mockOrderID1,
+            status: GxOrderStatus.WAITING_USD,
+            userTelegramID: mockUserTelegramID,
+            orderType: Ordertype.USD,
+            quoteId: mockQuoteID,
+          },
+        ],
+        globalOrderStatus: TransactionStatus.PENDING,
+      });
     });
   });
 });
