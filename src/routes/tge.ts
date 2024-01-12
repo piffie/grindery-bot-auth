@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet';
 import { SOURCE_WALLET_ADDRESS } from '../../secrets';
 import { getTokenPrice } from '../utils/ankr';
-import { GxOrderStatus, TransactionStatus } from 'grindery-nexus-common-utils';
+import { GxOrderStatus } from 'grindery-nexus-common-utils';
 import { UserTelegram } from '../utils/user';
 
 const router = express.Router();
@@ -799,10 +799,39 @@ router.get('/status', async (req, res) => {
 
     let consolidatedOrder = {
       quoteId: quoteId,
+      status: GxOrderStatus.PENDING, // Default status
       ...quote,
-      orders: orders,
-      globalOrderStatus: TransactionStatus.PENDING, // Default status
+      orderIdG1: null,
+      dateG1: null,
+      transactionHashG1: null,
+      userOpHashG1: null,
+      orderIdUSD: null,
+      dateUSD: null,
+      chainIdUSD: null,
+      tokenAddressUSD: null,
+      tokenAmountUSD: null,
+      transactionHashUSD: null,
+      userOpHashUSD: null,
     };
+
+    const orderG1 = orders.find((order) => order.orderType === Ordertype.G1);
+    if (orderG1) {
+      consolidatedOrder.orderIdG1 = orderG1.orderId;
+      consolidatedOrder.dateG1 = orderG1.dateG1;
+      consolidatedOrder.transactionHashG1 = orderG1.transactionHashG1;
+      consolidatedOrder.userOpHashG1 = orderG1.userOpHashG1;
+    }
+
+    const orderUSD = orders.find((order) => order.orderType === Ordertype.USD);
+    if (orderUSD) {
+      consolidatedOrder.orderIdUSD = orderUSD.orderId;
+      consolidatedOrder.dateUSD = orderUSD.dateUSD;
+      consolidatedOrder.chainIdUSD = orderUSD.chainIdUSD;
+      consolidatedOrder.tokenAddressUSD = orderUSD.tokenAddressUSD;
+      consolidatedOrder.tokenAmountUSD = orderUSD.tokenAmountUSD;
+      consolidatedOrder.transactionHashUSD = orderUSD.transactionHashUSD;
+      consolidatedOrder.userOpHashUSD = orderUSD.userOpHashUSD;
+    }
 
     // Calculate the final status based on the statuses of G1 and USD orders
     const isG1Successful = orders.some(
@@ -822,15 +851,17 @@ router.get('/status', async (req, res) => {
     );
 
     if (isAnyOrderPending) {
-      consolidatedOrder.globalOrderStatus = TransactionStatus.PENDING;
+      consolidatedOrder.status = GxOrderStatus.PENDING;
     } else if (
       isG1Successful &&
       (isUSDSuccessful ||
         !orders.some((order) => order.orderType === Ordertype.USD))
     ) {
-      consolidatedOrder.globalOrderStatus = TransactionStatus.SUCCESS;
-    } else {
-      consolidatedOrder.globalOrderStatus = TransactionStatus.FAILURE;
+      consolidatedOrder.status = GxOrderStatus.COMPLETE;
+    } else if (!isUSDSuccessful) {
+      consolidatedOrder.status = GxOrderStatus.FAILURE_USD;
+    } else if (!isG1Successful) {
+      consolidatedOrder.status = GxOrderStatus.FAILURE_G1;
     }
 
     return res.status(200).json(consolidatedOrder);

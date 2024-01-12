@@ -27,6 +27,7 @@ import {
   mockUserTelegramID,
   mockUserTelegramID1,
   mockUserTelegramID2,
+  mockValue,
   mockWallet,
 } from '../utils';
 import chaiExclude from 'chai-exclude';
@@ -39,7 +40,7 @@ import {
   Ordertype,
 } from '../../utils/constants';
 import axios from 'axios';
-import { GxOrderStatus, TransactionStatus } from 'grindery-nexus-common-utils';
+import { GxOrderStatus } from 'grindery-nexus-common-utils';
 
 chai.use(chaiHttp);
 chai.use(chaiExclude);
@@ -1448,6 +1449,9 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.G1,
           quoteId: mockQuoteID,
+          dateG1: '2024-01-12T21:18:16.336Z',
+          transactionHashG1: mockTransactionHash,
+          userOpHashG1: mockUserOpHash,
         },
         {
           orderId: mockOrderID1,
@@ -1455,6 +1459,12 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.USD,
           quoteId: mockQuoteID,
+          dateUSD: '2024-01-12T21:18:16.336Z',
+          chainIdUSD: mockChainId,
+          tokenAddressUSD: mockTokenAddress,
+          tokenAmountUSD: mockValue,
+          transactionHashUSD: mockTransactionHash,
+          userOpHashUSD: mockUserOpHash,
         },
       ]);
 
@@ -1469,6 +1479,7 @@ describe('G1 to GX util functions', async function () {
       expect(res).to.have.status(200);
       expect(res.body).to.deep.equal({
         quoteId: mockQuoteID,
+        status: GxOrderStatus.COMPLETE,
         tokenAmountG1: '500.00',
         usdFromUsdInvestment: '1',
         usdFromG1Investment: '1',
@@ -1483,23 +1494,17 @@ describe('G1 to GX util functions', async function () {
         discountReceived: '1',
         gxReceived: '1',
         userTelegramID: mockUserTelegramID,
-        orders: [
-          {
-            orderId: mockOrderID,
-            status: GxOrderStatus.COMPLETE,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.G1,
-            quoteId: mockQuoteID,
-          },
-          {
-            orderId: mockOrderID1,
-            status: GxOrderStatus.COMPLETE,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.USD,
-            quoteId: mockQuoteID,
-          },
-        ],
-        globalOrderStatus: TransactionStatus.SUCCESS,
+        orderIdG1: mockOrderID,
+        dateG1: '2024-01-12T21:18:16.336Z',
+        transactionHashG1: mockTransactionHash,
+        userOpHashG1: mockUserOpHash,
+        orderIdUSD: mockOrderID1,
+        dateUSD: '2024-01-12T21:18:16.336Z',
+        chainIdUSD: mockChainId,
+        tokenAddressUSD: mockTokenAddress,
+        tokenAmountUSD: mockValue,
+        transactionHashUSD: mockTransactionHash,
+        userOpHashUSD: mockUserOpHash,
       });
     });
 
@@ -1511,6 +1516,9 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.G1,
           quoteId: mockQuoteID,
+          dateG1: '2024-01-12T21:18:16.336Z',
+          transactionHashG1: mockTransactionHash,
+          userOpHashG1: mockUserOpHash,
         },
       ]);
 
@@ -1525,6 +1533,7 @@ describe('G1 to GX util functions', async function () {
       expect(res).to.have.status(200);
       expect(res.body).to.deep.equal({
         quoteId: mockQuoteID,
+        status: GxOrderStatus.COMPLETE,
         tokenAmountG1: '500.00',
         usdFromUsdInvestment: '1',
         usdFromG1Investment: '1',
@@ -1539,16 +1548,17 @@ describe('G1 to GX util functions', async function () {
         discountReceived: '1',
         gxReceived: '1',
         userTelegramID: mockUserTelegramID,
-        orders: [
-          {
-            orderId: mockOrderID,
-            status: GxOrderStatus.COMPLETE,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.G1,
-            quoteId: mockQuoteID,
-          },
-        ],
-        globalOrderStatus: TransactionStatus.SUCCESS,
+        orderIdG1: mockOrderID,
+        dateG1: '2024-01-12T21:18:16.336Z',
+        transactionHashG1: mockTransactionHash,
+        userOpHashG1: mockUserOpHash,
+        orderIdUSD: null,
+        dateUSD: null,
+        chainIdUSD: null,
+        tokenAddressUSD: null,
+        tokenAmountUSD: null,
+        transactionHashUSD: null,
+        userOpHashUSD: null,
       });
     });
 
@@ -1560,6 +1570,9 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.G1,
           quoteId: mockQuoteID,
+          dateG1: '2024-01-12T21:18:16.336Z',
+          transactionHashG1: mockTransactionHash,
+          userOpHashG1: mockUserOpHash,
         },
         {
           orderId: mockOrderID1,
@@ -1567,6 +1580,12 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.USD,
           quoteId: mockQuoteID,
+          dateUSD: '2024-01-12T21:18:16.336Z',
+          chainIdUSD: mockChainId,
+          tokenAddressUSD: mockTokenAddress,
+          tokenAmountUSD: mockValue,
+          transactionHashUSD: mockTransactionHash,
+          userOpHashUSD: mockUserOpHash,
         },
       ]);
 
@@ -1581,6 +1600,7 @@ describe('G1 to GX util functions', async function () {
       expect(res).to.have.status(200);
       expect(res.body).to.deep.equal({
         quoteId: mockQuoteID,
+        status: GxOrderStatus.FAILURE_USD,
         tokenAmountG1: '500.00',
         usdFromUsdInvestment: '1',
         usdFromG1Investment: '1',
@@ -1595,23 +1615,17 @@ describe('G1 to GX util functions', async function () {
         discountReceived: '1',
         gxReceived: '1',
         userTelegramID: mockUserTelegramID,
-        orders: [
-          {
-            orderId: mockOrderID,
-            status: GxOrderStatus.COMPLETE,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.G1,
-            quoteId: mockQuoteID,
-          },
-          {
-            orderId: mockOrderID1,
-            status: GxOrderStatus.FAILURE_USD,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.USD,
-            quoteId: mockQuoteID,
-          },
-        ],
-        globalOrderStatus: TransactionStatus.FAILURE,
+        orderIdG1: mockOrderID,
+        dateG1: '2024-01-12T21:18:16.336Z',
+        transactionHashG1: mockTransactionHash,
+        userOpHashG1: mockUserOpHash,
+        orderIdUSD: mockOrderID1,
+        dateUSD: '2024-01-12T21:18:16.336Z',
+        chainIdUSD: mockChainId,
+        tokenAddressUSD: mockTokenAddress,
+        tokenAmountUSD: mockValue,
+        transactionHashUSD: mockTransactionHash,
+        userOpHashUSD: mockUserOpHash,
       });
     });
 
@@ -1623,6 +1637,9 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.G1,
           quoteId: mockQuoteID,
+          dateG1: '2024-01-12T21:18:16.336Z',
+          transactionHashG1: mockTransactionHash,
+          userOpHashG1: mockUserOpHash,
         },
         {
           orderId: mockOrderID1,
@@ -1630,6 +1647,12 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.USD,
           quoteId: mockQuoteID,
+          dateUSD: '2024-01-12T21:18:16.336Z',
+          chainIdUSD: mockChainId,
+          tokenAddressUSD: mockTokenAddress,
+          tokenAmountUSD: mockValue,
+          transactionHashUSD: mockTransactionHash,
+          userOpHashUSD: mockUserOpHash,
         },
       ]);
 
@@ -1644,6 +1667,7 @@ describe('G1 to GX util functions', async function () {
       expect(res).to.have.status(200);
       expect(res.body).to.deep.equal({
         quoteId: mockQuoteID,
+        status: GxOrderStatus.FAILURE_G1,
         tokenAmountG1: '500.00',
         usdFromUsdInvestment: '1',
         usdFromG1Investment: '1',
@@ -1658,23 +1682,17 @@ describe('G1 to GX util functions', async function () {
         discountReceived: '1',
         gxReceived: '1',
         userTelegramID: mockUserTelegramID,
-        orders: [
-          {
-            orderId: mockOrderID,
-            status: GxOrderStatus.FAILURE_G1,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.G1,
-            quoteId: mockQuoteID,
-          },
-          {
-            orderId: mockOrderID1,
-            status: GxOrderStatus.COMPLETE,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.USD,
-            quoteId: mockQuoteID,
-          },
-        ],
-        globalOrderStatus: TransactionStatus.FAILURE,
+        orderIdG1: mockOrderID,
+        dateG1: '2024-01-12T21:18:16.336Z',
+        transactionHashG1: mockTransactionHash,
+        userOpHashG1: mockUserOpHash,
+        orderIdUSD: mockOrderID1,
+        dateUSD: '2024-01-12T21:18:16.336Z',
+        chainIdUSD: mockChainId,
+        tokenAddressUSD: mockTokenAddress,
+        tokenAmountUSD: mockValue,
+        transactionHashUSD: mockTransactionHash,
+        userOpHashUSD: mockUserOpHash,
       });
     });
 
@@ -1686,6 +1704,9 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.G1,
           quoteId: mockQuoteID,
+          dateG1: '2024-01-12T21:18:16.336Z',
+          transactionHashG1: mockTransactionHash,
+          userOpHashG1: mockUserOpHash,
         },
         {
           orderId: mockOrderID1,
@@ -1693,6 +1714,12 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.USD,
           quoteId: mockQuoteID,
+          dateUSD: '2024-01-12T21:18:16.336Z',
+          chainIdUSD: mockChainId,
+          tokenAddressUSD: mockTokenAddress,
+          tokenAmountUSD: mockValue,
+          transactionHashUSD: mockTransactionHash,
+          userOpHashUSD: mockUserOpHash,
         },
       ]);
 
@@ -1707,6 +1734,7 @@ describe('G1 to GX util functions', async function () {
       expect(res).to.have.status(200);
       expect(res.body).to.deep.equal({
         quoteId: mockQuoteID,
+        status: GxOrderStatus.FAILURE_USD,
         tokenAmountG1: '500.00',
         usdFromUsdInvestment: '1',
         usdFromG1Investment: '1',
@@ -1721,23 +1749,17 @@ describe('G1 to GX util functions', async function () {
         discountReceived: '1',
         gxReceived: '1',
         userTelegramID: mockUserTelegramID,
-        orders: [
-          {
-            orderId: mockOrderID,
-            status: GxOrderStatus.FAILURE_G1,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.G1,
-            quoteId: mockQuoteID,
-          },
-          {
-            orderId: mockOrderID1,
-            status: GxOrderStatus.FAILURE_USD,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.USD,
-            quoteId: mockQuoteID,
-          },
-        ],
-        globalOrderStatus: TransactionStatus.FAILURE,
+        orderIdG1: mockOrderID,
+        dateG1: '2024-01-12T21:18:16.336Z',
+        transactionHashG1: mockTransactionHash,
+        userOpHashG1: mockUserOpHash,
+        orderIdUSD: mockOrderID1,
+        dateUSD: '2024-01-12T21:18:16.336Z',
+        chainIdUSD: mockChainId,
+        tokenAddressUSD: mockTokenAddress,
+        tokenAmountUSD: mockValue,
+        transactionHashUSD: mockTransactionHash,
+        userOpHashUSD: mockUserOpHash,
       });
     });
 
@@ -1749,6 +1771,9 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.G1,
           quoteId: mockQuoteID,
+          dateG1: '2024-01-12T21:18:16.336Z',
+          transactionHashG1: mockTransactionHash,
+          userOpHashG1: mockUserOpHash,
         },
         {
           orderId: mockOrderID1,
@@ -1756,6 +1781,12 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.USD,
           quoteId: mockQuoteID,
+          dateUSD: '2024-01-12T21:18:16.336Z',
+          chainIdUSD: mockChainId,
+          tokenAddressUSD: mockTokenAddress,
+          tokenAmountUSD: mockValue,
+          transactionHashUSD: mockTransactionHash,
+          userOpHashUSD: mockUserOpHash,
         },
       ]);
 
@@ -1770,6 +1801,7 @@ describe('G1 to GX util functions', async function () {
       expect(res).to.have.status(200);
       expect(res.body).to.deep.equal({
         quoteId: mockQuoteID,
+        status: GxOrderStatus.PENDING,
         tokenAmountG1: '500.00',
         usdFromUsdInvestment: '1',
         usdFromG1Investment: '1',
@@ -1784,23 +1816,17 @@ describe('G1 to GX util functions', async function () {
         discountReceived: '1',
         gxReceived: '1',
         userTelegramID: mockUserTelegramID,
-        orders: [
-          {
-            orderId: mockOrderID,
-            status: GxOrderStatus.PENDING,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.G1,
-            quoteId: mockQuoteID,
-          },
-          {
-            orderId: mockOrderID1,
-            status: GxOrderStatus.COMPLETE,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.USD,
-            quoteId: mockQuoteID,
-          },
-        ],
-        globalOrderStatus: TransactionStatus.PENDING,
+        orderIdG1: mockOrderID,
+        dateG1: '2024-01-12T21:18:16.336Z',
+        transactionHashG1: mockTransactionHash,
+        userOpHashG1: mockUserOpHash,
+        orderIdUSD: mockOrderID1,
+        dateUSD: '2024-01-12T21:18:16.336Z',
+        chainIdUSD: mockChainId,
+        tokenAddressUSD: mockTokenAddress,
+        tokenAmountUSD: mockValue,
+        transactionHashUSD: mockTransactionHash,
+        userOpHashUSD: mockUserOpHash,
       });
     });
 
@@ -1812,6 +1838,9 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.G1,
           quoteId: mockQuoteID,
+          dateG1: '2024-01-12T21:18:16.336Z',
+          transactionHashG1: mockTransactionHash,
+          userOpHashG1: mockUserOpHash,
         },
         {
           orderId: mockOrderID1,
@@ -1819,6 +1848,12 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.USD,
           quoteId: mockQuoteID,
+          dateUSD: '2024-01-12T21:18:16.336Z',
+          chainIdUSD: mockChainId,
+          tokenAddressUSD: mockTokenAddress,
+          tokenAmountUSD: mockValue,
+          transactionHashUSD: mockTransactionHash,
+          userOpHashUSD: mockUserOpHash,
         },
       ]);
 
@@ -1833,6 +1868,7 @@ describe('G1 to GX util functions', async function () {
       expect(res).to.have.status(200);
       expect(res.body).to.deep.equal({
         quoteId: mockQuoteID,
+        status: GxOrderStatus.PENDING,
         tokenAmountG1: '500.00',
         usdFromUsdInvestment: '1',
         usdFromG1Investment: '1',
@@ -1847,23 +1883,17 @@ describe('G1 to GX util functions', async function () {
         discountReceived: '1',
         gxReceived: '1',
         userTelegramID: mockUserTelegramID,
-        orders: [
-          {
-            orderId: mockOrderID,
-            status: GxOrderStatus.COMPLETE,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.G1,
-            quoteId: mockQuoteID,
-          },
-          {
-            orderId: mockOrderID1,
-            status: GxOrderStatus.PENDING,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.USD,
-            quoteId: mockQuoteID,
-          },
-        ],
-        globalOrderStatus: TransactionStatus.PENDING,
+        orderIdG1: mockOrderID,
+        dateG1: '2024-01-12T21:18:16.336Z',
+        transactionHashG1: mockTransactionHash,
+        userOpHashG1: mockUserOpHash,
+        orderIdUSD: mockOrderID1,
+        dateUSD: '2024-01-12T21:18:16.336Z',
+        chainIdUSD: mockChainId,
+        tokenAddressUSD: mockTokenAddress,
+        tokenAmountUSD: mockValue,
+        transactionHashUSD: mockTransactionHash,
+        userOpHashUSD: mockUserOpHash,
       });
     });
 
@@ -1875,6 +1905,9 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.G1,
           quoteId: mockQuoteID,
+          dateG1: '2024-01-12T21:18:16.336Z',
+          transactionHashG1: mockTransactionHash,
+          userOpHashG1: mockUserOpHash,
         },
         {
           orderId: mockOrderID1,
@@ -1882,6 +1915,12 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.USD,
           quoteId: mockQuoteID,
+          dateUSD: '2024-01-12T21:18:16.336Z',
+          chainIdUSD: mockChainId,
+          tokenAddressUSD: mockTokenAddress,
+          tokenAmountUSD: mockValue,
+          transactionHashUSD: mockTransactionHash,
+          userOpHashUSD: mockUserOpHash,
         },
       ]);
 
@@ -1896,6 +1935,7 @@ describe('G1 to GX util functions', async function () {
       expect(res).to.have.status(200);
       expect(res.body).to.deep.equal({
         quoteId: mockQuoteID,
+        status: GxOrderStatus.PENDING,
         tokenAmountG1: '500.00',
         usdFromUsdInvestment: '1',
         usdFromG1Investment: '1',
@@ -1910,23 +1950,17 @@ describe('G1 to GX util functions', async function () {
         discountReceived: '1',
         gxReceived: '1',
         userTelegramID: mockUserTelegramID,
-        orders: [
-          {
-            orderId: mockOrderID,
-            status: GxOrderStatus.PENDING,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.G1,
-            quoteId: mockQuoteID,
-          },
-          {
-            orderId: mockOrderID1,
-            status: GxOrderStatus.PENDING,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.USD,
-            quoteId: mockQuoteID,
-          },
-        ],
-        globalOrderStatus: TransactionStatus.PENDING,
+        orderIdG1: mockOrderID,
+        dateG1: '2024-01-12T21:18:16.336Z',
+        transactionHashG1: mockTransactionHash,
+        userOpHashG1: mockUserOpHash,
+        orderIdUSD: mockOrderID1,
+        dateUSD: '2024-01-12T21:18:16.336Z',
+        chainIdUSD: mockChainId,
+        tokenAddressUSD: mockTokenAddress,
+        tokenAmountUSD: mockValue,
+        transactionHashUSD: mockTransactionHash,
+        userOpHashUSD: mockUserOpHash,
       });
     });
 
@@ -1938,6 +1972,9 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.G1,
           quoteId: mockQuoteID,
+          dateG1: '2024-01-12T21:18:16.336Z',
+          transactionHashG1: mockTransactionHash,
+          userOpHashG1: mockUserOpHash,
         },
         {
           orderId: mockOrderID1,
@@ -1945,6 +1982,12 @@ describe('G1 to GX util functions', async function () {
           userTelegramID: mockUserTelegramID,
           orderType: Ordertype.USD,
           quoteId: mockQuoteID,
+          dateUSD: '2024-01-12T21:18:16.336Z',
+          chainIdUSD: mockChainId,
+          tokenAddressUSD: mockTokenAddress,
+          tokenAmountUSD: mockValue,
+          transactionHashUSD: mockTransactionHash,
+          userOpHashUSD: mockUserOpHash,
         },
       ]);
 
@@ -1959,6 +2002,7 @@ describe('G1 to GX util functions', async function () {
       expect(res).to.have.status(200);
       expect(res.body).to.deep.equal({
         quoteId: mockQuoteID,
+        status: GxOrderStatus.PENDING,
         tokenAmountG1: '500.00',
         usdFromUsdInvestment: '1',
         usdFromG1Investment: '1',
@@ -1973,23 +2017,17 @@ describe('G1 to GX util functions', async function () {
         discountReceived: '1',
         gxReceived: '1',
         userTelegramID: mockUserTelegramID,
-        orders: [
-          {
-            orderId: mockOrderID,
-            status: GxOrderStatus.COMPLETE,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.G1,
-            quoteId: mockQuoteID,
-          },
-          {
-            orderId: mockOrderID1,
-            status: GxOrderStatus.WAITING_USD,
-            userTelegramID: mockUserTelegramID,
-            orderType: Ordertype.USD,
-            quoteId: mockQuoteID,
-          },
-        ],
-        globalOrderStatus: TransactionStatus.PENDING,
+        orderIdG1: mockOrderID,
+        dateG1: '2024-01-12T21:18:16.336Z',
+        transactionHashG1: mockTransactionHash,
+        userOpHashG1: mockUserOpHash,
+        orderIdUSD: mockOrderID1,
+        dateUSD: '2024-01-12T21:18:16.336Z',
+        chainIdUSD: mockChainId,
+        tokenAddressUSD: mockTokenAddress,
+        tokenAmountUSD: mockValue,
+        transactionHashUSD: mockTransactionHash,
+        userOpHashUSD: mockUserOpHash,
       });
     });
   });
