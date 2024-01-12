@@ -5,40 +5,40 @@ import { TOP_UP_COLLECTION, USERS_COLLECTION } from './constants';
 import { WithId } from 'mongodb';
 import { MongoUser } from 'grindery-nexus-common-utils';
 
-export async function isTopUpTx(inst: TransferTelegram): Promise<void> {
+export async function isTopUpTx(transferTelegram: TransferTelegram): Promise<void> {
   const db = await Database.getInstance();
 
   // Check if it's a top-up transaction
-  if (!inst.params.isTopUp) return;
+  if (!transferTelegram.params.isTopUp) return;
 
   // Get source wallet details
-  const sourceWallet = (await db?.collection(USERS_COLLECTION).findOne({
-    userTelegramID: inst.params.recipientTgId,
+  const sourceUser = (await db?.collection(USERS_COLLECTION).findOne({
+    userTelegramID: transferTelegram.params.recipientTgId,
   })) as WithId<MongoUser> | null;
 
   // Check if it's a top-up transaction
   if (
-    inst.params.tokenAddress != GX_POLYGON_ADDRESS ||
-    sourceWallet?.patchwallet != SOURCE_WALLET_ADDRESS
+    transferTelegram.params.tokenAddress != GX_POLYGON_ADDRESS ||
+    sourceUser?.patchwallet != SOURCE_WALLET_ADDRESS
   )
     return;
 
   // Check if a record for the user already exists
   const existingRecord = (await db?.collection(TOP_UP_COLLECTION).findOne({
-    userTelegramID: inst.params.senderTgId,
+    userTelegramID: transferTelegram.params.senderTgId,
   })) as WithId<MongoUser> | null;
 
   if (existingRecord) {
     // If record exists, update it by adding the new deposit amount to the old balance
     await db?.collection(TOP_UP_COLLECTION).updateOne(
-      { userTelegramID: inst.params.senderTgId },
-      { $inc: { gxBalance: Number(inst.params.amount) } }, // Increment gxBalance by the deposit amount
+      { userTelegramID: transferTelegram.params.senderTgId },
+      { $inc: { gxBalance: Number(transferTelegram.params.amount) } }, // Increment gxBalance by the deposit amount
     );
   } else {
     // If no record exists, create a new one
     await db?.collection(TOP_UP_COLLECTION).insertOne({
-      userTelegramID: inst.params.senderTgId,
-      gxBalance: Number(inst.params.amount),
+      userTelegramID: transferTelegram.params.senderTgId,
+      gxBalance: Number(transferTelegram.params.amount),
     });
   }
 }
