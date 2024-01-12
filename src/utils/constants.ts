@@ -233,3 +233,12 @@ export const enum Ordertype {
   /** Represents a USD order type. */
   USD = 'usd',
 }
+
+export const enum RewardReason {
+  /** Indicates a reward for user sign-up. */
+  SIGNUP = 'user_sign_up',
+  /** Indicates a reward for referral. */
+  REFERRAL = '2x_reward',
+  /** Indicates a reward for referral through a referral link. */
+  LINK = 'referral_link',
+}

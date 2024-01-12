@@ -9,6 +9,7 @@ import {
 import {
   FLOWXO_NEW_LINK_REWARD_WEBHOOK,
   REWARDS_COLLECTION,
+  RewardReason,
   USERS_COLLECTION,
 } from '../utils/constants';
 import {
@@ -127,7 +128,7 @@ export class LinkRewardTelegram {
     this.params = params;
 
     // Sets default values for specific parameters
-    this.params.reason = 'referral_link';
+    this.params.reason = RewardReason.LINK;
     this.params.amount = '10';
     this.params.message = 'Referral link';
 
