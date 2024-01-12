@@ -779,7 +779,7 @@ router.get('/order', authenticateApiKey, async (req, res) => {
  *   "error": "Error details here"
  * }
  */
-router.get('/status', async (req, res) => {
+router.get('/status', authenticateApiKey, async (req, res) => {
   try {
     const db = await Database.getInstance();
     const quoteId = req.query.quoteId;
