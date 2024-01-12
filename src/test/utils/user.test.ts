@@ -16,6 +16,9 @@ import {
   mockWallet1,
   mockResponsePath1,
   mockTransactionHash1,
+  mockUserTelegramID2,
+  mockResponsePath2,
+  mockWallet2,
 } from '../utils';
 import chaiExclude from 'chai-exclude';
 import { UserTelegram } from '../../utils/user';
@@ -462,7 +465,81 @@ describe('User utils', async function () {
               '0x0068dc7ad567fac23d74111a526bbeffc46a8867ghtyut41cb7e5b77187faf0ded1a0',
             status: 'success',
           },
+          {
+            userTelegramID: mockUserTelegramID2,
+            responsePath: mockResponsePath2,
+            walletAddress: mockWallet2,
+            reason: 'referral_link',
+            userHandle: mockUserHandle2,
+            userName: mockUserName2,
+            amount: '10',
+            message: 'Referral link',
+            transactionHash:
+              '0x9a93ddc7ed2b8e609ede7e4f698867bc4b0ba2c6bb9731348636f550f7b8c9c3',
+            sponsoredUserTelegramID: '1618212199',
+            status: 'success',
+          },
+          {
+            userTelegramID: mockUserTelegramID2,
+            responsePath: mockResponsePath2,
+            walletAddress: mockWallet2,
+            reason: 'referral_link',
+            userHandle: mockUserHandle2,
+            userName: mockUserName2,
+            amount: '10',
+            message: 'Referral link',
+            transactionHash:
+              '0xf8c83a9a8b4e0f0f947f95d91d9fa40e12c3b10e00269b15f2f10c76392c7b23',
+            sponsoredUserTelegramID: '6012890355',
+            status: 'success',
+          },
         ]);
+      });
+
+      it('getLinkRewards should return an array of link rewards', async function () {
+        const user = await UserTelegram.build(mockUserTelegramID2);
+        expect(await user.getLinkRewards())
+          .excluding(['_id'])
+          .to.deep.equal([
+            {
+              userTelegramID: mockUserTelegramID2,
+              responsePath: mockResponsePath2,
+              walletAddress: mockWallet2,
+              reason: 'referral_link',
+              userHandle: mockUserHandle2,
+              userName: mockUserName2,
+              amount: '10',
+              message: 'Referral link',
+              transactionHash:
+                '0x9a93ddc7ed2b8e609ede7e4f698867bc4b0ba2c6bb9731348636f550f7b8c9c3',
+              sponsoredUserTelegramID: '1618212199',
+              status: 'success',
+            },
+            {
+              userTelegramID: mockUserTelegramID2,
+              responsePath: mockResponsePath2,
+              walletAddress: mockWallet2,
+              reason: 'referral_link',
+              userHandle: mockUserHandle2,
+              userName: mockUserName2,
+              amount: '10',
+              message: 'Referral link',
+              transactionHash:
+                '0xf8c83a9a8b4e0f0f947f95d91d9fa40e12c3b10e00269b15f2f10c76392c7b23',
+              sponsoredUserTelegramID: '6012890355',
+              status: 'success',
+            },
+          ]);
+      });
+
+      it('getLinkRewards should return an empty array if no link reward', async function () {
+        const user = await UserTelegram.build('11491856');
+        expect(await user.getLinkRewards()).to.be.empty;
+      });
+
+      it('getLinkRewards should return an empty array if user is not in database', async function () {
+        const user = await UserTelegram.build('not_in_db');
+        expect(await user.getLinkRewards()).to.be.empty;
       });
 
       it('getSignUpReward should return an array of sign up rewards', async function () {
@@ -586,6 +663,21 @@ describe('User utils', async function () {
       it('getNbrReferralRewards should return 0 if user not in database', async function () {
         const user = await UserTelegram.build('not_in_db');
         expect(await user.getNbrReferralRewards()).to.equal(0);
+      });
+
+      it('getNbrLinkRewards should return the number of link rewards', async function () {
+        const user = await UserTelegram.build(mockUserTelegramID2);
+        expect(await user.getNbrLinkRewards()).to.equal(2);
+      });
+
+      it('getNbrLinkRewards should return 0 if no link reward', async function () {
+        const user = await UserTelegram.build(mockUserTelegramID1);
+        expect(await user.getNbrLinkRewards()).to.equal(0);
+      });
+
+      it('getNbrLinkRewards should return 0 if user not in database', async function () {
+        const user = await UserTelegram.build('not_in_db');
+        expect(await user.getNbrLinkRewards()).to.equal(0);
       });
     });
   });
