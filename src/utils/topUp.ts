@@ -5,7 +5,9 @@ import { TOP_UP_COLLECTION, USERS_COLLECTION } from './constants';
 import { WithId } from 'mongodb';
 import { MongoUser } from 'grindery-nexus-common-utils';
 
-export async function isTopUpTx(transferTelegram: TransferTelegram): Promise<void> {
+export async function isTopUpTx(
+  transferTelegram: TransferTelegram,
+): Promise<void> {
   const db = await Database.getInstance();
 
   // Check if it's a top-up transaction
@@ -24,21 +26,13 @@ export async function isTopUpTx(transferTelegram: TransferTelegram): Promise<voi
     return;
 
   // Check if a record for the user already exists
-  const existingRecord = (await db?.collection(TOP_UP_COLLECTION).findOne({
-    userTelegramID: transferTelegram.params.senderTgId,
-  })) as WithId<MongoUser> | null;
-
-  if (existingRecord) {
-    // If record exists, update it by adding the new deposit amount to the old balance
-    await db?.collection(TOP_UP_COLLECTION).updateOne(
-      { userTelegramID: transferTelegram.params.senderTgId },
-      { $inc: { gxBalance: Number(transferTelegram.params.amount) } }, // Increment gxBalance by the deposit amount
-    );
-  } else {
-    // If no record exists, create a new one
-    await db?.collection(TOP_UP_COLLECTION).insertOne({
-      userTelegramID: transferTelegram.params.senderTgId,
-      gxBalance: Number(transferTelegram.params.amount),
-    });
-  }
+  // If record exists, update it by adding the new deposit amount to the old balance
+  // If no record exists, create a new one
+  await db?.collection(TOP_UP_COLLECTION).updateOne(
+    { userTelegramID: transferTelegram.params.senderTgId },
+    {
+      $inc: { gxBalance: Number(transferTelegram.params.amount) },
+    },
+    { upsert: true },
+  );
 }
