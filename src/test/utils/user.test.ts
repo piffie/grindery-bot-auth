@@ -229,6 +229,106 @@ describe('User utils', async function () {
         const user = await UserTelegram.build('846343728');
         expect(user.getVirtualBalance()).to.be.undefined;
       });
+
+      it('Should return true for isActiveUser when the attribute is true', async function () {
+        const user = await UserTelegram.build('846343729');
+        expect(user.isActiveUser()).to.be.true;
+      });
+
+      it('Should return false for isBlacklist when the attribute is false', async function () {
+        const user = await UserTelegram.build('846343729');
+        expect(user.isBlacklist()).to.be.false;
+      });
+
+      it('Should return true for isContributeUser when the attribute is true', async function () {
+        const user = await UserTelegram.build('846343729');
+        expect(user.isContributeUser()).to.be.true;
+      });
+
+      it('Should return true for isDead when the attribute is true', async function () {
+        const user = await UserTelegram.build('846343729');
+        expect(user.isDead()).to.be.true;
+      });
+
+      it('Should return false for isDoubleSpent when the attribute is false', async function () {
+        const user = await UserTelegram.build('846343729');
+        expect(user.isDoubleSpent()).to.be.true;
+      });
+
+      it('Should return true for isDrone when the attribute is true', async function () {
+        const user = await UserTelegram.build('846343729');
+        expect(user.isDrone()).to.be.true;
+      });
+
+      it('Should return true for isDroneOwner when the attribute is true', async function () {
+        const user = await UserTelegram.build('846343729');
+        expect(user.isDroneOwner()).to.be.true;
+      });
+
+      it('Should return true for isGamer when the attribute is true', async function () {
+        const user = await UserTelegram.build('846343729');
+        expect(user.isGamer()).to.be.true;
+      });
+
+      it('Should return true for isSlave when the attribute is true', async function () {
+        const user = await UserTelegram.build('846343729');
+        expect(user.isSlave()).to.be.true;
+      });
+
+      it('Should return true for isWalkingDead when the attribute is true', async function () {
+        const user = await UserTelegram.build('846343729');
+        expect(user.isWalkingDead()).to.be.true;
+      });
+
+      it('Should return undefined for isActiveUser when the attribute does not exist', async function () {
+        const user = await UserTelegram.build('5958052954');
+        expect(user.isActiveUser()).to.be.undefined;
+      });
+
+      it('Should return undefined for isBlacklist when the attribute does not exist', async function () {
+        const user = await UserTelegram.build('5958052954');
+        expect(user.isBlacklist()).to.be.undefined;
+      });
+
+      it('Should return undefined for isContributeUser when the attribute does not exist', async function () {
+        const user = await UserTelegram.build('5958052954');
+        expect(user.isContributeUser()).to.be.undefined;
+      });
+
+      it('Should return undefined for isDead when the attribute does not exist', async function () {
+        const user = await UserTelegram.build('5958052954');
+        expect(user.isDead()).to.be.undefined;
+      });
+
+      it('Should return undefined for isDoubleSpent when the attribute does not exist', async function () {
+        const user = await UserTelegram.build('5958052954');
+        expect(user.isDoubleSpent()).to.be.undefined;
+      });
+
+      it('Should return undefined for isDrone when the attribute does not exist', async function () {
+        const user = await UserTelegram.build('5958052954');
+        expect(user.isDrone()).to.be.undefined;
+      });
+
+      it('Should return undefined for isDroneOwner when the attribute does not exist', async function () {
+        const user = await UserTelegram.build('5958052954');
+        expect(user.isDroneOwner()).to.be.undefined;
+      });
+
+      it('Should return undefined for isGamer when the attribute does not exist', async function () {
+        const user = await UserTelegram.build('5958052954');
+        expect(user.isGamer()).to.be.undefined;
+      });
+
+      it('Should return undefined for isSlave when the attribute does not exist', async function () {
+        const user = await UserTelegram.build('5958052954');
+        expect(user.isSlave()).to.be.undefined;
+      });
+
+      it('Should return undefined for isWalkingDead when the attribute does not exist', async function () {
+        const user = await UserTelegram.build('5958052954');
+        expect(user.isWalkingDead()).to.be.undefined;
+      });
     });
   });
 });
