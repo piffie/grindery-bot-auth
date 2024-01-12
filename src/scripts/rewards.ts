@@ -10,6 +10,7 @@ import csv from 'csv-parser';
 import web3 from 'web3';
 import {
   REWARDS_COLLECTION,
+  RewardReason,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
 } from '../utils/constants';
@@ -58,7 +59,7 @@ export async function distributeSignupRewards(): Promise<void> {
     // Fetch successful sign-up rewards within the last 48 hours
     const allRewards = await rewardsCollection
       ?.find({
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         status: 'success',
         dateAdded: {
           $gt: get24HoursBeforeDate(new Date(startDate)),
@@ -109,7 +110,7 @@ export async function distributeSignupRewards(): Promise<void> {
                   userTelegramID: user.userTelegramID,
                   responsePath: user.responsePath,
                   walletAddress: user.patchwallet,
-                  reason: 'user_sign_up',
+                  reason: RewardReason.SIGNUP,
                   userHandle: user.userHandle,
                   userName: user.userName,
                   amount: '100',
@@ -187,7 +188,7 @@ export async function distributeReferralRewards(): Promise<void> {
       .toArray();
     const allRewards = await rewardsCollection
       ?.find({
-        reason: '2x_reward',
+        reason: RewardReason.REFERRAL,
         status: TransactionStatus.SUCCESS,
         dateAdded: {
           $gt: get24HoursBeforeDate(new Date(startDate)),
@@ -267,7 +268,7 @@ export async function distributeReferralRewards(): Promise<void> {
               eventId: uuidv4(),
               userTelegramID: firstValidTransfer.senderTgId,
               walletAddress: rewardWallet,
-              reason: '2x_reward',
+              reason: RewardReason.REFERRAL,
               amount: rewardAmount.toString(),
               message: 'Referral reward',
               transactionHash: txReward.data.txHash,
@@ -451,7 +452,7 @@ const generateRewardMessage = (
 
   if (amount === '100') {
     return {
-      reason: 'user_sign_up',
+      reason: RewardReason.SIGNUP,
       description: 'Sign up reward',
     };
   } else if (amount === '50' && isBeforeTuesdayNoon) {
@@ -461,7 +462,7 @@ const generateRewardMessage = (
     };
   } else if (amount === '50' && !isBeforeTuesdayNoon) {
     return {
-      reason: '2x_reward',
+      reason: RewardReason.REFERRAL,
       description: '2x Referral reward',
     };
   } else {
@@ -966,7 +967,7 @@ async function getTransactionsAndRecipientsFromId(
     const transfersCollection = db?.collection(TRANSFERS_COLLECTION);
 
     const rewards = await rewardsCollection
-      ?.find({ userTelegramID: userId, reason: 'referral_link' })
+      ?.find({ userTelegramID: userId, reason: RewardReason.LINK })
       .toArray();
 
     // Obtenir les sponsoredUserTelegramID uniques

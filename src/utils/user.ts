@@ -1,6 +1,10 @@
 import { Db, WithId } from 'mongodb';
 import { Database } from '../db/conn';
-import { REWARDS_COLLECTION, USERS_COLLECTION } from './constants';
+import {
+  REWARDS_COLLECTION,
+  RewardReason,
+  USERS_COLLECTION,
+} from './constants';
 import { getPatchWalletAddressFromTgId } from './patchwallet';
 import { addIdentitySegment } from './segment';
 import { NewUserParams } from '../types/webhook.types';
@@ -157,7 +161,7 @@ export class NewUserTelegram {
         .collection(REWARDS_COLLECTION)
         .find({
           userTelegramID: this.params.userTelegramID,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
         })
         .toArray()) as WithId<MongoReward>[] | [];
     return [];
@@ -181,7 +185,7 @@ export class NewUserTelegram {
         .collection(REWARDS_COLLECTION)
         .find({
           userTelegramID: this.params.userTelegramID,
-          reason: '2x_reward',
+          reason: RewardReason.REFERRAL,
         })
         .toArray()) as WithId<MongoReward>[] | [];
     return [];
@@ -205,7 +209,7 @@ export class NewUserTelegram {
         .collection(REWARDS_COLLECTION)
         .find({
           userTelegramID: this.params.userTelegramID,
-          reason: 'referral_link',
+          reason: RewardReason.LINK,
         })
         .toArray()) as WithId<MongoReward>[] | [];
     return [];
@@ -310,7 +314,7 @@ export class UserTelegram {
         .collection(REWARDS_COLLECTION)
         .find({
           userTelegramID: this.userTelegramID,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
         })
         .toArray()) as WithId<MongoReward>[] | [];
     return [];
@@ -334,7 +338,7 @@ export class UserTelegram {
         .collection(REWARDS_COLLECTION)
         .find({
           userTelegramID: this.userTelegramID,
-          reason: '2x_reward',
+          reason: RewardReason.REFERRAL,
         })
         .toArray()) as WithId<MongoReward>[] | [];
     return [];
@@ -358,7 +362,7 @@ export class UserTelegram {
         .collection(REWARDS_COLLECTION)
         .find({
           userTelegramID: this.userTelegramID,
-          reason: 'referral_link',
+          reason: RewardReason.LINK,
         })
         .toArray()) as WithId<MongoReward>[] | [];
     return [];

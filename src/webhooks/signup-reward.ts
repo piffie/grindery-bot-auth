@@ -9,6 +9,7 @@ import {
 import {
   FLOWXO_NEW_SIGNUP_REWARD_WEBHOOK,
   REWARDS_COLLECTION,
+  RewardReason,
 } from '../utils/constants';
 import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet';
 import {
@@ -120,7 +121,7 @@ export class SignUpRewardTelegram {
     this.params = params;
 
     // Sets default values for specific parameters
-    this.params.reason = 'user_sign_up';
+    this.params.reason = RewardReason.SIGNUP;
     this.params.amount = '100';
     this.params.message = 'Sign up reward';
 

@@ -10,6 +10,7 @@ import {
 } from '../utils/transfers';
 import {
   REWARDS_COLLECTION,
+  RewardReason,
   TRANSFERS_COLLECTION,
   USERS_COLLECTION,
 } from '../utils/constants';
@@ -257,7 +258,7 @@ router.get('/referral-link-count', authenticateApiKey, async (req, res) => {
     const db = await Database.getInstance();
     const rewards = await db
       ?.collection(REWARDS_COLLECTION)
-      .find({ userTelegramID: req.query.userId, reason: 'referral_link' })
+      .find({ userTelegramID: req.query.userId, reason: RewardReason.LINK })
       .toArray();
     return res
       .status(200)

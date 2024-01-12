@@ -26,6 +26,7 @@ import {
   PATCHWALLET_AUTH_URL,
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
+  RewardReason,
 } from '../../utils/constants';
 import {
   FLOWXO_WEBHOOK_API_KEY,
@@ -118,7 +119,7 @@ describe('handleSignUpReward function', async function () {
       await collectionRewardsMock.insertOne({
         eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         status: TransactionStatus.SUCCESS,
       });
     });
@@ -167,7 +168,7 @@ describe('handleSignUpReward function', async function () {
           {
             eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
-            reason: 'user_sign_up',
+            reason: RewardReason.SIGNUP,
             status: TransactionStatus.SUCCESS,
           },
         ]);
@@ -196,7 +197,7 @@ describe('handleSignUpReward function', async function () {
       await collectionRewardsMock.insertOne({
         eventId: 'anotherEventId',
         userTelegramID: mockUserTelegramID,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         status: TransactionStatus.SUCCESS,
       });
     });
@@ -245,7 +246,7 @@ describe('handleSignUpReward function', async function () {
           {
             eventId: 'anotherEventId',
             userTelegramID: mockUserTelegramID,
-            reason: 'user_sign_up',
+            reason: RewardReason.SIGNUP,
             status: TransactionStatus.SUCCESS,
           },
         ]);
@@ -273,7 +274,7 @@ describe('handleSignUpReward function', async function () {
     beforeEach(async function () {
       await collectionRewardsMock.insertOne({
         userTelegramID: mockUserTelegramID,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         status: TransactionStatus.SUCCESS,
       });
     });
@@ -321,7 +322,7 @@ describe('handleSignUpReward function', async function () {
         .to.deep.equal([
           {
             userTelegramID: mockUserTelegramID,
-            reason: 'user_sign_up',
+            reason: RewardReason.SIGNUP,
             status: TransactionStatus.SUCCESS,
           },
         ]);
@@ -351,13 +352,13 @@ describe('handleSignUpReward function', async function () {
         {
           eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
-          reason: '2x_reward',
+          reason: RewardReason.REFERRAL,
           status: TransactionStatus.PENDING,
         },
         {
           eventId: mockEventId,
           userTelegramID: mockUserTelegramID,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
           status: TransactionStatus.PENDING,
         },
       ]);
@@ -418,7 +419,7 @@ describe('handleSignUpReward function', async function () {
           {
             eventId: mockEventId,
             userTelegramID: mockUserTelegramID,
-            reason: '2x_reward',
+            reason: RewardReason.REFERRAL,
             status: TransactionStatus.PENDING,
           },
           {
@@ -426,7 +427,7 @@ describe('handleSignUpReward function', async function () {
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
-            reason: 'user_sign_up',
+            reason: RewardReason.SIGNUP,
             userHandle: mockUserHandle,
             userName: mockUserName,
             amount: '100',
@@ -456,7 +457,7 @@ describe('handleSignUpReward function', async function () {
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         userHandle: mockUserHandle,
         userName: mockUserName,
         amount: '100',
@@ -478,7 +479,7 @@ describe('handleSignUpReward function', async function () {
       await collectionRewardsMock.insertOne({
         eventId: mockEventId,
         userTelegramID: mockUserTelegramID,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         status: TransactionStatus.FAILURE,
       });
     });
@@ -542,7 +543,7 @@ describe('handleSignUpReward function', async function () {
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
-            reason: 'user_sign_up',
+            reason: RewardReason.SIGNUP,
             userHandle: mockUserHandle,
             userName: mockUserName,
             amount: '100',
@@ -577,7 +578,7 @@ describe('handleSignUpReward function', async function () {
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         userHandle: mockUserHandle,
         userName: mockUserName,
         amount: '100',
@@ -670,7 +671,7 @@ describe('handleSignUpReward function', async function () {
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         userHandle: mockUserHandle,
         userName: mockUserName,
         amount: '100',
@@ -703,7 +704,7 @@ describe('handleSignUpReward function', async function () {
         userTelegramID: mockUserTelegramID,
         responsePath: mockResponsePath,
         walletAddress: mockWallet,
-        reason: 'user_sign_up',
+        reason: RewardReason.SIGNUP,
         userHandle: mockUserHandle,
         userName: mockUserName,
         amount: '100',
@@ -801,7 +802,7 @@ describe('handleSignUpReward function', async function () {
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
-            reason: 'user_sign_up',
+            reason: RewardReason.SIGNUP,
             userHandle: mockUserHandle,
             userName: mockUserName,
             amount: '100',
@@ -876,7 +877,7 @@ describe('handleSignUpReward function', async function () {
             userTelegramID: mockUserTelegramID,
             responsePath: mockResponsePath,
             walletAddress: mockWallet,
-            reason: 'user_sign_up',
+            reason: RewardReason.SIGNUP,
             userHandle: mockUserHandle,
             userName: mockUserName,
             amount: '100',
@@ -947,7 +948,7 @@ describe('handleSignUpReward function', async function () {
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: RewardReason.SIGNUP,
               userHandle: mockUserHandle,
               userName: mockUserName,
               amount: '100',
@@ -984,7 +985,7 @@ describe('handleSignUpReward function', async function () {
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
           userHandle: mockUserHandle,
           userName: mockUserName,
           amount: '100',
@@ -1040,7 +1041,7 @@ describe('handleSignUpReward function', async function () {
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: RewardReason.SIGNUP,
               userHandle: mockUserHandle,
               userName: mockUserName,
               amount: '100',
@@ -1070,7 +1071,7 @@ describe('handleSignUpReward function', async function () {
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
           userHandle: mockUserHandle,
           userName: mockUserName,
           amount: '100',
@@ -1094,7 +1095,7 @@ describe('handleSignUpReward function', async function () {
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
           userHandle: mockUserHandle,
           userName: mockUserName,
           amount: '100',
@@ -1157,7 +1158,7 @@ describe('handleSignUpReward function', async function () {
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: RewardReason.SIGNUP,
               userHandle: mockUserHandle,
               userName: mockUserName,
               amount: '100',
@@ -1194,7 +1195,7 @@ describe('handleSignUpReward function', async function () {
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
           userHandle: mockUserHandle,
           userName: mockUserName,
           amount: '100',
@@ -1254,7 +1255,7 @@ describe('handleSignUpReward function', async function () {
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: RewardReason.SIGNUP,
               userHandle: mockUserHandle,
               userName: mockUserName,
               amount: '100',
@@ -1290,7 +1291,7 @@ describe('handleSignUpReward function', async function () {
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
           userHandle: mockUserHandle,
           userName: mockUserName,
           amount: '100',
@@ -1345,7 +1346,7 @@ describe('handleSignUpReward function', async function () {
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: RewardReason.SIGNUP,
               userHandle: mockUserHandle,
               userName: mockUserName,
               amount: '100',
@@ -1382,7 +1383,7 @@ describe('handleSignUpReward function', async function () {
           userTelegramID: mockUserTelegramID,
           responsePath: mockResponsePath,
           walletAddress: mockWallet,
-          reason: 'user_sign_up',
+          reason: RewardReason.SIGNUP,
           userHandle: mockUserHandle,
           userName: mockUserName,
           amount: '100',
@@ -1446,7 +1447,7 @@ describe('handleSignUpReward function', async function () {
               userTelegramID: mockUserTelegramID,
               responsePath: mockResponsePath,
               walletAddress: mockWallet,
-              reason: 'user_sign_up',
+              reason: RewardReason.SIGNUP,
               userHandle: mockUserHandle,
               userName: mockUserName,
               amount: '100',
