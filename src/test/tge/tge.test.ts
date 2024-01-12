@@ -1427,7 +1427,7 @@ describe('G1 to GX util functions', async function () {
       ]);
     });
 
-    it('Should return all orders associated with quote', async () => {
+    it('Should return all orders associated with quote', async function () {
       await collectionOrdersMock.insertMany([
         {
           orderId: mockOrderID,
