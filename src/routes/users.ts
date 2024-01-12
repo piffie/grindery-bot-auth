@@ -3,6 +3,7 @@ import { Database } from '../db/conn';
 import { authenticateApiKey } from '../utils/auth';
 import { ANKR_MULTICHAIN_API_URL, USERS_COLLECTION } from '../utils/constants';
 import axios from 'axios';
+import { UserTelegram } from '../utils/user';
 
 const router = express.Router();
 
@@ -124,14 +125,11 @@ router.get('/attributes', authenticateApiKey, async (req, res) => {
       });
     }
 
-    const db = await Database.getInstance();
-    const user = await db
-      ?.collection(USERS_COLLECTION)
-      .findOne({ userTelegramID });
+    const user = await UserTelegram.build(userTelegramID as string);
 
     return res.status(200).send({
       userTelegramID,
-      attributes: user?.attributes,
+      attributes: user.attributes(),
     });
   } catch (error) {
     console.log(error);

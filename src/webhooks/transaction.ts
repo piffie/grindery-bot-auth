@@ -9,7 +9,6 @@ import {
 import {
   FLOWXO_NEW_TRANSACTION_WEBHOOK,
   TRANSFERS_COLLECTION,
-  USERS_COLLECTION,
 } from '../utils/constants';
 import {
   getPatchWalletAccessToken,
@@ -29,12 +28,9 @@ import {
 import { FLOWXO_WEBHOOK_API_KEY } from '../../secrets';
 import { addTrackSegment } from '../utils/segment';
 import { Db, WithId } from 'mongodb';
-import {
-  MongoTransfer,
-  MongoUser,
-  TransactionStatus,
-} from 'grindery-nexus-common-utils';
+import { MongoTransfer, TransactionStatus } from 'grindery-nexus-common-utils';
 import { isTopUpTx } from '../utils/topUp';
+import { UserTelegram } from '../utils/user';
 
 /**
  * Handles a new transaction based on the provided parameters.
@@ -51,15 +47,10 @@ import { isTopUpTx } from '../utils/topUp';
 export async function handleNewTransaction(
   params: TransactionParams,
 ): Promise<boolean> {
-  // Establish a connection to the database
-  const db = await Database.getInstance();
+  // Generate a Telegram user instance for the sender
+  const sender = await UserTelegram.build(params.senderTgId);
 
-  // Retrieve sender information from the "users" collection
-  const senderInformation = (await db?.collection(USERS_COLLECTION).findOne({
-    userTelegramID: params.senderTgId,
-  })) as WithId<MongoUser> | null;
-
-  if (!senderInformation)
+  if (!sender.params)
     return (
       console.error(
         `[${params.eventId}] Sender ${params.senderTgId} is not a user`,
@@ -69,7 +60,7 @@ export async function handleNewTransaction(
 
   // Create a transactionInstance object
   const { isError, transactionInstance } = await TransferTelegram.build(
-    createTransaction(params, senderInformation),
+    createTransaction(params, sender.params),
   );
 
   if (isError) return false;
@@ -107,11 +98,11 @@ export async function handleNewTransaction(
       transactionInstance.saveToSegment(),
       transactionInstance.saveToFlowXO(),
       params.message &&
-        senderInformation?.telegramSession &&
+        sender.params?.telegramSession &&
         sendTelegramMessage(
           params.message,
           params.recipientTgId,
-          senderInformation,
+          sender.params,
         ).then(
           (result) =>
             result.success ||
