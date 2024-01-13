@@ -86,6 +86,42 @@ describe('G1 to GX util functions', async function () {
       });
     });
 
+    it('Case 33', async function () {
+      expect(computeG1ToGxConversion(2000000, 1900000, 20, 4)).to.deep.equal({
+        m1: '0.0800',
+        m2: '0.0673',
+        m3: '0.1200',
+        m4: '0.0000',
+        m5: '0.2500',
+        m6: '0.5173',
+        finalG1Usd: '0.002876',
+        gxFromUsd: '555.56',
+        usdFromG1: '5464.41',
+        gxFromG1: '151789.03',
+        gxReceived: '152344.59',
+        equivalentUsdInvested: '5484.41',
+        GxUsdExchangeRate: GX_USD_CONV.toFixed(2),
+      });
+    });
+
+    it('Case 34', async function () {
+      expect(computeG1ToGxConversion(2000000, 1900000, 120, 4)).to.deep.equal({
+        m1: '0.2000',
+        m2: '0.4000',
+        m3: '0.1200',
+        m4: '0.0000',
+        m5: '0.2500',
+        m6: '0.9700',
+        finalG1Usd: '0.004868',
+        gxFromUsd: '3333.33',
+        usdFromG1: '9249.20',
+        gxFromG1: '256922.22',
+        gxReceived: '260255.56',
+        equivalentUsdInvested: '9369.20',
+        GxUsdExchangeRate: GX_USD_CONV.toFixed(2),
+      });
+    });
+
     it('Case 35', async function () {
       expect(
         computeG1ToGxConversion(120000000, 120000000, 180, 10),
