@@ -64,7 +64,12 @@ const router = express.Router();
  */
 router.get('/quote', authenticateApiKey, async (req, res) => {
   try {
-    const db = await Database.getInstance();
+    // Check if the G1 quantity is a positive number
+    if (!(parseFloat(req.query.g1Quantity as string) > 0)) {
+      return res.status(404).json({
+        msg: 'The amount of G1 must be a positive number.',
+      });
+    }
 
     // Calculate token price based on chainId and token address
     const token_price = await getTokenPrice(
@@ -72,51 +77,34 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
       req.query.tokenAddress as string,
     );
 
+    // Calculate USD quantity
     const usdQuantity = (
       parseFloat(req.query.tokenAmount as string) *
       parseFloat(token_price.data.result.usdPrice)
     ).toFixed(2);
 
+    // Get user details
     const user = await UserTelegram.build(req.query.userTelegramID as string);
 
+    // Get G1 balance for calculations
     const tokenAmountG1ForCalculations = await getUserTgeBalance(
       user.userTelegramID,
       parseFloat(req.query.g1Quantity as string),
     );
 
-    const result = computeG1ToGxConversion(
-      user.getBalanceSnapshot() || 0,
-      tokenAmountG1ForCalculations,
-      Number(usdQuantity),
-      user.getMvu() || 0,
-    );
+    // Generate a unique quoteId
+    const quoteId = uuidv4();
 
-    const id = uuidv4();
-    const date = new Date();
-
-    await db?.collection(GX_QUOTE_COLLECTION).updateOne(
-      { quoteId: id },
-      {
-        $set: {
-          ...result,
-          quoteId: id,
-          date: date,
-          userTelegramID: req.query.userTelegramID,
-          tokenAmount: req.query.tokenAmount,
-          chainId: req.query.chainId,
-          tokenAddress: req.query.tokenAddress,
-          tokenAmountG1: req.query.g1Quantity,
-          usdFromUsdInvestment: usdQuantity,
-          tokenAmountG1ForCalculations: tokenAmountG1ForCalculations.toFixed(2),
-        },
-      },
-      { upsert: true },
-    );
-
-    return res.status(200).json({
-      ...result,
-      quoteId: id,
-      date: date,
+    // Calculate G1 to Gx conversion and create a quote object
+    const quote = {
+      ...computeG1ToGxConversion(
+        user.getBalanceSnapshot() || 0,
+        tokenAmountG1ForCalculations,
+        Number(usdQuantity),
+        user.getMvu() || 0,
+      ),
+      quoteId,
+      date: new Date(),
       userTelegramID: req.query.userTelegramID,
       tokenAmount: req.query.tokenAmount,
       chainId: req.query.chainId,
@@ -124,8 +112,17 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
       tokenAmountG1: req.query.g1Quantity,
       usdFromUsdInvestment: usdQuantity,
       tokenAmountG1ForCalculations: tokenAmountG1ForCalculations.toFixed(2),
-    });
+    };
+
+    // Update or insert the quote in the database
+    await (await Database.getInstance())
+      ?.collection(GX_QUOTE_COLLECTION)
+      .updateOne({ quoteId: quoteId }, { $set: quote }, { upsert: true });
+
+    // Return the calculated values in the response
+    return res.status(200).json(quote);
   } catch (error) {
+    // Handle errors and return a 500 response
     return res.status(500).json({ msg: 'An error occurred', error });
   }
 });
