@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticateApiKey } from '../utils/auth';
-import { computeG1ToGxConversion } from '../utils/g1gx';
+import { computeG1ToGxConversion, getUserTgeBalance } from '../utils/g1gx';
 import { Database } from '../db/conn';
 import {
   GX_ORDER_COLLECTION,
@@ -52,7 +52,8 @@ const router = express.Router();
  *   "chainId": "1",
  *   "tokenAddress": "0x123456789ABCDEF",
  *   "quoteId": "some-unique-id",
- *   "date": "2023-12-31T12:00:00Z"
+ *   "date": "2023-12-31T12:00:00Z",
+ *   "tokenAmountG1ForCalculations": "555.00"
  * }
  *
  * @example response - 500 - Error response example
@@ -78,9 +79,14 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
 
     const user = await UserTelegram.build(req.query.userTelegramID as string);
 
+    const tokenAmountG1ForCalculations = await getUserTgeBalance(
+      user.userTelegramID,
+      parseFloat(req.query.g1Quantity as string),
+    );
+
     const result = computeG1ToGxConversion(
       user.getBalanceSnapshot() || 0,
-      Number(req.query.g1Quantity),
+      tokenAmountG1ForCalculations,
       Number(usdQuantity),
       user.getMvu() || 0,
     );
@@ -101,6 +107,7 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
           tokenAddress: req.query.tokenAddress,
           tokenAmountG1: req.query.g1Quantity,
           usdFromUsdInvestment: usdQuantity,
+          tokenAmountG1ForCalculations: tokenAmountG1ForCalculations.toFixed(2),
         },
       },
       { upsert: true },
@@ -116,6 +123,7 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
       tokenAddress: req.query.tokenAddress,
       tokenAmountG1: req.query.g1Quantity,
       usdFromUsdInvestment: usdQuantity,
+      tokenAmountG1ForCalculations: tokenAmountG1ForCalculations.toFixed(2),
     });
   } catch (error) {
     return res.status(500).json({ msg: 'An error occurred', error });

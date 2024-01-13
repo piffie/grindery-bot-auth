@@ -75,6 +75,8 @@ describe('G1 to GX util functions', async function () {
       total_gx: '16671666.67',
     });
 
+    sandbox.stub(g1gx, 'getUserTgeBalance').resolves(555);
+
     sandbox.stub(axios, 'post').callsFake(async (url: string) => {
       if (url === ANKR_MULTICHAIN_API_URL) {
         return Promise.resolve({
@@ -140,6 +142,7 @@ describe('G1 to GX util functions', async function () {
         tokenAmount: '10',
         chainId: mockChainId,
         tokenAddress: mockTokenAddress,
+        tokenAmountG1ForCalculations: '555.00',
       });
     });
 
@@ -179,6 +182,7 @@ describe('G1 to GX util functions', async function () {
             tokenAmount: '10',
             chainId: mockChainId,
             tokenAddress: mockTokenAddress,
+            tokenAmountG1ForCalculations: '555.00',
           },
         ]);
 
