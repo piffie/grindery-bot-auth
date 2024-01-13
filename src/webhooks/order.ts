@@ -17,7 +17,7 @@ import {
   handleUserOpHash,
 } from './utils';
 import { PRODUCTION_ENV, SOURCE_WALLET_ADDRESS } from '../../secrets';
-import { Db, WithId } from 'mongodb';
+import { Db, FindCursor, WithId } from 'mongodb';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
 import { MongoGxQuote, MongoOrder, OrderParams } from '../types/gx.types';
 import { mockTransactionHash, mockUserOpHash } from '../test/utils';
@@ -187,16 +187,40 @@ export class OrderTelegram {
     return null;
   }
 
+  /**
+   * Checks if there is another order for the user with a successful status.
+   * @returns A Promise that resolves to `true` if there is a successful order, and `false` otherwise.
+   */
   async isOtherOrderSuccess(): Promise<boolean> {
     if (this.db) {
-      const order = (await this.db.collection(GX_ORDER_COLLECTION).findOne({
-        userTelegramID: this.params.userTelegramID,
-        eventId: { $ne: this.params.eventId },
-        orderType: this.params.orderType,
-      })) as WithId<MongoOrder> | null;
+      const cursor = this.db.collection(GX_ORDER_COLLECTION).find({
+        $or: [
+          {
+            userTelegramID: this.params.userTelegramID,
+            eventId: { $ne: this.params.eventId },
+            orderType: this.params.orderType,
+          },
+          {
+            userTelegramID: this.params.userTelegramID,
+            quoteId: { $ne: this.params.quoteId },
+            orderType:
+              this.params.orderType === Ordertype.G1
+                ? Ordertype.USD
+                : Ordertype.G1,
+          },
+        ],
+      }) as FindCursor<WithId<MongoOrder>>;
 
-      if (order && order.status === TransactionStatus.SUCCESS) return true;
+      let order: WithId<MongoOrder> | null = null;
+
+      while (await cursor.hasNext()) {
+        order = await cursor.next();
+        if (order && order.status === TransactionStatus.SUCCESS) {
+          return true;
+        }
+      }
     }
+
     return false;
   }
 
