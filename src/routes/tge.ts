@@ -78,8 +78,9 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
     const user = await UserTelegram.build(req.query.userTelegramID as string);
 
     const result = computeG1ToGxConversion(
-      Number(usdQuantity),
+      user.getBalanceSnapshot() || 0,
       Number(req.query.g1Quantity),
+      Number(usdQuantity),
       user.getMvu() || 0,
     );
 
