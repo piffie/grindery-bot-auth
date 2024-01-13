@@ -11,32 +11,19 @@ import { Ordertype } from '../utils/constants';
  * Represents a GxQuote containing various fields related to Gx tokens and their values.
  */
 export type GxQuote = {
-  /** The amount of Gx tokens. */
-  tokenAmountG1: string;
-  /** USD value obtained from USD investment. */
-  usdFromUsdInvestment: string;
-  /** USD value obtained from G1 investment. */
-  usdFromG1Investment: string;
-  /** USD value obtained from MVU. */
-  usdFromMvu: string;
-  /** USD value obtained from time. */
-  usdFromTime: string;
-  /** Equivalent USD invested. */
-  equivalentUsdInvested: string;
-  /** Gx value before MVU. */
-  gxBeforeMvu: string;
-  /** Gx value affected by MVU. */
-  gxMvuEffect: string;
-  /** Gx value affected by time. */
-  gxTimeEffect: string;
-  /** Gx to USD exchange rate. */
-  GxUsdExchangeRate: string;
-  /** Standard Gx to USD exchange rate. */
-  standardGxUsdExchangeRate: string;
-  /** Discount received. */
-  discountReceived: string;
-  /** Gx tokens received. */
+  m1: string;
+  m2: string;
+  m3: string;
+  m4: string;
+  m5: string;
+  m6: string;
+  finalG1Usd: string;
+  gxFromUsd: string;
+  usdFromG1: string;
+  gxFromG1: string;
   gxReceived: string;
+  equivalentUsdInvested: string;
+  GxUsdExchangeRate: string;
 };
 
 /**
@@ -55,6 +42,9 @@ export type MongoGxQuote = GxQuote & {
   chainId: ChainId;
   /** The token address. */
   tokenAddress: TokenAddress;
+  tokenAmountG1ForCalculations: string;
+  usdFromUsdInvestment: string;
+  tokenAmountG1: string;
 };
 
 /**
