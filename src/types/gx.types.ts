@@ -11,32 +11,32 @@ import { Ordertype } from '../utils/constants';
  * Represents a GxQuote containing various fields related to Gx tokens and their values.
  */
 export type GxQuote = {
-  /** The amount of Gx tokens. */
-  tokenAmountG1: string;
-  /** USD value obtained from USD investment. */
-  usdFromUsdInvestment: string;
-  /** USD value obtained from G1 investment. */
-  usdFromG1Investment: string;
-  /** USD value obtained from MVU. */
-  usdFromMvu: string;
-  /** USD value obtained from time. */
-  usdFromTime: string;
-  /** Equivalent USD invested. */
-  equivalentUsdInvested: string;
-  /** Gx value before MVU. */
-  gxBeforeMvu: string;
-  /** Gx value affected by MVU. */
-  gxMvuEffect: string;
-  /** Gx value affected by time. */
-  gxTimeEffect: string;
-  /** Gx to USD exchange rate. */
-  GxUsdExchangeRate: string;
-  /** Standard Gx to USD exchange rate. */
-  standardGxUsdExchangeRate: string;
-  /** Discount received. */
-  discountReceived: string;
-  /** Gx tokens received. */
+  /** The value of m1 in the GxQuote. */
+  m1: string;
+  /** The value of m2 in the GxQuote. */
+  m2: string;
+  /** The value of m3 in the GxQuote. */
+  m3: string;
+  /** The value of m4 in the GxQuote. */
+  m4: string;
+  /** The value of m5 in the GxQuote. */
+  m5: string;
+  /** The value of m6 in the GxQuote. */
+  m6: string;
+  /** The final G1 to USD value in the GxQuote. */
+  finalG1Usd: string;
+  /** The amount of Gx obtained from USD in the GxQuote. */
+  gxFromUsd: string;
+  /** The amount of USD obtained from G1 in the GxQuote. */
+  usdFromG1: string;
+  /** The amount of Gx obtained from G1 in the GxQuote. */
+  gxFromG1: string;
+  /** The total amount of Gx received in the GxQuote. */
   gxReceived: string;
+  /** The equivalent USD invested in the GxQuote. */
+  equivalentUsdInvested: string;
+  /** The exchange rate from Gx to USD in the GxQuote. */
+  GxUsdExchangeRate: string;
 };
 
 /**
@@ -55,6 +55,9 @@ export type MongoGxQuote = GxQuote & {
   chainId: ChainId;
   /** The token address. */
   tokenAddress: TokenAddress;
+  tokenAmountG1ForCalculations: string;
+  usdFromUsdInvestment: string;
+  tokenAmountG1: string;
 };
 
 /**
