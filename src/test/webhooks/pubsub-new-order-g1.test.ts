@@ -647,7 +647,7 @@ describe('handleNewOrder function', async function () {
       });
     });
 
-    it('Should return true and no token sending if transaction is already a success', async function () {
+    it('Should return true and no token sending if another USD order exists with a success status and not the same quote ID', async function () {
       expect(
         await handleNewOrder({
           orderType: Ordertype.G1,
@@ -658,7 +658,7 @@ describe('handleNewOrder function', async function () {
       ).to.be.true;
     });
 
-    it('Should not send tokens if transaction is already a success', async function () {
+    it('Should not send tokens if another USD order exists with a success status and not the same quote ID', async function () {
       await handleNewOrder({
         orderType: Ordertype.G1,
         userTelegramID: mockUserTelegramID,
@@ -671,7 +671,7 @@ describe('handleNewOrder function', async function () {
       ).to.be.undefined;
     });
 
-    it('Should not modify database if transaction is already a success', async function () {
+    it('Should not modify database if another USD order exists with a success status and not the same quote ID', async function () {
       await handleNewOrder({
         orderType: Ordertype.G1,
         userTelegramID: mockUserTelegramID,

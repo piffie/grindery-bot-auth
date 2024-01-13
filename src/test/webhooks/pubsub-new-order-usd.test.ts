@@ -596,6 +596,151 @@ describe('handleNewUSDOrder function', async function () {
     });
   });
 
+  describe('Another G1 order exists with a success status and not the same quote ID', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+      });
+
+      await collectionQuotesMock.insertMany([
+        {
+          quoteId: mockOrderID,
+          tokenAmountG1: '500.55',
+          usdFromUsdInvestment: '1001.00',
+          usdFromG1Investment: '1',
+          usdFromMvu: '1',
+          usdFromTime: '1',
+          equivalentUsdInvested: '1',
+          gxBeforeMvu: '1',
+          gxMvuEffect: '1',
+          gxTimeEffect: '1',
+          GxUsdExchangeRate: '1',
+          standardGxUsdExchangeRate: '1',
+          discountReceived: '1',
+          gxReceived: '1',
+          userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
+        },
+        {
+          quoteId: mockOrderID1,
+          tokenAmountG1: '1000.00',
+          usdFromUsdInvestment: '1',
+          usdFromG1Investment: '1',
+          usdFromMvu: '1',
+          usdFromTime: '1',
+          equivalentUsdInvested: '1',
+          gxBeforeMvu: '1',
+          gxMvuEffect: '1',
+          gxTimeEffect: '1',
+          GxUsdExchangeRate: '1',
+          standardGxUsdExchangeRate: '1',
+          discountReceived: '1',
+          gxReceived: '1',
+          userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
+        },
+      ]);
+
+      await collectionOrdersMock.insertOne({
+        quoteId: mockOrderID1,
+        orderType: Ordertype.G1,
+        tokenAmountG1: '500.55',
+        usdFromUsdInvestment: '1',
+        usdFromG1Investment: '1',
+        usdFromMvu: '1',
+        usdFromTime: '1',
+        equivalentUsdInvested: '1',
+        gxBeforeMvu: '1',
+        gxMvuEffect: '1',
+        gxTimeEffect: '1',
+        GxUsdExchangeRate: '1',
+        standardGxUsdExchangeRate: '1',
+        discountReceived: '1',
+        gxReceived: '1',
+        userTelegramID: mockUserTelegramID,
+        eventId: mockEventId1,
+        transactionHash: mockTransactionHash,
+        userOpHash: null,
+        status: TransactionStatus.SUCCESS,
+        tokenAddress: null,
+        tokenAmount: null,
+        chainId: null,
+      });
+    });
+
+    it('Should return true and no token sending if another G1 order exists with a success status and not the same quote ID', async function () {
+      expect(
+        await handleNewOrder({
+          orderType: Ordertype.USD,
+          userTelegramID: mockUserTelegramID,
+          quoteId: mockOrderID,
+          eventId: mockEventId,
+        }),
+      ).to.be.true;
+    });
+
+    it('Should not send tokens if another G1 order exists with a success status and not the same quote ID', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.USD,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
+      ).to.be.undefined;
+    });
+
+    it('Should not modify database if another G1 order exists with a success status and not the same quote ID', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.USD,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      expect(await collectionOrdersMock.find({}).toArray())
+        .excluding(['_id'])
+        .to.deep.equal(
+          spuriousOrdersUSD.concat([
+            {
+              quoteId: mockOrderID1,
+              orderType: Ordertype.G1,
+              tokenAmountG1: '500.55',
+              usdFromUsdInvestment: '1',
+              usdFromG1Investment: '1',
+              usdFromMvu: '1',
+              usdFromTime: '1',
+              equivalentUsdInvested: '1',
+              gxBeforeMvu: '1',
+              gxMvuEffect: '1',
+              gxTimeEffect: '1',
+              GxUsdExchangeRate: '1',
+              standardGxUsdExchangeRate: '1',
+              discountReceived: '1',
+              gxReceived: '1',
+              userTelegramID: mockUserTelegramID,
+              eventId: mockEventId1,
+              transactionHash: mockTransactionHash,
+              userOpHash: null,
+              status: TransactionStatus.SUCCESS,
+              tokenAddress: null,
+              tokenAmount: null,
+              chainId: null,
+            },
+          ]),
+        );
+    });
+  });
+
   describe('Order if is already a failure', async function () {
     beforeEach(async function () {
       await collectionUsersMock.insertOne({
