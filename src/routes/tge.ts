@@ -34,24 +34,25 @@ const router = express.Router();
  *
  * @example response - 200 - Success response example
  * {
- *   "usdFromUsdInvestment": "10",
- *   "usdFromG1Investment": "0.049",
- *   "usdFromMvu": "0.80",
- *   "usdFromTime": "1.04",
- *   "equivalentUsdInvested": "11.89",
- *   "gxBeforeMvu": "279.16",
- *   "gxMvuEffect": "22.33",
- *   "gxTimeEffect": "29.00",
- *   "gxReceived": "1200",
- *   "GxUsdExchangeRate": "32.88",
- *   "standardGxUsdExchangeRate": "27.77",
- *   "discountReceived": "15.53",
- *   "date": "2023-12-31T12:00:00Z",
- *   "quoteId": "some-unique-id",
+ *   "m1": "0.2000",
+ *   "m2": "0.4000",
+ *   "m3": "0.3000",
+ *   "m4": "0.0000",
+ *   "m5": "0.2500",
+ *   "m6": "1.0000",
+ *   "final_g1_usd": "0.005000",
+ *   "gx_from_usd": "5000.00",
+ *   "usd_from_g1": "600000.00",
+ *   "gx_from_g1": "16666666.67",
+ *   "total_gx": "16671666.67",
  *   "userTelegramID": "user-telegram-id",
+ *   "tokenAmountG1": "4",
+ *   "usdFromUsdInvestment": "100.00",
  *   "tokenAmount": "10",
  *   "chainId": "1",
- *   "tokenAddress": "0x123456789ABCDEF"
+ *   "tokenAddress": "0x123456789ABCDEF",
+ *   "quoteId": "some-unique-id",
+ *   "date": "2023-12-31T12:00:00Z"
  * }
  *
  * @example response - 500 - Error response example
@@ -98,6 +99,8 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
           tokenAmount: req.query.tokenAmount,
           chainId: req.query.chainId,
           tokenAddress: req.query.tokenAddress,
+          tokenAmountG1: req.query.g1Quantity,
+          usdFromUsdInvestment: usdQuantity,
         },
       },
       { upsert: true },
@@ -105,12 +108,14 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
 
     return res.status(200).json({
       ...result,
-      date,
       quoteId: id,
+      date: date,
       userTelegramID: req.query.userTelegramID,
       tokenAmount: req.query.tokenAmount,
       chainId: req.query.chainId,
       tokenAddress: req.query.tokenAddress,
+      tokenAmountG1: req.query.g1Quantity,
+      usdFromUsdInvestment: usdQuantity,
     });
   } catch (error) {
     return res.status(500).json({ msg: 'An error occurred', error });
