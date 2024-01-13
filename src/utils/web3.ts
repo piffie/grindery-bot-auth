@@ -159,3 +159,23 @@ export function weiToEther(
     .div(new BigNumber(10).pow(decimals))
     .toString();
 }
+
+/**
+ * Retrieves the user's balance for a specific token on a given blockchain.
+ *
+ * @param {string} userAddress - The address of the user.
+ * @param {string} tokenAddress - The address of the token.
+ * @param {string} chainId - The identifier of the blockchain.
+ * @returns {Promise<string>} A Promise that resolves to the user's balance as a string.
+ */
+export async function getUserBalance(
+  userAddress: string,
+  tokenAddress: string,
+  chainId: string,
+): Promise<string> {
+  const contract = getContract(chainId, tokenAddress);
+
+  return BigNumber(await contract.methods['balanceOf'](userAddress).call())
+    .div(BigNumber(10).pow(BigNumber(await contract.methods.decimals().call())))
+    .toString();
+}

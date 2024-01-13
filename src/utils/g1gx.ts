@@ -1,5 +1,9 @@
+import { G1_POLYGON_ADDRESS } from '../../secrets';
 import { GxQuote } from '../types/gx.types';
+import { DEFAULT_CHAIN_ID } from './constants';
 import { minutesUntilTgeEnd } from './time';
+import { UserTelegram } from './user';
+import { getUserBalance } from './web3';
 
 /**
  * Coefficient A used in a mathematical function.
@@ -281,4 +285,43 @@ export function computeG1ToGxConversion(
     ).toFixed(2),
     gxReceived: (equivalentUsdInvested * GxUsdExchangeRate).toFixed(2),
   };
+}
+
+/**
+ * Retrieves the TGE balance for a user on the Polygon network.
+ *
+ * @param {string} userTelegramID - The Telegram User ID of the user.
+ * @param {number} amountG1 - The amount of G1 to trade.
+ * @returns {Promise<number>} A Promise that resolves to the user's TGE balance.
+ */
+export async function getUserTgeBalance(
+  userTelegramID: string,
+  amountG1: number,
+): Promise<number> {
+  // Build the UserTelegram object based on the provided Telegram User ID.
+  const user = await UserTelegram.build(userTelegramID);
+
+  // Get the real balance of the user in G1 on the Polygon network.
+  const realBalance = parseFloat(
+    await getUserBalance(
+      user.patchwalletAddress() || '', // User's Ethereum wallet address.
+      G1_POLYGON_ADDRESS, // Address of the G1 token on Polygon.
+      DEFAULT_CHAIN_ID, // Polygon chain ID.
+    ),
+  );
+
+  // Get the virtual balance of the user.
+  const virtualBalance = user.getVirtualBalance();
+
+  // Check if the amount of G1 to trade exceeds the real balance.
+  if (amountG1 > realBalance) {
+    throw new Error(
+      `Amount of G1 to trade (${amountG1}) is too high compared to your current balance (${realBalance})`,
+    );
+  }
+
+  // Calculate the TGE balance based on the conditions.
+  return virtualBalance && realBalance < virtualBalance
+    ? (amountG1 / realBalance) * virtualBalance
+    : amountG1;
 }
