@@ -61,25 +61,23 @@ describe('G1 to GX util functions', async function () {
     });
 
     sandbox = Sinon.createSandbox();
-    sandbox
-      .stub(g1gx, 'computeG1ToGxConversion')
-      .callsFake((_usdQuantity, _g1Quantity, mvu) => {
-        return {
-          tokenAmountG1: '1000.00',
-          usdFromUsdInvestment: '1',
-          usdFromG1Investment: '1',
-          usdFromMvu: '1',
-          usdFromTime: '1',
-          equivalentUsdInvested: '1',
-          gxBeforeMvu: '1',
-          gxMvuEffect: mvu.toString(),
-          gxTimeEffect: '1',
-          GxUsdExchangeRate: '1',
-          standardGxUsdExchangeRate: '1',
-          discountReceived: '1',
-          gxReceived: '1',
-        };
-      });
+    sandbox.stub(g1gx, 'computeG1ToGxConversion').returns({
+      m1: '0.2000',
+      m2: '0.4000',
+      m3: '0.3000',
+      m4: '0.0000',
+      m5: '0.2500',
+      m6: '1.0000',
+      finalG1Usd: '0.005000',
+      gxFromUsd: '5000.00',
+      usdFromG1: '600000.00',
+      gxFromG1: '16666666.67',
+      gxReceived: '16671666.67',
+      equivalentUsdInvested: '2178.50',
+      GxUsdExchangeRate: '10.00',
+    });
+
+    sandbox.stub(g1gx, 'getUserTgeBalance').resolves(555);
 
     sandbox.stub(axios, 'post').callsFake(async (url: string) => {
       if (url === ANKR_MULTICHAIN_API_URL) {
@@ -129,23 +127,26 @@ describe('G1 to GX util functions', async function () {
       delete res.body.quoteId;
 
       expect(res.body).to.deep.equal({
+        m1: '0.2000',
+        m2: '0.4000',
+        m3: '0.3000',
+        m4: '0.0000',
+        m5: '0.2500',
+        m6: '1.0000',
+        finalG1Usd: '0.005000',
+        gxFromUsd: '5000.00',
+        usdFromG1: '600000.00',
+        gxFromG1: '16666666.67',
+        gxReceived: '16671666.67',
+        equivalentUsdInvested: '2178.50',
+        GxUsdExchangeRate: '10.00',
         userTelegramID: mockUserTelegramID,
-        tokenAmountG1: '1000.00',
-        usdFromUsdInvestment: '1',
-        usdFromG1Investment: '1',
-        usdFromMvu: '1',
-        usdFromTime: '1',
-        equivalentUsdInvested: '1',
-        gxBeforeMvu: '1',
-        gxMvuEffect: '5.03',
-        gxTimeEffect: '1',
-        GxUsdExchangeRate: '1',
-        standardGxUsdExchangeRate: '1',
-        discountReceived: '1',
-        gxReceived: '1',
+        tokenAmountG1: '4',
+        usdFromUsdInvestment: '100.00',
         tokenAmount: '10',
         chainId: mockChainId,
         tokenAddress: mockTokenAddress,
+        tokenAmountG1ForCalculations: '555.00',
       });
     });
 
@@ -168,23 +169,26 @@ describe('G1 to GX util functions', async function () {
         .excluding(['_id', 'date', 'quoteId'])
         .to.deep.equal([
           {
-            tokenAmountG1: '1000.00',
-            usdFromUsdInvestment: '1',
-            usdFromG1Investment: '1',
-            usdFromMvu: '1',
-            usdFromTime: '1',
-            equivalentUsdInvested: '1',
-            gxBeforeMvu: '1',
-            gxMvuEffect: '5.03',
-            gxTimeEffect: '1',
-            GxUsdExchangeRate: '1',
-            standardGxUsdExchangeRate: '1',
-            discountReceived: '1',
-            gxReceived: '1',
+            m1: '0.2000',
+            m2: '0.4000',
+            m3: '0.3000',
+            m4: '0.0000',
+            m5: '0.2500',
+            m6: '1.0000',
+            finalG1Usd: '0.005000',
+            gxFromUsd: '5000.00',
+            usdFromG1: '600000.00',
+            gxFromG1: '16666666.67',
+            gxReceived: '16671666.67',
+            equivalentUsdInvested: '2178.50',
+            GxUsdExchangeRate: '10.00',
             userTelegramID: mockUserTelegramID,
+            tokenAmountG1: '4',
+            usdFromUsdInvestment: '100.00',
             tokenAmount: '10',
             chainId: mockChainId,
             tokenAddress: mockTokenAddress,
+            tokenAmountG1ForCalculations: '555.00',
           },
         ]);
 

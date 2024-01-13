@@ -1,284 +1,176 @@
-import { GxQuote } from '../types/gx.types';
-import { minutesUntilTgeEnd } from './time';
+import { G1_POLYGON_ADDRESS } from '../../secrets';
+import { DEFAULT_CHAIN_ID } from './constants';
+import { daysSinceStartDate } from './time';
+import { UserTelegram } from './user';
+import { getUserBalance } from './web3';
 
 /**
- * Coefficient A used in a mathematical function.
+ * The starting date for the calculation.
  */
-export const FUNCTION_PARAMETER_A: number = 5;
+const START_DATE = new Date('2024-01-12T00:00:00Z');
 
 /**
- * Coefficient B used in a mathematical function.
+ * The minimum USD price per G1 for conversion.
  */
-export const FUNCTION_PARAMETER_B: number = 223.175920819801;
+const MIN_USD_PRICE_PER_G1 = 0.0005;
 
 /**
- * Coefficient C used in a mathematical function.
+ * The maximum USD price per G1 for conversion.
  */
-export const FUNCTION_PARAMETER_C: number = 0.005;
+const MAX_USD_PRICE_PER_G1 = 0.005;
 
 /**
- * Coefficient D used in a mathematical function.
+ * The base rate for G1 to USD conversion.
  */
-export const FUNCTION_PARAMETER_D: number = 1;
+const BASE_RATE = MIN_USD_PRICE_PER_G1 * 1.2;
 
 /**
- * Maximum allowed USD cap.
+ * Factor for the first calculation component (m1).
  */
-export const USD_CAP: number = 500;
+const M1_FACTOR = 0.2;
 
 /**
- * Exchange rate between G1 and USD.
+ * Factor for the second calculation component (m2).
  */
-export const EXCHANGE_RATE_G1_USD: number = 1000;
+const M2_FACTOR = 0.4;
 
 /**
- * Exchange rate between GX and USD.
+ * Factor for the third calculation component (m3).
  */
-export const EXCHANGE_RATE_GX_USD: number = 1 / 0.036;
+const M3_FACTOR = 0.3;
 
 /**
- * Exchange rate between GX and G1.
+ * Factor for the fourth calculation component (m4).
  */
-export const EXCHANGE_RATE_GX_G1: number =
-  EXCHANGE_RATE_GX_USD / EXCHANGE_RATE_G1_USD;
+const M4_FACTOR = -0.2;
 
 /**
- * Initial factor for time effect calculation.
+ * Factor for the fifth calculation component (m5).
  */
-export const TIME_EFFECT_INITIAL_FACTOR: number = 1.15;
+const M5_FACTOR = 0.25;
 
 /**
- * Final factor for time effect calculation.
+ * Factor for the sixth calculation component (m6).
  */
-export const TIME_EFFECT_FINAL_FACTOR: number = 1;
+const M6_FACTOR = MAX_USD_PRICE_PER_G1;
 
 /**
- * Represents the constant defining the number of minutes from a reference time
- * to a deadline for time effect calculation.
+ * USD conversion factor.
  */
-export const TIME_EFFECT_MINUTE_TO_DEADLINE = 23712;
+const USD_GX_CONV = 0.036;
 
 /**
- * Decaying slope used in time effect calculation based on time until Jan 1, 2024.
+ * USD conversion factor.
  */
-export const TIME_EFFECT_DECAYING_SLOPE: number =
-  (TIME_EFFECT_INITIAL_FACTOR - TIME_EFFECT_FINAL_FACTOR) /
-  TIME_EFFECT_MINUTE_TO_DEADLINE;
+export const GX_USD_CONV = 1 / USD_GX_CONV;
 
 /**
- * Computes the ratio between USD quantity and G1 quantity.
- * @param {number} usdQuantity - The quantity in USD.
- * @param {number} g1Quantity - The quantity in G1.
- * @returns {number} The computed ratio of USD to G1.
- * @throws {Error} Throws an error if the G1 quantity is zero.
- */
-export function computeUSDtoG1Ratio(
-  usdQuantity: number,
-  g1Quantity: number,
-): number {
-  if (g1Quantity === 0) {
-    throw new Error('G1 quantity cannot be zero.');
-  }
-
-  return usdQuantity / g1Quantity;
-}
-
-/**
- * Computes the factor based on USD and G1 quantities.
- * @param {number} usdQuantity - The quantity in USD.
- * @param {number} g1Quantity - The quantity in G1.
- * @returns {number} The computed factor.
- * @throws {Error} Throws an error if the G1 quantity is zero.
- */
-export function computeFactor(usdQuantity: number, g1Quantity: number): number {
-  if (g1Quantity === 0) {
-    throw new Error('G1 quantity cannot be zero.');
-  }
-
-  return usdQuantity === 0
-    ? FUNCTION_PARAMETER_A *
-        (1 - Math.exp(-FUNCTION_PARAMETER_B * (1 / g1Quantity)))
-    : FUNCTION_PARAMETER_A *
-        (1 -
-          Math.exp(
-            -FUNCTION_PARAMETER_B *
-              computeUSDtoG1Ratio(usdQuantity, g1Quantity),
-          ));
-}
-
-/**
- * Converts a quantity in USD to GX.
- * @param {number} usdQuantity - The quantity in USD to convert.
- * @returns {number} The equivalent quantity in GX.
- */
-export function getGxFromUSD(usdQuantity: number): number {
-  return usdQuantity * EXCHANGE_RATE_GX_USD;
-}
-
-/**
- * Converts a quantity in G1 to GX based on the provided USD and G1 quantities.
- * @param {number} usdQuantity - The quantity in USD.
- * @param {number} g1Quantity - The quantity in G1 to convert.
- * @returns {number} The equivalent quantity in GX.
- */
-export function getGxFromG1(usdQuantity: number, g1Quantity: number): number {
-  return (
-    g1Quantity * EXCHANGE_RATE_GX_G1 * computeFactor(usdQuantity, g1Quantity)
-  );
-}
-
-/**
- * Calculates the total quantity of GX before MVU (Market Value Update) based on the provided USD and G1 quantities.
- * @param {number} usdQuantity - The quantity in USD.
- * @param {number} g1Quantity - The quantity in G1.
- * @returns {number} The total quantity of GX before MVU.
- */
-export function getGxBeforeMVU(
-  usdQuantity: number,
-  g1Quantity: number,
-): number {
-  return getGxFromG1(usdQuantity, g1Quantity) + getGxFromUSD(usdQuantity);
-}
-
-/**
- * Calculates the total quantity of GX after MVU based on the provided USD, G1 quantities, and MVU factor.
- * @param {number} usdQuantity - The quantity in USD.
- * @param {number} g1Quantity - The quantity in G1.
- * @param {number} mvu - The MVU factor.
- * @returns {number} The total quantity of GX after MVU.
- */
-export function getGxAfterMVU(
-  usdQuantity: number,
-  g1Quantity: number,
-  mvu: number,
-): number {
-  // Calculate the intermediate value using MVU factor
-  const intermediateValue =
-    FUNCTION_PARAMETER_C * Math.pow(mvu, 2) + FUNCTION_PARAMETER_D;
-
-  // Calculate GX quantities from USD and G1
-  const gx_from_usd = getGxFromUSD(usdQuantity);
-  const gx_from_g1 = getGxFromG1(usdQuantity, g1Quantity);
-
-  // Check if the total GX exceeds the USD cap
-  if ((gx_from_usd + gx_from_g1) / EXCHANGE_RATE_GX_USD > USD_CAP) {
-    // If total GX exceeds the cap, compute GX after MVU considering cap limit
-    return (
-      intermediateValue * (USD_CAP * EXCHANGE_RATE_GX_USD) +
-      (gx_from_usd + gx_from_g1 - USD_CAP * EXCHANGE_RATE_GX_USD)
-    );
-  } else {
-    // If total GX does not exceed the cap, compute GX after MVU without considering cap limit
-    return intermediateValue * (gx_from_usd + gx_from_g1);
-  }
-}
-
-/**
- * Calculates the total quantity of GX after MVU considering the time effect based on provided parameters.
- * @param {number} usdQuantity - The quantity in USD.
- * @param {number} g1Quantity - The quantity in G1.
- * @param {number} mvu - The MVU factor.
- * @returns {number} The total quantity of GX after MVU with time effect.
- */
-export function getGxAfterMVUWithTimeEffect(
-  usdQuantity: number,
-  g1Quantity: number,
-  mvu: number,
-): number {
-  // Calculate the time difference between the target date and the provided time
-  const maxDifference = Math.max(
-    TIME_EFFECT_MINUTE_TO_DEADLINE - minutesUntilTgeEnd(),
-    0,
-  );
-
-  // Calculate the total GX after MVU and apply the time effect
-  return (
-    getGxAfterMVU(usdQuantity, g1Quantity, mvu) *
-    (TIME_EFFECT_INITIAL_FACTOR - TIME_EFFECT_DECAYING_SLOPE * maxDifference)
-  );
-}
-
-/**
- * Calculates the total equivalent quantity in USD based on provided parameters after considering MVU and time effects.
- * @param {number} usdQuantity - The quantity in USD.
- * @param {number} g1Quantity - The quantity in G1.
- * @param {number} mvu - MVU factor.
- * @returns {number} The total equivalent quantity in USD after MVU and time effects.
- */
-export function getTotalUSD(
-  usdQuantity: number,
-  g1Quantity: number,
-  mvu: number,
-): number {
-  // Calculate the total quantity of GX after MVU with time effect
-  const gxAfterMVUWithTimeEffect = getGxAfterMVUWithTimeEffect(
-    usdQuantity,
-    g1Quantity,
-    mvu,
-  );
-
-  // Convert the total GX after MVU with time effect to USD
-  return gxAfterMVUWithTimeEffect / EXCHANGE_RATE_GX_USD;
-}
-
-/**
- * Computes the conversion details from G1 to GX and its equivalent investments in USD based on provided parameters after considering Market Value Update (MVU) and time effects.
- * @param {number} usdQuantity - The quantity in USD.
- * @param {number} g1Quantity - The quantity in G1.
- * @param {number} mvu - The Market Value Update (MVU) factor.
- * @returns {object} An object containing details of the conversion and its equivalent investments in USD.
+ * Computes the G1 to GX conversion based on various factors and inputs.
+ * @param {number} snapshotG1 - The snapshot of G1.
+ * @param {number} amountG1ToConvert - The amount of G1 to convert.
+ * @param {number} amountUSDToConvert - The amount of USD to convert.
+ * @param {number} mvu - The MVU (Minimum Viable Utility) value.
+ * @returns {object} - Object containing the results of the conversion.
  */
 export function computeG1ToGxConversion(
-  usdQuantity: number,
-  g1Quantity: number,
+  snapshotG1: number,
+  amountG1ToConvert: number,
+  amountUSDToConvert: number,
   mvu: number,
-): GxQuote {
-  // Calculate different quantities and effects
-  const gxAfterMVU = getGxAfterMVU(usdQuantity, g1Quantity, mvu);
-  const gxFromG1 = getGxFromG1(usdQuantity, g1Quantity);
-  const gxFromUSD = getGxFromUSD(usdQuantity);
-  const gxBeforeMVU = getGxBeforeMVU(usdQuantity, g1Quantity);
-  const gxAfterMVUWithTimeEffect = getGxAfterMVUWithTimeEffect(
-    usdQuantity,
-    g1Quantity,
-    mvu,
+) {
+  // Calculate m1 based on the amount of USD to convert.
+  const m1 = Math.min(1, amountUSDToConvert / 50) * M1_FACTOR;
+
+  // Calculate m12 using logarithmic and linear functions.
+  const m12 = Math.max((Math.log2(amountG1ToConvert / 1000) + 1) * 10, 1);
+
+  // Calculate m2 based on the amount of USD to convert and m12.
+  const m2 = Math.min(M2_FACTOR, (amountUSDToConvert / m12) * M2_FACTOR);
+
+  // Calculate m3 based on the MVU value.
+  const m3 = (mvu / 10) * M3_FACTOR;
+
+  // Calculate m4 based on the days since the start date.
+  const m4 = (daysSinceStartDate(START_DATE) - 1) * (M4_FACTOR / (30 - 1));
+
+  // Calculate m5 based on the ratio of amountG1ToConvert to snapshotG1.
+  const m5 =
+    amountG1ToConvert / snapshotG1 < 0.8
+      ? 0
+      : amountG1ToConvert / snapshotG1 < 0.95
+      ? (amountG1ToConvert / snapshotG1 - 0.8) *
+        (M5_FACTOR / (0.95 - 0.8)) *
+        100
+      : M5_FACTOR;
+
+  // Calculate m6 as the minimum of the sum of m1, m2, m3, m4, and m5.
+  const m6 = Math.min(1, m1 + m2 + m3 + m4 + m5);
+
+  // Calculate the finalG1Usd based on BASE_RATE, M6_FACTOR, and m6.
+  const finalG1Usd = BASE_RATE + (M6_FACTOR - BASE_RATE) * m6;
+
+  // Calculate gxFromUsd by dividing amountUSDToConvert by USD_GX_CONV.
+  const gxFromUsd = amountUSDToConvert / USD_GX_CONV;
+
+  // Calculate usdFromG1 by multiplying finalG1Usd by amountG1ToConvert.
+  const usdFromG1 = finalG1Usd * amountG1ToConvert;
+
+  // Calculate gxFromG1 by dividing usdFromG1 by USD_GX_CONV.
+  const gxFromG1 = usdFromG1 / USD_GX_CONV;
+
+  // Return an object containing the calculated values, each rounded to a specific number of decimal places.
+  return {
+    m1: m1.toFixed(4),
+    m2: m2.toFixed(4),
+    m3: m3.toFixed(4),
+    m4: m4.toFixed(4),
+    m5: m5.toFixed(4),
+    m6: m6.toFixed(4),
+    finalG1Usd: finalG1Usd.toFixed(6),
+    gxFromUsd: gxFromUsd.toFixed(2),
+    usdFromG1: usdFromG1.toFixed(2),
+    gxFromG1: gxFromG1.toFixed(2),
+    gxReceived: (gxFromUsd + gxFromG1).toFixed(2),
+    equivalentUsdInvested: (amountUSDToConvert + usdFromG1).toFixed(2),
+    GxUsdExchangeRate: GX_USD_CONV.toFixed(2),
+  };
+}
+
+/**
+ * Retrieves the TGE balance for a user on the Polygon network.
+ *
+ * @param {string} userTelegramID - The Telegram User ID of the user.
+ * @param {number} amountG1 - The amount of G1 to trade.
+ * @returns {Promise<number>} A Promise that resolves to the user's TGE balance.
+ */
+export async function getUserTgeBalance(
+  userTelegramID: string,
+  amountG1: number,
+): Promise<number> {
+  // Build the UserTelegram object based on the provided Telegram User ID.
+  const user = await UserTelegram.build(userTelegramID);
+
+  // Get the real balance of the user in G1 on the Polygon network.
+  const realBalance = parseFloat(
+    await getUserBalance(
+      user.patchwalletAddress() || '', // User's Ethereum wallet address.
+      G1_POLYGON_ADDRESS, // Address of the G1 token on Polygon.
+      DEFAULT_CHAIN_ID, // Polygon chain ID.
+    ),
   );
 
-  // Calculate quantities in USD
-  const usdFromUsdInvestment = gxFromUSD / EXCHANGE_RATE_GX_USD;
-  const usdFromG1Investment = gxFromG1 / EXCHANGE_RATE_GX_USD;
-  const usdFromMvu = (gxAfterMVU - gxBeforeMVU) / EXCHANGE_RATE_GX_USD;
-  const usdFromTime =
-    (gxAfterMVUWithTimeEffect - gxAfterMVU) / EXCHANGE_RATE_GX_USD;
-  const equivalentUsdInvested =
-    usdFromUsdInvestment + usdFromG1Investment + usdFromMvu + usdFromTime;
+  // Get the virtual balance of the user.
+  const virtualBalance = user.getVirtualBalance();
 
-  // Calculate different effects
-  const gxBeforeMvu =
-    (usdFromG1Investment + usdFromUsdInvestment) * EXCHANGE_RATE_GX_USD;
-  const gxMvuEffect = usdFromMvu * EXCHANGE_RATE_GX_USD;
-  const gxTimeEffect = gxAfterMVUWithTimeEffect - (gxBeforeMvu + gxMvuEffect);
-  const GxUsdExchangeRate =
-    (gxBeforeMvu + gxMvuEffect + gxTimeEffect) /
-    (usdFromUsdInvestment + usdFromG1Investment);
+  // Check if the amount of G1 to trade exceeds the real balance.
+  if (amountG1 > realBalance) {
+    throw new Error(
+      `Amount of G1 to trade (${amountG1}) is too high compared to your current balance (${realBalance})`,
+    );
+  }
 
-  // Return an object with conversion details and equivalencies
-  return {
-    tokenAmountG1: g1Quantity.toFixed(2),
-    usdFromUsdInvestment: usdFromUsdInvestment.toFixed(2),
-    usdFromG1Investment: usdFromG1Investment.toFixed(2),
-    usdFromMvu: usdFromMvu.toFixed(2),
-    usdFromTime: usdFromTime.toFixed(2),
-    equivalentUsdInvested: equivalentUsdInvested.toFixed(2),
-    gxBeforeMvu: gxBeforeMvu.toFixed(2),
-    gxMvuEffect: gxMvuEffect.toFixed(2),
-    gxTimeEffect: gxTimeEffect.toFixed(2),
-    GxUsdExchangeRate: GxUsdExchangeRate.toFixed(2),
-    standardGxUsdExchangeRate: EXCHANGE_RATE_GX_USD.toFixed(2),
-    discountReceived: (
-      (1 - EXCHANGE_RATE_GX_USD / GxUsdExchangeRate) *
-      100
-    ).toFixed(2),
-    gxReceived: (equivalentUsdInvested * GxUsdExchangeRate).toFixed(2),
-  };
+  // Calculate the TGE balance based on the conditions.
+  return virtualBalance && realBalance < virtualBalance
+    ? (amountG1 / realBalance) * virtualBalance
+    : amountG1;
 }

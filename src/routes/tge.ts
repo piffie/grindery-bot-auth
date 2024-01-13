@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticateApiKey } from '../utils/auth';
-import { computeG1ToGxConversion } from '../utils/g1gx';
+import { computeG1ToGxConversion, getUserTgeBalance } from '../utils/g1gx';
 import { Database } from '../db/conn';
 import {
   GX_ORDER_COLLECTION,
@@ -34,24 +34,26 @@ const router = express.Router();
  *
  * @example response - 200 - Success response example
  * {
- *   "usdFromUsdInvestment": "10",
- *   "usdFromG1Investment": "0.049",
- *   "usdFromMvu": "0.80",
- *   "usdFromTime": "1.04",
- *   "equivalentUsdInvested": "11.89",
- *   "gxBeforeMvu": "279.16",
- *   "gxMvuEffect": "22.33",
- *   "gxTimeEffect": "29.00",
- *   "gxReceived": "1200",
- *   "GxUsdExchangeRate": "32.88",
- *   "standardGxUsdExchangeRate": "27.77",
- *   "discountReceived": "15.53",
- *   "date": "2023-12-31T12:00:00Z",
- *   "quoteId": "some-unique-id",
+ *   "m1": "0.2000",
+ *   "m2": "0.4000",
+ *   "m3": "0.3000",
+ *   "m4": "0.0000",
+ *   "m5": "0.2500",
+ *   "m6": "1.0000",
+ *   "finalG1Usd": "0.005000",
+ *   "gxFromUsd": "5000.00",
+ *   "usdFromG1": "600000.00",
+ *   "gxFromG1": "16666666.67",
+ *   "gxReceived": "16671666.67",
  *   "userTelegramID": "user-telegram-id",
+ *   "tokenAmountG1": "4",
+ *   "usdFromUsdInvestment": "100.00",
  *   "tokenAmount": "10",
  *   "chainId": "1",
- *   "tokenAddress": "0x123456789ABCDEF"
+ *   "tokenAddress": "0x123456789ABCDEF",
+ *   "quoteId": "some-unique-id",
+ *   "date": "2023-12-31T12:00:00Z",
+ *   "tokenAmountG1ForCalculations": "555.00"
  * }
  *
  * @example response - 500 - Error response example
@@ -77,9 +79,15 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
 
     const user = await UserTelegram.build(req.query.userTelegramID as string);
 
+    const tokenAmountG1ForCalculations = await getUserTgeBalance(
+      user.userTelegramID,
+      parseFloat(req.query.g1Quantity as string),
+    );
+
     const result = computeG1ToGxConversion(
+      user.getBalanceSnapshot() || 0,
+      tokenAmountG1ForCalculations,
       Number(usdQuantity),
-      Number(req.query.g1Quantity),
       user.getMvu() || 0,
     );
 
@@ -97,6 +105,9 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
           tokenAmount: req.query.tokenAmount,
           chainId: req.query.chainId,
           tokenAddress: req.query.tokenAddress,
+          tokenAmountG1: req.query.g1Quantity,
+          usdFromUsdInvestment: usdQuantity,
+          tokenAmountG1ForCalculations: tokenAmountG1ForCalculations.toFixed(2),
         },
       },
       { upsert: true },
@@ -104,12 +115,15 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
 
     return res.status(200).json({
       ...result,
-      date,
       quoteId: id,
+      date: date,
       userTelegramID: req.query.userTelegramID,
       tokenAmount: req.query.tokenAmount,
       chainId: req.query.chainId,
       tokenAddress: req.query.tokenAddress,
+      tokenAmountG1: req.query.g1Quantity,
+      usdFromUsdInvestment: usdQuantity,
+      tokenAmountG1ForCalculations: tokenAmountG1ForCalculations.toFixed(2),
     });
   } catch (error) {
     return res.status(500).json({ msg: 'An error occurred', error });

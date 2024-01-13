@@ -542,4 +542,15 @@ export class UserTelegram {
     }
     return undefined;
   }
+
+  getBalanceSnapshot(): number | undefined {
+    if (this.params && this.params.attributes.balance_100123) {
+      const parsedBalanceSnapshot = parseFloat(
+        this.params.attributes.balance_100123,
+      );
+      if (!(isNaN(parsedBalanceSnapshot) && parsedBalanceSnapshot <= 0))
+        return parsedBalanceSnapshot;
+    }
+    return undefined;
+  }
 }

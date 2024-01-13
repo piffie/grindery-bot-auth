@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import {
+  daysSinceStartDate,
   get24HoursBeforeDate,
   getLast24HoursDateTime,
   getLastHourDateTime,
@@ -7,7 +8,6 @@ import {
   getXDayBeforeDate,
   getXHourBeforeDate,
   getXMinBeforeDate,
-  minutesUntilTgeEnd,
 } from '../../utils/time';
 
 describe('Time function', async function () {
@@ -132,16 +132,28 @@ describe('Time function', async function () {
     });
   });
 
-  describe('Minutes until TGE end date function', async function () {
-    it('Should return the correct number of minutes remaining until Jan 15th, 2024', async function () {
-      const currentTime = new Date();
-      const janFirst2024 = new Date('2024-01-15T00:00:00Z');
-      const expectedMinutesRemaining = Math.round(
-        (janFirst2024.getTime() - currentTime.getTime()) / (1000 * 60),
+  describe('daysSinceStartDate function', async function () {
+    it('Should return 0 when given the same date', async function () {
+      const currentDate = new Date();
+      const result = daysSinceStartDate(currentDate);
+      expect(result).to.equal(0);
+    });
+
+    it('Should return the correct number of days since the start date', async function () {
+      const testDate = new Date('2023-01-01T12:00:00Z');
+      const currentDate = new Date();
+      const expectedDaysElapsed = Math.floor(
+        (currentDate.getTime() - testDate.getTime()) / (1000 * 60 * 60 * 24),
       );
 
-      const result = minutesUntilTgeEnd();
-      expect(result).to.equal(expectedMinutesRemaining);
+      const result = daysSinceStartDate(testDate);
+      expect(result).to.equal(expectedDaysElapsed);
+    });
+
+    it('Should return a positive value for a past date', async function () {
+      const pastDate = new Date('2020-01-01T12:00:00Z');
+      const result = daysSinceStartDate(pastDate);
+      expect(result).to.be.greaterThan(0);
     });
   });
 });

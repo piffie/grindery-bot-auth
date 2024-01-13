@@ -74,8 +74,10 @@ export function formatDate(date: Date): string {
   });
 }
 
-export const minutesUntilTgeEnd = (): number =>
-  Math.round(
-    (new Date('2024-01-15T00:00:00Z').getTime() - new Date().getTime()) /
-      (1000 * 60),
-  );
+/**
+ * Calculates the number of days that have passed since the given start date.
+ * @param {Date} date - The start date for calculating the time difference.
+ * @returns {number} - The number of days elapsed since the start date.
+ */
+export const daysSinceStartDate = (date: Date): number =>
+  Math.floor((new Date().getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
