@@ -57,7 +57,12 @@ const M6_FACTOR = MAX_USD_PRICE_PER_G1;
 /**
  * USD conversion factor.
  */
-const USD_CONV = 0.036;
+const USD_GX_CONV = 0.036;
+
+/**
+ * USD conversion factor.
+ */
+export const GX_USD_CONV = 1 / USD_GX_CONV;
 
 /**
  * Computes the G1 to GX conversion based on various factors and inputs.
@@ -101,17 +106,17 @@ export function computeG1ToGxConversion(
   // Calculate m6 as the minimum of the sum of m1, m2, m3, m4, and m5.
   const m6 = Math.min(1, m1 + m2 + m3 + m4 + m5);
 
-  // Calculate the final_g1_usd based on BASE_RATE, M6_FACTOR, and m6.
-  const final_g1_usd = BASE_RATE + (M6_FACTOR - BASE_RATE) * m6;
+  // Calculate the finalG1Usd based on BASE_RATE, M6_FACTOR, and m6.
+  const finalG1Usd = BASE_RATE + (M6_FACTOR - BASE_RATE) * m6;
 
-  // Calculate gx_from_usd by dividing amountUSDToConvert by USD_CONV.
-  const gx_from_usd = amountUSDToConvert / USD_CONV;
+  // Calculate gxFromUsd by dividing amountUSDToConvert by USD_GX_CONV.
+  const gxFromUsd = amountUSDToConvert / USD_GX_CONV;
 
-  // Calculate usd_from_g1 by multiplying final_g1_usd by amountG1ToConvert.
-  const usd_from_g1 = final_g1_usd * amountG1ToConvert;
+  // Calculate usdFromG1 by multiplying finalG1Usd by amountG1ToConvert.
+  const usdFromG1 = finalG1Usd * amountG1ToConvert;
 
-  // Calculate gx_from_g1 by dividing usd_from_g1 by USD_CONV.
-  const gx_from_g1 = usd_from_g1 / USD_CONV;
+  // Calculate gxFromG1 by dividing usdFromG1 by USD_GX_CONV.
+  const gxFromG1 = usdFromG1 / USD_GX_CONV;
 
   // Return an object containing the calculated values, each rounded to a specific number of decimal places.
   return {
@@ -121,11 +126,13 @@ export function computeG1ToGxConversion(
     m4: m4.toFixed(4),
     m5: m5.toFixed(4),
     m6: m6.toFixed(4),
-    final_g1_usd: final_g1_usd.toFixed(6),
-    gx_from_usd: gx_from_usd.toFixed(2),
-    usd_from_g1: usd_from_g1.toFixed(2),
-    gx_from_g1: gx_from_g1.toFixed(2),
-    total_gx: (gx_from_usd + gx_from_g1).toFixed(2),
+    finalG1Usd: finalG1Usd.toFixed(6),
+    gxFromUsd: gxFromUsd.toFixed(2),
+    usdFromG1: usdFromG1.toFixed(2),
+    gxFromG1: gxFromG1.toFixed(2),
+    gxReceived: (gxFromUsd + gxFromG1).toFixed(2),
+    equivalentUsdInvested: (amountUSDToConvert + usdFromG1).toFixed(2),
+    GxUsdExchangeRate: GX_USD_CONV.toFixed(2),
   };
 }
 

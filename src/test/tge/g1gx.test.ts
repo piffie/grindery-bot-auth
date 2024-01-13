@@ -1,5 +1,9 @@
 import chai from 'chai';
-import { computeG1ToGxConversion, getUserTgeBalance } from '../../utils/g1gx';
+import {
+  GX_USD_CONV,
+  computeG1ToGxConversion,
+  getUserTgeBalance,
+} from '../../utils/g1gx';
 import * as time from '../../utils/time';
 import Sinon from 'sinon';
 import * as web3 from '../../utils/web3';
@@ -36,11 +40,13 @@ describe('G1 to GX util functions', async function () {
         m4: '0.0000',
         m5: '0.2500',
         m6: '0.3565',
-        final_g1_usd: '0.002168',
-        gx_from_usd: '277.78',
-        usd_from_g1: '2168.50',
-        gx_from_g1: '60236.09',
-        total_gx: '60513.87',
+        finalG1Usd: '0.002168',
+        gxFromUsd: '277.78',
+        usdFromG1: '2168.50',
+        gxFromG1: '60236.09',
+        gxReceived: '60513.87',
+        equivalentUsdInvested: '2178.50',
+        GxUsdExchangeRate: GX_USD_CONV.toFixed(2),
       });
     });
 
@@ -52,11 +58,13 @@ describe('G1 to GX util functions', async function () {
         m4: '0.0000',
         m5: '0.2500',
         m6: '0.7200',
-        final_g1_usd: '0.003768',
-        gx_from_usd: '277.78',
-        usd_from_g1: '0.00',
-        gx_from_g1: '0.10',
-        total_gx: '277.88',
+        finalG1Usd: '0.003768',
+        gxFromUsd: '277.78',
+        usdFromG1: '0.00',
+        gxFromG1: '0.10',
+        gxReceived: '277.88',
+        equivalentUsdInvested: '10.00',
+        GxUsdExchangeRate: GX_USD_CONV.toFixed(2),
       });
     });
 
@@ -68,11 +76,13 @@ describe('G1 to GX util functions', async function () {
         m4: '0.0000',
         m5: '0.2500',
         m6: '0.3700',
-        final_g1_usd: '0.002228',
-        gx_from_usd: '0.00',
-        usd_from_g1: '1.11',
-        gx_from_g1: '30.94',
-        total_gx: '30.94',
+        finalG1Usd: '0.002228',
+        gxFromUsd: '0.00',
+        usdFromG1: '1.11',
+        gxFromG1: '30.94',
+        gxReceived: '30.94',
+        equivalentUsdInvested: '1.11',
+        GxUsdExchangeRate: GX_USD_CONV.toFixed(2),
       });
     });
 
@@ -86,11 +96,13 @@ describe('G1 to GX util functions', async function () {
         m4: '0.0000',
         m5: '0.2500',
         m6: '1.0000',
-        final_g1_usd: '0.005000',
-        gx_from_usd: '5000.00',
-        usd_from_g1: '600000.00',
-        gx_from_g1: '16666666.67',
-        total_gx: '16671666.67',
+        finalG1Usd: '0.005000',
+        gxFromUsd: '5000.00',
+        usdFromG1: '600000.00',
+        gxFromG1: '16666666.67',
+        gxReceived: '16671666.67',
+        equivalentUsdInvested: '600180.00',
+        GxUsdExchangeRate: GX_USD_CONV.toFixed(2),
       });
     });
   });
