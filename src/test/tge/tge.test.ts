@@ -108,6 +108,24 @@ describe('G1 to GX util functions', async function () {
   });
 
   describe('Endpoint for conversion information', async function () {
+    it('Should return an error if G1 token amount is 0', async function () {
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/quote')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          tokenAmount: '10',
+          chainId: mockChainId,
+          tokenAddress: mockTokenAddress,
+          g1Quantity: '0',
+          userTelegramID: mockUserTelegramID,
+        });
+
+      expect(res.body).to.deep.equal({
+        msg: 'The amount of G1 must be a positive number.',
+      });
+    });
+
     it('Should return all conversion information', async function () {
       const res = await chai
         .request(app)
