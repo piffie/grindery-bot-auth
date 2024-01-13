@@ -11,18 +11,31 @@ import { Ordertype } from '../utils/constants';
  * Represents a GxQuote containing various fields related to Gx tokens and their values.
  */
 export type GxQuote = {
+  /** The value of m1 in the GxQuote. */
   m1: string;
+  /** The value of m2 in the GxQuote. */
   m2: string;
+  /** The value of m3 in the GxQuote. */
   m3: string;
+  /** The value of m4 in the GxQuote. */
   m4: string;
+  /** The value of m5 in the GxQuote. */
   m5: string;
+  /** The value of m6 in the GxQuote. */
   m6: string;
+  /** The final G1 to USD value in the GxQuote. */
   finalG1Usd: string;
+  /** The amount of Gx obtained from USD in the GxQuote. */
   gxFromUsd: string;
+  /** The amount of USD obtained from G1 in the GxQuote. */
   usdFromG1: string;
+  /** The amount of Gx obtained from G1 in the GxQuote. */
   gxFromG1: string;
+  /** The total amount of Gx received in the GxQuote. */
   gxReceived: string;
+  /** The equivalent USD invested in the GxQuote. */
   equivalentUsdInvested: string;
+  /** The exchange rate from Gx to USD in the GxQuote. */
   GxUsdExchangeRate: string;
 };
 
