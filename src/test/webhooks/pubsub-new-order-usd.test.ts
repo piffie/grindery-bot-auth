@@ -19,6 +19,7 @@ import {
   mockTokenAddress1,
   mockChainId1,
   mockEventId,
+  mockNativeTokenAddress,
 } from '../utils';
 import Sinon from 'sinon';
 import axios from 'axios';
@@ -475,6 +476,147 @@ describe('handleNewUSDOrder function', async function () {
         to: [mockTokenAddress1],
         value: ['0x00'],
         data: [`${SOURCE_WALLET_ADDRESS}+100100000000000000000`],
+        delegatecall: 0,
+        auth: '',
+      });
+    });
+  });
+
+  describe('Native token transaction', async function () {
+    beforeEach(async function () {
+      await collectionUsersMock.insertOne({
+        userTelegramID: mockUserTelegramID,
+        userName: mockUserName,
+        userHandle: mockUserHandle,
+        patchwallet: mockWallet,
+        responsePath: mockResponsePath,
+      });
+
+      await collectionQuotesMock.insertMany([
+        {
+          quoteId: mockOrderID,
+          tokenAmountG1: '500.55',
+          usdFromUsdInvestment: '1001.00',
+          equivalentUsdInvested: '1',
+          GxUsdExchangeRate: '1',
+          gxReceived: '1',
+          userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockNativeTokenAddress,
+          m1: '0.2000',
+          m2: '0.4000',
+          m3: '0.3000',
+          m4: '0.0000',
+          m5: '0.2500',
+          m6: '1.0000',
+          finalG1Usd: '0.005000',
+          gxFromUsd: '5000.00',
+          usdFromG1: '600000.00',
+          gxFromG1: '16666666.67',
+          tokenAmountG1ForCalculations: '144.00',
+        },
+        {
+          quoteId: mockOrderID1,
+          tokenAmountG1: '1000.00',
+          usdFromUsdInvestment: '1',
+          equivalentUsdInvested: '1',
+          GxUsdExchangeRate: '1',
+          gxReceived: '1',
+          userTelegramID: mockUserTelegramID,
+          tokenAmount: '100.10',
+          chainId: mockChainId1,
+          tokenAddress: mockTokenAddress1,
+          m1: '0.2000',
+          m2: '0.4000',
+          m3: '0.3000',
+          m4: '0.0000',
+          m5: '0.2500',
+          m6: '1.0000',
+          finalG1Usd: '0.005000',
+          gxFromUsd: '5000.00',
+          usdFromG1: '600000.00',
+          gxFromG1: '16666666.67',
+          tokenAmountG1ForCalculations: '144.00',
+        },
+      ]);
+    });
+
+    it('Should return true', async function () {
+      expect(
+        await handleNewOrder({
+          orderType: Ordertype.USD,
+          userTelegramID: mockUserTelegramID,
+          quoteId: mockOrderID,
+          eventId: mockEventId,
+        }),
+      ).to.be.true;
+    });
+
+    it('Should populate orders database', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.USD,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      const orders = await collectionOrdersMock.find({}).toArray();
+
+      expect(orders)
+        .excluding(['dateAdded', '_id'])
+        .to.deep.equal(
+          spuriousOrdersUSD.concat([
+            {
+              orderType: 'usd',
+              quoteId: mockOrderID,
+              tokenAmountG1: '500.55',
+              usdFromUsdInvestment: '1001.00',
+              equivalentUsdInvested: '1',
+              GxUsdExchangeRate: '1',
+              gxReceived: '1',
+              userTelegramID: mockUserTelegramID,
+              eventId: mockEventId,
+              transactionHash: mockTransactionHash,
+              userOpHash: null,
+              status: TransactionStatus.SUCCESS,
+              tokenAmount: '100.10',
+              tokenAddress: mockNativeTokenAddress,
+              chainId: mockChainId1,
+              m1: '0.2000',
+              m2: '0.4000',
+              m3: '0.3000',
+              m4: '0.0000',
+              m5: '0.2500',
+              m6: '1.0000',
+              finalG1Usd: '0.005000',
+              gxFromUsd: '5000.00',
+              usdFromG1: '600000.00',
+              gxFromG1: '16666666.67',
+              tokenAmountG1ForCalculations: '144.00',
+            },
+          ]),
+        );
+      expect(orders[0].dateAdded).to.be.a('date');
+    });
+
+    it('Should call the sendTokens function properly for a USD order', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.USD,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      expect(
+        axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL)
+          .args[1],
+      ).to.deep.equal({
+        userId: `grindery:${mockUserTelegramID}`,
+        chain: mockChainName1,
+        to: [SOURCE_WALLET_ADDRESS],
+        value: ['100100000000000000000'],
+        data: ['0x'],
         delegatecall: 0,
         auth: '',
       });

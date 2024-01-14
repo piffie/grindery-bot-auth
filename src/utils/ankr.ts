@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { ANKR_MULTICHAIN_API_URL } from './constants';
+import { ANKR_MULTICHAIN_API_URL, nativeTokenAddresses } from './constants';
 import { CHAIN_MAPPING } from './chains';
 
 export async function getTokenPrice(
@@ -14,7 +14,9 @@ export async function getTokenPrice(
       method: 'ankr_getTokenPrice',
       params: {
         blockchain: CHAIN_MAPPING[chainId].ankr_name,
-        contractAddress,
+        ...(nativeTokenAddresses.includes(contractAddress)
+          ? {}
+          : { contractAddress }),
       },
       id: 1,
     },
