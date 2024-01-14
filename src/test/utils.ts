@@ -115,6 +115,8 @@ export const mockChainId = 'eip155:137';
 export const mockChainId1 = 'eip155:59144';
 export const mockChainName = 'matic';
 export const mockChainName1 = 'linea';
+export const mockNativeTokenAddress =
+  '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
 export const mockToSwap = '0x38147794FF247e5Fc179eDbAE6C37fff88f68C52';
 export const mockFromSwap = '0x699791A03Ac2B58E1B7cA29B601C69F223c78e9c';
