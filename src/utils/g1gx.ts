@@ -7,17 +7,17 @@ import { getUserBalance } from './web3';
 /**
  * The starting date for the calculation.
  */
-const START_DATE = new Date('2024-01-12T00:00:00Z');
+const START_DATE = new Date('2024-01-14T00:00:00Z');
 
 /**
  * The minimum USD price per G1 for conversion.
  */
-const MIN_USD_PRICE_PER_G1 = 0.0003;
+const MIN_USD_PRICE_PER_G1 = 0.0002;
 
 /**
  * The maximum USD price per G1 for conversion.
  */
-const MAX_USD_PRICE_PER_G1 = 0.003;
+const MAX_USD_PRICE_PER_G1 = 0.002;
 
 /**
  * The base rate for G1 to USD conversion.
@@ -28,6 +28,11 @@ const BASE_RATE = MIN_USD_PRICE_PER_G1 * 1.2;
  * Factor for the first calculation component (m1).
  */
 const M1_FACTOR = 0.2;
+
+/**
+ * Factor for the second calculation component (m12).
+ */
+const M12_FACTOR = 1.2;
 
 /**
  * Factor for the second calculation component (m2).
@@ -82,7 +87,10 @@ export function computeG1ToGxConversion(
   const m1 = Math.min(1, amountUSDToConvert / 50) * M1_FACTOR;
 
   // Calculate m12 using logarithmic and linear functions.
-  const m12 = Math.max((Math.log2(amountG1ToConvert / 1000) + 1) * 10, 1);
+  const logResult =
+    Math.log(amountG1ToConvert / 1000) / Math.log(M12_FACTOR) + 1;
+
+  const m12 = (logResult < 1 ? 1 : logResult) * 10;
 
   // Calculate m2 based on the amount of USD to convert and m12.
   const m2 = Math.min(M2_FACTOR, (amountUSDToConvert / m12) * M2_FACTOR);
