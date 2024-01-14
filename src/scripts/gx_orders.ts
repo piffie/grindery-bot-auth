@@ -1,4 +1,4 @@
-import { GxOrderStatus } from 'grindery-nexus-common-utils';
+import { TransactionStatus } from 'grindery-nexus-common-utils';
 import { Database } from '../db/conn';
 import { GX_ORDER_COLLECTION, Ordertype } from '../utils/constants';
 
@@ -10,7 +10,7 @@ async function g1OrdersCountByUser(): Promise<void> {
 
     if (collectionOrders) {
       const successfulG1Orders = await collectionOrders
-        .find({ orderType: Ordertype.G1, status: GxOrderStatus.COMPLETE })
+        .find({ orderType: Ordertype.G1, status: TransactionStatus.SUCCESS })
         .toArray();
 
       const userOrderCounts: Record<string, number> = successfulG1Orders.reduce(
@@ -43,7 +43,7 @@ async function usdOrdersCountByUser(): Promise<void> {
 
     if (collectionOrders) {
       const successfulUSDOrders = await collectionOrders
-        .find({ orderType: Ordertype.USD, status: GxOrderStatus.COMPLETE })
+        .find({ orderType: Ordertype.USD, status: TransactionStatus.SUCCESS })
         .toArray();
 
       const userOrderCounts: Record<string, number> =
