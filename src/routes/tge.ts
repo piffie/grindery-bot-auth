@@ -71,27 +71,33 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
       });
     }
 
-    // Calculate token price based on chainId and token address
-    const token_price = await getTokenPrice(
-      req.query.chainId as string,
-      req.query.tokenAddress as string,
-    );
+    let usdQuantity = '0';
 
-    // Calculate USD quantity
-    const usdQuantity = (
-      parseFloat(req.query.tokenAmount as string) *
-      parseFloat(token_price.data.result.usdPrice)
-    ).toFixed(2);
+    if (
+      req.query.chainId &&
+      req.query.chainId &&
+      parseFloat(req.query.tokenAmount as string) > 0
+    ) {
+      // Calculate token price based on chainId and token address
+      const token_price = await getTokenPrice(
+        req.query.chainId as string,
+        req.query.tokenAddress as string,
+      );
+
+      // Calculate USD quantity
+      usdQuantity = (
+        parseFloat(req.query.tokenAmount as string) *
+        parseFloat(token_price.data.result.usdPrice)
+      ).toFixed(2);
+    }
 
     // Get user details
     const user = await UserTelegram.build(req.query.userTelegramID as string);
-
     // Get G1 balance for calculations
     const tokenAmountG1ForCalculations = await getUserTgeBalance(
       user.userTelegramID,
       parseFloat(req.query.g1Quantity as string),
     );
-
     // Generate a unique quoteId
     const quoteId = uuidv4();
 
@@ -117,8 +123,8 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
       date: new Date(),
       userTelegramID: req.query.userTelegramID,
       tokenAmount: req.query.tokenAmount,
-      chainId: req.query.chainId,
-      tokenAddress: req.query.tokenAddress,
+      chainId: req.query.chainId ?? null,
+      tokenAddress: req.query.tokenAddress ?? null,
       tokenAmountG1: req.query.g1Quantity,
       usdFromUsdInvestment: usdQuantity,
       tokenAmountG1ForCalculations: tokenAmountG1ForCalculations.toFixed(2),
