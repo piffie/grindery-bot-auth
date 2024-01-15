@@ -16,7 +16,11 @@ import {
   updateTxHash,
   handleUserOpHash,
 } from './utils';
-import { SOURCE_WALLET_ADDRESS } from '../../secrets';
+import {
+  PRODUCTION_ENV,
+  SOURCE_WALLET_ADDRESS,
+  ZAPIER_NEW_ORDER_WEBHOOK,
+} from '../../secrets';
 import { Db, FindCursor, WithId } from 'mongodb';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
 import { MongoGxQuote, MongoOrder, OrderParams } from '../types/gx.types';
@@ -87,7 +91,19 @@ export async function handleNewOrder(params: OrderParams): Promise<boolean> {
   if (tx.txHash) {
     updateTxHash(orderInstance, tx.txHash);
     updateStatus(orderInstance, TransactionStatus.SUCCESS);
-    await orderInstance.updateInDatabase(TransactionStatus.SUCCESS, new Date());
+
+    await Promise.all([
+      await orderInstance.updateInDatabase(
+        TransactionStatus.SUCCESS,
+        new Date(),
+      ),
+      await orderInstance.sendToWebhook(),
+    ]).catch((error) =>
+      console.error(
+        `[${params.eventId}] Error processing Segment or FlowXO webhook, or sending telegram message: ${error}`,
+      ),
+    );
+
     console.log(
       `[${orderInstance.txHash}] order G1 from ${orderInstance.params.userTelegramID} for ${orderInstance.params.quote?.tokenAmountG1} with event ID ${orderInstance.params.eventId} finished.`,
     );
@@ -266,6 +282,40 @@ export class OrderTelegram {
     console.log(
       `[${this.params.eventId}] ${this.params.orderType} order from ${this.params.userTelegramID} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
     );
+  }
+
+  async sendToWebhook(): Promise<void> {
+    // Send transaction information to Webhook
+    await axios.post(ZAPIER_NEW_ORDER_WEBHOOK, {
+      m1: this.params.quote?.m1,
+      m2: this.params.quote?.m2,
+      m3: this.params.quote?.m3,
+      m4: this.params.quote?.m4,
+      m5: this.params.quote?.m5,
+      m6: this.params.quote?.m6,
+      finalG1Usd: this.params.quote?.finalG1Usd,
+      gxFromUsd: this.params.quote?.gxFromUsd,
+      usdFromG1: this.params.quote?.usdFromG1,
+      gxFromG1: this.params.quote?.gxFromG1,
+      tokenAmountG1ForCalculations:
+        this.params.quote?.tokenAmountG1ForCalculations,
+      quoteId: this.params.quote?.quoteId,
+      orderType: this.params.orderType,
+      tokenAmountG1: this.params.quote?.tokenAmountG1,
+      usdFromUsdInvestment: this.params.quote?.usdFromUsdInvestment,
+      equivalentUsdInvested: this.params.quote?.equivalentUsdInvested,
+      GxUsdExchangeRate: this.params.quote?.GxUsdExchangeRate,
+      gxReceived: this.params.quote?.gxReceived,
+      eventId: this.params.eventId,
+      status: this.status,
+      dateAdded: new Date(),
+      transactionHash: this.txHash,
+      userOpHash: this.userOpHash,
+      userTelegramID: this.params.userTelegramID,
+      tokenAmount: this.params.quote?.tokenAmount,
+      chainId: this.params.quote?.chainId,
+      tokenAddress: this.params.quote?.tokenAddress,
+    });
   }
 
   async sendTransactionAction(): Promise<

@@ -24,6 +24,7 @@ import chaiExclude from 'chai-exclude';
 import { ANKR_MULTICHAIN_API_URL, Ordertype } from '../../utils/constants';
 import axios from 'axios';
 import { GxOrderStatus } from 'grindery-nexus-common-utils';
+import * as web3 from '../../utils/web3';
 
 chai.use(chaiHttp);
 chai.use(chaiExclude);
@@ -33,6 +34,7 @@ describe('G1 to GX util functions', async function () {
   let collectionQuotesMock;
   let collectionOrdersMock;
   let conversionStub;
+  let balanceStub;
 
   beforeEach(async function () {
     collectionQuotesMock = await getCollectionGXQuoteMock();
@@ -79,6 +81,7 @@ describe('G1 to GX util functions', async function () {
     });
 
     sandbox.stub(g1gx, 'getUserTgeBalance').resolves(555);
+    balanceStub = sandbox.stub(web3, 'getUserBalance').resolves('10');
 
     sandbox.stub(axios, 'post').callsFake(async (url: string) => {
       if (url === ANKR_MULTICHAIN_API_URL) {
@@ -305,6 +308,44 @@ describe('G1 to GX util functions', async function () {
       expect(res.body).to.deep.equal({
         msg: 'The amount of G1 must be a positive number.',
       });
+    });
+
+    it('Should call the computeG1ToGxConversion with balance snapshot if balance snapshot > balance', async function () {
+      await chai
+        .request(app)
+        .get('/v1/tge/quote')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          tokenAmount: '10',
+          chainId: mockChainId,
+          tokenAddress: mockTokenAddress,
+          g1Quantity: '4',
+          userTelegramID: mockUserTelegramID,
+        });
+
+      expect(conversionStub.getCalls()[0].args).to.deep.equal([
+        500, 555, 100, 5.03,
+      ]);
+    });
+
+    it('Should call the computeG1ToGxConversion with balance if balance snapshot < balance', async function () {
+      balanceStub.returns(5000);
+
+      await chai
+        .request(app)
+        .get('/v1/tge/quote')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          tokenAmount: '10',
+          chainId: mockChainId,
+          tokenAddress: mockTokenAddress,
+          g1Quantity: '4',
+          userTelegramID: mockUserTelegramID,
+        });
+
+      expect(conversionStub.getCalls()[0].args).to.deep.equal([
+        5000, 555, 100, 5.03,
+      ]);
     });
 
     it('Should return all conversion information', async function () {

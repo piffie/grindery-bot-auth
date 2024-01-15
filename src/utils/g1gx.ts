@@ -12,12 +12,12 @@ const START_DATE = new Date('2024-01-14T00:00:00Z');
 /**
  * The minimum USD price per G1 for conversion.
  */
-const MIN_USD_PRICE_PER_G1 = 0.0002;
+const MIN_USD_PRICE_PER_G1 = 0.0003;
 
 /**
  * The maximum USD price per G1 for conversion.
  */
-const MAX_USD_PRICE_PER_G1 = 0.002;
+const MAX_USD_PRICE_PER_G1 = 0.003;
 
 /**
  * The base rate for G1 to USD conversion.

@@ -27,7 +27,11 @@ import {
   PATCHWALLET_TX_STATUS_URL,
   PATCHWALLET_TX_URL,
 } from '../../utils/constants';
-import { G1_POLYGON_ADDRESS, SOURCE_WALLET_ADDRESS } from '../../../secrets';
+import {
+  G1_POLYGON_ADDRESS,
+  SOURCE_WALLET_ADDRESS,
+  ZAPIER_NEW_ORDER_WEBHOOK,
+} from '../../../secrets';
 import * as web3 from '../../utils/web3';
 import { ContractStub } from '../../types/tests.types';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
@@ -76,6 +80,12 @@ describe('handleNewOrder function', async function () {
           data: {
             access_token: mockAccessToken,
           },
+        });
+      }
+
+      if (url == ZAPIER_NEW_ORDER_WEBHOOK) {
+        return Promise.resolve({
+          result: 'success',
         });
       }
 
@@ -339,6 +349,48 @@ describe('handleNewOrder function', async function () {
         auth: '',
       });
     });
+
+    it('Should call webhook properly', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.G1,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      const webhookArgs = axiosStub
+        .getCalls()
+        .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK).args[1];
+
+      expect(webhookArgs).excluding(['dateAdded']).to.deep.equal({
+        quoteId: mockOrderID,
+        orderType: 'g1',
+        tokenAmountG1: '5',
+        usdFromUsdInvestment: '1',
+        equivalentUsdInvested: '1',
+        GxUsdExchangeRate: '1',
+        gxReceived: '1',
+        userTelegramID: mockUserTelegramID,
+        eventId: mockEventId,
+        transactionHash: mockTransactionHash,
+        userOpHash: undefined,
+        status: TransactionStatus.SUCCESS,
+        tokenAddress: undefined,
+        tokenAmount: undefined,
+        chainId: undefined,
+        m1: '0.2000',
+        m2: '0.4000',
+        m3: '0.3000',
+        m4: '0.0000',
+        m5: '0.2500',
+        m6: '1.0000',
+        finalG1Usd: '0.005000',
+        gxFromUsd: '5000.00',
+        usdFromG1: '600000.00',
+        gxFromG1: '16666666.67',
+        tokenAmountG1ForCalculations: '144.00',
+      });
+    });
   });
 
   describe('Normal process to handle an order with a float number', async function () {
@@ -461,6 +513,48 @@ describe('handleNewOrder function', async function () {
         data: [`${SOURCE_WALLET_ADDRESS}+500550000000000000000`],
         delegatecall: 0,
         auth: '',
+      });
+    });
+
+    it('Should call webhook properly', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.G1,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      const webhookArgs = axiosStub
+        .getCalls()
+        .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK).args[1];
+
+      expect(webhookArgs).excluding(['dateAdded']).to.deep.equal({
+        quoteId: mockOrderID,
+        orderType: 'g1',
+        tokenAmountG1: '500.55',
+        usdFromUsdInvestment: '1',
+        equivalentUsdInvested: '1',
+        GxUsdExchangeRate: '1',
+        gxReceived: '1',
+        userTelegramID: mockUserTelegramID,
+        eventId: mockEventId,
+        transactionHash: mockTransactionHash,
+        userOpHash: undefined,
+        status: TransactionStatus.SUCCESS,
+        tokenAddress: undefined,
+        tokenAmount: undefined,
+        chainId: undefined,
+        m1: '0.2000',
+        m2: '0.4000',
+        m3: '0.3000',
+        m4: '0.0000',
+        m5: '0.2500',
+        m6: '1.0000',
+        finalG1Usd: '0.005000',
+        gxFromUsd: '5000.00',
+        usdFromG1: '600000.00',
+        gxFromG1: '16666666.67',
+        tokenAmountG1ForCalculations: '144.00',
       });
     });
   });
@@ -614,6 +708,21 @@ describe('handleNewOrder function', async function () {
           ]),
         );
     });
+
+    it('Should not call webhook', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.G1,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+      ).to.be.undefined;
+    });
   });
 
   describe('Another USD order exists with a success status and not the same quote ID', async function () {
@@ -764,6 +873,21 @@ describe('handleNewOrder function', async function () {
             },
           ]),
         );
+    });
+
+    it('Should not call webhook', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.G1,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+      ).to.be.undefined;
     });
   });
 
@@ -916,6 +1040,21 @@ describe('handleNewOrder function', async function () {
           ]),
         );
     });
+
+    it('Should not call webhook', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.G1,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+      ).to.be.undefined;
+    });
   });
 
   describe('Order if is already a failure 503', async function () {
@@ -1066,6 +1205,21 @@ describe('handleNewOrder function', async function () {
             },
           ]),
         );
+    });
+
+    it('Should not call webhook', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.G1,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+      ).to.be.undefined;
     });
   });
 
@@ -1218,6 +1372,21 @@ describe('handleNewOrder function', async function () {
           ]),
         );
     });
+
+    it('Should not call webhook', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.G1,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+      ).to.be.undefined;
+    });
   });
 
   describe('Error in send token request', async function () {
@@ -1333,6 +1502,21 @@ describe('handleNewOrder function', async function () {
           ]),
         );
     });
+
+    it('Should not call webhook', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.G1,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+      ).to.be.undefined;
+    });
   });
 
   describe('Sender is not a user', async function () {
@@ -1415,6 +1599,21 @@ describe('handleNewOrder function', async function () {
 
       expect(
         axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
+      ).to.be.undefined;
+    });
+
+    it('Should not call webhook', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.G1,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
       ).to.be.undefined;
     });
   });
@@ -1581,6 +1780,21 @@ describe('handleNewOrder function', async function () {
           ]),
         );
     });
+
+    it('Should not call webhook', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.G1,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+      ).to.be.undefined;
+    });
   });
 
   describe('PatchWallet 503 error', async function () {
@@ -1703,6 +1917,21 @@ describe('handleNewOrder function', async function () {
             },
           ]),
         );
+    });
+
+    it('Should not call webhook', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.G1,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+      ).to.be.undefined;
     });
   });
 
@@ -1827,6 +2056,21 @@ describe('handleNewOrder function', async function () {
           ]),
         );
     });
+
+    it('Should not call webhook', async function () {
+      await handleNewOrder({
+        orderType: Ordertype.G1,
+        userTelegramID: mockUserTelegramID,
+        quoteId: mockOrderID,
+        eventId: mockEventId,
+      });
+
+      expect(
+        axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+      ).to.be.undefined;
+    });
   });
 
   describe('Get transaction hash via userOpHash if transaction hash is empty first', async function () {
@@ -1939,6 +2183,21 @@ describe('handleNewOrder function', async function () {
               },
             ]),
           );
+      });
+
+      it('Should not call webhook', async function () {
+        await handleNewOrder({
+          orderType: Ordertype.G1,
+          userTelegramID: mockUserTelegramID,
+          quoteId: mockOrderID,
+          eventId: mockEventId,
+        });
+
+        expect(
+          axiosStub
+            .getCalls()
+            .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+        ).to.be.undefined;
       });
     });
 
@@ -2084,6 +2343,48 @@ describe('handleNewOrder function', async function () {
             ]),
           );
       });
+
+      it('Should call webhook properly', async function () {
+        await handleNewOrder({
+          orderType: Ordertype.G1,
+          userTelegramID: mockUserTelegramID,
+          quoteId: mockOrderID,
+          eventId: mockEventId,
+        });
+
+        const webhookArgs = axiosStub
+          .getCalls()
+          .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK).args[1];
+
+        expect(webhookArgs).excluding(['dateAdded']).to.deep.equal({
+          quoteId: mockOrderID,
+          orderType: 'g1',
+          tokenAmountG1: '500.55',
+          usdFromUsdInvestment: '1',
+          equivalentUsdInvested: '1',
+          GxUsdExchangeRate: '1',
+          gxReceived: '1',
+          userTelegramID: mockUserTelegramID,
+          eventId: mockEventId,
+          transactionHash: mockTransactionHash,
+          userOpHash: mockUserOpHash,
+          status: TransactionStatus.SUCCESS,
+          tokenAddress: undefined,
+          tokenAmount: undefined,
+          chainId: undefined,
+          m1: '0.2000',
+          m2: '0.4000',
+          m3: '0.3000',
+          m4: '0.0000',
+          m5: '0.2500',
+          m6: '1.0000',
+          finalG1Usd: '0.005000',
+          gxFromUsd: '5000.00',
+          usdFromG1: '600000.00',
+          gxFromG1: '16666666.67',
+          tokenAmountG1ForCalculations: '144.00',
+        });
+      });
     });
 
     describe('Transaction hash is not present in PatchWallet status endpoint', async function () {
@@ -2162,6 +2463,7 @@ describe('handleNewOrder function', async function () {
             tokenAmountG1ForCalculations: '144.00',
           },
         ]);
+
         axiosStub.withArgs(PATCHWALLET_TX_STATUS_URL).resolves({
           data: {
             txHash: '',
@@ -2169,6 +2471,7 @@ describe('handleNewOrder function', async function () {
           },
         });
       });
+
       it('Should return false if transaction hash is not present in PatchWallet status endpoint', async function () {
         const result = await handleNewOrder({
           orderType: Ordertype.G1,
@@ -2178,6 +2481,7 @@ describe('handleNewOrder function', async function () {
         });
         expect(result).to.be.false;
       });
+
       it('Should not send tokens if transaction hash is not present in PatchWallet status endpoint', async function () {
         await handleNewOrder({
           orderType: Ordertype.G1,
@@ -2189,6 +2493,7 @@ describe('handleNewOrder function', async function () {
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
+
       it('Should not update database if transaction hash is not present in PatchWallet status endpoint', async function () {
         await handleNewOrder({
           orderType: Ordertype.G1,
@@ -2230,6 +2535,21 @@ describe('handleNewOrder function', async function () {
               },
             ]),
           );
+      });
+
+      it('Should not call webhook', async function () {
+        await handleNewOrder({
+          orderType: Ordertype.G1,
+          userTelegramID: mockUserTelegramID,
+          quoteId: mockOrderID,
+          eventId: mockEventId,
+        });
+
+        expect(
+          axiosStub
+            .getCalls()
+            .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+        ).to.be.undefined;
       });
     });
 
@@ -2317,6 +2637,7 @@ describe('handleNewOrder function', async function () {
           .withArgs(PATCHWALLET_TX_STATUS_URL)
           .rejects(new Error('Service not available'));
       });
+
       it('Should return false if Error in PatchWallet get status endpoint', async function () {
         const result = await handleNewOrder({
           orderType: Ordertype.G1,
@@ -2326,6 +2647,7 @@ describe('handleNewOrder function', async function () {
         });
         expect(result).to.be.false;
       });
+
       it('Should not send tokens if Error in PatchWallet get status endpoint', async function () {
         await handleNewOrder({
           orderType: Ordertype.G1,
@@ -2337,6 +2659,7 @@ describe('handleNewOrder function', async function () {
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
+
       it('Should not update database if Error in PatchWallet get status endpoint', async function () {
         await handleNewOrder({
           orderType: Ordertype.G1,
@@ -2378,6 +2701,21 @@ describe('handleNewOrder function', async function () {
               },
             ]),
           );
+      });
+
+      it('Should not call webhook', async function () {
+        await handleNewOrder({
+          orderType: Ordertype.G1,
+          userTelegramID: mockUserTelegramID,
+          quoteId: mockOrderID,
+          eventId: mockEventId,
+        });
+
+        expect(
+          axiosStub
+            .getCalls()
+            .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+        ).to.be.undefined;
       });
     });
 
@@ -2528,6 +2866,21 @@ describe('handleNewOrder function', async function () {
             ]),
           );
       });
+
+      it('Should not call webhook', async function () {
+        await handleNewOrder({
+          orderType: Ordertype.G1,
+          userTelegramID: mockUserTelegramID,
+          quoteId: mockOrderID,
+          eventId: mockEventId,
+        });
+
+        expect(
+          axiosStub
+            .getCalls()
+            .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+        ).to.be.undefined;
+      });
     });
 
     describe('Transaction is set to success without transaction hash if pending_hash without userOpHash', async function () {
@@ -2606,6 +2959,7 @@ describe('handleNewOrder function', async function () {
           },
         ]);
       });
+
       it('Should return true if transaction hash is pending_hash without userOpHash', async function () {
         const result = await handleNewOrder({
           orderType: Ordertype.G1,
@@ -2615,6 +2969,7 @@ describe('handleNewOrder function', async function () {
         });
         expect(result).to.be.true;
       });
+
       it('Should not send tokens if transaction hash is pending_hash without userOpHash', async function () {
         await handleNewOrder({
           orderType: Ordertype.G1,
@@ -2626,6 +2981,7 @@ describe('handleNewOrder function', async function () {
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
+
       it('Should update reward database with a success status if transaction hash is pending_hash without userOpHash', async function () {
         await handleNewOrder({
           orderType: Ordertype.G1,
@@ -2667,6 +3023,21 @@ describe('handleNewOrder function', async function () {
               },
             ]),
           );
+      });
+
+      it('Should not call webhook', async function () {
+        await handleNewOrder({
+          orderType: Ordertype.G1,
+          userTelegramID: mockUserTelegramID,
+          quoteId: mockOrderID,
+          eventId: mockEventId,
+        });
+
+        expect(
+          axiosStub
+            .getCalls()
+            .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+        ).to.be.undefined;
       });
     });
 
@@ -2763,6 +3134,7 @@ describe('handleNewOrder function', async function () {
         });
         expect(result).to.be.true;
       });
+
       it('Should not send tokens after 10 min of trying to get status', async function () {
         await handleNewOrder({
           orderType: Ordertype.G1,
@@ -2774,6 +3146,7 @@ describe('handleNewOrder function', async function () {
           axiosStub.getCalls().find((e) => e.firstArg === PATCHWALLET_TX_URL),
         ).to.be.undefined;
       });
+
       it('Should update reward database with a failure status after 10 min of trying to get status', async function () {
         await handleNewOrder({
           orderType: Ordertype.G1,
@@ -2815,6 +3188,21 @@ describe('handleNewOrder function', async function () {
               },
             ]),
           );
+      });
+
+      it('Should not call webhook', async function () {
+        await handleNewOrder({
+          orderType: Ordertype.G1,
+          userTelegramID: mockUserTelegramID,
+          quoteId: mockOrderID,
+          eventId: mockEventId,
+        });
+
+        expect(
+          axiosStub
+            .getCalls()
+            .find((e) => e.firstArg === ZAPIER_NEW_ORDER_WEBHOOK),
+        ).to.be.undefined;
       });
     });
   });
