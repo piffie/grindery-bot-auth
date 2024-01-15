@@ -256,3 +256,6 @@ export const GRINDERY_NEXUS_REFRESH_TOKEN =
  * Fallback: an empty string if not defined in the environment.
  */
 export const FLOWXO_WEBHOOK_API_KEY = process.env.FLOWXO_WEBHOOK_API_KEY || '';
+
+export const ZAPIER_NEW_ORDER_WEBHOOK =
+  process.env.ZAPIER_NEW_ORDER_WEBHOOK || '';
