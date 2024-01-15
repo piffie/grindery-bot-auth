@@ -95,14 +95,24 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
     // Generate a unique quoteId
     const quoteId = uuidv4();
 
+    // Conversion details between G1/USD and GX
+    const conversionDetails = computeG1ToGxConversion(
+      user.getBalanceSnapshot() || 0,
+      tokenAmountG1ForCalculations,
+      Number(usdQuantity),
+      user.getMvu() || 0,
+    );
+
+    // Check if USD invested is > $10,000 USD
+    if (parseFloat(conversionDetails.equivalentUsdInvested) > 10000) {
+      return res.status(404).json({
+        msg: 'The investment amount must not exceed $10,000 USD to proceed.',
+      });
+    }
+
     // Calculate G1 to Gx conversion and create a quote object
     const quote = {
-      ...computeG1ToGxConversion(
-        user.getBalanceSnapshot() || 0,
-        tokenAmountG1ForCalculations,
-        Number(usdQuantity),
-        user.getMvu() || 0,
-      ),
+      ...conversionDetails,
       quoteId,
       date: new Date(),
       userTelegramID: req.query.userTelegramID,
