@@ -3,6 +3,7 @@ import { authenticateApiKey } from '../utils/auth';
 import { computeG1ToGxConversion, getUserTgeBalance } from '../utils/g1gx';
 import { Database } from '../db/conn';
 import {
+  DEFAULT_CHAIN_ID,
   GX_ORDER_COLLECTION,
   GX_QUOTE_COLLECTION,
   Ordertype,
@@ -11,6 +12,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { getTokenPrice } from '../utils/ankr';
 import { GxOrderStatus } from 'grindery-nexus-common-utils';
 import { UserTelegram } from '../utils/user';
+import { G1_POLYGON_ADDRESS } from '../../secrets';
+import { getUserBalance } from '../utils/web3';
 
 const router = express.Router();
 
@@ -93,6 +96,7 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
 
     // Get user details
     const user = await UserTelegram.build(req.query.userTelegramID as string);
+
     // Get G1 balance for calculations
     const tokenAmountG1ForCalculations = await getUserTgeBalance(
       user.userTelegramID,
@@ -103,7 +107,16 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
 
     // Conversion details between G1/USD and GX
     const conversionDetails = computeG1ToGxConversion(
-      user.getBalanceSnapshot() || 0,
+      Math.max(
+        user.getBalanceSnapshot() || 0,
+        parseFloat(
+          await getUserBalance(
+            user.patchwalletAddress() || '', // User's Ethereum wallet address.
+            G1_POLYGON_ADDRESS, // Address of the G1 token on Polygon.
+            DEFAULT_CHAIN_ID, // Polygon chain ID.
+          ),
+        ),
+      ),
       tokenAmountG1ForCalculations,
       Number(usdQuantity),
       user.getMvu() || 0,
