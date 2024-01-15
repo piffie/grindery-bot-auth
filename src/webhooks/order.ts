@@ -1,12 +1,12 @@
-import axios, { AxiosError } from "axios";
-import { Database } from "../db/conn";
-import { OrderInit, PatchRawResult } from "../types/webhook.types";
+import axios, { AxiosError } from 'axios';
+import { Database } from '../db/conn';
+import { OrderInit, PatchRawResult } from '../types/webhook.types';
 import {
   GX_ORDER_COLLECTION,
   GX_QUOTE_COLLECTION,
   Ordertype,
-} from "../utils/constants";
-import { getPatchWalletAccessToken, sendTokens } from "../utils/patchwallet";
+} from '../utils/constants';
+import { getPatchWalletAccessToken, sendTokens } from '../utils/patchwallet';
 import {
   processPendingHashStatus,
   isFailedTransaction,
@@ -15,12 +15,12 @@ import {
   updateStatus,
   updateTxHash,
   handleUserOpHash,
-} from "./utils";
-import { SOURCE_WALLET_ADDRESS, ZAPIER_NEW_ORDER_WEBHOOK } from "../../secrets";
-import { Db, FindCursor, WithId } from "mongodb";
-import { TransactionStatus } from "grindery-nexus-common-utils";
-import { MongoGxQuote, MongoOrder, OrderParams } from "../types/gx.types";
-import { UserTelegram } from "../utils/user";
+} from './utils';
+import { SOURCE_WALLET_ADDRESS, ZAPIER_NEW_ORDER_WEBHOOK } from '../../secrets';
+import { Db, FindCursor, WithId } from 'mongodb';
+import { TransactionStatus } from 'grindery-nexus-common-utils';
+import { MongoGxQuote, MongoOrder, OrderParams } from '../types/gx.types';
+import { UserTelegram } from '../utils/user';
 
 export async function handleNewOrder(params: OrderParams): Promise<boolean> {
   // Establish a connection to the database
@@ -32,7 +32,7 @@ export async function handleNewOrder(params: OrderParams): Promise<boolean> {
   if (!sender.isInDatabase)
     return (
       console.error(
-        `[${params.eventId}] Sender ${params.userTelegramID} is not a user`
+        `[${params.eventId}] Sender ${params.userTelegramID} is not a user`,
       ),
       true
     );
@@ -46,7 +46,7 @@ export async function handleNewOrder(params: OrderParams): Promise<boolean> {
   if (!quote)
     return (
       console.error(
-        `[${params.eventId}] No quote for sender ${params.userTelegramID} with quote ID ${params.quoteId}`
+        `[${params.eventId}] No quote for sender ${params.userTelegramID} with quote ID ${params.quoteId}`,
       ),
       true
     );
@@ -91,17 +91,17 @@ export async function handleNewOrder(params: OrderParams): Promise<boolean> {
     await Promise.all([
       await orderInstance.updateInDatabase(
         TransactionStatus.SUCCESS,
-        new Date()
+        new Date(),
       ),
       await orderInstance.sendToWebhook(),
     ]).catch((error) =>
       console.error(
-        `[${params.eventId}] Error processing Segment or FlowXO webhook, or sending telegram message: ${error}`
-      )
+        `[${params.eventId}] Error processing Segment or FlowXO webhook, or sending telegram message: ${error}`,
+      ),
     );
 
     console.log(
-      `[${orderInstance.txHash}] order G1 from ${orderInstance.params.userTelegramID} for ${orderInstance.params.quote?.tokenAmountG1} with event ID ${orderInstance.params.eventId} finished.`
+      `[${orderInstance.txHash}] order G1 from ${orderInstance.params.userTelegramID} for ${orderInstance.params.quote?.tokenAmountG1} with event ID ${orderInstance.params.eventId} finished.`,
     );
     return true;
   }
@@ -237,7 +237,7 @@ export class OrderTelegram {
 
   async updateInDatabase(
     status: TransactionStatus,
-    date: Date | null
+    date: Date | null,
   ): Promise<void> {
     await this.db?.collection(GX_ORDER_COLLECTION).updateOne(
       { eventId: this.params.eventId },
@@ -273,10 +273,10 @@ export class OrderTelegram {
           tokenAddress: this.params.quote?.tokenAddress,
         },
       },
-      { upsert: true }
+      { upsert: true },
     );
     console.log(
-      `[${this.params.eventId}] ${this.params.orderType} order from ${this.params.userTelegramID} in MongoDB as ${status} with transaction hash : ${this.txHash}.`
+      `[${this.params.eventId}] ${this.params.orderType} order from ${this.params.userTelegramID} in MongoDB as ${status} with transaction hash : ${this.txHash}.`,
     );
   }
 
@@ -319,21 +319,21 @@ export class OrderTelegram {
   > {
     if (this.params.orderType === Ordertype.G1)
       return await sendTokens(
-        this.params.userTelegramID || "",
+        this.params.userTelegramID || '',
         SOURCE_WALLET_ADDRESS,
-        this.params.quote?.tokenAmountG1 || "",
+        this.params.quote?.tokenAmountG1 || '',
         await getPatchWalletAccessToken(),
-        0
+        0,
       );
 
     return await sendTokens(
-      this.params.userTelegramID || "",
+      this.params.userTelegramID || '',
       SOURCE_WALLET_ADDRESS,
-      this.params.quote?.tokenAmount || "",
+      this.params.quote?.tokenAmount || '',
       await getPatchWalletAccessToken(),
       0,
       this.params.quote?.tokenAddress,
-      this.params.quote?.chainId
+      this.params.quote?.chainId,
     );
   }
 }
