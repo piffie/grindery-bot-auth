@@ -122,7 +122,7 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
       quoteId,
       date: new Date(),
       userTelegramID: req.query.userTelegramID,
-      tokenAmount: req.query.tokenAmount,
+      tokenAmount: req.query.tokenAmount ?? '0',
       chainId: req.query.chainId ?? null,
       tokenAddress: req.query.tokenAddress ?? null,
       tokenAmountG1: req.query.g1Quantity,

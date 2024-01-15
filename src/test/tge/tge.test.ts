@@ -216,6 +216,113 @@ describe('G1 to GX util functions', async function () {
       });
     });
 
+    it('With undefined USD', async function () {
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/quote')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          tokenAmount: undefined,
+          chainId: undefined,
+          tokenAddress: undefined,
+          g1Quantity: '10',
+          userTelegramID: mockUserTelegramID,
+        });
+
+      expect(isUUIDv4(res.body.quoteId)).to.be.true;
+
+      delete res.body.date;
+      delete res.body.quoteId;
+
+      expect(res.body).to.deep.equal({
+        m1: '0.2000',
+        m2: '0.4000',
+        m3: '0.3000',
+        m4: '0.0000',
+        m5: '0.2500',
+        m6: '1.0000',
+        finalG1Usd: '0.005000',
+        gxFromUsd: '5000.00',
+        usdFromG1: '600000.00',
+        gxFromG1: '16666666.67',
+        gxReceived: '16671666.67',
+        equivalentUsdInvested: '2178.50',
+        GxUsdExchangeRate: '10.00',
+        userTelegramID: mockUserTelegramID,
+        tokenAmountG1: '10',
+        usdFromUsdInvestment: '0',
+        tokenAmount: '0',
+        chainId: null,
+        tokenAddress: null,
+        tokenAmountG1ForCalculations: '555.00',
+      });
+
+      const quotes = await collectionQuotesMock.find({}).toArray();
+
+      expect(quotes)
+        .excluding(['_id', 'date', 'quoteId'])
+        .to.deep.equal([
+          {
+            m1: '0.2000',
+            m2: '0.4000',
+            m3: '0.3000',
+            m4: '0.0000',
+            m5: '0.2500',
+            m6: '1.0000',
+            finalG1Usd: '0.005000',
+            gxFromUsd: '5000.00',
+            usdFromG1: '600000.00',
+            gxFromG1: '16666666.67',
+            gxReceived: '16671666.67',
+            equivalentUsdInvested: '2178.50',
+            GxUsdExchangeRate: '10.00',
+            userTelegramID: mockUserTelegramID,
+            tokenAmountG1: '10',
+            usdFromUsdInvestment: '0',
+            tokenAmount: '0',
+            chainId: null,
+            tokenAddress: null,
+            tokenAmountG1ForCalculations: '555.00',
+          },
+        ]);
+
+      expect(isUUIDv4(quotes[0].quoteId)).to.be.true;
+    });
+
+    it('Should return an error if total amount invested is more than $10,000 USD', async function () {
+      conversionStub.returns({
+        m1: '0.2000',
+        m2: '0.4000',
+        m3: '0.3000',
+        m4: '0.0000',
+        m5: '0.2500',
+        m6: '1.0000',
+        finalG1Usd: '0.005000',
+        gxFromUsd: '5000.00',
+        usdFromG1: '600000.00',
+        gxFromG1: '16666666.67',
+        gxReceived: '16671666.67',
+        equivalentUsdInvested: '11000',
+        GxUsdExchangeRate: '10.00',
+      });
+
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/quote')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          tokenAmount: '10',
+          chainId: mockChainId,
+          tokenAddress: mockTokenAddress,
+          g1Quantity: '10',
+          userTelegramID: mockUserTelegramID,
+        });
+
+      expect(res.body).to.deep.equal({
+        msg: 'The investment amount must not exceed $10,000 USD to proceed.',
+      });
+    });
+
     it('Should return an error if G1 token amount is 0', async function () {
       const res = await chai
         .request(app)
