@@ -16,11 +16,10 @@ import {
   updateTxHash,
   handleUserOpHash,
 } from './utils';
-import { PRODUCTION_ENV, SOURCE_WALLET_ADDRESS } from '../../secrets';
+import { SOURCE_WALLET_ADDRESS } from '../../secrets';
 import { Db, FindCursor, WithId } from 'mongodb';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
 import { MongoGxQuote, MongoOrder, OrderParams } from '../types/gx.types';
-import { mockTransactionHash, mockUserOpHash } from '../test/utils';
 import { UserTelegram } from '../utils/user';
 
 export async function handleNewOrder(params: OrderParams): Promise<boolean> {
