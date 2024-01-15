@@ -17,7 +17,6 @@ import {
   handleUserOpHash,
 } from './utils';
 import {
-  PRODUCTION_ENV,
   SOURCE_WALLET_ADDRESS,
   ZAPIER_NEW_ORDER_WEBHOOK,
 } from '../../secrets';
