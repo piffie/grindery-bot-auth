@@ -272,13 +272,6 @@ export class OrderTelegram {
   async sendTransactionAction(): Promise<
     axios.AxiosResponse<PatchRawResult, AxiosError>
   > {
-    if (PRODUCTION_ENV) {
-      return {
-        data: { userOpHash: mockUserOpHash, txHash: mockTransactionHash },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any;
-    }
-
     if (this.params.orderType === Ordertype.G1)
       return await sendTokens(
         this.params.userTelegramID || '',
