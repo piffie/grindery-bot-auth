@@ -74,7 +74,7 @@ describe('Users route', async function () {
       });
     });
 
-    it('Should push new attributes is no attribute exist', async function () {
+    it('Should push new attributes if no attribute exist', async function () {
       const res = await chai
         .request(app)
         .post('/v1/users/attributes')
@@ -158,7 +158,7 @@ describe('Users route', async function () {
           },
           {
             userTelegramID: mockUserTelegramID3,
-            attributes: { mvu_score: '44' },
+            attributes: { active: true },
           },
         ]);
 
@@ -184,7 +184,7 @@ describe('Users route', async function () {
           },
           {
             userTelegramID: mockUserTelegramID3,
-            attributes: { mvu_score: '44' },
+            attributes: { mvu_score: '34', active: true },
           },
         ]);
 

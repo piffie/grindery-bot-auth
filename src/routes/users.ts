@@ -83,13 +83,22 @@ router.post('/attributes', authenticateApiKey, async (req, res) => {
     }
 
     // Map the request body to bulk operations
-    const bulkOperations = req.body.map((update) => ({
-      updateOne: {
-        filter: { userTelegramID: update.userTelegramID },
-        update: { $set: { attributes: update.attributes } },
-        upsert: true,
-      },
-    }));
+    const bulkOperations = req.body.map((update) => {
+      const updateFields = {};
+
+      // Construct field-level update for each attribute
+      for (const key in update.attributes) {
+        updateFields[`attributes.${key}`] = update.attributes[key];
+      }
+
+      return {
+        updateOne: {
+          filter: { userTelegramID: update.userTelegramID },
+          update: { $set: updateFields },
+          upsert: true,
+        },
+      };
+    });
 
     // Perform the bulk write operation
     const result = await db
