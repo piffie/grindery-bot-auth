@@ -16,15 +16,10 @@ import {
   updateTxHash,
   handleUserOpHash,
 } from './utils';
-import {
-  PRODUCTION_ENV,
-  SOURCE_WALLET_ADDRESS,
-  ZAPIER_NEW_ORDER_WEBHOOK,
-} from '../../secrets';
+import { SOURCE_WALLET_ADDRESS, ZAPIER_NEW_ORDER_WEBHOOK } from '../../secrets';
 import { Db, FindCursor, WithId } from 'mongodb';
 import { TransactionStatus } from 'grindery-nexus-common-utils';
 import { MongoGxQuote, MongoOrder, OrderParams } from '../types/gx.types';
-import { mockTransactionHash, mockUserOpHash } from '../test/utils';
 import { UserTelegram } from '../utils/user';
 
 export async function handleNewOrder(params: OrderParams): Promise<boolean> {
@@ -322,13 +317,6 @@ export class OrderTelegram {
   async sendTransactionAction(): Promise<
     axios.AxiosResponse<PatchRawResult, AxiosError>
   > {
-    if (PRODUCTION_ENV) {
-      return {
-        data: { userOpHash: mockUserOpHash, txHash: mockTransactionHash },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any;
-    }
-
     if (this.params.orderType === Ordertype.G1)
       return await sendTokens(
         this.params.userTelegramID || '',
