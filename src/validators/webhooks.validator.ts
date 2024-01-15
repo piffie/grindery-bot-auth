@@ -324,7 +324,7 @@ export const isolatedRewardValidator = [
     .withMessage('chainName must be a string'),
 
   // Validates referentUserTelegramID within params as an optional string
-  validateUserTelegramID('params.referentUserTelegramID', false),
+  validateUserTelegramID('params.referentUserTelegramID', true),
 
   // Validates isSignupReward within params as an optional boolean
   body('params.isSignupReward')
