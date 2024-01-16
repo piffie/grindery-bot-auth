@@ -99,7 +99,9 @@ export function computeG1ToGxConversion(
   const m3 = (mvu / 10) * M3_FACTOR;
 
   // Calculate m4 based on the days since the start date.
-  const m4 = (daysSinceStartDate(START_DATE) - 1) * (M4_FACTOR / (30 - 1));
+  // const m4 = (daysSinceStartDate(START_DATE) - 1) * (M4_FACTOR / (30 - 1));
+  // Time decay is disabled for now. See Slack.
+  const m4 = 0;
 
   // Calculate m5 based on the ratio of amountG1ToConvert to snapshotG1.
   const m5 =
