@@ -1,13 +1,13 @@
 import { G1_POLYGON_ADDRESS } from '../../secrets';
 import { DEFAULT_CHAIN_ID } from './constants';
-import { daysSinceStartDate } from './time';
+// import { daysSinceStartDate } from './time';
 import { UserTelegram } from './user';
 import { getUserBalance } from './web3';
 
 /**
  * The starting date for the calculation.
  */
-const START_DATE = new Date('2024-01-14T00:00:00Z');
+// const START_DATE = new Date('2024-01-14T00:00:00Z');
 
 /**
  * The minimum USD price per G1 for conversion.
@@ -47,7 +47,7 @@ const M3_FACTOR = 0.3;
 /**
  * Factor for the fourth calculation component (m4).
  */
-const M4_FACTOR = -0.2;
+// const M4_FACTOR = -0.2;
 
 /**
  * Factor for the fifth calculation component (m5).
