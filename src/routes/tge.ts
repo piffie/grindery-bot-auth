@@ -74,13 +74,51 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
       });
     }
 
+    // Initialize USD quantity to '0'
     let usdQuantity = '0';
 
+    // Get user details
+    const user = await UserTelegram.build(req.query.userTelegramID as string);
+
+    // Get the user's G1 balance
+    const userG1Balance = await getUserBalance(
+      user.patchwalletAddress() || '',
+      G1_POLYGON_ADDRESS,
+      DEFAULT_CHAIN_ID,
+    );
+
+    // Check if the requested G1 quantity exceeds the user's G1 balance
+    if (
+      parseFloat(req.query.g1Quantity as string) > parseFloat(userG1Balance)
+    ) {
+      return res.status(404).json({
+        msg: 'Insufficient G1 balance. The G1 balance must be greater than or equal to the requested token amount for the exchange.',
+      });
+    }
+
+    // Check if chainId and tokenAmount are provided
     if (
       req.query.chainId &&
-      req.query.chainId &&
+      req.query.tokenAmount &&
       parseFloat(req.query.tokenAmount as string) > 0
     ) {
+      // Get the user's balance for the specified token and chain
+      const userOtherTokenBalance = await getUserBalance(
+        user.patchwalletAddress() || '',
+        req.query.tokenAddress as string,
+        req.query.chainId as string,
+      );
+
+      // Check if the requested token amount exceeds the user's token balance
+      if (
+        parseFloat(req.query.tokenAmount as string) >
+        parseFloat(userOtherTokenBalance)
+      ) {
+        return res.status(404).json({
+          msg: `Insufficient ${req.query.tokenAddress} balance. The ${req.query.tokenAddress} balance must be greater than or equal to the requested token amount for the exchange.`,
+        });
+      }
+
       // Calculate token price based on chainId and token address
       const token_price = await getTokenPrice(
         req.query.chainId as string,
@@ -94,29 +132,18 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
       ).toFixed(2);
     }
 
-    // Get user details
-    const user = await UserTelegram.build(req.query.userTelegramID as string);
-
     // Get G1 balance for calculations
     const tokenAmountG1ForCalculations = await getUserTgeBalance(
       user.userTelegramID,
       parseFloat(req.query.g1Quantity as string),
     );
+
     // Generate a unique quoteId
     const quoteId = uuidv4();
 
     // Conversion details between G1/USD and GX
     const conversionDetails = computeG1ToGxConversion(
-      Math.max(
-        user.getBalanceSnapshot() || 0,
-        parseFloat(
-          await getUserBalance(
-            user.patchwalletAddress() || '', // User's Ethereum wallet address.
-            G1_POLYGON_ADDRESS, // Address of the G1 token on Polygon.
-            DEFAULT_CHAIN_ID, // Polygon chain ID.
-          ),
-        ),
-      ),
+      Math.max(user.getBalanceSnapshot() || 0, parseFloat(userG1Balance)),
       tokenAmountG1ForCalculations,
       Number(usdQuantity),
       user.getMvu() || 0,
