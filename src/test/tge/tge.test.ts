@@ -217,6 +217,8 @@ describe('G1 to GX util functions', async function () {
       expect(res.body).to.deep.equal({
         msg: 'The investment amount must not exceed $10,000 USD to proceed.',
       });
+
+      expect(await collectionQuotesMock.find({}).toArray()).to.be.empty;
     });
 
     it('With undefined USD', async function () {
@@ -308,6 +310,8 @@ describe('G1 to GX util functions', async function () {
       expect(res.body).to.deep.equal({
         msg: 'The amount of G1 must be a positive number.',
       });
+
+      expect(await collectionQuotesMock.find({}).toArray()).to.be.empty;
     });
 
     it('Should call the computeG1ToGxConversion with balance snapshot if balance snapshot > balance', async function () {
@@ -433,6 +437,50 @@ describe('G1 to GX util functions', async function () {
         ]);
 
       expect(isUUIDv4(quotes[0].quoteId)).to.be.true;
+    });
+
+    it('Should return an error if the G1 balance is less than the requested amount', async function () {
+      balanceStub.returns('1');
+
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/quote')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          tokenAmount: '10',
+          chainId: mockChainId,
+          tokenAddress: mockTokenAddress,
+          g1Quantity: '4',
+          userTelegramID: mockUserTelegramID,
+        });
+
+      expect(res.body).to.deep.equal({
+        msg: 'Insufficient G1 balance. The G1 balance must be greater than or equal to the requested token amount for the exchange.',
+      });
+
+      expect(await collectionQuotesMock.find({}).toArray()).to.be.empty;
+    });
+
+    it('Should return an error if the other token balance is less than the requested amount', async function () {
+      balanceStub.returns('5');
+
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/quote')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          tokenAmount: '10',
+          chainId: mockChainId,
+          tokenAddress: mockTokenAddress,
+          g1Quantity: '4',
+          userTelegramID: mockUserTelegramID,
+        });
+
+      expect(res.body).to.deep.equal({
+        msg: `Insufficient ${mockTokenAddress} balance. The ${mockTokenAddress} balance must be greater than or equal to the requested token amount for the exchange.`,
+      });
+
+      expect(await collectionQuotesMock.find({}).toArray()).to.be.empty;
     });
   });
 

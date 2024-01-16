@@ -1,6 +1,5 @@
 import { G1_POLYGON_ADDRESS } from '../../secrets';
 import { DEFAULT_CHAIN_ID } from './constants';
-// import { daysSinceStartDate } from './time';
 import { UserTelegram } from './user';
 import { getUserBalance } from './web3';
 
