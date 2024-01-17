@@ -24,7 +24,7 @@ describe('G1 to GX util functions', async function () {
     sandbox = Sinon.createSandbox();
     sandbox.stub(time, 'daysSinceStartDate').returns(1);
 
-    balanceMock = sandbox.stub(web3, 'getUserBalance').resolves('10');
+    balanceMock = sandbox.stub(web3, 'getUserBalanceERC20').resolves('10');
   });
 
   afterEach(function () {

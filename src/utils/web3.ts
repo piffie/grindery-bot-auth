@@ -168,7 +168,7 @@ export function weiToEther(
  * @param {string} chainId - The identifier of the blockchain.
  * @returns {Promise<string>} A Promise that resolves to the user's balance as a string.
  */
-export async function getUserBalance(
+export async function getUserBalanceERC20(
   userAddress: string,
   tokenAddress: string,
   chainId: string,
