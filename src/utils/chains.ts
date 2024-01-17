@@ -1,3 +1,4 @@
+import Web3 from 'web3';
 import {
   ALCHEMY_API_KEY,
   ANKR_KEY,
@@ -182,4 +183,21 @@ export const CHAIN_MAPPING: Record<string, ChainInfo> = {
     name_display: 'Linea',
     ankr_name: 'linea',
   },
+};
+
+/**
+ * Retrieves a Web3 instance for a specific blockchain based on the given chain ID.
+ *
+ * @param {string} chainId - The chain ID representing a specific blockchain.
+ * @returns {Web3} - An instance of the Web3 class configured for the specified blockchain.
+ */
+function getWeb3Chain(chainId: string): Web3 {
+  return new Web3(CHAIN_MAPPING[chainId].endpoint[1]);
+}
+
+/**
+ * Object containing methods related to blockchain interactions.
+ */
+export const chainMethods = {
+  getWeb3Chain,
 };
