@@ -1,7 +1,7 @@
 import { G1_POLYGON_ADDRESS } from '../../secrets';
 import { DEFAULT_CHAIN_ID } from './constants';
 import { UserTelegram } from './user';
-import { getUserBalance } from './web3';
+import { getUserBalanceERC20 } from './web3';
 
 /**
  * The starting date for the calculation.
@@ -161,7 +161,7 @@ export async function getUserTgeBalance(
 
   // Get the real balance of the user in G1 on the Polygon network.
   const realBalance = parseFloat(
-    await getUserBalance(
+    await getUserBalanceERC20(
       user.patchwalletAddress() || '', // User's Ethereum wallet address.
       G1_POLYGON_ADDRESS, // Address of the G1 token on Polygon.
       DEFAULT_CHAIN_ID, // Polygon chain ID.

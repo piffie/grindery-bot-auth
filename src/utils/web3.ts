@@ -1,5 +1,5 @@
 import { G1_POLYGON_ADDRESS } from '../../secrets';
-import { CHAIN_MAPPING } from './chains';
+import { CHAIN_MAPPING, chainMethods } from './chains';
 import ERC20 from '../abi/ERC20.json';
 import Web3 from 'web3';
 import BN from 'bn.js';
@@ -168,7 +168,7 @@ export function weiToEther(
  * @param {string} chainId - The identifier of the blockchain.
  * @returns {Promise<string>} A Promise that resolves to the user's balance as a string.
  */
-export async function getUserBalance(
+export async function getUserBalanceERC20(
   userAddress: string,
   tokenAddress: string,
   chainId: string,
@@ -191,9 +191,9 @@ export async function getUserBalanceNative(
   userAddress: string,
   chainId: string,
 ): Promise<string> {
-  const web3 = new Web3(CHAIN_MAPPING[chainId].endpoint[1]);
-
-  return BigNumber(await web3.eth.getBalance(userAddress))
+  return BigNumber(
+    await chainMethods.getWeb3Chain(chainId).eth.getBalance(userAddress),
+  )
     .div(BigNumber(10).pow(BigNumber(18)))
     .toString();
 }

@@ -82,7 +82,7 @@ describe('G1 to GX util functions', async function () {
     });
 
     sandbox.stub(g1gx, 'getUserTgeBalance').resolves(555);
-    balanceStub = sandbox.stub(web3, 'getUserBalance').resolves('10');
+    balanceStub = sandbox.stub(web3, 'getUserBalanceERC20').resolves('10');
     balanceStubNative = sandbox
       .stub(web3, 'getUserBalanceNative')
       .resolves('20');

@@ -14,7 +14,7 @@ import { getTokenPrice } from '../utils/ankr';
 import { GxOrderStatus } from 'grindery-nexus-common-utils';
 import { UserTelegram } from '../utils/user';
 import { G1_POLYGON_ADDRESS } from '../../secrets';
-import { getUserBalance, getUserBalanceNative } from '../utils/web3';
+import { getUserBalanceERC20, getUserBalanceNative } from '../utils/web3';
 import BigNumber from 'bignumber.js';
 
 const router = express.Router();
@@ -83,7 +83,7 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
     const user = await UserTelegram.build(req.query.userTelegramID as string);
 
     // Get the user's G1 balance
-    const userG1Balance = await getUserBalance(
+    const userG1Balance = await getUserBalanceERC20(
       user.patchwalletAddress() || '',
       G1_POLYGON_ADDRESS,
       DEFAULT_CHAIN_ID,
@@ -112,7 +112,7 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
             user.patchwalletAddress() || '',
             req.query.chainId as string,
           )
-        : await getUserBalance(
+        : await getUserBalanceERC20(
             user.patchwalletAddress() || '',
             req.query.tokenAddress as string,
             req.query.chainId as string,

@@ -1,8 +1,41 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from 'chai';
-import { numberToString, scaleDecimals, weiToEther } from '../../utils/web3';
+import {
+  getUserBalanceNative,
+  numberToString,
+  scaleDecimals,
+  weiToEther,
+} from '../../utils/web3';
 import BN from 'bn.js';
+import Sinon from 'sinon';
+import { mockChainId } from '../utils';
+import { chainMethods } from '../../utils/chains';
 
 describe('Web3 utils ', async function () {
+  let sandbox: sinon.SinonSandbox;
+  let balanceMock;
+
+  beforeEach(async function () {
+    sandbox = Sinon.createSandbox();
+
+    const fakeWeb3Instance: any = {
+      eth: {
+        getBalance: sandbox
+          .stub()
+          .callsFake(async () => '100100000000000000000'),
+      },
+    };
+
+    balanceMock = sandbox
+      .stub(chainMethods, 'getWeb3Chain')
+      .callsFake((_chainId: string) => fakeWeb3Instance);
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
+
   describe('numberToString', async function () {
     it('Should convert a valid string number to string', async function () {
       expect(numberToString('42')).to.equal('42');
@@ -180,6 +213,40 @@ describe('Web3 utils ', async function () {
 
     it('should throw an error for non-numeric Wei values', async function () {
       expect(() => weiToEther('invalidWeiValue', 10)).to.throw();
+    });
+  });
+
+  describe('getUserBalanceNative', async function () {
+    it('should return the user balance converted into Ether', async function () {
+      // Arrange
+      const fakeWeb3Instance: any = {
+        eth: {
+          getBalance: sandbox
+            .stub()
+            .callsFake(async () => '1022286187188978853816'),
+        },
+      };
+
+      balanceMock.callsFake((_chainId: string) => fakeWeb3Instance);
+
+      // Act & Assert
+      expect(await getUserBalanceNative('xx', mockChainId)).to.equal(
+        '1022.286187188978853816',
+      );
+    });
+
+    it('should return the user balance as zero when the balance is zero', async function () {
+      // Arrange
+      const fakeWeb3Instance: any = {
+        eth: {
+          getBalance: sandbox.stub().callsFake(async () => '0'),
+        },
+      };
+
+      balanceMock.callsFake((_chainId: string) => fakeWeb3Instance);
+
+      // Act & Assert
+      expect(await getUserBalanceNative('xx', mockChainId)).to.equal('0');
     });
   });
 });
