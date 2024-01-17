@@ -511,7 +511,7 @@ export class UserTelegram {
   getMvu(): number | undefined {
     if (this.params && this.params.attributes.mvu_score) {
       const parsedMvu = parseFloat(this.params.attributes.mvu_score);
-      if (!(isNaN(parsedMvu) && parsedMvu <= 0)) return parsedMvu;
+      if (!(isNaN(parsedMvu) || parsedMvu < 0)) return parsedMvu;
     }
     return undefined;
   }
@@ -523,7 +523,7 @@ export class UserTelegram {
   getMvuRounded(): number | undefined {
     if (this.params && this.params.attributes.mvu_rounded) {
       const parsedMvu = parseFloat(this.params.attributes.mvu_rounded);
-      if (!(isNaN(parsedMvu) && parsedMvu <= 0)) return parsedMvu;
+      if (!(isNaN(parsedMvu) || parsedMvu < 0)) return parsedMvu;
     }
     return undefined;
   }
@@ -537,18 +537,23 @@ export class UserTelegram {
       const parsedVirtualBalance = parseFloat(
         this.params.attributes.virtual_balance,
       );
-      if (!(isNaN(parsedVirtualBalance) && parsedVirtualBalance <= 0))
+      if (!(isNaN(parsedVirtualBalance) || parsedVirtualBalance < 0))
         return parsedVirtualBalance;
     }
     return undefined;
   }
 
+  /**
+   * Returns the virtual balance as a number.
+   *
+   * @returns {number | undefined} The virtual balance, or undefined if not present or invalid.
+   */
   getBalanceSnapshot(): number | undefined {
     if (this.params && this.params.attributes.balance_100123) {
       const parsedBalanceSnapshot = parseFloat(
         this.params.attributes.balance_100123,
       );
-      if (!(isNaN(parsedBalanceSnapshot) && parsedBalanceSnapshot <= 0))
+      if (!(isNaN(parsedBalanceSnapshot) || parsedBalanceSnapshot < 0))
         return parsedBalanceSnapshot;
     }
     return undefined;
