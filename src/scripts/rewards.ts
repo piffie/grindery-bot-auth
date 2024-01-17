@@ -9,7 +9,6 @@ import fs from 'fs';
 import csv from 'csv-parser';
 import web3 from 'web3';
 import {
-  GX_ORDER_COLLECTION,
   REWARDS_COLLECTION,
   RewardReason,
   TRANSFERS_COLLECTION,
