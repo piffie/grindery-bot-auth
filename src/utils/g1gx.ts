@@ -108,8 +108,7 @@ export function computeG1ToGxConversion(
       ? 0
       : amountG1ToConvert / snapshotG1 < 0.95
       ? (amountG1ToConvert / snapshotG1 - 0.8) *
-        (M5_FACTOR / (0.95 - 0.8)) *
-        100
+        (M5_FACTOR / (0.95 - 0.8)) 
       : M5_FACTOR;
 
   // Calculate m6 as the minimum of the sum of m1, m2, m3, m4, and m5.
