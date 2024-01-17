@@ -82,6 +82,7 @@ describe('G1 to GX util functions', async function () {
 
     sandbox.stub(g1gx, 'getUserTgeBalance').resolves(555);
     balanceStub = sandbox.stub(web3, 'getUserBalance').resolves('10');
+    sandbox.stub(web3, 'getUserBalanceNative').resolves('20');
 
     sandbox.stub(axios, 'post').callsFake(async (url: string) => {
       if (url === ANKR_MULTICHAIN_API_URL) {

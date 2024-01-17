@@ -7,13 +7,14 @@ import {
   GX_ORDER_COLLECTION,
   GX_QUOTE_COLLECTION,
   Ordertype,
+  nativeTokenAddresses,
 } from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 import { getTokenPrice } from '../utils/ankr';
 import { GxOrderStatus } from 'grindery-nexus-common-utils';
 import { UserTelegram } from '../utils/user';
 import { G1_POLYGON_ADDRESS } from '../../secrets';
-import { getUserBalance } from '../utils/web3';
+import { getUserBalance, getUserBalanceNative } from '../utils/web3';
 
 const router = express.Router();
 
@@ -103,11 +104,18 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
       parseFloat(req.query.tokenAmount as string) > 0
     ) {
       // Get the user's balance for the specified token and chain
-      const userOtherTokenBalance = await getUserBalance(
-        user.patchwalletAddress() || '',
+      const userOtherTokenBalance = nativeTokenAddresses.includes(
         req.query.tokenAddress as string,
-        req.query.chainId as string,
-      );
+      )
+        ? await getUserBalanceNative(
+            user.patchwalletAddress() || '',
+            req.query.chainId as string,
+          )
+        : await getUserBalance(
+            user.patchwalletAddress() || '',
+            req.query.tokenAddress as string,
+            req.query.chainId as string,
+          );
 
       // Check if the requested token amount exceeds the user's token balance
       if (
