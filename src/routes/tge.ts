@@ -15,6 +15,7 @@ import { GxOrderStatus } from 'grindery-nexus-common-utils';
 import { UserTelegram } from '../utils/user';
 import { G1_POLYGON_ADDRESS } from '../../secrets';
 import { getUserBalance, getUserBalanceNative } from '../utils/web3';
+import BigNumber from 'bignumber.js';
 
 const router = express.Router();
 
@@ -69,7 +70,7 @@ const router = express.Router();
 router.get('/quote', authenticateApiKey, async (req, res) => {
   try {
     // Check if the G1 quantity is a positive number
-    if (!(parseFloat(req.query.g1Quantity as string) > 0)) {
+    if (!BigNumber(req.query.g1Quantity as string).gt(BigNumber(0))) {
       return res.status(404).json({
         msg: 'The amount of G1 must be a positive number.',
       });
@@ -90,7 +91,7 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
 
     // Check if the requested G1 quantity exceeds the user's G1 balance
     if (
-      parseFloat(req.query.g1Quantity as string) > parseFloat(userG1Balance)
+      BigNumber(req.query.g1Quantity as string).gt(BigNumber(userG1Balance))
     ) {
       return res.status(404).json({
         msg: 'Insufficient G1 balance. The G1 balance must be greater than or equal to the requested token amount for the exchange.',
@@ -101,7 +102,7 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
     if (
       req.query.chainId &&
       req.query.tokenAmount &&
-      parseFloat(req.query.tokenAmount as string) > 0
+      BigNumber(req.query.tokenAmount as string).gt(BigNumber(0))
     ) {
       // Get the user's balance for the specified token and chain
       const userOtherTokenBalance = nativeTokenAddresses.includes(
@@ -119,8 +120,9 @@ router.get('/quote', authenticateApiKey, async (req, res) => {
 
       // Check if the requested token amount exceeds the user's token balance
       if (
-        parseFloat(req.query.tokenAmount as string) >
-        parseFloat(userOtherTokenBalance)
+        BigNumber(req.query.tokenAmount as string).gt(
+          BigNumber(userOtherTokenBalance),
+        )
       ) {
         return res.status(404).json({
           msg: `Insufficient ${req.query.tokenAddress} balance. The ${req.query.tokenAddress} balance must be greater than or equal to the requested token amount for the exchange.`,

@@ -35,6 +35,7 @@ describe('G1 to GX util functions', async function () {
   let collectionOrdersMock;
   let conversionStub;
   let balanceStub;
+  let balanceStubNative;
 
   beforeEach(async function () {
     collectionQuotesMock = await getCollectionGXQuoteMock();
@@ -82,7 +83,9 @@ describe('G1 to GX util functions', async function () {
 
     sandbox.stub(g1gx, 'getUserTgeBalance').resolves(555);
     balanceStub = sandbox.stub(web3, 'getUserBalance').resolves('10');
-    sandbox.stub(web3, 'getUserBalanceNative').resolves('20');
+    balanceStubNative = sandbox
+      .stub(web3, 'getUserBalanceNative')
+      .resolves('20');
 
     sandbox.stub(axios, 'post').callsFake(async (url: string) => {
       if (url === ANKR_MULTICHAIN_API_URL) {
@@ -482,6 +485,98 @@ describe('G1 to GX util functions', async function () {
       });
 
       expect(await collectionQuotesMock.find({}).toArray()).to.be.empty;
+    });
+
+    it('Should return an error if the other token balance is less than the requested amount with lots of digits', async function () {
+      balanceStubNative.returns('15.482128442114959219');
+
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/quote')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          tokenAmount: '15.48212844211496',
+          chainId: 'eip155:137',
+          tokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+          g1Quantity: '4',
+          userTelegramID: '5343013849',
+        });
+
+      expect(res.body).to.deep.equal({
+        msg: 'Insufficient 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee balance. The 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee balance must be greater than or equal to the requested token amount for the exchange.',
+      });
+
+      expect(await collectionQuotesMock.find({}).toArray()).to.be.empty;
+    });
+
+    it('Should be a successful quote if amount and balance are the same with lots of digits', async function () {
+      balanceStubNative.returns('15.482128442114959219');
+
+      const res = await chai
+        .request(app)
+        .get('/v1/tge/quote')
+        .set('Authorization', `Bearer ${await getApiKey()}`)
+        .query({
+          tokenAmount: '15.482128442114959219',
+          chainId: 'eip155:137',
+          tokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+          g1Quantity: '4',
+          userTelegramID: '5343013849',
+        });
+
+      expect(res.body).excluding(['date', 'quoteId']).to.deep.equal({
+        m1: '0.2000',
+        m2: '0.4000',
+        m3: '0.3000',
+        m4: '0.0000',
+        m5: '0.2500',
+        m6: '1.0000',
+        finalG1Usd: '0.005000',
+        gxFromUsd: '5000.00',
+        usdFromG1: '600000.00',
+        gxFromG1: '16666666.67',
+        gxReceived: '16671666.67',
+        equivalentUsdInvested: '2178.50',
+        GxUsdExchangeRate: '10.00',
+        userTelegramID: '5343013849',
+        tokenAmount: '15.482128442114959219',
+        chainId: 'eip155:137',
+        tokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        tokenAmountG1: '4',
+        usdFromUsdInvestment: '154.82',
+        tokenAmountG1ForCalculations: '555.00',
+      });
+
+      const quotes = await collectionQuotesMock.find({}).toArray();
+
+      expect(quotes)
+        .excluding(['_id', 'date', 'quoteId'])
+        .to.deep.equal([
+          {
+            m1: '0.2000',
+            m2: '0.4000',
+            m3: '0.3000',
+            m4: '0.0000',
+            m5: '0.2500',
+            m6: '1.0000',
+            finalG1Usd: '0.005000',
+            gxFromUsd: '5000.00',
+            usdFromG1: '600000.00',
+            gxFromG1: '16666666.67',
+            gxReceived: '16671666.67',
+            equivalentUsdInvested: '2178.50',
+            GxUsdExchangeRate: '10.00',
+            userTelegramID: '5343013849',
+            tokenAmount: '15.482128442114959219',
+            chainId: 'eip155:137',
+            tokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+            tokenAmountG1: '4',
+            usdFromUsdInvestment: '154.82',
+            tokenAmountG1ForCalculations: '555.00',
+          },
+        ]);
+
+      expect(isUUIDv4(quotes[0].quoteId)).to.be.true;
     });
   });
 
