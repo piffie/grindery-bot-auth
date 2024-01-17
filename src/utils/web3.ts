@@ -191,6 +191,7 @@ export async function getUserBalanceNative(
   userAddress: string,
   chainId: string,
 ): Promise<string> {
+  BigNumber.config({ EXPONENTIAL_AT: 19 });
   return BigNumber(
     await chainMethods.getWeb3Chain(chainId).eth.getBalance(userAddress),
   )

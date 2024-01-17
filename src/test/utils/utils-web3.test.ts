@@ -235,6 +235,38 @@ describe('Web3 utils ', async function () {
       );
     });
 
+    it('should return the user balance converted into Ether for 10 WEI', async function () {
+      // Arrange
+      const fakeWeb3Instance: any = {
+        eth: {
+          getBalance: sandbox.stub().callsFake(async () => '10'),
+        },
+      };
+
+      balanceMock.callsFake((_chainId: string) => fakeWeb3Instance);
+
+      // Act & Assert
+      expect(await getUserBalanceNative('xx', mockChainId)).to.equal(
+        '0.00000000000000001',
+      );
+    });
+
+    it('should return the user balance converted into Ether for 1 WEI', async function () {
+      // Arrange
+      const fakeWeb3Instance: any = {
+        eth: {
+          getBalance: sandbox.stub().callsFake(async () => '1'),
+        },
+      };
+
+      balanceMock.callsFake((_chainId: string) => fakeWeb3Instance);
+
+      // Act & Assert
+      expect(await getUserBalanceNative('xx', mockChainId)).to.equal(
+        '0.000000000000000001',
+      );
+    });
+
     it('should return the user balance as zero when the balance is zero', async function () {
       // Arrange
       const fakeWeb3Instance: any = {
