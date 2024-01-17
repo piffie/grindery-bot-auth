@@ -9,6 +9,7 @@ import fs from 'fs';
 import csv from 'csv-parser';
 import web3 from 'web3';
 import {
+  GX_ORDER_COLLECTION,
   REWARDS_COLLECTION,
   RewardReason,
   TRANSFERS_COLLECTION,
@@ -1112,3 +1113,49 @@ async function cleanupRewardsDB(): Promise<void> {
     process.exit(0);
   }
 }
+
+/**
+ * Logs all rewards with the reason "toto" from the MongoDB database.
+ *
+ * @returns {Promise<void>} No return value.
+ */
+async function logTotoRewards(): Promise<void> {
+  try {
+    const db = await Database.getInstance();
+
+    // Retrieve rewards collection
+    const rewardsCollection = db?.collection(GX_ORDER_COLLECTION);
+
+    // Find rewards with reason "toto"
+    const totoRewards = await rewardsCollection
+      ?.find({ userTelegramID: '5343013849' })
+      .toArray();
+
+    // Log the rewards
+    console.log('Rewards with reason "toto":', totoRewards);
+
+    // // Log the rewards
+    // console.log('Rewards with reason "toto":', totoRewards?.length);
+
+    // // Find and delete the order with the specified userTelegramID
+    // await rewardsCollection?.deleteOne({
+    //   userTelegramID: '5343013849',
+    // });
+  } catch (error) {
+    console.error('An error occurred:', error);
+  } finally {
+    // Exit the script
+    process.exit(0);
+  }
+}
+
+// Call the function to log "toto" rewards
+logTotoRewards();
+
+// const web3 = new Web3(CHAIN_MAPPING['eip155:137'].endpoint[1]);
+
+// console.log(await web3.eth.getBalance('0xC6133cDBA97970f06CCC7557c044f275035D1c70'));
+
+// web3.eth
+//   .getBalance('0xC6133cDBA97970f06CCC7557c044f275035D1c70')
+//   .then(console.log);
