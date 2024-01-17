@@ -23,6 +23,8 @@ import {
 import chaiExclude from 'chai-exclude';
 import { UserTelegram } from '../../utils/user';
 import { RewardReason } from '../../utils/constants';
+import { MongoUserWithAttributes } from '../../types/mongo.types';
+import { WithId } from 'mongodb';
 
 chai.use(chaiExclude);
 
@@ -137,6 +139,29 @@ describe('User utils', async function () {
             virtual_balance: '30000',
           },
         },
+        {
+          userTelegramID: '846343711',
+          patchwallet: '0xAe29C9fD46648E0831b21E67dccE6B117664ec03',
+          responsePath: '64d170d6dc5a2a00578ad6f6/c/846343711',
+          userHandle: mockUserHandle1,
+          userName: mockUserName1,
+          attributes: {
+            aff_score: null,
+            host_score: '3',
+            isActiveUser: false,
+            isBlacklist: false,
+            isContributeUser: true,
+            isDead: false,
+            isDoubleSpent: false,
+            isDrone: false,
+            isDroneOwner: false,
+            isGamer: false,
+            isSlave: false,
+            isWalkingDead: false,
+            mvu_rounded: '7',
+            mvu_score: '7.35',
+          },
+        },
       ]);
     });
 
@@ -246,9 +271,21 @@ describe('User utils', async function () {
         });
       });
 
-      it('Should return the MVU score as undefined if not available', async function () {
+      it('Should return the MVU score as undefined if not available or negative', async function () {
         const user = await UserTelegram.build('846343729');
         expect(user.getMvu()).to.be.undefined;
+        (user.params as WithId<MongoUserWithAttributes>).attributes.mvu_score =
+          '-10';
+        expect(user.getMvu()).to.be.undefined;
+        (user.params as WithId<MongoUserWithAttributes>).attributes.mvu_score =
+          'nan';
+        expect(user.getMvu()).to.be.undefined;
+        (user.params as WithId<MongoUserWithAttributes>).attributes.mvu_score =
+          '0';
+        expect(user.getMvu()).to.equal(0);
+        (user.params as WithId<MongoUserWithAttributes>).attributes.mvu_score =
+          '10';
+        expect(user.getMvu()).to.equal(10);
       });
 
       it('Should return the MVU score as a number available', async function () {
@@ -256,9 +293,25 @@ describe('User utils', async function () {
         expect(user.getMvu()).to.equal(7.35);
       });
 
-      it('Should return the MVU score rounded as undefined if not available', async function () {
+      it('Should return the MVU score rounded as undefined if not available or negative', async function () {
         const user = await UserTelegram.build('846343721');
         expect(user.getMvuRounded()).to.be.undefined;
+        (
+          user.params as WithId<MongoUserWithAttributes>
+        ).attributes.mvu_rounded = '-10';
+        expect(user.getMvuRounded()).to.be.undefined;
+        (
+          user.params as WithId<MongoUserWithAttributes>
+        ).attributes.mvu_rounded = 'nan';
+        expect(user.getMvuRounded()).to.be.undefined;
+        (
+          user.params as WithId<MongoUserWithAttributes>
+        ).attributes.mvu_rounded = '0';
+        expect(user.getMvuRounded()).to.equal(0);
+        (
+          user.params as WithId<MongoUserWithAttributes>
+        ).attributes.mvu_rounded = '10';
+        expect(user.getMvuRounded()).to.equal(10);
       });
 
       it('Should return the MVU score rounded as a number available', async function () {
@@ -271,9 +324,51 @@ describe('User utils', async function () {
         expect(user.getVirtualBalance()).to.equal(30000);
       });
 
-      it('Should return the virtual balance as undefined if not available', async function () {
+      it('Should return the virtual balance as undefined if not available or negative', async function () {
         const user = await UserTelegram.build('846343728');
         expect(user.getVirtualBalance()).to.be.undefined;
+        (
+          user.params as WithId<MongoUserWithAttributes>
+        ).attributes.virtual_balance = '-10';
+        expect(user.getVirtualBalance()).to.be.undefined;
+        (
+          user.params as WithId<MongoUserWithAttributes>
+        ).attributes.virtual_balance = 'nan';
+        expect(user.getVirtualBalance()).to.be.undefined;
+        (
+          user.params as WithId<MongoUserWithAttributes>
+        ).attributes.virtual_balance = '0';
+        expect(user.getVirtualBalance()).to.equal(0);
+        (
+          user.params as WithId<MongoUserWithAttributes>
+        ).attributes.virtual_balance = '10';
+        expect(user.getVirtualBalance()).to.equal(10);
+      });
+
+      it('Should return the balance snapshot as a number', async function () {
+        const user = await UserTelegram.build('846343729');
+        expect(user.getBalanceSnapshot()).to.equal(110581);
+      });
+
+      it('Should return the virtual snapshot as undefined if not available or negative', async function () {
+        const user = await UserTelegram.build('846343711');
+        expect(user.getBalanceSnapshot()).to.be.undefined;
+        (
+          user.params as WithId<MongoUserWithAttributes>
+        ).attributes.balance_100123 = '-10';
+        expect(user.getBalanceSnapshot()).to.be.undefined;
+        (
+          user.params as WithId<MongoUserWithAttributes>
+        ).attributes.balance_100123 = 'nan';
+        expect(user.getBalanceSnapshot()).to.be.undefined;
+        (
+          user.params as WithId<MongoUserWithAttributes>
+        ).attributes.balance_100123 = '0';
+        expect(user.getBalanceSnapshot()).to.equal(0);
+        (
+          user.params as WithId<MongoUserWithAttributes>
+        ).attributes.balance_100123 = '10';
+        expect(user.getBalanceSnapshot()).to.equal(10);
       });
 
       it('Should return true for isActiveUser when the attribute is true', async function () {
