@@ -179,3 +179,21 @@ export async function getUserBalance(
     .div(BigNumber(10).pow(BigNumber(await contract.methods.decimals().call())))
     .toString();
 }
+
+/**
+ * Retrieves the native balance of a user on a given blockchain.
+ *
+ * @param {string} userAddress - The address of the user.
+ * @param {string} chainId - The identifier of the blockchain.
+ * @returns {Promise<string>} A Promise that resolves to the user's native balance as a string.
+ */
+export async function getUserBalanceNative(
+  userAddress: string,
+  chainId: string,
+): Promise<string> {
+  const web3 = new Web3(CHAIN_MAPPING[chainId].endpoint[1]);
+
+  return BigNumber(await web3.eth.getBalance(userAddress))
+    .div(BigNumber(10).pow(BigNumber(18)))
+    .toString();
+}
